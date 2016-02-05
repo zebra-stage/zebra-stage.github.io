@@ -4692,7 +4692,7 @@ var mxVersions = [
                                         device: 'TC55',
                                         os: 'KK',
                                         notes: '',
-                                        supported:'0'
+                                        supported:'1'
                                     },
                                     {
                                         name: 'TC70 KK',
