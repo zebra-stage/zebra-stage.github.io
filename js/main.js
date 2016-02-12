@@ -2,41 +2,41 @@ jQuery(function($) {'use strict';
 
 	// Navigation Scroll
 	$(window).scroll(function(event) {
-		Scroll();
+		// Scroll();
 	});
 
-	$('.navbar-collapse ul li a').on('click', function() {  
-		$('html, body').animate({scrollTop: $(this.hash).offset().top - 100}, 1000);
-		return false;
-	});
+	// $('.navbar-collapse ul li a').on('click', function() {  
+	// 	$('html, body').animate({scrollTop: $(this.hash).offset().top - 100}, 1000);
+	// 	return false;
+	// });
 
-	$('#toc ul li a').on('click', function() {  
-		console.log("scrolling");
-		console.log($(this.hash));
-		console.log($(this.hash).offset());
-		$('html, body, .fixed-column-right').animate({scrollTop: $(this.hash).offset().top - 100}, 1000);
-		return false;
-	});
+	// $('#toc ul li a').on('click', function() {  
+	// 	console.log("scrolling");
+	// 	console.log($(this.hash));
+	// 	console.log($(this.hash).offset());
+	// 	$('html, body, .fixed-column-right').animate({scrollTop: $(this.hash).offset().top - 100}, 1000);
+	// 	return false;
+	// });
 
-	// User define function
-	function Scroll() {
-		var contentTop      =   [];
-		var contentBottom   =   [];
-		var winTop      =   $(window).scrollTop();
-		var rangeTop    =   200;
-		var rangeBottom =   500;
-		$('.navbar-collapse').find('.scroll a').each(function(){
-			contentTop.push( $( $(this).attr('href') ).offset().top);
-			contentBottom.push( $( $(this).attr('href') ).offset().top + $( $(this).attr('href') ).height() );
-		})
-		$.each( contentTop, function(i){
-			if ( winTop > contentTop[i] - rangeTop ){
-				$('.navbar-collapse li.scroll')
-				.removeClass('active')
-				.eq(i).addClass('active');			
-			}
-		})
-	};
+	// // User define function
+	// function Scroll() {
+	// 	var contentTop      =   [];
+	// 	var contentBottom   =   [];
+	// 	var winTop      =   $(window).scrollTop();
+	// 	var rangeTop    =   200;
+	// 	var rangeBottom =   500;
+	// 	$('.navbar-collapse').find('.scroll a').each(function(){
+	// 		contentTop.push( $( $(this).attr('href') ).offset().top);
+	// 		contentBottom.push( $( $(this).attr('href') ).offset().top + $( $(this).attr('href') ).height() );
+	// 	})
+	// 	$.each( contentTop, function(i){
+	// 		if ( winTop > contentTop[i] - rangeTop ){
+	// 			$('.navbar-collapse li.scroll')
+	// 			.removeClass('active')
+	// 			.eq(i).addClass('active');			
+	// 		}
+	// 	})
+	// };
 
 	$('#tile-view').on('click', function(){
 		$('.viewlist').addClass('hidden');
