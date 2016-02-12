@@ -10,13 +10,13 @@ jQuery(function($) {'use strict';
 	// 	return false;
 	// });
 
-	// $('#toc ul li a').on('click', function() {  
-	// 	console.log("scrolling");
-	// 	console.log($(this.hash));
-	// 	console.log($(this.hash).offset());
-	// 	$('html, body, .fixed-column-right').animate({scrollTop: $(this.hash).offset().top - 100}, 1000);
-	// 	return false;
-	// });
+	$('#toc ul li a').on('click', function() {  
+		console.log("scrolling");
+		console.log($(this.hash));
+		console.log($(this.hash).offset());
+		$('html, body, .fixed-column-right').animate({scrollTop: $(this.hash).offset().top - 100}, 1000);
+		return false;
+	});
 
 	// // User define function
 	// function Scroll() {
