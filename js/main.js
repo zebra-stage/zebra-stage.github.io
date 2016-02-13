@@ -74,6 +74,86 @@ jQuery(function($) {'use strict';
 	$(document).ready(function() {
 		// make all images use img-responsove class from bootstrap
 		$('img').addClass('img-responsive');
+		
+		//youtube enable images with special alt-tag
+		var imgTags = $("#mainContent").find('img').each(function( index ) {
+		var imgIsVideo = false;
+		if($(this).attr('alt').startsWith('yt:')){
+			imgIsVideo = true;
+			var ytid = $(this).attr('alt').replace('yt:','');
+			var video_thumbnail = 'http://img.youtube.com/vi/'+ytid+'/0.jpg';
+			$(this).attr('src',video_thumbnail);
+			$(this).wrap( "<div class='videos'></div>" );
+			$(this).wrap( "<div  class='video' alt='yt:" + ytid + "''></div>" );
+			$(this).before( "<span></span>" );
+		};
+		var item;
+		if(imgIsVideo){
+			item = $(this).parent();
+		}
+		else{
+			item = $(this);
+		}
+
+		//Image Model
+		item.click(function(){
+			//Set Image
+			var imgIsVideo = false;
+			
+			if($(this).attr('alt').startsWith('yt:')){
+				imgIsVideo = true;
+			}
+			var itemHeight = this.naturalHeight;
+			var itemWidth = this.naturalWidth;
+			if(imgIsVideo){
+				var ytid = $(this).attr('alt').replace('yt:','');
+
+				var ytEmbed = '<iframe id="yt-video" width="100%" height="315" src="https://www.youtube.com/embed/' + ytid + '?autoplay=1" frameborder="0" autoplay allowfullscreen></iframe>'
+				$("#modalImg").html(ytEmbed);
+				console.log('youtube video' + ytid);
+				itemHeight = 480;
+				itemWidth = 640;
+			}
+			else{
+				$("#modalImg").html( '<a href="' + $(this).attr("src") + '" target="_blank"><img title="" slt="img" src="' + $(this).attr("src") + '"></img></a>');
+
+			}
+
+			//Size box
+			if(this.naturalWidth  > ($(document).width()- 100))
+			{
+				$(".modal-dialog").css("width", ($(document).width() - 100) + "px");
+			}
+			else
+			{
+				$(".modal-dialog").css("width", (itemWidth +44) + "px");
+			}
+
+			if(this.naturalHeight  > ($(window).height()- 120))
+			{
+				$(".modal-body").css("height", ($(window).height() - 120) + "px");
+			}
+			else
+			{
+				$(".modal-body").css("height", (itemHeight+44) + "px");
+			}
+
+			if(imgIsVideo){
+				$("#basicModal").on('hide.bs.modal', function(){
+			        $("#yt-video").attr('src', '');
+			    });
+			}
+			//Show
+			$('#basicModal').modal('show');
+
+			setTimeout(function(){
+				$("#modalImg").scrollTop(0);
+				$("#modalImg").scrollLeft(0);
+			},200);
+		});
+
+
+	});;
 
 		//enable all tooltips
 		$('[data-toggle="tooltip"]').tooltip();
