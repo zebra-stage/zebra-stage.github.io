@@ -361,7 +361,18 @@ jQuery(function($) {'use strict';
 
 });
 
+function changeVersion(version_from,version_to,default_url){
+	var new_url = $(location).attr('href').replace(version_from,version_to);
+	console.log(new_url);
+	var jqxhr = $.get( new_url, function() {
+	  window.location = new_url;
+	})
+	.fail(function() {
+		window.location = default_url;
+	});
 
+
+}
 
 
 // more tree binding functions
