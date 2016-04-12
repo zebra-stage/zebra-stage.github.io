@@ -78,7 +78,7 @@ jQuery(function($) {'use strict';
 		//youtube enable images with special alt-tag
 		var imgTags = $("#mainContent").find('img').each(function( index ) {
 		var imgIsVideo = false;
-		if($(this).attr('alt').startsWith('yt:')){
+		if($(this).attr('alt') && $(this).attr('alt').startsWith('yt:')){
 			imgIsVideo = true;
 			var ytid = $(this).attr('alt').replace('yt:','');
 			var video_thumbnail = 'http://img.youtube.com/vi/'+ytid+'/0.jpg';
