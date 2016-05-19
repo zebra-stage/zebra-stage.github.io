@@ -73,7 +73,7 @@
                     <ul class="nav navbar-nav">
                         <li class="navbar-text pull-left"><strong>TechDocs</strong></li>
                         <li class="dropdown">
-                          <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown"> EMDK For Android 4.1
+                          <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown"> EMDK For Android 4.2
                           <span class="caret"></span></button>
                           <ul class="dropdown-menu">
                                 <li><a onclick="changeVersion('4-1','4-0','/emdk-for-android/4-0/guide/about')">EMDK For Android 4.0 </a></li>
@@ -237,7 +237,7 @@
                                     <h1 id="mifaredesfire" class="anchor"><a class="heading-anchor" href="#mifaredesfire"><span></span></a>MifareDesfire</h1>
                                     <p>
                                         EMDK For Android
-                                        4.1
+                                        4.2
                                     </p>
                                 </div>
                             </section>                    
@@ -258,7 +258,6 @@
 
 <pre class="prettyprint"><code>
 
-
 public class MainActivity  extends Activity implements EMDKListener {
 
 SecureNfcManager secureNfcManager;
@@ -266,73 +265,51 @@ EMDKManager emdkManager;
 SamType samType;
 MifareDesfire mifaredesfire;
 MifareSam mifareSam;
+
 protected void onCreate(Bundle savedInstanceState) {
+
 EMDKResults results = EMDKManager.getEMDKManager(getApplicationContext(), this);
 }
+
 public void onOpened(EMDKManager emdkManager) {
+
 this.emdkManager = emdkManager;
+
 this.secureNfcManager = (secureNfcManager)
 this.emdkManager.getInstance(FEATURE_TYPE.SECURENFC);
-if (this.secureNfcManager != null) {
-try {
+
+if(this.secureNfcManager != null){
+
+try{
+
 samType = secureNfcManager.getAvailableSam();
+
 } catch (SecureNfcException e) {
+
 e.printStackTrace();
 }
+
 if (samType.equals(SamType.MIFARE)) {
+
 mifareSam = (MifareSam) secureNfcMgr.getSamInstance(samType);
+
 }
-if (mifareSam != null) {
+
+if(mifareSam != null){
+
 try {
 SamMode samMode = mifareSam.connect();
+
 SamKey samKey = new SamKey();
 samKey.keyNum = 0x00;
 samKey.keyVer = 0x00;
-mifareSam.authenticateSam(authKey, samKey, null);
+
+mifareSam.authenticateSam(authKey, samKey,null);
+
 mifareSam.close();
+
 } catch (MifareSamException e) {
 e.printStackTrace();
-}
-}
-}
-}
-public void onNewIntent(Intent intent) {
-if (intent != null)
-tagDetection(intent);
-}
-private void tagDetection(Intent intent) {
-if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(intent.getAction()) || NfcAdapter.ACTION_TAG_DISCOVERED.equals(intent.getAction()) || NfcAdapter.ACTION_TECH_DISCOVERED.equals(intent.getAction())) {
-lTag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
-try {
-TagTechType tagType = secureNfcMgr.getTagTechType(lTag);
-if (tagType.equals(TagTechType.MIFARE_DESFIRE)) {
-mifareDesfire = (MifareDesfire) secureNfcMgr.getTagTechInstance(tagType);
-try {
-if (!mifareDesfire.isEnabled()) {
-mifareDesfire.enable(lTag);
-}
-} catch (MifareDesfireExpection e) {
-e.printStackTrace();
-}
-}
-} catch (SecureNfcException e) {
-e.printStackTrace();
-}
-}
-}
-public void onDestroy() {
-if (mifareDesfire != null) {
-try {
-mifareDesfire.disable();
-} catch (MifareDesfireExpection e) {
-e.printStackTrace();
-}
-}
-if (this.emdkManager != null)
-this.emdkManager.release();
-}
-public void onClosed() {
-this.emdkManager.release();
 }
 }
 }
