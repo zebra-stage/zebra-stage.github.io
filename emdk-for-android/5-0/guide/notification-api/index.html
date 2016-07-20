@@ -257,12 +257,12 @@
 
 <h2 id="notificationapi" class="anchor"><a class="heading-anchor" href="#notificationapi"><span></span></a>Notification API</h2>
 
-<p><strong>Zebra EMDK notification API is intended for use with remote devices such as RS6000 and External Vibrator</strong></p>
+<p><strong>Zebra EMDK notification API is intended  to notify the user using remote devices such as RS6000 and pluggable External Vibrator</strong></p>
 
 <p>A Ring Scanner such as RS6000 provides several annunciators to notify
 the user of business application workflow events. The list of
 annunciators includes multi-color LEDs, a beeper and a vibrator. 
-business applications levraging the Notificaiton API would have the ability to control these annunciators to notify the user of custom events in their workflow.</p>
+Business applications leveraging the Notification API would have the ability to control these annunciators to notify the user of custom events in their workflow.</p>
 
 <p><img src="../../images/notification-api/image1.png" alt="img"></p>
 
@@ -270,9 +270,7 @@ business applications levraging the Notificaiton API would have the ability to c
 
 <h3 id="externalvibrator" class="anchor"><a class="heading-anchor" href="#externalvibrator"><span></span></a>External Vibrator</h3>
 
-<p>The External Vibrator is a pluggable accessory and supports only the
-vibration feature. This is meant for hearing impaired users and can be
-used to notify with vibration instead of beeping.</p>
+<p>The External Vibrator is a pluggable accessory for using with WT6000 device and supports only the vibration feature. This is meant for hearing impaired users and can be used to notify with vibration instead of beeping.</p>
 
 <p><img src="../../images/notification-api/image2.png" alt="img"> <img src="../../images/notification-api/image3.png" alt="img"></p>
 
@@ -290,45 +288,21 @@ below:</p>
 <ul>
 <li><p>The notification devices must be paired and connected before enabling the notification device; otherwise this will result in DEVICE_NOT_CONNECTED error.</p></li>
 
-<li><p>The user must call the following APIs in advance to determine the
-notification capability of the device. So it will minimize the
-confusion on setting unsupported features.</p>
+<li><p>Only one application is allowed to enable the notification device at a time. The recommendation for the application to disable notification device object when application doesn’t need the notification devices anymore.</p></li>
 
-<ul>
-<li>isLEDSupported() - to determine the support for Line Of Sight LED.</li>
+<li><p>The notification sent to the notification device will replace the previous notifications in progress and the applications must be designed to handle this based on the business requirements.</p></li>
 
-<li>isBeepSupported() - to determine the support for Beeping.</li>
+<li><p>When the notification device such as RS6000 is disconnected and connected back, calling any method on the notification device will result DEVICE_INVALID error. The application has to release the previous and get a new notification device to work with the re-connected device. This behavior is applicable only to RS6000.  The application doesn’t need to release and get a new notification device when the pluggable External Vibrator gets disconnected and connected and can continue to use the same notification device.</p></li>
 
-<li>isVibrateSupported() - to determine the support for Vibration.</li></ul></li>
-
-
-<li><p>Only one application is expected to enable the notification device
-at a time. The recommendation for the application to disable
-notification device object when application doesn’t need the
-notification devices anymore.</p></li>
-
-<li><p>The notification sent to the notification device will replace the
-previous notifications in progress and the applications must be
-designed to handle this based on the business requirements.</p></li>
-
-<li><p>When the notification device such as RS6000 is disconnected and connected back, calling any method on the notification device will result DEVICE_INVALID error. The application has to release the previous and get a new notification device to work with the re-connected device. This behavior is applicable only to RS6000. The External Vibrator will never throw DEVICE_INVALID. Therefore if connected back, you can continue to use the same notification device object.</p></li>
-
-<li><p>Disabling the notification device cancels the pending notification
-in progress and closes the session for the others applications to
-utilize the notification device.</p></li>
-
-<li><p>If two External Vibrator accessories connected to WT6000 Left/Right
-ports and sent the notification, the accessory which connected first
-is getting vibrated and the other accessory is getting blocked.</p></li>
+<li><p>Disabling the notification device cancels the pending notification in progress and closes the session for the others applications to utilize the notification device.</p></li>
 </ul>
 
 <h3 id="gettingnotificationmanager" class="anchor"><a class="heading-anchor" href="#gettingnotificationmanager"><span></span></a>Getting Notification Manager</h3>
 
-<p>The EMDK must be opened before getting the NotificationManager object
-and release NotificationManager before exiting the application.</p>
+<p><strong>EMDKManager &gt; NotificationManager used in an application must be released before another application can use this feature.</strong></p>
 
 <pre class="prettyprint"><code>
-NotificationManager notificationManager = (NotificationManager)emdkManager.getInstance(FEATURE\_TYPE.NOTIFICATION);
+NotificationManager notificationManager = (NotificationManager)emdkManager.getInstance(FEATURE_TYPE.NOTIFICATION);
 </code></pre>
 
 <h3 id="gettingnotificationdevice" class="anchor"><a class="heading-anchor" href="#gettingnotificationdevice"><span></span></a>Getting Notification Device</h3>
@@ -346,12 +320,12 @@ enumeration</strong></p>
 <ul>
 <li>BLUETOOTH_IMAGER_RS6000: Use the Ring Scanner “RS6000”</li>
 
-<li>EXTERNAL_VIBRATOR1: Use the pluggable accessory “External Vibrator”</li></ul>
+<li>EXTERNAL_VIBRATOR1: Use the pluggable External Vibrator</li></ul>
 
 <p>If the specified Device Identifier is not supported on the target platform, call to “getDevice” will return null.</p>
 
 <pre class="prettyprint"><code>
-NotificationDevice notificationDevice = notificationManager.getDevice(DeviceIdentifier.BLUETOOTH\_IMAGER\_RS6000);
+NotificationDevice notificationDevice = notificationManager.getDevice(DeviceIdentifier.BLUETOOTH_IMAGER_RS6000);
 </code></pre></li>
 
 <li><p><strong>Get NotificationDevice using DeviceInfo from device enumeration</strong></p>
@@ -369,7 +343,7 @@ while(it.hasNext()) {
 
 <pre><code>DeviceInfo devInfo = it.next();
 
-if(devInfo.getConnectionType()==BLUETOOTH\_SSI&amp;amp;&amp;amp;devInfo.getDeviceType()==IMAGER){
+if(devInfo.getConnectionType()==BLUETOOTH_SSI&amp;amp;&amp;amp;devInfo.getDeviceType()==IMAGER){
 
     notificationObject = notificationManager.getDevice(devInfo);
 
@@ -384,22 +358,9 @@ if(devInfo.getConnectionType()==BLUETOOTH\_SSI&amp;amp;&amp;amp;devInfo.getDevic
 
 <h3 id="usingnotificationdevice" class="anchor"><a class="heading-anchor" href="#usingnotificationdevice"><span></span></a>Using Notification Device</h3>
 
-<p>The notification device must be enabled before sending notifications to
-the notification devices and this opens the session with the hardware.
-If the notification device is already enabled by this application, it
-will throw an exception with error DEVICE_ALREADY_ENABLED. The
-concurrent enable calls to the same notification device within the same
-application or different application is not expected.</p>
+<p>The notification device must be enabled before sending notifications to the notification devices and this opens the session with the hardware. If the notification device is already enabled by this application, it will throw an exception with error DEVICE_ALREADY_ENABLED. EMDKManager &gt; NotificationManager used in an application must be released before another application can use that feature.</p>
 
-<p>The recommendation for the application is to disable notification device
-object when application doesn’t need the notification devices anymore.</p>
-
-<p>The NotificationDevice.notify(Notification notification) method sends
-the notification data to notification device to notify the users based
-on the business requirement. Passing the null object to this method
-throws an exception. The notification sent to the notification device
-will replace the previous notifications in progress and the applications
-must be designed to handle this based on the business requirements.</p>
+<p>The business application can use the NotificationDevice.notify(Notification notification) method to send the notification to remote  device to notify the users.  Passing the null object to this method throws an exception. The notification sent to the notification device will replace the previous notifications in progress and the applications must be designed to handle this based on the business requirements.</p>
 
 <p>The NotificationDevice.cancelNotification() method can be used to cancel
 the active notifications on the remote device.</p>
@@ -417,8 +378,8 @@ scanner configuration such as ScannerParams .decodeLEDFeedbackMode and
 ScannerParams .decodeAudioFeedbackMode.</p>
 
 <p>When using notification manager with RS6000, it will get disconnected
-based on Connection Idle Timeout settings. Default is 600 seconds and
-either an EMDK scanning app or Datawedge may change this value. If the
+based on Connection Idle Timeout settings. Default timeout is 600 seconds and
+either an EMDK scanning app or DataWedge may change this value. If the
 behavior is not desirable, consider changing the Connection Idle Timeout
 setting in the corresponding app or DataWedge.</p>
 
@@ -441,28 +402,13 @@ devices and access the scanner devices to read barcodes.</p>
 below:</p>
 
 <ul>
-<li><p>An app should either use the DataCapture feature of the
-ProfileManager or barcode APIs for scanning barcodes but not both</p></li>
+<li><p>An app should either use the DataCapture feature of the ProfileManager or barcode APIs for scanning barcodes  but it is not allowed access the both at the same time. The EMDKManager &gt; BarcodeManager takes precedence over the DataCapture feature of the ProfileManager.</p></li>
 
-<li><p>Only one application is allowed to enable any of the scanners at
-a time. The recommendation for the application to disable scanner
-when application doesn’t need the scanner anymore.</p></li>
+<li><p>The EMDKManager &gt; BarcodeManager used in an application must be released before another application can use that feature.When the scanner such as RS6000, RS4000 is disconnected and connected back, the calling any method on the barcode object will result in INVALID_OBJECT error. The application can register for the connection notifications to know when the device gets disconnected and connected back so that applications can programmatically  re-initialize the scanner again.</p></li>
 
-<li><p>When the scanner such as RS6000, RS4000 is disconnected and
-connected back, the calling any method on the barcode object will
-result in INVALID_OBJECT error. The application can register for
-the connection notifications to know when the device gets
-disconnected and connected back so that applications can
-programmatically enable the scanner again.</p></li>
+<li><p>Disabling the scanner cancels the pending read in progress and closes the session for the others applications to utilize the device.</p></li>
 
-<li><p>Disabling the scanner cancels the pending read in progress and
-closes the session for the others applications to utilize
-the device.</p></li>
-
-<li><p>If the Bluetooth Scanner is not paired, enabling the Bluetooth
-scanner will automatically launch the pairing utility for the user
-to scan the barcode displayed on the Mobile device using Bluetooth
-scanner to pair with the mobile device.</p></li>
+<li><p>If the Bluetooth Scanner is not paired, enabling the Bluetooth scanner will automatically launch the pairing utility for the user to scan the barcode displayed on the Mobile device using Bluetooth scanner to pair with the mobile device.</p></li>
 </ul>
 
 <h3 id="gettingbarcodemanager" class="anchor"><a class="heading-anchor" href="#gettingbarcodemanager"><span></span></a>Getting Barcode Manager</h3>
@@ -471,7 +417,7 @@ scanner to pair with the mobile device.</p></li>
 release BarcodeManager before exiting the application.</p>
 
 <pre class="prettyprint"><code>    
-    BarcodeManager barcodeManager = (BarcodeManager)emdkManager.getInstance(FEATURE\_TYPE.BARCODE);
+    BarcodeManager barcodeManager = (BarcodeManager)emdkManager.getInstance(FEATURE_TYPE.BARCODE);
 </code></pre>
 
 <h3 id="gettingscanner" class="anchor"><a class="heading-anchor" href="#gettingscanner"><span></span></a>Getting Scanner</h3>
@@ -486,7 +432,7 @@ release BarcodeManager before exiting the application.</p>
 <p>If the specified Device Identifier is not supported on the target platform, call to “getDevice” will return null.</p>
 
 <pre class="prettyprint"><code>
-Scanner scanner = barcodeManager.getDevice(DeviceIdentifier.BLUETOOTH\_IMAGER\_RS6000);
+Scanner scanner = barcodeManager.getDevice(DeviceIdentifier.BLUETOOTH_IMAGER_RS6000);
 </code></pre></li>
 
 <li><p><strong>Get Scanner using ScannerInfo from device enumeration</strong></p>
@@ -507,7 +453,7 @@ while(it.hasNext()) {
 
 ScannerInfo scnInfo = it.next();
 
-if(scnInfo.getDeviceIdentifier()==DeviceIdentifier.BLUETOOTH\_IMAGER\_RS6000){
+if(scnInfo.getDeviceIdentifier()==DeviceIdentifier.BLUETOOTH_IMAGER_RS6000){
 
 scanner = barcodeManager.getDevice(scnInfo);
 
@@ -521,25 +467,9 @@ break;
 
 <h3 id="usingscanner" class="anchor"><a class="heading-anchor" href="#usingscanner"><span></span></a>Using Scanner</h3>
 
-<p>The scanner must be enabled first to open the session with the hardware.
-If scanner is already enabled other applications, this will throw an
-exception with error as scanner in use. The recommendation is to disable
-when you are done, otherwise it will remain locked for current
-application and will be unavailable any other application that want to
-use scanner.</p>
+<p>The scanner must be enabled first to open the session with the hardware. The Scanner.enable() is an async call and exception will thrown if any error occurs during request. After the successful enabling of the scanner, the IDLE status event will be sent the application using the registered status listener. If any error occurs while enabling the scanner, the ERROR status will be sent to application using the registered status listener.</p>
 
-<p>The Scanner.enable() is an async call and exception will thrown if any
-error occurs during request. Once the scanner is successfully enabled
-and ready to use to configure the scanner setting or read the barcode,
-the application has to register Status Listener to receive the status of
-the scanner. After the successful enabling of the scanner, the IDLE
-status will be sent the application by the Scanner Engine. If any error
-occurs while enabling the scanner, the ERROR status will be sent to
-application using the registered status listener.</p>
-
-<p>Issuing any read request while the previous read is pending will result
-in an error. The recommendation is to wait for the IDLE status from the
-application before issuing the next read to read the barcodes.</p><p></p>
+<p>Issuing any read request while the previous read is pending will result in an error. The recommendation is to wait for the IDLE status from the application before issuing the next read to read the barcodes.</p><p></p>
                                         
 
 
