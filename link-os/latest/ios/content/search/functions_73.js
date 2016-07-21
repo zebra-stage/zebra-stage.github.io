@@ -7,6 +7,7 @@ var searchData=
   ['setmaxtimeoutforopen_3a',['setMaxTimeoutForOpen:',['../interface_tcp_printer_connection.html#ad8de5b9485c0d85cc4923e788176e7f1',1,'TcpPrinterConnection']]],
   ['settimetowaitafterreadinmilliseconds_3a',['setTimeToWaitAfterReadInMilliseconds:',['../interface_mfi_bt_printer_connection.html#a214afd74cc308acc66e2d39cf7f578d1',1,'MfiBtPrinterConnection']]],
   ['settimetowaitafterwriteinmilliseconds_3a',['setTimeToWaitAfterWriteInMilliseconds:',['../interface_mfi_bt_printer_connection.html#a2639a2649c5861f9ebe6cdece94ebb6e',1,'MfiBtPrinterConnection']]],
+  ['settimetowaitbeforecloseinmilliseconds_3a',['setTimeToWaitBeforeCloseInMilliseconds:',['../interface_mfi_bt_printer_connection.html#addae4735db7e85943211e770a26e654c',1,'MfiBtPrinterConnection']]],
   ['storeimage_3awithimage_3awithwidth_3aandwithheight_3aerror_3a',['storeImage:withImage:withWidth:andWithHeight:error:',['../protocol_graphics_util-p.html#aed5af41815551038f5d1b5eef864bfb9',1,'GraphicsUtil-p']]],
   ['storeimage_3awithpathondevice_3awithwidth_3aandwithheight_3aerror_3a',['storeImage:withPathOnDevice:withWidth:andWithHeight:error:',['../protocol_graphics_util-p.html#aa3f6c7c81c1f334dfb857615f4a703cb',1,'GraphicsUtil-p']]],
   ['subnetsearchwithrange_3aandwaitforresponsestimeout_3aerror_3a',['subnetSearchWithRange:andWaitForResponsesTimeout:error:',['../interface_network_discoverer.html#a94594b426aa08f71c6c2d26b8e08fa66',1,'NetworkDiscoverer']]],

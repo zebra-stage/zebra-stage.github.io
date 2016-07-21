@@ -8,6 +8,7 @@ var searchData=
   ['idiscoveredprinternetwork',['IDiscoveredPrinterNetwork',['../interface_link_o_s_1_1_plugin_1_1_abstractions_1_1_i_discovered_printer_network.html',1,'LinkOS::Plugin::Abstractions']]],
   ['idiscoveredprinterusb',['IDiscoveredPrinterUsb',['../interface_link_o_s_1_1_plugin_1_1_abstractions_1_1_i_discovered_printer_usb.html',1,'LinkOS::Plugin::Abstractions']]],
   ['idiscoveryhandler',['IDiscoveryHandler',['../interface_link_o_s_1_1_plugin_1_1_abstractions_1_1_i_discovery_handler.html',1,'LinkOS::Plugin::Abstractions']]],
+  ['idiscoveryhandlerfactory',['IDiscoveryHandlerFactory',['../interface_link_o_s_1_1_plugin_1_1_abstractions_1_1_i_discovery_handler_factory.html',1,'LinkOS::Plugin::Abstractions']]],
   ['ifielddescription',['IFieldDescription',['../interface_link_o_s_1_1_plugin_1_1_abstractions_1_1_i_field_description.html',1,'LinkOS::Plugin::Abstractions']]],
   ['ifileutil',['IFileUtil',['../interface_link_o_s_1_1_plugin_1_1_abstractions_1_1_i_file_util.html',1,'LinkOS::Plugin::Abstractions']]],
   ['iformatutil',['IFormatUtil',['../interface_link_o_s_1_1_plugin_1_1_abstractions_1_1_i_format_util.html',1,'LinkOS::Plugin::Abstractions']]],
