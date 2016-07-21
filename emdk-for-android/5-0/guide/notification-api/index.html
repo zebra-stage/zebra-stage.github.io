@@ -288,6 +288,19 @@ below:</p>
 <ul>
 <li><p>The notification devices must be paired and connected before enabling the notification device; otherwise this will result in DEVICE_NOT_CONNECTED error.</p></li>
 
+<li><p>The applications can enumerate the supported devices and determine its supported notification capability of the remote device to minimize the confusion on setting the unsupported features. The capabilities can be determined using the methods of enumerated DeviceInfo object such as isLEDSupported(), isBeepSupported(), isVibrateSupported(). </p>
+
+<p>The notification capabilities are:</p>
+
+<ol>
+<li>Line of sight LED</li>
+
+<li>Beeping</li>
+
+<li>Vibration</li></ol></li>
+
+<li><p>When multiple pluggable External Vibrators connected to WT6000 device, the WT6000 device always chooses the first connected External Vibrator for sending the notifications.</p></li>
+
 <li><p>Only one application is allowed to enable the notification device at a time. The recommendation for the application to disable notification device object when application doesn’t need the notification devices anymore.</p></li>
 
 <li><p>The notification sent to the notification device will replace the previous notifications in progress and the applications must be designed to handle this based on the business requirements.</p></li>
@@ -340,18 +353,11 @@ NotificationDevice notificationObject = null;
 Iterator&lt;DeviceInfo&gt; it = deviceList.iterator();
 
 while(it.hasNext()) {
-
-<pre><code>DeviceInfo devInfo = it.next();
-
-if(devInfo.getConnectionType()==BLUETOOTH_SSI&amp;amp;&amp;amp;devInfo.getDeviceType()==IMAGER){
-
-    notificationObject = notificationManager.getDevice(devInfo);
-
-    break;
-
-}
-</code></pre>
-
+    DeviceInfo devInfo = it.next();
+    if(devInfo.getConnectionType()==BLUETOOTH_SSI&amp;&amp;devInfo.getDeviceType()==IMAGER){
+        notificationObject = notificationManager.getDevice(devInfo);
+        break;
+    }
 }
 </code></pre></li>
 </ol>
@@ -383,9 +389,6 @@ either an EMDK scanning app or DataWedge may change this value. If the
 behavior is not desirable, consider changing the Connection Idle Timeout
 setting in the corresponding app or DataWedge.</p>
 
-<p>ScannerParams.remoteDecodeHapticFeedback is being removed in this
-release.</p>
-
 <h2 id="barcodeapi" class="anchor"><a class="heading-anchor" href="#barcodeapi"><span></span></a>Barcode API</h2>
 
 <p>The EMDK Barcode API provides applications with an ability to read the
@@ -404,7 +407,9 @@ below:</p>
 <ul>
 <li><p>An app should either use the DataCapture feature of the ProfileManager or barcode APIs for scanning barcodes  but it is not allowed access the both at the same time. The EMDKManager &gt; BarcodeManager takes precedence over the DataCapture feature of the ProfileManager.</p></li>
 
-<li><p>The EMDKManager &gt; BarcodeManager used in an application must be released before another application can use that feature.When the scanner such as RS6000, RS4000 is disconnected and connected back, the calling any method on the barcode object will result in INVALID_OBJECT error. The application can register for the connection notifications to know when the device gets disconnected and connected back so that applications can programmatically  re-initialize the scanner again.</p></li>
+<li><p>The EMDKManager &gt; BarcodeManager used in an application must be released before another application can use that feature.</p></li>
+
+<li><p>When the scanner such as RS6000, RS4000 is disconnected and connected back, the calling any method on the barcode object will result in INVALID_OBJECT error. The application can register for the connection notifications to know when the device gets disconnected and connected back so that applications can programmatically  re-initialize the scanner again.</p></li>
 
 <li><p>Disabling the scanner cancels the pending read in progress and closes the session for the others applications to utilize the device.</p></li>
 
