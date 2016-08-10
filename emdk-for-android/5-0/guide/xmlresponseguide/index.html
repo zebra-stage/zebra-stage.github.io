@@ -7,8 +7,8 @@
     <meta name="author" content="Zebra Technologies">
     <meta name="google-site-verification" content="i4B78BrWnNy8ShJwe5feRW3jO3HE6gfYlYqYbxfl8yY">
     <meta name="msvalidate.01" content="6B651B00161BCE79B8950AC09D5C4C75">
-    <meta title="EMDK XML Response programmer's guide">
-    <title>EMDK XML Response programmer's guide - Zebra Technologies Techdocs</title>
+    <meta title="XML Response programmer's guide">
+    <title>XML Response programmer's guide - Zebra Technologies Techdocs</title>
     <!-- core CSS -->
     <link href="/css/bootstrap.min.css" rel="stylesheet">
     <link href="/css/font-awesome.min.css" rel="stylesheet">
@@ -149,7 +149,7 @@
                     <nav id="toc" data-toggle="toc" data-spy="affix" style="height: 75%; max-width: 225px; overflow-y: auto; ">
                         
                         <ul class="nav">
-                            <li><strong>EMDK XML Response programmer's guide</strong></li>
+                            <li><strong>XML Response programmer's guide</strong></li>
                         </ul>
                     </nav>
                     <div class="modal fade" id="modal-smartdocs" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true" data-backdrop="true">
@@ -235,7 +235,7 @@
                         <div class="col-sm-12">
                             <section id="cta" class="wow fadeIn">
                                 <div class="">
-                                    <h1 id="emdk-xml-response-programmers-guide" class="anchor"><a class="heading-anchor" href="#emdk-xml-response-programmers-guide"><span></span></a>EMDK XML Response programmer's guide</h1>
+                                    <h1 id="xml-response-programmers-guide" class="anchor"><a class="heading-anchor" href="#xml-response-programmers-guide"><span></span></a>XML Response programmer's guide</h1>
                                     <p>
                                         EMDK For Android
                                         5.0
@@ -253,11 +253,8 @@
 
                                         <p></p><h2 id="introduction" class="anchor"><a class="heading-anchor" href="#introduction"><span></span></a>Introduction</h2>
 
-<p>The <a href="/emdk-for-android/5-0/api/ProfileManager">ProfileManager</a> API exposes a method ( processProfile ) that is used
-to install and activate a static XML profile located in your projects Assets folder. The processProfile method returns an <a href="/emdk-for-android/5-0/api/EMDKResults">EMDKResults</a> object. This Object contains status codes and a XML string that when inspected, can provide feedback as to whether a submitted profile was successfully processed or if there were errors while 
-while being processed.</p>
-
-<h3 id="methodsignature" class="anchor"><a class="heading-anchor" href="#methodsignature"><span></span></a>Method Signature</h3>
+<p>The <a href="/emdk-for-android/5-0/api/core/ProfileManager/">ProfileManager</a> API exposes a method ( processProfile ) that is used
+to install and activate a static XML profile located in your projects Assets folder. The processProfile method returns an <a href="/emdk-for-android/5-0/api/core/EMDKResults">EMDKResults</a> object that contains status codes and a XML string can provide feedback as to whether a submitted profile was successfully processed, or if there were errors during processing.</p>
 
 <pre class="prettyprint"><code>
 EMDKResults results = profileManager.processProfile(String profileName,
@@ -265,9 +262,9 @@ EMDKResults results = profileManager.processProfile(String profileName,
                String[] extraData);
 </code></pre>
 
-<h1 id="statuscodes" class="anchor"><a class="heading-anchor" href="#statuscodes"><span></span></a>Status Codes</h1>
+<h2 id="statuscodes" class="anchor"><a class="heading-anchor" href="#statuscodes"><span></span></a>Status Codes</h2>
 
-<p>The first step to determine a profile processing success or failure would be to inspect the <a href="/emdk-for-android/5-0/api/core/EMDKResults-STATUS_CODE/">Status</a> Code returned by calling the EMDKResults.statusCode() method. </p>
+<p>The first step to determine if profile processing was a success or failure would be to inspect the <a href="/emdk-for-android/5-0/api/core/EMDKResults/#statuscode">EMDKResults.statusCode</a> Field. This field will be of type <a href="/emdk-for-android/5-0/api/core/EMDKResults-STATUS_CODE/">EMDKResults.STATUS_CODE</a>.  For this Guide we will focus on the CHECK_XML Status Code.</p>
 
 <pre class="prettyprint"><code>
 EMDKResults results = profileManager.processProfile(String profileName,
@@ -277,39 +274,18 @@ EMDKResults results = profileManager.processProfile(String profileName,
 STATUS_CODE statusCode = results.statusCode;
 </code></pre>
 
-<h2 id="successresponse" class="anchor"><a class="heading-anchor" href="#successresponse"><span></span></a>SUCCESS Response</h2>
+<h2 id="check_xmlstatuscode" class="anchor"><a class="heading-anchor" href="#check_xmlstatuscode"><span></span></a>CHECK_XML Status Code</h2>
 
-<p>It is possible to receive a <a href="/emdk-for-android/5-0/api/core/EMDKResults-STATUS_CODE/">SUCCESS</a> status code if a profile only makes use of (Profile Manager's DataCapture feature )[../../mx/data-capture]. If any other profile features are used in the profile, the status code will be CHECK_XML on success or failure. If SUCCESS is returned you can be sure that your profile processed correctly and there is no need to inspect the XML response.</p>
+<p>In many cases, the Status Code will be <a href="/emdk-for-android/5-0/api/core/EMDKResults-STATUS_CODE/">CHECK_XML</a> regardless of whether there was a processing error or not. This status code does not clarify if a processing failure happened, only that we need to check the XML response for errors. The CHECK_XML status code should be used to determine if xml processing is necessary. </p>
 
-<h2 id="check_xmlresponse" class="anchor"><a class="heading-anchor" href="#check_xmlresponse"><span></span></a>CHECK_XML Response</h2>
-
-<p>In most cases, the Status Code will be <a href="/emdk-for-android/5-0/api/core/EMDKResults-STATUS_CODE/">CHECK_XML</a> regardless of whether there was a processing error or not. This status code does not clarify if a processing failure happened, only that we need to check the XML response for errors.</p>
-
-<h3 id="quickcheckforerror" class="anchor"><a class="heading-anchor" href="#quickcheckforerror"><span></span></a>Quick check for <strong>error</strong></h3>
-
-<p>The fastest way to determine if there is an error in the response XML would be to check if the response XML contains the characters "error".  If the XML does not contain "error" then you can be sure that there where no errors found while processing the profile.</p>
-
-<p>To check the Response XML for <strong>error</strong>:</p>
-
-<ol>
-<li><p>First get a String Object of the Response XML by calling the results.getStatusString()</p></li>
-
-<li><p>Next call the String Object's contains() method passing "error" as a parameter.</p></li>
-
-<li><p>The contains() method will return true if <strong>error</strong> was found</p>
-
-<pre class="prettyprint"><code>
-EMDKResults results = profileManager.processProfile(String profileName,
-            ProfileManager.PROFILE_FLAG profileFlag,
-            String[] extraData);
-
-if (results.getStatusString().contains("error")){
-    //An Error was found. Parse the response XML to learn more about the errors found.
-} else {
-    // No error was found. No need to parse the response XML.
-}
-</code></pre></li>
-</ol>
+<pre class="prettyprint"><code>    
+    STATUS_CODE statusCode = results.statusCode;
+    if(results.statusCode == EMDKResults.STATUS_CODE.CHECK_XML) {
+        //parse the response xml to insure there are no errors
+    } else {
+        // no need to parse xml
+    }
+</code></pre>
 
 <h2 id="parsingresponsexml" class="anchor"><a class="heading-anchor" href="#parsingresponsexml"><span></span></a>Parsing Response XML</h2>
 
@@ -322,69 +298,72 @@ if (results.getStatusString().contains("error")){
 <ol>
 <li><p>First import the XML parsing library</p>
 
-<p><strong>import XmlPullParser</strong>:</p>
-
 <pre class="prettyprint"><code>
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 </code></pre></li>
 
+<li><p>Next we will get a string representation of the XML Response, Then instantiate a new XMLPullParser object, and set its input to the the XML Response String object.</p>
 
-
-<li><p>Next we will create a XMLPullParser 
-:::java
-if (xmlResponse.contains("error")){
+<pre class="prettyprint"><code>
+String xmlResponse = results.getStatusString();
 XmlPullParser parser = Xml.newPullParser();
-String parmName = "";
-String errorDescription = "";
-String errorType = "";</p>
+parser.setInput(new StringReader(xmlResponse));
+</code></pre></li>
 
-<p>try {
-    parser.setInput(new StringReader(xmlResponse));
-    int event;</p>
+<li><p>Finally we will use XmlPullParser events to iterate over the XML Response nodes searching for parm and characteristic errors. In this example, I simply log the errors for later review. You will need to add custom error handling to each of the if blocks inside the START_TAG case if logging is not sufficient.</p>
 
-<pre class="prettyprint"><code>try {
-    event = parser.getEventType();
-    while (event != XmlPullParser.END_DOCUMENT) {
-        String name = parser.getName();
-        switch (event) {
-            case XmlPullParser.START_TAG:
+<pre class="prettyprint"><code>
+try {
+    int event;
+    try {
+        event = parser.getEventType();
+        while (event != XmlPullParser.END_DOCUMENT) {
+            String name = parser.getName();
+            switch (event) {
+                case XmlPullParser.START_TAG:
 
-<pre><code>            if (name.equals("parm-error")) {
-                parmName = parser.getAttributeValue(null, "name");
-                errorDescription = parser.getAttributeValue(null, "desc");
-                Log.d(TAG," (Name: " + parmName + ", Error Description: " + errorDescription + ")");
-                return;
-            }
-            if (name.equals("characteristic-error")) {
-                errorType = parser.getAttributeValue(null, "type");
-                errorDescription = parser.getAttributeValue(null, "desc");
-                Log.d(TAG," (Type: " + errorType + ", Error Description: " + errorDescription + ")");
-                return;
-            }
-            break;
-        case XmlPullParser.END_TAG:
+<pre><code>                if (name.equals("parm-error")) {
+                    parmName = parser.getAttributeValue(null, "name");
+                    errorDescription = parser.getAttributeValue(null, "desc");
+                    Log.d(TAG," (Name: " + parmName + ", Error Description: " + errorDescription + ")");
+                    return;
+                }
+                if (name.equals("characteristic-error")) {
+                    errorType = parser.getAttributeValue(null, "type");
+                    errorDescription = parser.getAttributeValue(null, "desc");
+                    Log.d(TAG," (Type: " + errorType + ", Error Description: " + errorDescription + ")");
+                    return;
+                }
+                break;
+            case XmlPullParser.END_TAG:
 
-            break;
+                break;
+        }
+        event = parser.next();
     }
-    event = parser.next();
-}
-</code></pre>
 
-} catch (Exception e) {
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
+
+} catch (XmlPullParserException e) {
     e.printStackTrace();
 }
 </code></pre>
 
-<p>} catch (XmlPullParserException e) {
-    e.printStackTrace();
-}
 } else {
-//Profile processed sucessfully
-}</p></li>
+    //Profile processed sucessfully
+}
+
+
+
+}
+</code></pre></li>
 </ol>
 
-<p>}</p><p></p>
+<h3 id="-" class="anchor"><a class="heading-anchor" href="#-"><span></span></a> </h3><p></p>
                                         
 
 
