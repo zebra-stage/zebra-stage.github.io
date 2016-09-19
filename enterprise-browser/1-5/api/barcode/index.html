@@ -107,6 +107,11 @@
                             </a>
                         </li>
                         <li>
+                            <a href="/enterprise-browser/1-5/guide/configreference">
+                                    Config.xml
+                            </a>
+                        </li>
+                        <li>
                             <a href="/enterprise-browser/1-5/api">
                                     APIs
                             </a>
@@ -242,7 +247,19 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>The Barcode Module provides access to control the functionality of the device's scanner. Check the platform indicators in each property or method section. In general if you are developing for a device with only a camera, the number of symbologies available to you will be limited to just the most common ones, eg EAN13, UPCA etc and your scanning will be via the device camera. If your application is running on more traditional Symbol Technologies' hardware you will have much finer control over a more fully featured Scanner, often with a choice of scanner hardware on the device. In general if you wish to capture a single barcode in a 'one shot' use case, eg your App just wants to capture a single barcode to be submitted to a price comparison website then use Barcode.take(callback); if your application is expecting a number of barcodes to be received, common in enterprise scenarios for example a user in a warehouse then use Barcode.enable(callback). Only the foreground application is given access to the scanning hardware, when an application is sent to the background its state will be saved and it will automatically relinquish control of the scanner. When brought back to the foreground, an application previously using the barcode API will have its previous configuration reapplied automatically. A VC70 scanner will work only if connected in SSI Mode.</p>
+<p>The Barcode Module controls functionality of the device scanner. Check the platform indicators in each property or method section. If developing for a device with only a camera, the number of symbologies available will be limited only to the most common such as EAN13 and UPCA, and scanning will be available only through the device camera. If the app is running on more well-equipped hardware, finer control over a more fully featured Scanner wilol be available, often with a choice of scanner hardware to use on the device. </p>
+
+<p>If the use case involves capturing a single barcode (for example, a pricing kiosk app) Zebra recommends using the <code>Barcode.take(callback)</code> method. If the app will decode multiple barcode types common in enterprise scenarios (for example a warehouse inventory and receiving app), Zebra recommends using the <code>Barcode.enable(callback)</code> method. </p>
+
+<p><strong>Notes</strong>: </p>
+
+<ul>
+<li><p><strong>Only foreground apps have access to scanning hardware</strong>. When an app is sent to the background, its state is saved and scanner control is automatically relinquished. When a scanner app returns to the foreground, its previous state is reapplied. </p></li>
+
+<li><p><strong>On the VC70</strong>, the scanner will work only if connected in SSI Mode.</p></li>
+
+<li><p><strong>EB 1.5 now supports the <code>decodeSound</code> method</strong>. A bug in the method had prevented apps made with EB 1.4 and earlier from using the method.  </p></li>
+</ul>
 
 <h2 id="enablingtheapi" class="anchor"><a class="heading-anchor" href="#enablingtheapi"><span></span></a>Enabling the API</h2>
 
@@ -254,48 +271,94 @@
 <li>Include only the required API modules</li>
 </ul>
 
-<p>For either of these methods, you'll need to include files from the <code>/Enterprise Browser/JavaScript Files/Enterprise Browser</code> directory on the computer that you installed the Enterprise Browser.</p>
+<p>For either of these methods, one or more files must be copied to the device from the <code>/Enterprise Browser/JavaScript Files/Enterprise Browser</code> directory on the computer that contains the the Enterprise Browser installation.</p>
 
-<h3 id="includealljsapimodules" class="anchor"><a class="heading-anchor" href="#includealljsapimodules"><span></span></a>Include all JS API modules</h3>
+<h3 id="includeallapimodules" class="anchor"><a class="heading-anchor" href="#includeallapimodules"><span></span></a>Include all API modules</h3>
 
-<p>To include all JS APIs, copy the ebapi-modules.js file to a location accessible by the app's files and include a reference to the JavaScript file in the app's HTML. For instance, to include the modules file in the app's <code>index.html</code>, copy the file to the same directory as that <code>index.html</code> and add the following line to the HTML's HEAD section:</p>
+<p>To include all APIs, copy the <code>ebapi-modules.js</code> file to a location accessible by the app's files and include a reference to the JavaScript file in the app's HTML. For instance, to include the modules file in the app's <code>index.html</code>, copy the file to the same directory as that <code>index.html</code> and add the following line to the HTML's HEAD section:</p>
 
 <pre class="prettyprint"><code>
 &lt;script type="text/javascript" charset="utf-8" src="ebapi-modules.js"&gt;&lt;/script&gt;
 </code></pre>
 
 <blockquote>
-  <p>Note: that the pathing for this file is relative to the current page.</p>
+  <p>The code above defines the EB class within the page. <strong>Note that the path for this file is relative to the current page</strong> (index.html). Any page on which the modules are required must include a reference to the required .js file(s) in this fashion.</p>
 </blockquote>
-
-<p>This will define the EB class within the page. Any page you need to use the modules will need to have the .js file included in this fashion.</p>
 
 <h3 id="includeonlytherequiredmodules" class="anchor"><a class="heading-anchor" href="#includeonlytherequiredmodules"><span></span></a>Include only the required modules</h3>
 
-<p>To include single APIs, you must first include the <code>ebapi.js</code> in your HTML as well as the API file you want to use. For instance, to use the Barcode API, I would add the following code to my HTML file(s), assuming the API files have been copied to the same directory as the HTML.</p>
+<p>To include individual APIs, first include the <code>ebapi.js</code> in the HTML, and then the additional required API file(s). For instance, to use the Barcode API, add the following code to the HTML file(s), assuming the API files have been copied to the same directory as the HTML.</p>
 
 <pre class="prettyprint"><code>
 &lt;script type="text/javascript" charset="utf-8" src="ebapi.js"&gt;&lt;/script&gt;
 &lt;script type="text/javascript" charset="utf-8" src="eb.barcode.js"&gt;&lt;/script&gt;
 </code></pre>
 
-<p>The ebapi.js file is necessary for all single API inclusions.</p>
+<blockquote>
+  <p>In the lines above, notice that <code>ebapi.js</code> is included first, followed by <code>eb.barcode.js</code>, which is the Barcode API for Enterprise Browser. <strong>This coding is required on each HTML page whenever an individual API will be called from that page</strong>.</p>
+</blockquote>
 
 <h2 id="methods" class="anchor"><a class="heading-anchor" href="#methods"><span></span></a>Methods</h2>
+
+<h3 id="addconnectionlistener" class="anchor"><a class="heading-anchor" href="#addconnectionlistener"><span></span></a>addConnectionListener()</h3>
+
+<p>If you are using an RS507/RS6000/RS4000 barcode scanner you can add a connection listener to receive connected or disconnected callbacks through this method.</p>
+
+<h4 id="parameters" class="anchor"><a class="heading-anchor" href="#parameters"><span></span></a>Parameters</h4>
+
+<ul><li>callback : <span class="text-info">CallBackHandler</span></li></ul>
+
+<h4 id="callback" class="anchor"><a class="heading-anchor" href="#callback"><span></span></a>Callback</h4>
+
+<p>Async Callback Returning Parameters: <span class="text-info">HASH</span></p><ul><ul><li>connectionState : <span class="text-info">STRING</span><p>The message describing the connection: Connected or Disconnected. </p></li><li>connectionType : <span class="text-info">STRING</span><p>The message describes the connection type removed/attached scanner: Bluetooth_SSI, Serial_SSI etc. </p></li><li>decoderType : <span class="text-info">STRING</span><p>The message describes the decode type of removed/attached scanner: ONE_DIMENSIONAL, TWO_DIMENSIONAL etc. </p></li><li>deviceType : <span class="text-info">STRING</span><p>The message describes the device type of removed/attached scanner: IMAGER, CAMERA etc. </p></li><li>friendlyName : <span class="text-info">STRING</span><p>The message describes the friendly name of removed/attached scanner: BLUETOOTH SCANNER,2D IMAGER,CAMERA SCANNER Disconnected. </p></li><li>isDefaultScanner : <span class="text-info">STRING</span><p>The message describes wether removed/attached scanner is a default scanner: true or false. </p></li></ul></ul><p></p>
+
+<h4 id="returns" class="anchor"><a class="heading-anchor" href="#returns"><span></span></a>Returns</h4>
+
+<p>Synchronous Return:</p>
+
+<ul>
+<li>Void</li>
+</ul>
+
+<h4 id="platforms" class="anchor"><a class="heading-anchor" href="#platforms"><span></span></a>Platforms</h4>
+
+<ul>
+<li>Android</li>
+
+<li>Zebra Devices Only</li>
+</ul>
+
+<h4 id="methodaccess" class="anchor"><a class="heading-anchor" href="#methodaccess"><span></span></a>Method Access:</h4>
+
+<ul>
+<li>Instance Method: This method can be accessed via an instance object of this class: 
+
+
+<ul>
+<li><code>myObject.addConnectionListener()</code></li></ul>
+</li>
+
+<li>Default Instance: This method can be accessed via the default instance object of this class. 
+
+
+<ul>
+<li><code>EB.Barcode.addConnectionListener()</code> </li></ul>
+</li>
+</ul>
 
 <h3 id="barcode_recognizespanclasstextinfostringspanimagefilepath" class="anchor"><a class="heading-anchor" href="#barcode_recognizespanclasstextinfostringspanimagefilepath"><span></span></a>barcode_recognize(<span class="text-info">STRING</span> imageFilePath)</h3>
 
 <p>Recognizes a barcode on an image. Returns a string with recognized code, or empty string if the barcode is not recognized.</p>
 
-<h4 id="parameters" class="anchor"><a class="heading-anchor" href="#parameters"><span></span></a>Parameters</h4>
+<h4 id="parameters-1" class="anchor"><a class="heading-anchor" href="#parameters-1"><span></span></a>Parameters</h4>
 
 <ul><li>imageFilePath : <span class="text-info">STRING</span><p>Path to the image that contains the barcode to be recognized. </p></li><li>callback : <span class="text-info">CallBackHandler</span></li></ul>
 
-<h4 id="callback" class="anchor"><a class="heading-anchor" href="#callback"><span></span></a>Callback</h4>
+<h4 id="callback-1" class="anchor"><a class="heading-anchor" href="#callback-1"><span></span></a>Callback</h4>
 
 <p>Async Callback Returning Parameters: <span class="text-info">STRING</span></p><ul></ul><p></p>
 
-<h4 id="returns" class="anchor"><a class="heading-anchor" href="#returns"><span></span></a>Returns</h4>
+<h4 id="returns-1" class="anchor"><a class="heading-anchor" href="#returns-1"><span></span></a>Returns</h4>
 
 <p>Synchronous Return:</p>
 
@@ -303,13 +366,13 @@
 <li>STRING : String with recognized code, or empty string if the barcode is not recognized.</li>
 </ul>
 
-<h4 id="platforms" class="anchor"><a class="heading-anchor" href="#platforms"><span></span></a>Platforms</h4>
+<h4 id="platforms-1" class="anchor"><a class="heading-anchor" href="#platforms-1"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
 </ul>
 
-<h4 id="methodaccess" class="anchor"><a class="heading-anchor" href="#methodaccess"><span></span></a>Method Access:</h4>
+<h4 id="methodaccess-1" class="anchor"><a class="heading-anchor" href="#methodaccess-1"><span></span></a>Method Access:</h4>
 
 <ul>
 <li>Instance Method: This method can be accessed via an instance object of this class: 
@@ -331,11 +394,11 @@
 
 <p>Instruct the connected RS507 scanner to perform some action.</p>
 
-<h4 id="parameters-1" class="anchor"><a class="heading-anchor" href="#parameters-1"><span></span></a>Parameters</h4>
+<h4 id="parameters-2" class="anchor"><a class="heading-anchor" href="#parameters-2"><span></span></a>Parameters</h4>
 
 <ul><li>command : <span class="text-info">STRING</span><p>The action the RS507 scanner should perform, can be 'Disconnect' which disconnects the bluetooth RS507; 'unpair' which unpairs the RS507 from the device for association with another device; 'StartPaging' or 'StopPaging' which will cause the RS507 scanner to start or stop emitting a beep, to allow it to be located. </p></li><li>callback : <span class="text-info">CallBackHandler</span></li></ul>
 
-<h4 id="returns-1" class="anchor"><a class="heading-anchor" href="#returns-1"><span></span></a>Returns</h4>
+<h4 id="returns-2" class="anchor"><a class="heading-anchor" href="#returns-2"><span></span></a>Returns</h4>
 
 <p>Synchronous Return:</p>
 
@@ -343,7 +406,7 @@
 <li>Void</li>
 </ul>
 
-<h4 id="platforms-1" class="anchor"><a class="heading-anchor" href="#platforms-1"><span></span></a>Platforms</h4>
+<h4 id="platforms-2" class="anchor"><a class="heading-anchor" href="#platforms-2"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -351,7 +414,7 @@
 <li>Zebra Devices Only</li>
 </ul>
 
-<h4 id="methodaccess-1" class="anchor"><a class="heading-anchor" href="#methodaccess-1"><span></span></a>Method Access:</h4>
+<h4 id="methodaccess-2" class="anchor"><a class="heading-anchor" href="#methodaccess-2"><span></span></a>Method Access:</h4>
 
 <ul>
 <li>Instance Method: This method can be accessed via an instance object of this class: 
@@ -373,59 +436,9 @@
 
 <p>Disables the barcode scanner. This reverts the scanner to its default state and flushes any current decoder settings.</p>
 
-<h4 id="parameters-2" class="anchor"><a class="heading-anchor" href="#parameters-2"><span></span></a>Parameters</h4>
-
-<ul><li>callback : <span class="text-info">CallBackHandler</span></li></ul>
-
-<h4 id="returns-2" class="anchor"><a class="heading-anchor" href="#returns-2"><span></span></a>Returns</h4>
-
-<p>Synchronous Return:</p>
-
-<ul>
-<li>Void</li>
-</ul>
-
-<h4 id="platforms-2" class="anchor"><a class="heading-anchor" href="#platforms-2"><span></span></a>Platforms</h4>
-
-<ul>
-<li>Android</li>
-
-<li>Windows Mobile</li>
-
-<li>Windows CE</li>
-
-<li>Zebra Devices Only</li>
-</ul>
-
-<h4 id="methodaccess-2" class="anchor"><a class="heading-anchor" href="#methodaccess-2"><span></span></a>Method Access:</h4>
-
-<ul>
-<li>Instance Method: This method can be accessed via an instance object of this class: 
-
-
-<ul>
-<li><code>myObject.disable()</code></li></ul>
-</li>
-
-<li>Default Instance: This method can be accessed via the default instance object of this class. 
-
-
-<ul>
-<li><code>EB.Barcode.disable()</code> </li></ul>
-</li>
-</ul>
-
-<h3 id="enablespanclasstextinfohashspanpropertymap" class="anchor"><a class="heading-anchor" href="#enablespanclasstextinfohashspanpropertymap"><span></span></a>enable(<span class="text-info">HASH</span> propertyMap)</h3>
-
-<p>Enabling the scanner puts it in a state where it will respond to the trigger (on devices with a hardware trigger) or will accept a command to initiate a soft scan (start method). Scanned barcodes will be available to the application through the callback provided to this method. Only one scanner on the device can be enabled at any one time, to switch between the imager and camera scanners (for example) then first disable the currently enabled scanner. If you do not specify a callback to this method you will received the scanned data as keystrokes. Note that it is necessary to enable the scanner on WM/CE devices prior to being able to retrieve the state of properties.</p>
-
 <h4 id="parameters-3" class="anchor"><a class="heading-anchor" href="#parameters-3"><span></span></a>Parameters</h4>
 
-<ul><li>propertyMap : <span class="text-info">HASH</span> <span class="label label-info">Optional</span><p>Provide a set of properties to configure the scanner, for example enable specific symbologies or check digits. Valid `properties` for this parameter are the properties available to this API module. Check the <a href="../barcode#properties">property section</a> for applicable properties. Not providing properties to this function will use the scanner's default properties, or those previously set on the Scanner instance.</p></li><li>callback : <span class="text-info">CallBackHandler</span></li></ul>
-
-<h4 id="callback-1" class="anchor"><a class="heading-anchor" href="#callback-1"><span></span></a>Callback</h4>
-
-<p>Async Callback Returning Parameters: <span class="text-info">HASH</span></p><ul><ul><li>data : <span class="text-info">STRING</span><p>The data decoded by the scanner or imaging device. </p></li><li>source : <span class="text-info">STRING</span><p>The source device and human readable decoder type of the decoded barcode or symbol. </p></li><li>type : <span class="text-info">STRING</span><p>Hex value representing the decoder type. </p></li><li>time : <span class="text-info">STRING</span><p>The time at which the decode occurred (hh:mm:ss) </p></li><li>length : <span class="text-info">STRING</span><p>The length of the decoded barcode or symbol. </p></li><li>direction : <span class="text-info">STRING</span><p>The direction the barcode was scanned, either forward, reverse or unavailable. </p></li></ul></ul><p></p>
+<ul><li>callback : <span class="text-info">CallBackHandler</span></li></ul>
 
 <h4 id="returns-3" class="anchor"><a class="heading-anchor" href="#returns-3"><span></span></a>Returns</h4>
 
@@ -454,28 +467,28 @@
 
 
 <ul>
-<li><code>myObject.enable(<span class="text-info">HASH</span> propertyMap)</code></li></ul>
+<li><code>myObject.disable()</code></li></ul>
 </li>
 
 <li>Default Instance: This method can be accessed via the default instance object of this class. 
 
 
 <ul>
-<li><code>EB.Barcode.enable(<span class="text-info">HASH</span> propertyMap)</code> </li></ul>
+<li><code>EB.Barcode.disable()</code> </li></ul>
 </li>
 </ul>
 
-<h3 id="enumerate" class="anchor"><a class="heading-anchor" href="#enumerate"><span></span></a>enumerate()</h3>
+<h3 id="enablespanclasstextinfohashspanpropertymap" class="anchor"><a class="heading-anchor" href="#enablespanclasstextinfohashspanpropertymap"><span></span></a>enable(<span class="text-info">HASH</span> propertyMap)</h3>
 
-<p>Used to gain access to all scanner objects present on the device. For consumer devices you will most likely only have a single scanner, your device's camera but Enterprise grade hardware may have two or more scanners attached.</p>
+<p>Enabling the scanner puts it in a state where it will respond to the trigger (on devices with a hardware trigger) or will accept a command to initiate a soft scan (start method). Scanned barcodes will be available to the application through the callback provided to this method. Only one scanner on the device can be enabled at any one time, to switch between the imager and camera scanners (for example) then first disable the currently enabled scanner. If you do not specify a callback to this method you will received the scanned data as keystrokes. Note that it is necessary to enable the scanner on WM/CE devices prior to being able to retrieve the state of properties.</p>
 
 <h4 id="parameters-4" class="anchor"><a class="heading-anchor" href="#parameters-4"><span></span></a>Parameters</h4>
 
-<ul><li>callback : <span class="text-info">CallBackHandler</span></li></ul>
+<ul><li>propertyMap : <span class="text-info">HASH</span> <span class="label label-info">Optional</span><p>Provide a set of properties to configure the scanner, for example enable specific symbologies or check digits. Valid `properties` for this parameter are the properties available to this API module. Check the <a href="#api-barcode?Properties">property section</a> for applicable properties. Not providing properties to this function will use the scanner's default properties, or those previously set on the Scanner instance.</p></li><li>callback : <span class="text-info">CallBackHandler</span></li></ul>
 
 <h4 id="callback-2" class="anchor"><a class="heading-anchor" href="#callback-2"><span></span></a>Callback</h4>
 
-<p>Async Callback Returning Parameters: <span class="text-info">ARRAY</span></p><ul><ul><li><i>Object</i> : <span class="text-info">SELF_INSTANCE: EB.Barcode</span><p> </p></li></ul></ul><p></p>
+<p>Async Callback Returning Parameters: <span class="text-info">HASH</span></p><ul><ul><li>data : <span class="text-info">STRING</span><p>The data decoded by the scanner or imaging device. </p></li><li>source : <span class="text-info">STRING</span><p>The source device and human readable decoder type of the decoded barcode or symbol. </p></li><li>type : <span class="text-info">STRING</span><p>Hex value representing the decoder type. </p></li><li>time : <span class="text-info">STRING</span><p>The time at which the decode occurred (hh:mm:ss) </p></li><li>length : <span class="text-info">STRING</span><p>The length of the decoded barcode or symbol. </p></li><li>direction : <span class="text-info">STRING</span><p>The direction the barcode was scanned, either forward, reverse or unavailable. </p></li></ul></ul><p></p>
 
 <h4 id="returns-4" class="anchor"><a class="heading-anchor" href="#returns-4"><span></span></a>Returns</h4>
 
@@ -493,9 +506,59 @@
 <li>Windows Mobile</li>
 
 <li>Windows CE</li>
+
+<li>Zebra Devices Only</li>
 </ul>
 
 <h4 id="methodaccess-4" class="anchor"><a class="heading-anchor" href="#methodaccess-4"><span></span></a>Method Access:</h4>
+
+<ul>
+<li>Instance Method: This method can be accessed via an instance object of this class: 
+
+
+<ul>
+<li><code>myObject.enable(<span class="text-info">HASH</span> propertyMap)</code></li></ul>
+</li>
+
+<li>Default Instance: This method can be accessed via the default instance object of this class. 
+
+
+<ul>
+<li><code>EB.Barcode.enable(<span class="text-info">HASH</span> propertyMap)</code> </li></ul>
+</li>
+</ul>
+
+<h3 id="enumerate" class="anchor"><a class="heading-anchor" href="#enumerate"><span></span></a>enumerate()</h3>
+
+<p>Used to gain access to all scanner objects present on the device. For consumer devices you will most likely only have a single scanner, your device's camera but Enterprise grade hardware may have two or more scanners attached.</p>
+
+<h4 id="parameters-5" class="anchor"><a class="heading-anchor" href="#parameters-5"><span></span></a>Parameters</h4>
+
+<ul><li>callback : <span class="text-info">CallBackHandler</span></li></ul>
+
+<h4 id="callback-3" class="anchor"><a class="heading-anchor" href="#callback-3"><span></span></a>Callback</h4>
+
+<p>Async Callback Returning Parameters: <span class="text-info">ARRAY</span></p><ul><ul><li><i>Object</i> : <span class="text-info">SELF_INSTANCE: EB.Barcode</span><p> </p></li></ul></ul><p></p>
+
+<h4 id="returns-5" class="anchor"><a class="heading-anchor" href="#returns-5"><span></span></a>Returns</h4>
+
+<p>Synchronous Return:</p>
+
+<ul>
+<li>Void</li>
+</ul>
+
+<h4 id="platforms-5" class="anchor"><a class="heading-anchor" href="#platforms-5"><span></span></a>Platforms</h4>
+
+<ul>
+<li>Android</li>
+
+<li>Windows Mobile</li>
+
+<li>Windows CE</li>
+</ul>
+
+<h4 id="methodaccess-5" class="anchor"><a class="heading-anchor" href="#methodaccess-5"><span></span></a>Method Access:</h4>
 
 <ul>
 <li>Class Method: This method can only be accessed via the API class object. 
@@ -510,15 +573,15 @@
 
 <p>This method will return all of object/value pairs for the propertyNames of the API class.</p>
 
-<h4 id="parameters-5" class="anchor"><a class="heading-anchor" href="#parameters-5"><span></span></a>Parameters</h4>
+<h4 id="parameters-6" class="anchor"><a class="heading-anchor" href="#parameters-6"><span></span></a>Parameters</h4>
 
 <ul><li>callback : <span class="text-info">CallBackHandler</span></li></ul>
 
-<h4 id="callback-3" class="anchor"><a class="heading-anchor" href="#callback-3"><span></span></a>Callback</h4>
+<h4 id="callback-4" class="anchor"><a class="heading-anchor" href="#callback-4"><span></span></a>Callback</h4>
 
 <p>Async Callback Returning Parameters: <span class="text-info">HASH</span></p><ul><ul><li> : <span class="text-info">STRING</span><p> </p></li></ul></ul><p></p>
 
-<h4 id="returns-5" class="anchor"><a class="heading-anchor" href="#returns-5"><span></span></a>Returns</h4>
+<h4 id="returns-6" class="anchor"><a class="heading-anchor" href="#returns-6"><span></span></a>Returns</h4>
 
 <p>Synchronous Return:</p>
 
@@ -526,7 +589,7 @@
 <li>HASH : Map of all available properties<ul><li> : <span class="text-info">STRING</span><p> </p></li></ul></li>
 </ul>
 
-<h4 id="platforms-5" class="anchor"><a class="heading-anchor" href="#platforms-5"><span></span></a>Platforms</h4>
+<h4 id="platforms-6" class="anchor"><a class="heading-anchor" href="#platforms-6"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -534,7 +597,7 @@
 <li>Windows Mobile</li>
 </ul>
 
-<h4 id="methodaccess-5" class="anchor"><a class="heading-anchor" href="#methodaccess-5"><span></span></a>Method Access:</h4>
+<h4 id="methodaccess-6" class="anchor"><a class="heading-anchor" href="#methodaccess-6"><span></span></a>Method Access:</h4>
 
 <ul>
 <li>Instance Method: This method can be accessed via an instance object of this class: 
@@ -556,15 +619,15 @@
 
 <p>This method will return an object that represents the default instance of the API Class. For example Camera.getDefault will return a Camera object that represents the default camera.</p>
 
-<h4 id="parameters-6" class="anchor"><a class="heading-anchor" href="#parameters-6"><span></span></a>Parameters</h4>
+<h4 id="parameters-7" class="anchor"><a class="heading-anchor" href="#parameters-7"><span></span></a>Parameters</h4>
 
 <ul><li>callback : <span class="text-info">CallBackHandler</span></li></ul>
 
-<h4 id="callback-4" class="anchor"><a class="heading-anchor" href="#callback-4"><span></span></a>Callback</h4>
+<h4 id="callback-5" class="anchor"><a class="heading-anchor" href="#callback-5"><span></span></a>Callback</h4>
 
 <p>Async Callback Returning Parameters: <span class="text-info">SELF_INSTANCE</span></p><ul></ul><p></p>
 
-<h4 id="returns-6" class="anchor"><a class="heading-anchor" href="#returns-6"><span></span></a>Returns</h4>
+<h4 id="returns-7" class="anchor"><a class="heading-anchor" href="#returns-7"><span></span></a>Returns</h4>
 
 <p>Synchronous Return:</p>
 
@@ -572,7 +635,7 @@
 <li>SELF_INSTANCE : Default object of Module.</li>
 </ul>
 
-<h4 id="platforms-6" class="anchor"><a class="heading-anchor" href="#platforms-6"><span></span></a>Platforms</h4>
+<h4 id="platforms-7" class="anchor"><a class="heading-anchor" href="#platforms-7"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -580,7 +643,7 @@
 <li>Windows Mobile</li>
 </ul>
 
-<h4 id="methodaccess-6" class="anchor"><a class="heading-anchor" href="#methodaccess-6"><span></span></a>Method Access:</h4>
+<h4 id="methodaccess-7" class="anchor"><a class="heading-anchor" href="#methodaccess-7"><span></span></a>Method Access:</h4>
 
 <ul>
 <li>Class Method: This method can only be accessed via the API class object. 
@@ -595,15 +658,15 @@
 
 <p>This method will return a set of object/value pairs for the list of the propertyName that is passed in. The propertyNames must be a valid property of the API class.</p>
 
-<h4 id="parameters-7" class="anchor"><a class="heading-anchor" href="#parameters-7"><span></span></a>Parameters</h4>
+<h4 id="parameters-8" class="anchor"><a class="heading-anchor" href="#parameters-8"><span></span></a>Parameters</h4>
 
 <ul><li>arrayofNames : <span class="text-info">ARRAY</span><p>List of properties I want to know about </p></li><ul><li><i>Object</i> : <span class="text-info">STRING</span><p> </p></li></ul><li>callback : <span class="text-info">CallBackHandler</span></li></ul>
 
-<h4 id="callback-5" class="anchor"><a class="heading-anchor" href="#callback-5"><span></span></a>Callback</h4>
+<h4 id="callback-6" class="anchor"><a class="heading-anchor" href="#callback-6"><span></span></a>Callback</h4>
 
 <p>Async Callback Returning Parameters: <span class="text-info">HASH</span></p><ul><ul><li> : <span class="text-info">STRING</span><p> </p></li></ul></ul><p></p>
 
-<h4 id="returns-7" class="anchor"><a class="heading-anchor" href="#returns-7"><span></span></a>Returns</h4>
+<h4 id="returns-8" class="anchor"><a class="heading-anchor" href="#returns-8"><span></span></a>Returns</h4>
 
 <p>Synchronous Return:</p>
 
@@ -611,7 +674,7 @@
 <li>HASH : Map of properties I want to know about<ul><li> : <span class="text-info">STRING</span><p> </p></li></ul></li>
 </ul>
 
-<h4 id="platforms-7" class="anchor"><a class="heading-anchor" href="#platforms-7"><span></span></a>Platforms</h4>
+<h4 id="platforms-8" class="anchor"><a class="heading-anchor" href="#platforms-8"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -619,7 +682,7 @@
 <li>Windows Mobile</li>
 </ul>
 
-<h4 id="methodaccess-7" class="anchor"><a class="heading-anchor" href="#methodaccess-7"><span></span></a>Method Access:</h4>
+<h4 id="methodaccess-8" class="anchor"><a class="heading-anchor" href="#methodaccess-8"><span></span></a>Method Access:</h4>
 
 <ul>
 <li>Instance Method: This method can be accessed via an instance object of this class: 
@@ -641,15 +704,15 @@
 
 <p>This method will return the value of the propertyName that is passed in. The propertyName must be a valid property of the API class.</p>
 
-<h4 id="parameters-8" class="anchor"><a class="heading-anchor" href="#parameters-8"><span></span></a>Parameters</h4>
+<h4 id="parameters-9" class="anchor"><a class="heading-anchor" href="#parameters-9"><span></span></a>Parameters</h4>
 
 <ul><li>propertyName : <span class="text-info">STRING</span><p>The property to return info about. </p></li><li>callback : <span class="text-info">CallBackHandler</span></li></ul>
 
-<h4 id="callback-6" class="anchor"><a class="heading-anchor" href="#callback-6"><span></span></a>Callback</h4>
+<h4 id="callback-7" class="anchor"><a class="heading-anchor" href="#callback-7"><span></span></a>Callback</h4>
 
 <p>Async Callback Returning Parameters: <span class="text-info">STRING</span></p><ul></ul><p></p>
 
-<h4 id="returns-8" class="anchor"><a class="heading-anchor" href="#returns-8"><span></span></a>Returns</h4>
+<h4 id="returns-9" class="anchor"><a class="heading-anchor" href="#returns-9"><span></span></a>Returns</h4>
 
 <p>Synchronous Return:</p>
 
@@ -657,7 +720,7 @@
 <li>STRING : The property to return info about.</li>
 </ul>
 
-<h4 id="platforms-8" class="anchor"><a class="heading-anchor" href="#platforms-8"><span></span></a>Platforms</h4>
+<h4 id="platforms-9" class="anchor"><a class="heading-anchor" href="#platforms-9"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -665,7 +728,7 @@
 <li>Windows Mobile</li>
 </ul>
 
-<h4 id="methodaccess-8" class="anchor"><a class="heading-anchor" href="#methodaccess-8"><span></span></a>Method Access:</h4>
+<h4 id="methodaccess-9" class="anchor"><a class="heading-anchor" href="#methodaccess-9"><span></span></a>Method Access:</h4>
 
 <ul>
 <li>Instance Method: This method can be accessed via an instance object of this class: 
@@ -687,15 +750,15 @@
 
 <p>Return array of properties supported by this scanner.</p>
 
-<h4 id="parameters-9" class="anchor"><a class="heading-anchor" href="#parameters-9"><span></span></a>Parameters</h4>
+<h4 id="parameters-10" class="anchor"><a class="heading-anchor" href="#parameters-10"><span></span></a>Parameters</h4>
 
 <ul><li>callback : <span class="text-info">CallBackHandler</span></li></ul>
 
-<h4 id="callback-7" class="anchor"><a class="heading-anchor" href="#callback-7"><span></span></a>Callback</h4>
+<h4 id="callback-8" class="anchor"><a class="heading-anchor" href="#callback-8"><span></span></a>Callback</h4>
 
 <p>Async Callback Returning Parameters: <span class="text-info">ARRAY</span></p><ul><ul><li><i>Object</i> : <span class="text-info">STRING</span><p> </p></li></ul></ul><p></p>
 
-<h4 id="returns-9" class="anchor"><a class="heading-anchor" href="#returns-9"><span></span></a>Returns</h4>
+<h4 id="returns-10" class="anchor"><a class="heading-anchor" href="#returns-10"><span></span></a>Returns</h4>
 
 <p>Synchronous Return:</p>
 
@@ -703,7 +766,7 @@
 <li>ARRAY : Array of property names supported by this scanner.<ul><li><i>Object</i> : <span class="text-info">STRING</span><p> </p></li></ul></li>
 </ul>
 
-<h4 id="platforms-9" class="anchor"><a class="heading-anchor" href="#platforms-9"><span></span></a>Platforms</h4>
+<h4 id="platforms-10" class="anchor"><a class="heading-anchor" href="#platforms-10"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -713,7 +776,7 @@
 <li>Zebra Devices Only</li>
 </ul>
 
-<h4 id="methodaccess-9" class="anchor"><a class="heading-anchor" href="#methodaccess-9"><span></span></a>Method Access:</h4>
+<h4 id="methodaccess-10" class="anchor"><a class="heading-anchor" href="#methodaccess-10"><span></span></a>Method Access:</h4>
 
 <ul>
 <li>Instance Method: This method can be accessed via an instance object of this class: 
@@ -735,15 +798,15 @@
 
 <p>If you are using an RS507 barcode scanner you can register to receive connected or disconnected events through this method.</p>
 
-<h4 id="parameters-10" class="anchor"><a class="heading-anchor" href="#parameters-10"><span></span></a>Parameters</h4>
+<h4 id="parameters-11" class="anchor"><a class="heading-anchor" href="#parameters-11"><span></span></a>Parameters</h4>
 
 <ul><li>callback : <span class="text-info">CallBackHandler</span></li></ul>
 
-<h4 id="callback-8" class="anchor"><a class="heading-anchor" href="#callback-8"><span></span></a>Callback</h4>
+<h4 id="callback-9" class="anchor"><a class="heading-anchor" href="#callback-9"><span></span></a>Callback</h4>
 
 <p>Async Callback Returning Parameters: <span class="text-info">HASH</span></p><ul><ul><li>status : <span class="text-info">STRING</span><p>The message describing the bluetooth connection: BluetoothConnected, BluetoothDisconnected or BTScanAssociationBarcode. See below for further descriptions. </p></li></ul></ul><p></p>
 
-<h4 id="returns-10" class="anchor"><a class="heading-anchor" href="#returns-10"><span></span></a>Returns</h4>
+<h4 id="returns-11" class="anchor"><a class="heading-anchor" href="#returns-11"><span></span></a>Returns</h4>
 
 <p>Synchronous Return:</p>
 
@@ -751,7 +814,7 @@
 <li>Void</li>
 </ul>
 
-<h4 id="platforms-10" class="anchor"><a class="heading-anchor" href="#platforms-10"><span></span></a>Platforms</h4>
+<h4 id="platforms-11" class="anchor"><a class="heading-anchor" href="#platforms-11"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -759,7 +822,7 @@
 <li>Zebra Devices Only</li>
 </ul>
 
-<h4 id="methodaccess-10" class="anchor"><a class="heading-anchor" href="#methodaccess-10"><span></span></a>Method Access:</h4>
+<h4 id="methodaccess-11" class="anchor"><a class="heading-anchor" href="#methodaccess-11"><span></span></a>Method Access:</h4>
 
 <ul>
 <li>Instance Method: This method can be accessed via an instance object of this class: 
@@ -777,48 +840,13 @@
 </li>
 </ul>
 
-<h3 id="setdefaultspanclasstextinfoself_instanceebbarcodespandefaultinstance" class="anchor"><a class="heading-anchor" href="#setdefaultspanclasstextinfoself_instanceebbarcodespandefaultinstance"><span></span></a>setDefault(<span class="text-info">SELF_INSTANCE: EB.Barcode</span> defaultInstance)</h3>
+<h3 id="removeconnectionlistener" class="anchor"><a class="heading-anchor" href="#removeconnectionlistener"><span></span></a>removeConnectionListener()</h3>
 
-<p>This method allows you to set the attributes of the default object instance by passing in an object of the same class.</p>
-
-<h4 id="parameters-11" class="anchor"><a class="heading-anchor" href="#parameters-11"><span></span></a>Parameters</h4>
-
-<ul><li>defaultInstance : <span class="text-info">SELF_INSTANCE: EB.Barcode</span><p>An instance object that is of the same class. </p></li><li>callback : <span class="text-info">CallBackHandler</span></li></ul>
-
-<h4 id="returns-11" class="anchor"><a class="heading-anchor" href="#returns-11"><span></span></a>Returns</h4>
-
-<p>Synchronous Return:</p>
-
-<ul>
-<li>Void</li>
-</ul>
-
-<h4 id="platforms-11" class="anchor"><a class="heading-anchor" href="#platforms-11"><span></span></a>Platforms</h4>
-
-<ul>
-<li>Android</li>
-
-<li>Windows Mobile</li>
-</ul>
-
-<h4 id="methodaccess-11" class="anchor"><a class="heading-anchor" href="#methodaccess-11"><span></span></a>Method Access:</h4>
-
-<ul>
-<li>Class Method: This method can only be accessed via the API class object. 
-
-
-<ul>
-<li><code>EB.Barcode.setDefault(<span class="text-info">SELF_INSTANCE: EB.Barcode</span> defaultInstance)</code> </li></ul>
-</li>
-</ul>
-
-<h3 id="setpropertiesspanclasstextinfohashspanpropertymap" class="anchor"><a class="heading-anchor" href="#setpropertiesspanclasstextinfohashspanpropertymap"><span></span></a>setProperties(<span class="text-info">HASH</span> propertyMap)</h3>
-
-<p>This method will set the values of a list of properties for the API class. The propertyName must be a valid property for the class and must also not be read only.</p>
+<p>If you are using an RS507/RS6000/RS4000 barcode scanner you can remove a connection listener to receive connected or disconnected callbacks through this method.</p>
 
 <h4 id="parameters-12" class="anchor"><a class="heading-anchor" href="#parameters-12"><span></span></a>Parameters</h4>
 
-<ul><li>propertyMap : <span class="text-info">HASH</span><p>Map of properties I want to set </p></li><ul><li><i>Object</i> : <span class="text-info">STRING</span><p> </p></li></ul><li>callback : <span class="text-info">CallBackHandler</span></li></ul>
+<ul><li>callback : <span class="text-info">CallBackHandler</span></li></ul>
 
 <h4 id="returns-12" class="anchor"><a class="heading-anchor" href="#returns-12"><span></span></a>Returns</h4>
 
@@ -833,10 +861,87 @@
 <ul>
 <li>Android</li>
 
-<li>Windows Mobile</li>
+<li>Zebra Devices Only</li>
 </ul>
 
 <h4 id="methodaccess-12" class="anchor"><a class="heading-anchor" href="#methodaccess-12"><span></span></a>Method Access:</h4>
+
+<ul>
+<li>Instance Method: This method can be accessed via an instance object of this class: 
+
+
+<ul>
+<li><code>myObject.removeConnectionListener()</code></li></ul>
+</li>
+
+<li>Default Instance: This method can be accessed via the default instance object of this class. 
+
+
+<ul>
+<li><code>EB.Barcode.removeConnectionListener()</code> </li></ul>
+</li>
+</ul>
+
+<h3 id="setdefaultspanclasstextinfoself_instanceebbarcodespandefaultinstance" class="anchor"><a class="heading-anchor" href="#setdefaultspanclasstextinfoself_instanceebbarcodespandefaultinstance"><span></span></a>setDefault(<span class="text-info">SELF_INSTANCE: EB.Barcode</span> defaultInstance)</h3>
+
+<p>This method allows you to set the attributes of the default object instance by passing in an object of the same class.</p>
+
+<h4 id="parameters-13" class="anchor"><a class="heading-anchor" href="#parameters-13"><span></span></a>Parameters</h4>
+
+<ul><li>defaultInstance : <span class="text-info">SELF_INSTANCE: EB.Barcode</span><p>An instance object that is of the same class. </p></li><li>callback : <span class="text-info">CallBackHandler</span></li></ul>
+
+<h4 id="returns-13" class="anchor"><a class="heading-anchor" href="#returns-13"><span></span></a>Returns</h4>
+
+<p>Synchronous Return:</p>
+
+<ul>
+<li>Void</li>
+</ul>
+
+<h4 id="platforms-13" class="anchor"><a class="heading-anchor" href="#platforms-13"><span></span></a>Platforms</h4>
+
+<ul>
+<li>Android</li>
+
+<li>Windows Mobile</li>
+</ul>
+
+<h4 id="methodaccess-13" class="anchor"><a class="heading-anchor" href="#methodaccess-13"><span></span></a>Method Access:</h4>
+
+<ul>
+<li>Class Method: This method can only be accessed via the API class object. 
+
+
+<ul>
+<li><code>EB.Barcode.setDefault(<span class="text-info">SELF_INSTANCE: EB.Barcode</span> defaultInstance)</code> </li></ul>
+</li>
+</ul>
+
+<h3 id="setpropertiesspanclasstextinfohashspanpropertymap" class="anchor"><a class="heading-anchor" href="#setpropertiesspanclasstextinfohashspanpropertymap"><span></span></a>setProperties(<span class="text-info">HASH</span> propertyMap)</h3>
+
+<p>This method will set the values of a list of properties for the API class. The propertyName must be a valid property for the class and must also not be read only.</p>
+
+<h4 id="parameters-14" class="anchor"><a class="heading-anchor" href="#parameters-14"><span></span></a>Parameters</h4>
+
+<ul><li>propertyMap : <span class="text-info">HASH</span><p>Map of properties I want to set </p></li><ul><li><i>Object</i> : <span class="text-info">STRING</span><p> </p></li></ul><li>callback : <span class="text-info">CallBackHandler</span></li></ul>
+
+<h4 id="returns-14" class="anchor"><a class="heading-anchor" href="#returns-14"><span></span></a>Returns</h4>
+
+<p>Synchronous Return:</p>
+
+<ul>
+<li>Void</li>
+</ul>
+
+<h4 id="platforms-14" class="anchor"><a class="heading-anchor" href="#platforms-14"><span></span></a>Platforms</h4>
+
+<ul>
+<li>Android</li>
+
+<li>Windows Mobile</li>
+</ul>
+
+<h4 id="methodaccess-14" class="anchor"><a class="heading-anchor" href="#methodaccess-14"><span></span></a>Method Access:</h4>
 
 <ul>
 <li>Instance Method: This method can be accessed via an instance object of this class: 
@@ -858,11 +963,11 @@
 
 <p>This method will set the value of a property for the API class. The propertyName must be a valid property for the class and must also not be read only.</p>
 
-<h4 id="parameters-13" class="anchor"><a class="heading-anchor" href="#parameters-13"><span></span></a>Parameters</h4>
+<h4 id="parameters-15" class="anchor"><a class="heading-anchor" href="#parameters-15"><span></span></a>Parameters</h4>
 
 <ul><li>propertyName : <span class="text-info">STRING</span><p>The one property name that I want to set </p></li><li>propertyValue : <span class="text-info">STRING</span><p>The one property value that I want to set </p></li><li>callback : <span class="text-info">CallBackHandler</span></li></ul>
 
-<h4 id="returns-13" class="anchor"><a class="heading-anchor" href="#returns-13"><span></span></a>Returns</h4>
+<h4 id="returns-15" class="anchor"><a class="heading-anchor" href="#returns-15"><span></span></a>Returns</h4>
 
 <p>Synchronous Return:</p>
 
@@ -870,7 +975,7 @@
 <li>Void</li>
 </ul>
 
-<h4 id="platforms-13" class="anchor"><a class="heading-anchor" href="#platforms-13"><span></span></a>Platforms</h4>
+<h4 id="platforms-15" class="anchor"><a class="heading-anchor" href="#platforms-15"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -878,7 +983,7 @@
 <li>Windows Mobile</li>
 </ul>
 
-<h4 id="methodaccess-13" class="anchor"><a class="heading-anchor" href="#methodaccess-13"><span></span></a>Method Access:</h4>
+<h4 id="methodaccess-15" class="anchor"><a class="heading-anchor" href="#methodaccess-15"><span></span></a>Method Access:</h4>
 
 <ul>
 <li>Instance Method: This method can be accessed via an instance object of this class: 
@@ -900,11 +1005,11 @@
 
 <p>Performs a soft trigger start, initiating a scan without pressing the hardware trigger. If the scan does not result in a decode it is necessary to perform a soft stop before another soft start.</p>
 
-<h4 id="parameters-14" class="anchor"><a class="heading-anchor" href="#parameters-14"><span></span></a>Parameters</h4>
+<h4 id="parameters-16" class="anchor"><a class="heading-anchor" href="#parameters-16"><span></span></a>Parameters</h4>
 
 <ul><li>callback : <span class="text-info">CallBackHandler</span></li></ul>
 
-<h4 id="returns-14" class="anchor"><a class="heading-anchor" href="#returns-14"><span></span></a>Returns</h4>
+<h4 id="returns-16" class="anchor"><a class="heading-anchor" href="#returns-16"><span></span></a>Returns</h4>
 
 <p>Synchronous Return:</p>
 
@@ -912,7 +1017,7 @@
 <li>Void</li>
 </ul>
 
-<h4 id="platforms-14" class="anchor"><a class="heading-anchor" href="#platforms-14"><span></span></a>Platforms</h4>
+<h4 id="platforms-16" class="anchor"><a class="heading-anchor" href="#platforms-16"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -924,7 +1029,7 @@
 <li>Zebra Devices Only</li>
 </ul>
 
-<h4 id="methodaccess-14" class="anchor"><a class="heading-anchor" href="#methodaccess-14"><span></span></a>Method Access:</h4>
+<h4 id="methodaccess-16" class="anchor"><a class="heading-anchor" href="#methodaccess-16"><span></span></a>Method Access:</h4>
 
 <ul>
 <li>Instance Method: This method can be accessed via an instance object of this class: 
@@ -946,11 +1051,11 @@
 
 <p>Performs a soft trigger stop.</p>
 
-<h4 id="parameters-15" class="anchor"><a class="heading-anchor" href="#parameters-15"><span></span></a>Parameters</h4>
+<h4 id="parameters-17" class="anchor"><a class="heading-anchor" href="#parameters-17"><span></span></a>Parameters</h4>
 
 <ul><li>callback : <span class="text-info">CallBackHandler</span></li></ul>
 
-<h4 id="returns-15" class="anchor"><a class="heading-anchor" href="#returns-15"><span></span></a>Returns</h4>
+<h4 id="returns-17" class="anchor"><a class="heading-anchor" href="#returns-17"><span></span></a>Returns</h4>
 
 <p>Synchronous Return:</p>
 
@@ -958,7 +1063,7 @@
 <li>Void</li>
 </ul>
 
-<h4 id="platforms-15" class="anchor"><a class="heading-anchor" href="#platforms-15"><span></span></a>Platforms</h4>
+<h4 id="platforms-17" class="anchor"><a class="heading-anchor" href="#platforms-17"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -970,7 +1075,7 @@
 <li>Zebra Devices Only</li>
 </ul>
 
-<h4 id="methodaccess-15" class="anchor"><a class="heading-anchor" href="#methodaccess-15"><span></span></a>Method Access:</h4>
+<h4 id="methodaccess-17" class="anchor"><a class="heading-anchor" href="#methodaccess-17"><span></span></a>Method Access:</h4>
 
 <ul>
 <li>Instance Method: This method can be accessed via an instance object of this class: 
@@ -992,15 +1097,15 @@
 
 <p>Enable the scanner and start capturing the barcode automatically. On Symbol Technologies' devices the amount of time to scan the barcode is defined by the scanTimeout property. On Android if a barcode is found, the user can confirm barcode recognition, or continue to try to recognize the barcode. When the user confirms or cancels, the callback is called. Once the callback has been called the barcode hardware is disabled.This method will work only on scanners which support soft scan.</p>
 
-<h4 id="parameters-16" class="anchor"><a class="heading-anchor" href="#parameters-16"><span></span></a>Parameters</h4>
+<h4 id="parameters-18" class="anchor"><a class="heading-anchor" href="#parameters-18"><span></span></a>Parameters</h4>
 
-<ul><li>propertyMap : <span class="text-info">HASH</span> <span class="label label-info">Optional</span><p>Provide a set of properties to configure the scanner, for example enable specific symbologies or check digits. Valid `properties` for this parameter are the properties available to this API module. Check the <a href="../barcode#properties">property section</a> for applicable properties. Not providing properties to this function will use the scanner's default properties, or those previously set on the Scanner instance.</p></li><li>callback : <span class="text-info">CallBackHandler</span></li></ul>
+<ul><li>propertyMap : <span class="text-info">HASH</span> <span class="label label-info">Optional</span><p>Provide a set of properties to configure the scanner, for example enable specific symbologies or check digits. Valid `properties` for this parameter are the properties available to this API module. Check the <a href="#api-barcode?Properties">property section</a> for applicable properties. Not providing properties to this function will use the scanner's default properties, or those previously set on the Scanner instance.</p></li><li>callback : <span class="text-info">CallBackHandler</span></li></ul>
 
-<h4 id="callback-9" class="anchor"><a class="heading-anchor" href="#callback-9"><span></span></a>Callback</h4>
+<h4 id="callback-10" class="anchor"><a class="heading-anchor" href="#callback-10"><span></span></a>Callback</h4>
 
 <p>Async Callback Returning Parameters: <span class="text-info">HASH</span></p><ul><ul><li>barcode : <span class="text-info">STRING</span><p>The data decoded by the scanner or imaging device. </p></li><li>status : <span class="text-info">STRING</span><p>Whether or not the barcode was successfully scanned, status will be 'ok' or 'cancel' </p></li></ul></ul><p></p>
 
-<h4 id="returns-16" class="anchor"><a class="heading-anchor" href="#returns-16"><span></span></a>Returns</h4>
+<h4 id="returns-18" class="anchor"><a class="heading-anchor" href="#returns-18"><span></span></a>Returns</h4>
 
 <p>Synchronous Return:</p>
 
@@ -1008,7 +1113,7 @@
 <li>Void</li>
 </ul>
 
-<h4 id="platforms-16" class="anchor"><a class="heading-anchor" href="#platforms-16"><span></span></a>Platforms</h4>
+<h4 id="platforms-18" class="anchor"><a class="heading-anchor" href="#platforms-18"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -1018,7 +1123,7 @@
 <li>Windows CE</li>
 </ul>
 
-<h4 id="methodaccess-16" class="anchor"><a class="heading-anchor" href="#methodaccess-16"><span></span></a>Method Access:</h4>
+<h4 id="methodaccess-18" class="anchor"><a class="heading-anchor" href="#methodaccess-18"><span></span></a>Method Access:</h4>
 
 <ul>
 <li>Instance Method: This method can be accessed via an instance object of this class: 
@@ -1061,7 +1166,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-17" class="anchor"><a class="heading-anchor" href="#platforms-17"><span></span></a>Platforms</h4>
+<h4 id="platforms-19" class="anchor"><a class="heading-anchor" href="#platforms-19"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -1106,7 +1211,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-18" class="anchor"><a class="heading-anchor" href="#platforms-18"><span></span></a>Platforms</h4>
+<h4 id="platforms-20" class="anchor"><a class="heading-anchor" href="#platforms-20"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -1155,7 +1260,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-19" class="anchor"><a class="heading-anchor" href="#platforms-19"><span></span></a>Platforms</h4>
+<h4 id="platforms-21" class="anchor"><a class="heading-anchor" href="#platforms-21"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -1186,7 +1291,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-20" class="anchor"><a class="heading-anchor" href="#platforms-20"><span></span></a>Platforms</h4>
+<h4 id="platforms-22" class="anchor"><a class="heading-anchor" href="#platforms-22"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -1219,7 +1324,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-21" class="anchor"><a class="heading-anchor" href="#platforms-21"><span></span></a>Platforms</h4>
+<h4 id="platforms-23" class="anchor"><a class="heading-anchor" href="#platforms-23"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -1254,7 +1359,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-22" class="anchor"><a class="heading-anchor" href="#platforms-22"><span></span></a>Platforms</h4>
+<h4 id="platforms-24" class="anchor"><a class="heading-anchor" href="#platforms-24"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -1289,7 +1394,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-23" class="anchor"><a class="heading-anchor" href="#platforms-23"><span></span></a>Platforms</h4>
+<h4 id="platforms-25" class="anchor"><a class="heading-anchor" href="#platforms-25"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -1324,7 +1429,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-24" class="anchor"><a class="heading-anchor" href="#platforms-24"><span></span></a>Platforms</h4>
+<h4 id="platforms-26" class="anchor"><a class="heading-anchor" href="#platforms-26"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -1369,7 +1474,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-25" class="anchor"><a class="heading-anchor" href="#platforms-25"><span></span></a>Platforms</h4>
+<h4 id="platforms-27" class="anchor"><a class="heading-anchor" href="#platforms-27"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -1412,7 +1517,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-26" class="anchor"><a class="heading-anchor" href="#platforms-26"><span></span></a>Platforms</h4>
+<h4 id="platforms-28" class="anchor"><a class="heading-anchor" href="#platforms-28"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -1443,7 +1548,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-27" class="anchor"><a class="heading-anchor" href="#platforms-27"><span></span></a>Platforms</h4>
+<h4 id="platforms-29" class="anchor"><a class="heading-anchor" href="#platforms-29"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -1474,7 +1579,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-28" class="anchor"><a class="heading-anchor" href="#platforms-28"><span></span></a>Platforms</h4>
+<h4 id="platforms-30" class="anchor"><a class="heading-anchor" href="#platforms-30"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -1509,7 +1614,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-29" class="anchor"><a class="heading-anchor" href="#platforms-29"><span></span></a>Platforms</h4>
+<h4 id="platforms-31" class="anchor"><a class="heading-anchor" href="#platforms-31"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -1544,7 +1649,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-30" class="anchor"><a class="heading-anchor" href="#platforms-30"><span></span></a>Platforms</h4>
+<h4 id="platforms-32" class="anchor"><a class="heading-anchor" href="#platforms-32"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -1579,7 +1684,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-31" class="anchor"><a class="heading-anchor" href="#platforms-31"><span></span></a>Platforms</h4>
+<h4 id="platforms-33" class="anchor"><a class="heading-anchor" href="#platforms-33"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -1614,7 +1719,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-32" class="anchor"><a class="heading-anchor" href="#platforms-32"><span></span></a>Platforms</h4>
+<h4 id="platforms-34" class="anchor"><a class="heading-anchor" href="#platforms-34"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -1649,7 +1754,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-33" class="anchor"><a class="heading-anchor" href="#platforms-33"><span></span></a>Platforms</h4>
+<h4 id="platforms-35" class="anchor"><a class="heading-anchor" href="#platforms-35"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -1684,7 +1789,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-34" class="anchor"><a class="heading-anchor" href="#platforms-34"><span></span></a>Platforms</h4>
+<h4 id="platforms-36" class="anchor"><a class="heading-anchor" href="#platforms-36"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -1719,7 +1824,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-35" class="anchor"><a class="heading-anchor" href="#platforms-35"><span></span></a>Platforms</h4>
+<h4 id="platforms-37" class="anchor"><a class="heading-anchor" href="#platforms-37"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -1754,7 +1859,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-36" class="anchor"><a class="heading-anchor" href="#platforms-36"><span></span></a>Platforms</h4>
+<h4 id="platforms-38" class="anchor"><a class="heading-anchor" href="#platforms-38"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -1801,7 +1906,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-37" class="anchor"><a class="heading-anchor" href="#platforms-37"><span></span></a>Platforms</h4>
+<h4 id="platforms-39" class="anchor"><a class="heading-anchor" href="#platforms-39"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -1836,7 +1941,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-38" class="anchor"><a class="heading-anchor" href="#platforms-38"><span></span></a>Platforms</h4>
+<h4 id="platforms-40" class="anchor"><a class="heading-anchor" href="#platforms-40"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -1871,7 +1976,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-39" class="anchor"><a class="heading-anchor" href="#platforms-39"><span></span></a>Platforms</h4>
+<h4 id="platforms-41" class="anchor"><a class="heading-anchor" href="#platforms-41"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -1906,7 +2011,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-40" class="anchor"><a class="heading-anchor" href="#platforms-40"><span></span></a>Platforms</h4>
+<h4 id="platforms-42" class="anchor"><a class="heading-anchor" href="#platforms-42"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -1941,7 +2046,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-41" class="anchor"><a class="heading-anchor" href="#platforms-41"><span></span></a>Platforms</h4>
+<h4 id="platforms-43" class="anchor"><a class="heading-anchor" href="#platforms-43"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -1976,7 +2081,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-42" class="anchor"><a class="heading-anchor" href="#platforms-42"><span></span></a>Platforms</h4>
+<h4 id="platforms-44" class="anchor"><a class="heading-anchor" href="#platforms-44"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -2011,7 +2116,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-43" class="anchor"><a class="heading-anchor" href="#platforms-43"><span></span></a>Platforms</h4>
+<h4 id="platforms-45" class="anchor"><a class="heading-anchor" href="#platforms-45"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -2046,7 +2151,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-44" class="anchor"><a class="heading-anchor" href="#platforms-44"><span></span></a>Platforms</h4>
+<h4 id="platforms-46" class="anchor"><a class="heading-anchor" href="#platforms-46"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -2081,7 +2186,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-45" class="anchor"><a class="heading-anchor" href="#platforms-45"><span></span></a>Platforms</h4>
+<h4 id="platforms-47" class="anchor"><a class="heading-anchor" href="#platforms-47"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -2128,7 +2233,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-46" class="anchor"><a class="heading-anchor" href="#platforms-46"><span></span></a>Platforms</h4>
+<h4 id="platforms-48" class="anchor"><a class="heading-anchor" href="#platforms-48"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -2163,7 +2268,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-47" class="anchor"><a class="heading-anchor" href="#platforms-47"><span></span></a>Platforms</h4>
+<h4 id="platforms-49" class="anchor"><a class="heading-anchor" href="#platforms-49"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -2198,7 +2303,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-48" class="anchor"><a class="heading-anchor" href="#platforms-48"><span></span></a>Platforms</h4>
+<h4 id="platforms-50" class="anchor"><a class="heading-anchor" href="#platforms-50"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -2233,7 +2338,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-49" class="anchor"><a class="heading-anchor" href="#platforms-49"><span></span></a>Platforms</h4>
+<h4 id="platforms-51" class="anchor"><a class="heading-anchor" href="#platforms-51"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -2268,7 +2373,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-50" class="anchor"><a class="heading-anchor" href="#platforms-50"><span></span></a>Platforms</h4>
+<h4 id="platforms-52" class="anchor"><a class="heading-anchor" href="#platforms-52"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -2303,7 +2408,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-51" class="anchor"><a class="heading-anchor" href="#platforms-51"><span></span></a>Platforms</h4>
+<h4 id="platforms-53" class="anchor"><a class="heading-anchor" href="#platforms-53"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -2338,7 +2443,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-52" class="anchor"><a class="heading-anchor" href="#platforms-52"><span></span></a>Platforms</h4>
+<h4 id="platforms-54" class="anchor"><a class="heading-anchor" href="#platforms-54"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -2373,7 +2478,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-53" class="anchor"><a class="heading-anchor" href="#platforms-53"><span></span></a>Platforms</h4>
+<h4 id="platforms-55" class="anchor"><a class="heading-anchor" href="#platforms-55"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -2408,7 +2513,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-54" class="anchor"><a class="heading-anchor" href="#platforms-54"><span></span></a>Platforms</h4>
+<h4 id="platforms-56" class="anchor"><a class="heading-anchor" href="#platforms-56"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -2443,7 +2548,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-55" class="anchor"><a class="heading-anchor" href="#platforms-55"><span></span></a>Platforms</h4>
+<h4 id="platforms-57" class="anchor"><a class="heading-anchor" href="#platforms-57"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -2478,7 +2583,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-56" class="anchor"><a class="heading-anchor" href="#platforms-56"><span></span></a>Platforms</h4>
+<h4 id="platforms-58" class="anchor"><a class="heading-anchor" href="#platforms-58"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -2513,7 +2618,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-57" class="anchor"><a class="heading-anchor" href="#platforms-57"><span></span></a>Platforms</h4>
+<h4 id="platforms-59" class="anchor"><a class="heading-anchor" href="#platforms-59"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -2548,7 +2653,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-58" class="anchor"><a class="heading-anchor" href="#platforms-58"><span></span></a>Platforms</h4>
+<h4 id="platforms-60" class="anchor"><a class="heading-anchor" href="#platforms-60"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -2583,7 +2688,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-59" class="anchor"><a class="heading-anchor" href="#platforms-59"><span></span></a>Platforms</h4>
+<h4 id="platforms-61" class="anchor"><a class="heading-anchor" href="#platforms-61"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -2618,7 +2723,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-60" class="anchor"><a class="heading-anchor" href="#platforms-60"><span></span></a>Platforms</h4>
+<h4 id="platforms-62" class="anchor"><a class="heading-anchor" href="#platforms-62"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -2653,7 +2758,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-61" class="anchor"><a class="heading-anchor" href="#platforms-61"><span></span></a>Platforms</h4>
+<h4 id="platforms-63" class="anchor"><a class="heading-anchor" href="#platforms-63"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -2688,7 +2793,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-62" class="anchor"><a class="heading-anchor" href="#platforms-62"><span></span></a>Platforms</h4>
+<h4 id="platforms-64" class="anchor"><a class="heading-anchor" href="#platforms-64"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -2723,7 +2828,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-63" class="anchor"><a class="heading-anchor" href="#platforms-63"><span></span></a>Platforms</h4>
+<h4 id="platforms-65" class="anchor"><a class="heading-anchor" href="#platforms-65"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -2758,7 +2863,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-64" class="anchor"><a class="heading-anchor" href="#platforms-64"><span></span></a>Platforms</h4>
+<h4 id="platforms-66" class="anchor"><a class="heading-anchor" href="#platforms-66"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -2793,7 +2898,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-65" class="anchor"><a class="heading-anchor" href="#platforms-65"><span></span></a>Platforms</h4>
+<h4 id="platforms-67" class="anchor"><a class="heading-anchor" href="#platforms-67"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -2828,7 +2933,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-66" class="anchor"><a class="heading-anchor" href="#platforms-66"><span></span></a>Platforms</h4>
+<h4 id="platforms-68" class="anchor"><a class="heading-anchor" href="#platforms-68"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -2875,7 +2980,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-67" class="anchor"><a class="heading-anchor" href="#platforms-67"><span></span></a>Platforms</h4>
+<h4 id="platforms-69" class="anchor"><a class="heading-anchor" href="#platforms-69"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -2910,7 +3015,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-68" class="anchor"><a class="heading-anchor" href="#platforms-68"><span></span></a>Platforms</h4>
+<h4 id="platforms-70" class="anchor"><a class="heading-anchor" href="#platforms-70"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -2941,7 +3046,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-69" class="anchor"><a class="heading-anchor" href="#platforms-69"><span></span></a>Platforms</h4>
+<h4 id="platforms-71" class="anchor"><a class="heading-anchor" href="#platforms-71"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -2976,7 +3081,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-70" class="anchor"><a class="heading-anchor" href="#platforms-70"><span></span></a>Platforms</h4>
+<h4 id="platforms-72" class="anchor"><a class="heading-anchor" href="#platforms-72"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -3007,7 +3112,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-71" class="anchor"><a class="heading-anchor" href="#platforms-71"><span></span></a>Platforms</h4>
+<h4 id="platforms-73" class="anchor"><a class="heading-anchor" href="#platforms-73"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -3042,7 +3147,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-72" class="anchor"><a class="heading-anchor" href="#platforms-72"><span></span></a>Platforms</h4>
+<h4 id="platforms-74" class="anchor"><a class="heading-anchor" href="#platforms-74"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -3077,7 +3182,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-73" class="anchor"><a class="heading-anchor" href="#platforms-73"><span></span></a>Platforms</h4>
+<h4 id="platforms-75" class="anchor"><a class="heading-anchor" href="#platforms-75"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -3112,7 +3217,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-74" class="anchor"><a class="heading-anchor" href="#platforms-74"><span></span></a>Platforms</h4>
+<h4 id="platforms-76" class="anchor"><a class="heading-anchor" href="#platforms-76"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -3147,7 +3252,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-75" class="anchor"><a class="heading-anchor" href="#platforms-75"><span></span></a>Platforms</h4>
+<h4 id="platforms-77" class="anchor"><a class="heading-anchor" href="#platforms-77"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -3178,7 +3283,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-76" class="anchor"><a class="heading-anchor" href="#platforms-76"><span></span></a>Platforms</h4>
+<h4 id="platforms-78" class="anchor"><a class="heading-anchor" href="#platforms-78"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -3223,7 +3328,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-77" class="anchor"><a class="heading-anchor" href="#platforms-77"><span></span></a>Platforms</h4>
+<h4 id="platforms-79" class="anchor"><a class="heading-anchor" href="#platforms-79"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -3258,7 +3363,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-78" class="anchor"><a class="heading-anchor" href="#platforms-78"><span></span></a>Platforms</h4>
+<h4 id="platforms-80" class="anchor"><a class="heading-anchor" href="#platforms-80"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -3297,7 +3402,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-79" class="anchor"><a class="heading-anchor" href="#platforms-79"><span></span></a>Platforms</h4>
+<h4 id="platforms-81" class="anchor"><a class="heading-anchor" href="#platforms-81"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -3317,7 +3422,7 @@
 
 <h4 id="description-63" class="anchor"><a class="heading-anchor" href="#description-63"><span></span></a>Description</h4>
 
-<p>Path to a local wave file to be played when the scanner successfully decodes a barcode. This setting overrides the scanner beeper. In Android, this settings will not override beeper and hence not supported.</p>
+<p>Path to a local wave file to be played when the scanner successfully decodes a barcode. The wave file must reside on the device. This will override the existing scanner beeper settings. </p>
 
 <h4 id="access-63" class="anchor"><a class="heading-anchor" href="#access-63"><span></span></a>Access</h4>
 
@@ -3332,7 +3437,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-80" class="anchor"><a class="heading-anchor" href="#platforms-80"><span></span></a>Platforms</h4>
+<h4 id="platforms-82" class="anchor"><a class="heading-anchor" href="#platforms-82"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -3371,7 +3476,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-81" class="anchor"><a class="heading-anchor" href="#platforms-81"><span></span></a>Platforms</h4>
+<h4 id="platforms-83" class="anchor"><a class="heading-anchor" href="#platforms-83"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -3406,7 +3511,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-82" class="anchor"><a class="heading-anchor" href="#platforms-82"><span></span></a>Platforms</h4>
+<h4 id="platforms-84" class="anchor"><a class="heading-anchor" href="#platforms-84"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -3441,7 +3546,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-83" class="anchor"><a class="heading-anchor" href="#platforms-83"><span></span></a>Platforms</h4>
+<h4 id="platforms-85" class="anchor"><a class="heading-anchor" href="#platforms-85"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -3472,7 +3577,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-84" class="anchor"><a class="heading-anchor" href="#platforms-84"><span></span></a>Platforms</h4>
+<h4 id="platforms-86" class="anchor"><a class="heading-anchor" href="#platforms-86"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -3503,7 +3608,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-85" class="anchor"><a class="heading-anchor" href="#platforms-85"><span></span></a>Platforms</h4>
+<h4 id="platforms-87" class="anchor"><a class="heading-anchor" href="#platforms-87"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -3534,7 +3639,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-86" class="anchor"><a class="heading-anchor" href="#platforms-86"><span></span></a>Platforms</h4>
+<h4 id="platforms-88" class="anchor"><a class="heading-anchor" href="#platforms-88"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -3565,7 +3670,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-87" class="anchor"><a class="heading-anchor" href="#platforms-87"><span></span></a>Platforms</h4>
+<h4 id="platforms-89" class="anchor"><a class="heading-anchor" href="#platforms-89"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -3600,7 +3705,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-88" class="anchor"><a class="heading-anchor" href="#platforms-88"><span></span></a>Platforms</h4>
+<h4 id="platforms-90" class="anchor"><a class="heading-anchor" href="#platforms-90"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -3635,7 +3740,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-89" class="anchor"><a class="heading-anchor" href="#platforms-89"><span></span></a>Platforms</h4>
+<h4 id="platforms-91" class="anchor"><a class="heading-anchor" href="#platforms-91"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -3670,7 +3775,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-90" class="anchor"><a class="heading-anchor" href="#platforms-90"><span></span></a>Platforms</h4>
+<h4 id="platforms-92" class="anchor"><a class="heading-anchor" href="#platforms-92"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -3705,7 +3810,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-91" class="anchor"><a class="heading-anchor" href="#platforms-91"><span></span></a>Platforms</h4>
+<h4 id="platforms-93" class="anchor"><a class="heading-anchor" href="#platforms-93"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -3746,7 +3851,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-92" class="anchor"><a class="heading-anchor" href="#platforms-92"><span></span></a>Platforms</h4>
+<h4 id="platforms-94" class="anchor"><a class="heading-anchor" href="#platforms-94"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -3777,7 +3882,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-93" class="anchor"><a class="heading-anchor" href="#platforms-93"><span></span></a>Platforms</h4>
+<h4 id="platforms-95" class="anchor"><a class="heading-anchor" href="#platforms-95"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -3812,7 +3917,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-94" class="anchor"><a class="heading-anchor" href="#platforms-94"><span></span></a>Platforms</h4>
+<h4 id="platforms-96" class="anchor"><a class="heading-anchor" href="#platforms-96"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -3847,7 +3952,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-95" class="anchor"><a class="heading-anchor" href="#platforms-95"><span></span></a>Platforms</h4>
+<h4 id="platforms-97" class="anchor"><a class="heading-anchor" href="#platforms-97"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -3882,7 +3987,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-96" class="anchor"><a class="heading-anchor" href="#platforms-96"><span></span></a>Platforms</h4>
+<h4 id="platforms-98" class="anchor"><a class="heading-anchor" href="#platforms-98"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -3921,7 +4026,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-97" class="anchor"><a class="heading-anchor" href="#platforms-97"><span></span></a>Platforms</h4>
+<h4 id="platforms-99" class="anchor"><a class="heading-anchor" href="#platforms-99"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -3952,7 +4057,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-98" class="anchor"><a class="heading-anchor" href="#platforms-98"><span></span></a>Platforms</h4>
+<h4 id="platforms-100" class="anchor"><a class="heading-anchor" href="#platforms-100"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -3987,7 +4092,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-99" class="anchor"><a class="heading-anchor" href="#platforms-99"><span></span></a>Platforms</h4>
+<h4 id="platforms-101" class="anchor"><a class="heading-anchor" href="#platforms-101"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -4022,7 +4127,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-100" class="anchor"><a class="heading-anchor" href="#platforms-100"><span></span></a>Platforms</h4>
+<h4 id="platforms-102" class="anchor"><a class="heading-anchor" href="#platforms-102"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -4057,7 +4162,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-101" class="anchor"><a class="heading-anchor" href="#platforms-101"><span></span></a>Platforms</h4>
+<h4 id="platforms-103" class="anchor"><a class="heading-anchor" href="#platforms-103"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -4092,7 +4197,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-102" class="anchor"><a class="heading-anchor" href="#platforms-102"><span></span></a>Platforms</h4>
+<h4 id="platforms-104" class="anchor"><a class="heading-anchor" href="#platforms-104"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -4127,7 +4232,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-103" class="anchor"><a class="heading-anchor" href="#platforms-103"><span></span></a>Platforms</h4>
+<h4 id="platforms-105" class="anchor"><a class="heading-anchor" href="#platforms-105"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -4174,7 +4279,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-104" class="anchor"><a class="heading-anchor" href="#platforms-104"><span></span></a>Platforms</h4>
+<h4 id="platforms-106" class="anchor"><a class="heading-anchor" href="#platforms-106"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -4194,7 +4299,7 @@
 
 <h4 id="description-88" class="anchor"><a class="heading-anchor" href="#description-88"><span></span></a>Description</h4>
 
-<p>Selects the illumination mode to use. Not currently supported on Android (illumination is always on).</p>
+<p>Selects the illumination mode to use.</p>
 
 <h4 id="values-10" class="anchor"><a class="heading-anchor" href="#values-10"><span></span></a>Values</h4>
 
@@ -4221,7 +4326,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-105" class="anchor"><a class="heading-anchor" href="#platforms-105"><span></span></a>Platforms</h4>
+<h4 id="platforms-107" class="anchor"><a class="heading-anchor" href="#platforms-107"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -4258,7 +4363,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-106" class="anchor"><a class="heading-anchor" href="#platforms-106"><span></span></a>Platforms</h4>
+<h4 id="platforms-108" class="anchor"><a class="heading-anchor" href="#platforms-108"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -4289,7 +4394,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-107" class="anchor"><a class="heading-anchor" href="#platforms-107"><span></span></a>Platforms</h4>
+<h4 id="platforms-109" class="anchor"><a class="heading-anchor" href="#platforms-109"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -4332,7 +4437,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-108" class="anchor"><a class="heading-anchor" href="#platforms-108"><span></span></a>Platforms</h4>
+<h4 id="platforms-110" class="anchor"><a class="heading-anchor" href="#platforms-110"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -4367,7 +4472,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-109" class="anchor"><a class="heading-anchor" href="#platforms-109"><span></span></a>Platforms</h4>
+<h4 id="platforms-111" class="anchor"><a class="heading-anchor" href="#platforms-111"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -4402,7 +4507,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-110" class="anchor"><a class="heading-anchor" href="#platforms-110"><span></span></a>Platforms</h4>
+<h4 id="platforms-112" class="anchor"><a class="heading-anchor" href="#platforms-112"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -4433,7 +4538,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-111" class="anchor"><a class="heading-anchor" href="#platforms-111"><span></span></a>Platforms</h4>
+<h4 id="platforms-113" class="anchor"><a class="heading-anchor" href="#platforms-113"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -4468,7 +4573,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-112" class="anchor"><a class="heading-anchor" href="#platforms-112"><span></span></a>Platforms</h4>
+<h4 id="platforms-114" class="anchor"><a class="heading-anchor" href="#platforms-114"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -4499,7 +4604,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-113" class="anchor"><a class="heading-anchor" href="#platforms-113"><span></span></a>Platforms</h4>
+<h4 id="platforms-115" class="anchor"><a class="heading-anchor" href="#platforms-115"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -4530,7 +4635,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-114" class="anchor"><a class="heading-anchor" href="#platforms-114"><span></span></a>Platforms</h4>
+<h4 id="platforms-116" class="anchor"><a class="heading-anchor" href="#platforms-116"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -4565,7 +4670,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-115" class="anchor"><a class="heading-anchor" href="#platforms-115"><span></span></a>Platforms</h4>
+<h4 id="platforms-117" class="anchor"><a class="heading-anchor" href="#platforms-117"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -4612,7 +4717,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-116" class="anchor"><a class="heading-anchor" href="#platforms-116"><span></span></a>Platforms</h4>
+<h4 id="platforms-118" class="anchor"><a class="heading-anchor" href="#platforms-118"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -4651,7 +4756,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-117" class="anchor"><a class="heading-anchor" href="#platforms-117"><span></span></a>Platforms</h4>
+<h4 id="platforms-119" class="anchor"><a class="heading-anchor" href="#platforms-119"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -4682,7 +4787,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-118" class="anchor"><a class="heading-anchor" href="#platforms-118"><span></span></a>Platforms</h4>
+<h4 id="platforms-120" class="anchor"><a class="heading-anchor" href="#platforms-120"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -4713,7 +4818,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-119" class="anchor"><a class="heading-anchor" href="#platforms-119"><span></span></a>Platforms</h4>
+<h4 id="platforms-121" class="anchor"><a class="heading-anchor" href="#platforms-121"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -4744,7 +4849,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-120" class="anchor"><a class="heading-anchor" href="#platforms-120"><span></span></a>Platforms</h4>
+<h4 id="platforms-122" class="anchor"><a class="heading-anchor" href="#platforms-122"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -4775,7 +4880,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-121" class="anchor"><a class="heading-anchor" href="#platforms-121"><span></span></a>Platforms</h4>
+<h4 id="platforms-123" class="anchor"><a class="heading-anchor" href="#platforms-123"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -4806,7 +4911,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-122" class="anchor"><a class="heading-anchor" href="#platforms-122"><span></span></a>Platforms</h4>
+<h4 id="platforms-124" class="anchor"><a class="heading-anchor" href="#platforms-124"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -4837,7 +4942,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-123" class="anchor"><a class="heading-anchor" href="#platforms-123"><span></span></a>Platforms</h4>
+<h4 id="platforms-125" class="anchor"><a class="heading-anchor" href="#platforms-125"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -4868,7 +4973,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-124" class="anchor"><a class="heading-anchor" href="#platforms-124"><span></span></a>Platforms</h4>
+<h4 id="platforms-126" class="anchor"><a class="heading-anchor" href="#platforms-126"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -4899,7 +5004,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-125" class="anchor"><a class="heading-anchor" href="#platforms-125"><span></span></a>Platforms</h4>
+<h4 id="platforms-127" class="anchor"><a class="heading-anchor" href="#platforms-127"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -4930,7 +5035,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-126" class="anchor"><a class="heading-anchor" href="#platforms-126"><span></span></a>Platforms</h4>
+<h4 id="platforms-128" class="anchor"><a class="heading-anchor" href="#platforms-128"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -4961,7 +5066,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-127" class="anchor"><a class="heading-anchor" href="#platforms-127"><span></span></a>Platforms</h4>
+<h4 id="platforms-129" class="anchor"><a class="heading-anchor" href="#platforms-129"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -4996,7 +5101,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-128" class="anchor"><a class="heading-anchor" href="#platforms-128"><span></span></a>Platforms</h4>
+<h4 id="platforms-130" class="anchor"><a class="heading-anchor" href="#platforms-130"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -5031,7 +5136,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-129" class="anchor"><a class="heading-anchor" href="#platforms-129"><span></span></a>Platforms</h4>
+<h4 id="platforms-131" class="anchor"><a class="heading-anchor" href="#platforms-131"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -5066,7 +5171,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-130" class="anchor"><a class="heading-anchor" href="#platforms-130"><span></span></a>Platforms</h4>
+<h4 id="platforms-132" class="anchor"><a class="heading-anchor" href="#platforms-132"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -5101,7 +5206,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-131" class="anchor"><a class="heading-anchor" href="#platforms-131"><span></span></a>Platforms</h4>
+<h4 id="platforms-133" class="anchor"><a class="heading-anchor" href="#platforms-133"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -5136,7 +5241,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-132" class="anchor"><a class="heading-anchor" href="#platforms-132"><span></span></a>Platforms</h4>
+<h4 id="platforms-134" class="anchor"><a class="heading-anchor" href="#platforms-134"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -5171,7 +5276,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-133" class="anchor"><a class="heading-anchor" href="#platforms-133"><span></span></a>Platforms</h4>
+<h4 id="platforms-135" class="anchor"><a class="heading-anchor" href="#platforms-135"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -5206,7 +5311,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-134" class="anchor"><a class="heading-anchor" href="#platforms-134"><span></span></a>Platforms</h4>
+<h4 id="platforms-136" class="anchor"><a class="heading-anchor" href="#platforms-136"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -5241,7 +5346,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-135" class="anchor"><a class="heading-anchor" href="#platforms-135"><span></span></a>Platforms</h4>
+<h4 id="platforms-137" class="anchor"><a class="heading-anchor" href="#platforms-137"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -5286,7 +5391,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-136" class="anchor"><a class="heading-anchor" href="#platforms-136"><span></span></a>Platforms</h4>
+<h4 id="platforms-138" class="anchor"><a class="heading-anchor" href="#platforms-138"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -5331,7 +5436,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-137" class="anchor"><a class="heading-anchor" href="#platforms-137"><span></span></a>Platforms</h4>
+<h4 id="platforms-139" class="anchor"><a class="heading-anchor" href="#platforms-139"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -5366,7 +5471,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-138" class="anchor"><a class="heading-anchor" href="#platforms-138"><span></span></a>Platforms</h4>
+<h4 id="platforms-140" class="anchor"><a class="heading-anchor" href="#platforms-140"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -5401,7 +5506,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-139" class="anchor"><a class="heading-anchor" href="#platforms-139"><span></span></a>Platforms</h4>
+<h4 id="platforms-141" class="anchor"><a class="heading-anchor" href="#platforms-141"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -5436,7 +5541,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-140" class="anchor"><a class="heading-anchor" href="#platforms-140"><span></span></a>Platforms</h4>
+<h4 id="platforms-142" class="anchor"><a class="heading-anchor" href="#platforms-142"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -5471,7 +5576,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-141" class="anchor"><a class="heading-anchor" href="#platforms-141"><span></span></a>Platforms</h4>
+<h4 id="platforms-143" class="anchor"><a class="heading-anchor" href="#platforms-143"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -5506,7 +5611,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-142" class="anchor"><a class="heading-anchor" href="#platforms-142"><span></span></a>Platforms</h4>
+<h4 id="platforms-144" class="anchor"><a class="heading-anchor" href="#platforms-144"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -5526,7 +5631,7 @@
 
 <h4 id="description-126" class="anchor"><a class="heading-anchor" href="#description-126"><span></span></a>Description</h4>
 
-<p>Allows the imager to decode only the barcode that is directly under the cross-hair / center of the reticle. This feature is most useful in applications where multiple barcodes may appear in the field of view during a decode session and only one of them is targeted for decode. When enabled picklistMode will override aimMode or, if no aiming is chosen, and use aimMode:reticle. This mode will also interact with viewfinderMode, see the EMDK for C help file for more information. Enabling picklist mode may adversely affect overall decoding performance.</p>
+<p>Allows the imager to decode only the barcode that is directly under the cross-hair on Android and center of the reticle on WM/CE. This feature is most useful in applications where multiple barcodes may appear in the field of view during a decode session and only one of them is targeted for decode. When enabled picklistMode will override aimMode or, if no aiming is chosen, and use aimMode:reticle. This mode will also interact with viewfinderMode, see the EMDK for C help file for more information. Enabling picklist mode may adversely affect overall decoding performance.</p>
 
 <h4 id="values-15" class="anchor"><a class="heading-anchor" href="#values-15"><span></span></a>Values</h4>
 
@@ -5537,7 +5642,7 @@
 
 <li>Constant: EB.Barcode.PICKLIST_HARDWARE_RETICLE - String: hardwareReticle Enables picklist mode so that only the barcode under the projected reticle can be decoded. On Windows, if the imager does not support a projected reticle then the behavior is the same as softwareReticle. On Android, this is only supported for Imager (non-viewfinder) based scanners.</li>
 
-<li>Constant: EB.Barcode.PICKLIST_SOFTWARE_RETICLE - String: softwareReticle Enables picklist mode so that only the barcode in the center of the image is decoded. This is most useful when used in conjunction with static and dynamic reticle viewfinder modes. This value is not supported on Android Platform.</li>
+<li>Constant: EB.Barcode.PICKLIST_SOFTWARE_RETICLE - String: softwareReticle Enables picklist mode so that only the barcode in the center of the image is decoded on WM/CE and under the cross-hair on Android. This is most useful when used in conjunction with static and dynamic reticle viewfinder modes.</li>
 </ul>
 
 <h4 id="access-126" class="anchor"><a class="heading-anchor" href="#access-126"><span></span></a>Access</h4>
@@ -5553,7 +5658,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-143" class="anchor"><a class="heading-anchor" href="#platforms-143"><span></span></a>Platforms</h4>
+<h4 id="platforms-145" class="anchor"><a class="heading-anchor" href="#platforms-145"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -5588,7 +5693,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-144" class="anchor"><a class="heading-anchor" href="#platforms-144"><span></span></a>Platforms</h4>
+<h4 id="platforms-146" class="anchor"><a class="heading-anchor" href="#platforms-146"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -5619,7 +5724,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-145" class="anchor"><a class="heading-anchor" href="#platforms-145"><span></span></a>Platforms</h4>
+<h4 id="platforms-147" class="anchor"><a class="heading-anchor" href="#platforms-147"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -5654,7 +5759,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-146" class="anchor"><a class="heading-anchor" href="#platforms-146"><span></span></a>Platforms</h4>
+<h4 id="platforms-148" class="anchor"><a class="heading-anchor" href="#platforms-148"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -5699,7 +5804,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-147" class="anchor"><a class="heading-anchor" href="#platforms-147"><span></span></a>Platforms</h4>
+<h4 id="platforms-149" class="anchor"><a class="heading-anchor" href="#platforms-149"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -5730,7 +5835,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-148" class="anchor"><a class="heading-anchor" href="#platforms-148"><span></span></a>Platforms</h4>
+<h4 id="platforms-150" class="anchor"><a class="heading-anchor" href="#platforms-150"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -5761,7 +5866,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-149" class="anchor"><a class="heading-anchor" href="#platforms-149"><span></span></a>Platforms</h4>
+<h4 id="platforms-151" class="anchor"><a class="heading-anchor" href="#platforms-151"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -5792,7 +5897,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-150" class="anchor"><a class="heading-anchor" href="#platforms-150"><span></span></a>Platforms</h4>
+<h4 id="platforms-152" class="anchor"><a class="heading-anchor" href="#platforms-152"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -5823,7 +5928,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-151" class="anchor"><a class="heading-anchor" href="#platforms-151"><span></span></a>Platforms</h4>
+<h4 id="platforms-153" class="anchor"><a class="heading-anchor" href="#platforms-153"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -5854,7 +5959,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-152" class="anchor"><a class="heading-anchor" href="#platforms-152"><span></span></a>Platforms</h4>
+<h4 id="platforms-154" class="anchor"><a class="heading-anchor" href="#platforms-154"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -5899,7 +6004,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-153" class="anchor"><a class="heading-anchor" href="#platforms-153"><span></span></a>Platforms</h4>
+<h4 id="platforms-155" class="anchor"><a class="heading-anchor" href="#platforms-155"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -5930,7 +6035,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-154" class="anchor"><a class="heading-anchor" href="#platforms-154"><span></span></a>Platforms</h4>
+<h4 id="platforms-156" class="anchor"><a class="heading-anchor" href="#platforms-156"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -5961,7 +6066,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-155" class="anchor"><a class="heading-anchor" href="#platforms-155"><span></span></a>Platforms</h4>
+<h4 id="platforms-157" class="anchor"><a class="heading-anchor" href="#platforms-157"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -5992,7 +6097,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-156" class="anchor"><a class="heading-anchor" href="#platforms-156"><span></span></a>Platforms</h4>
+<h4 id="platforms-158" class="anchor"><a class="heading-anchor" href="#platforms-158"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -6023,7 +6128,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-157" class="anchor"><a class="heading-anchor" href="#platforms-157"><span></span></a>Platforms</h4>
+<h4 id="platforms-159" class="anchor"><a class="heading-anchor" href="#platforms-159"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -6054,7 +6159,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-158" class="anchor"><a class="heading-anchor" href="#platforms-158"><span></span></a>Platforms</h4>
+<h4 id="platforms-160" class="anchor"><a class="heading-anchor" href="#platforms-160"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -6085,7 +6190,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-159" class="anchor"><a class="heading-anchor" href="#platforms-159"><span></span></a>Platforms</h4>
+<h4 id="platforms-161" class="anchor"><a class="heading-anchor" href="#platforms-161"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -6116,7 +6221,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-160" class="anchor"><a class="heading-anchor" href="#platforms-160"><span></span></a>Platforms</h4>
+<h4 id="platforms-162" class="anchor"><a class="heading-anchor" href="#platforms-162"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -6147,7 +6252,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-161" class="anchor"><a class="heading-anchor" href="#platforms-161"><span></span></a>Platforms</h4>
+<h4 id="platforms-163" class="anchor"><a class="heading-anchor" href="#platforms-163"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -6178,7 +6283,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-162" class="anchor"><a class="heading-anchor" href="#platforms-162"><span></span></a>Platforms</h4>
+<h4 id="platforms-164" class="anchor"><a class="heading-anchor" href="#platforms-164"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -6209,7 +6314,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-163" class="anchor"><a class="heading-anchor" href="#platforms-163"><span></span></a>Platforms</h4>
+<h4 id="platforms-165" class="anchor"><a class="heading-anchor" href="#platforms-165"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -6240,7 +6345,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-164" class="anchor"><a class="heading-anchor" href="#platforms-164"><span></span></a>Platforms</h4>
+<h4 id="platforms-166" class="anchor"><a class="heading-anchor" href="#platforms-166"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -6271,7 +6376,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-165" class="anchor"><a class="heading-anchor" href="#platforms-165"><span></span></a>Platforms</h4>
+<h4 id="platforms-167" class="anchor"><a class="heading-anchor" href="#platforms-167"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -6302,7 +6407,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-166" class="anchor"><a class="heading-anchor" href="#platforms-166"><span></span></a>Platforms</h4>
+<h4 id="platforms-168" class="anchor"><a class="heading-anchor" href="#platforms-168"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -6333,7 +6438,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-167" class="anchor"><a class="heading-anchor" href="#platforms-167"><span></span></a>Platforms</h4>
+<h4 id="platforms-169" class="anchor"><a class="heading-anchor" href="#platforms-169"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -6364,7 +6469,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-168" class="anchor"><a class="heading-anchor" href="#platforms-168"><span></span></a>Platforms</h4>
+<h4 id="platforms-170" class="anchor"><a class="heading-anchor" href="#platforms-170"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -6395,7 +6500,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-169" class="anchor"><a class="heading-anchor" href="#platforms-169"><span></span></a>Platforms</h4>
+<h4 id="platforms-171" class="anchor"><a class="heading-anchor" href="#platforms-171"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -6426,7 +6531,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-170" class="anchor"><a class="heading-anchor" href="#platforms-170"><span></span></a>Platforms</h4>
+<h4 id="platforms-172" class="anchor"><a class="heading-anchor" href="#platforms-172"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -6457,7 +6562,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-171" class="anchor"><a class="heading-anchor" href="#platforms-171"><span></span></a>Platforms</h4>
+<h4 id="platforms-173" class="anchor"><a class="heading-anchor" href="#platforms-173"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -6488,7 +6593,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-172" class="anchor"><a class="heading-anchor" href="#platforms-172"><span></span></a>Platforms</h4>
+<h4 id="platforms-174" class="anchor"><a class="heading-anchor" href="#platforms-174"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -6519,7 +6624,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-173" class="anchor"><a class="heading-anchor" href="#platforms-173"><span></span></a>Platforms</h4>
+<h4 id="platforms-175" class="anchor"><a class="heading-anchor" href="#platforms-175"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -6550,7 +6655,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-174" class="anchor"><a class="heading-anchor" href="#platforms-174"><span></span></a>Platforms</h4>
+<h4 id="platforms-176" class="anchor"><a class="heading-anchor" href="#platforms-176"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -6581,7 +6686,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-175" class="anchor"><a class="heading-anchor" href="#platforms-175"><span></span></a>Platforms</h4>
+<h4 id="platforms-177" class="anchor"><a class="heading-anchor" href="#platforms-177"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -6612,7 +6717,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-176" class="anchor"><a class="heading-anchor" href="#platforms-176"><span></span></a>Platforms</h4>
+<h4 id="platforms-178" class="anchor"><a class="heading-anchor" href="#platforms-178"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -6643,7 +6748,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-177" class="anchor"><a class="heading-anchor" href="#platforms-177"><span></span></a>Platforms</h4>
+<h4 id="platforms-179" class="anchor"><a class="heading-anchor" href="#platforms-179"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -6674,7 +6779,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-178" class="anchor"><a class="heading-anchor" href="#platforms-178"><span></span></a>Platforms</h4>
+<h4 id="platforms-180" class="anchor"><a class="heading-anchor" href="#platforms-180"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -6705,7 +6810,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-179" class="anchor"><a class="heading-anchor" href="#platforms-179"><span></span></a>Platforms</h4>
+<h4 id="platforms-181" class="anchor"><a class="heading-anchor" href="#platforms-181"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -6736,7 +6841,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-180" class="anchor"><a class="heading-anchor" href="#platforms-180"><span></span></a>Platforms</h4>
+<h4 id="platforms-182" class="anchor"><a class="heading-anchor" href="#platforms-182"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -6767,7 +6872,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-181" class="anchor"><a class="heading-anchor" href="#platforms-181"><span></span></a>Platforms</h4>
+<h4 id="platforms-183" class="anchor"><a class="heading-anchor" href="#platforms-183"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -6798,7 +6903,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-182" class="anchor"><a class="heading-anchor" href="#platforms-182"><span></span></a>Platforms</h4>
+<h4 id="platforms-184" class="anchor"><a class="heading-anchor" href="#platforms-184"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -6829,7 +6934,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-183" class="anchor"><a class="heading-anchor" href="#platforms-183"><span></span></a>Platforms</h4>
+<h4 id="platforms-185" class="anchor"><a class="heading-anchor" href="#platforms-185"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -6864,7 +6969,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-184" class="anchor"><a class="heading-anchor" href="#platforms-184"><span></span></a>Platforms</h4>
+<h4 id="platforms-186" class="anchor"><a class="heading-anchor" href="#platforms-186"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -6897,7 +7002,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-185" class="anchor"><a class="heading-anchor" href="#platforms-185"><span></span></a>Platforms</h4>
+<h4 id="platforms-187" class="anchor"><a class="heading-anchor" href="#platforms-187"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -6932,7 +7037,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-186" class="anchor"><a class="heading-anchor" href="#platforms-186"><span></span></a>Platforms</h4>
+<h4 id="platforms-188" class="anchor"><a class="heading-anchor" href="#platforms-188"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -6963,7 +7068,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-187" class="anchor"><a class="heading-anchor" href="#platforms-187"><span></span></a>Platforms</h4>
+<h4 id="platforms-189" class="anchor"><a class="heading-anchor" href="#platforms-189"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -6994,7 +7099,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-188" class="anchor"><a class="heading-anchor" href="#platforms-188"><span></span></a>Platforms</h4>
+<h4 id="platforms-190" class="anchor"><a class="heading-anchor" href="#platforms-190"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -7025,7 +7130,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-189" class="anchor"><a class="heading-anchor" href="#platforms-189"><span></span></a>Platforms</h4>
+<h4 id="platforms-191" class="anchor"><a class="heading-anchor" href="#platforms-191"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -7056,7 +7161,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-190" class="anchor"><a class="heading-anchor" href="#platforms-190"><span></span></a>Platforms</h4>
+<h4 id="platforms-192" class="anchor"><a class="heading-anchor" href="#platforms-192"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -7095,7 +7200,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-191" class="anchor"><a class="heading-anchor" href="#platforms-191"><span></span></a>Platforms</h4>
+<h4 id="platforms-193" class="anchor"><a class="heading-anchor" href="#platforms-193"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -7126,7 +7231,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-192" class="anchor"><a class="heading-anchor" href="#platforms-192"><span></span></a>Platforms</h4>
+<h4 id="platforms-194" class="anchor"><a class="heading-anchor" href="#platforms-194"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -7161,7 +7266,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-193" class="anchor"><a class="heading-anchor" href="#platforms-193"><span></span></a>Platforms</h4>
+<h4 id="platforms-195" class="anchor"><a class="heading-anchor" href="#platforms-195"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -7196,7 +7301,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-194" class="anchor"><a class="heading-anchor" href="#platforms-194"><span></span></a>Platforms</h4>
+<h4 id="platforms-196" class="anchor"><a class="heading-anchor" href="#platforms-196"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -7231,7 +7336,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-195" class="anchor"><a class="heading-anchor" href="#platforms-195"><span></span></a>Platforms</h4>
+<h4 id="platforms-197" class="anchor"><a class="heading-anchor" href="#platforms-197"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -7262,7 +7367,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-196" class="anchor"><a class="heading-anchor" href="#platforms-196"><span></span></a>Platforms</h4>
+<h4 id="platforms-198" class="anchor"><a class="heading-anchor" href="#platforms-198"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -7307,7 +7412,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-197" class="anchor"><a class="heading-anchor" href="#platforms-197"><span></span></a>Platforms</h4>
+<h4 id="platforms-199" class="anchor"><a class="heading-anchor" href="#platforms-199"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -7342,7 +7447,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-198" class="anchor"><a class="heading-anchor" href="#platforms-198"><span></span></a>Platforms</h4>
+<h4 id="platforms-200" class="anchor"><a class="heading-anchor" href="#platforms-200"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -7377,7 +7482,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-199" class="anchor"><a class="heading-anchor" href="#platforms-199"><span></span></a>Platforms</h4>
+<h4 id="platforms-201" class="anchor"><a class="heading-anchor" href="#platforms-201"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -7412,7 +7517,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-200" class="anchor"><a class="heading-anchor" href="#platforms-200"><span></span></a>Platforms</h4>
+<h4 id="platforms-202" class="anchor"><a class="heading-anchor" href="#platforms-202"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -7447,7 +7552,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-201" class="anchor"><a class="heading-anchor" href="#platforms-201"><span></span></a>Platforms</h4>
+<h4 id="platforms-203" class="anchor"><a class="heading-anchor" href="#platforms-203"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -7482,7 +7587,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-202" class="anchor"><a class="heading-anchor" href="#platforms-202"><span></span></a>Platforms</h4>
+<h4 id="platforms-204" class="anchor"><a class="heading-anchor" href="#platforms-204"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -7517,7 +7622,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-203" class="anchor"><a class="heading-anchor" href="#platforms-203"><span></span></a>Platforms</h4>
+<h4 id="platforms-205" class="anchor"><a class="heading-anchor" href="#platforms-205"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -7552,7 +7657,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-204" class="anchor"><a class="heading-anchor" href="#platforms-204"><span></span></a>Platforms</h4>
+<h4 id="platforms-206" class="anchor"><a class="heading-anchor" href="#platforms-206"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -7587,7 +7692,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-205" class="anchor"><a class="heading-anchor" href="#platforms-205"><span></span></a>Platforms</h4>
+<h4 id="platforms-207" class="anchor"><a class="heading-anchor" href="#platforms-207"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -7642,7 +7747,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-206" class="anchor"><a class="heading-anchor" href="#platforms-206"><span></span></a>Platforms</h4>
+<h4 id="platforms-208" class="anchor"><a class="heading-anchor" href="#platforms-208"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -7677,7 +7782,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-207" class="anchor"><a class="heading-anchor" href="#platforms-207"><span></span></a>Platforms</h4>
+<h4 id="platforms-209" class="anchor"><a class="heading-anchor" href="#platforms-209"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -7724,7 +7829,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-208" class="anchor"><a class="heading-anchor" href="#platforms-208"><span></span></a>Platforms</h4>
+<h4 id="platforms-210" class="anchor"><a class="heading-anchor" href="#platforms-210"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -7759,7 +7864,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-209" class="anchor"><a class="heading-anchor" href="#platforms-209"><span></span></a>Platforms</h4>
+<h4 id="platforms-211" class="anchor"><a class="heading-anchor" href="#platforms-211"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -7794,7 +7899,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-210" class="anchor"><a class="heading-anchor" href="#platforms-210"><span></span></a>Platforms</h4>
+<h4 id="platforms-212" class="anchor"><a class="heading-anchor" href="#platforms-212"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -7829,7 +7934,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-211" class="anchor"><a class="heading-anchor" href="#platforms-211"><span></span></a>Platforms</h4>
+<h4 id="platforms-213" class="anchor"><a class="heading-anchor" href="#platforms-213"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -7876,7 +7981,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-212" class="anchor"><a class="heading-anchor" href="#platforms-212"><span></span></a>Platforms</h4>
+<h4 id="platforms-214" class="anchor"><a class="heading-anchor" href="#platforms-214"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -7911,7 +8016,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-213" class="anchor"><a class="heading-anchor" href="#platforms-213"><span></span></a>Platforms</h4>
+<h4 id="platforms-215" class="anchor"><a class="heading-anchor" href="#platforms-215"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -7946,7 +8051,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-214" class="anchor"><a class="heading-anchor" href="#platforms-214"><span></span></a>Platforms</h4>
+<h4 id="platforms-216" class="anchor"><a class="heading-anchor" href="#platforms-216"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -7981,7 +8086,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-215" class="anchor"><a class="heading-anchor" href="#platforms-215"><span></span></a>Platforms</h4>
+<h4 id="platforms-217" class="anchor"><a class="heading-anchor" href="#platforms-217"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -8028,7 +8133,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-216" class="anchor"><a class="heading-anchor" href="#platforms-216"><span></span></a>Platforms</h4>
+<h4 id="platforms-218" class="anchor"><a class="heading-anchor" href="#platforms-218"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -8063,7 +8168,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-217" class="anchor"><a class="heading-anchor" href="#platforms-217"><span></span></a>Platforms</h4>
+<h4 id="platforms-219" class="anchor"><a class="heading-anchor" href="#platforms-219"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -8098,7 +8203,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-218" class="anchor"><a class="heading-anchor" href="#platforms-218"><span></span></a>Platforms</h4>
+<h4 id="platforms-220" class="anchor"><a class="heading-anchor" href="#platforms-220"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -8133,7 +8238,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-219" class="anchor"><a class="heading-anchor" href="#platforms-219"><span></span></a>Platforms</h4>
+<h4 id="platforms-221" class="anchor"><a class="heading-anchor" href="#platforms-221"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -8168,7 +8273,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-220" class="anchor"><a class="heading-anchor" href="#platforms-220"><span></span></a>Platforms</h4>
+<h4 id="platforms-222" class="anchor"><a class="heading-anchor" href="#platforms-222"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -8203,7 +8308,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-221" class="anchor"><a class="heading-anchor" href="#platforms-221"><span></span></a>Platforms</h4>
+<h4 id="platforms-223" class="anchor"><a class="heading-anchor" href="#platforms-223"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -8234,7 +8339,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-222" class="anchor"><a class="heading-anchor" href="#platforms-222"><span></span></a>Platforms</h4>
+<h4 id="platforms-224" class="anchor"><a class="heading-anchor" href="#platforms-224"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -8269,7 +8374,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-223" class="anchor"><a class="heading-anchor" href="#platforms-223"><span></span></a>Platforms</h4>
+<h4 id="platforms-225" class="anchor"><a class="heading-anchor" href="#platforms-225"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -8312,7 +8417,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-224" class="anchor"><a class="heading-anchor" href="#platforms-224"><span></span></a>Platforms</h4>
+<h4 id="platforms-226" class="anchor"><a class="heading-anchor" href="#platforms-226"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -8347,7 +8452,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-225" class="anchor"><a class="heading-anchor" href="#platforms-225"><span></span></a>Platforms</h4>
+<h4 id="platforms-227" class="anchor"><a class="heading-anchor" href="#platforms-227"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -8382,7 +8487,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-226" class="anchor"><a class="heading-anchor" href="#platforms-226"><span></span></a>Platforms</h4>
+<h4 id="platforms-228" class="anchor"><a class="heading-anchor" href="#platforms-228"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -8427,7 +8532,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-227" class="anchor"><a class="heading-anchor" href="#platforms-227"><span></span></a>Platforms</h4>
+<h4 id="platforms-229" class="anchor"><a class="heading-anchor" href="#platforms-229"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -8462,7 +8567,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-228" class="anchor"><a class="heading-anchor" href="#platforms-228"><span></span></a>Platforms</h4>
+<h4 id="platforms-230" class="anchor"><a class="heading-anchor" href="#platforms-230"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -8493,7 +8598,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-229" class="anchor"><a class="heading-anchor" href="#platforms-229"><span></span></a>Platforms</h4>
+<h4 id="platforms-231" class="anchor"><a class="heading-anchor" href="#platforms-231"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -8524,7 +8629,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-230" class="anchor"><a class="heading-anchor" href="#platforms-230"><span></span></a>Platforms</h4>
+<h4 id="platforms-232" class="anchor"><a class="heading-anchor" href="#platforms-232"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Windows Mobile</li>
@@ -8555,7 +8660,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-231" class="anchor"><a class="heading-anchor" href="#platforms-231"><span></span></a>Platforms</h4>
+<h4 id="platforms-233" class="anchor"><a class="heading-anchor" href="#platforms-233"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -8590,7 +8695,7 @@
 </li>
 </ul>
 
-<h4 id="platforms-232" class="anchor"><a class="heading-anchor" href="#platforms-232"><span></span></a>Platforms</h4>
+<h4 id="platforms-234" class="anchor"><a class="heading-anchor" href="#platforms-234"><span></span></a>Platforms</h4>
 
 <ul>
 <li>Android</li>
@@ -8629,6 +8734,12 @@ a period of time once it regains power or goes out of range, if it fails to reco
 timeout the reconnect button on the device should be pushed. Once the unpairing barcode is scanned
 it is necessary to disable the scanner and then re-enable it before another scanner can be associated.</p>
 
+<h3 id="bluetoothscannersupportonandroiddevices" class="anchor"><a class="heading-anchor" href="#bluetoothscannersupportonandroiddevices"><span></span></a>Bluetooth Scanner Support On Android Devices</h3>
+
+<p>On Android platform, Enterprise Browser doesnot support Bluetooth Scanner on TC70 GA1 device. </p>
+
+<p>On Android platform, Enterprise Browser supports Bluetooth Scanner from Android Kitkat version and above.</p>
+
 <h3 id="viewfinderpositionparameters" class="anchor"><a class="heading-anchor" href="#viewfinderpositionparameters"><span></span></a>Viewfinder Position Parameters</h3>
 
 <p>On Symbol Technologies' scanners the scanner viewfinder window is not infinitely resizable, when setting ViewFinderX, ViewFinderY, ViewFinderWidth and ViewFinderHeight ensure you do not exceed the size of the screen and it is recommended to use the same aspect ratio as your device. For applications designed to handle screen rotation it is recommended to use a scan window whose longest side will fit within both the screen width and screen height. If your viewfinder position fails to be applied it is recommended you query your log file to see which parameter is causing trouble, or reposition the window away from the edges of the screen.</p>
@@ -8648,6 +8759,14 @@ it is necessary to disable the scanner and then re-enable it before another scan
 <h3 id="androidcamerabarcodelimitation" class="anchor"><a class="heading-anchor" href="#androidcamerabarcodelimitation"><span></span></a>Android Camera Barcode limitation</h3>
 
 <p>As google barcode scanning library(Zxing library) supported only in Landscape mode. Barcode scanning window only appears at centre of screen in Landscape mode.</p>
+
+<h3 id="deviceslackingsupport" class="anchor"><a class="heading-anchor" href="#deviceslackingsupport"><span></span></a>Devices lacking support</h3>
+
+<p>Due to platform limitations this API is not available on the following Zebra Technologies devices on specific platform.  Note: However one can enable legacy scanner service and can scan the respective barcode.</p>
+
+<ul>
+<li>VH10 CE 6.0</li>
+</ul>
 
 <h2 id="examples" class="anchor"><a class="heading-anchor" href="#examples"><span></span></a>Examples</h2>
 

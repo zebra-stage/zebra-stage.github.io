@@ -107,6 +107,11 @@
                             </a>
                         </li>
                         <li>
+                            <a href="/enterprise-browser/1-5/guide/configreference">
+                                    Config.xml
+                            </a>
+                        </li>
+                        <li>
                             <a href="/enterprise-browser/1-5/api">
                                     APIs
                             </a>
@@ -242,17 +247,15 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>Keycodes are constants that uniquely identify the ASCII values of device keypresses (hard or soft). The keycodes for keys with multiple values (such as upper and lower case) are accessed with the shift or other modifier key and in some cases cannot be captured. Enterprise Browser 1.5 permits Android keycode values to be assigned from a file when an Enterprise Browser app starts up.</p>
+<p>Keycodes are constants that uniquely identify the ASCII values of device keypresses (hard or soft). Android apps made with Enterprise Browser 1.4 and higher permit Android keycode values to be assigned from a file when an Enterprise Browser app starts up. <strong>Note</strong>: The keycodes for keys with multiple values accessed with the shift or other modifier key (such as upper and lower case) might not be capturable. See the <a href="../../api/keycapture/#remarks">KeyCapture API remarks</a> for more information. </p>
 
-<blockquote>
-  <p><strong>Note</strong>: This guide applies only to Android.</p>
-</blockquote>
+<p><strong>Mapping Windows Mobile function keys</strong> is possible only for Zebra Psion devices running apps made with Enterprise Browser 1.5 or higher. See the <a href="#mappingpsionfunctionkeys">Mapping Psion Function Keys</a> section below. </p>
 
-<h3 id="keycodehandling" class="anchor"><a class="heading-anchor" href="#keycodehandling"><span></span></a>Keycode Handling</h3>
+<h3 id="androidkeycodehandling" class="anchor"><a class="heading-anchor" href="#androidkeycodehandling"><span></span></a>Android Keycode Handling</h3>
 
 <p>On Android devices, the keycode values of certain keys are sometimes not returned as expected or desired. To ensure control and accuracy of key presses, the desired keycode value(s) can be assigned through the current <a href="../../api/keycapture">KeyCapture 4.x API</a> as well as legacy 2.x versions. The steps in thie guide apply to all API versions. </p>
 
-<p>The following facts apply generally to keycode mapping for Enterprise Browser: </p>
+<p>The following facts apply generally to Android keycode mapping for Enterprise Browser: </p>
 
 <ul>
 <li>Keycode mapping <strong>requires Enterprise Browser 1.4</strong> or higher.</li>
@@ -269,10 +272,10 @@
 
 <li>Keycodes not mapped (or left blank in the mapping file) retain their default values. </li>
 
-<li><a href="../../api/keycapture?Remarks">Additional restrictions</a> apply to keycapture and keycode mapping. </li>
+<li><a href="../../api/keycapture/#remarks">Additional restrictions</a> apply to keycapture and keycode mapping. </li>
 </ul>
 
-<h2 id="mappingkeycodes" class="anchor"><a class="heading-anchor" href="#mappingkeycodes"><span></span></a>Mapping Keycodes</h2>
+<h2 id="mappingandroidkeycodes" class="anchor"><a class="heading-anchor" href="#mappingandroidkeycodes"><span></span></a>Mapping Android Keycodes</h2>
 
 <p>To assign custom keycodes to Android hard or soft keys, follow these simple steps:  </p>
 
@@ -394,7 +397,163 @@ This is usually the <code>sdcard0/android/data/com.symbol.enterprisebrowser</cod
 <li><strong><a href="../../api/keycapture/#remarks">Keys that cannot be captured</a> -</strong> including the SHIFT and ALT keys </li>
 
 <li><strong><a href="http://developer.android.com/reference/android/view/KeyEvent.html">Android KeyEvents documentation</a> -</strong> the official list of Android key names</li>
-</ul><p></p>
+</ul>
+
+<hr>
+
+<h2 id="mappingpsionfunctionkeys" class="anchor"><a class="heading-anchor" href="#mappingpsionfunctionkeys"><span></span></a>Mapping Psion Function Keys</h2>
+
+<p>The function keys of Zebra's Psion devices running Windows Mobile return a proprietary set of Unicode values in their <code>keydown/keyup</code> messages rather than the values generally expected on other devices running Windows. For example, pressing the F1 key returns the hexadecimal value E001 (57345 decimal) rather than the hex value 0x70 (112 decimal) as generally expected. This can lead to compatibility issues for Enterprise Browser apps when Microsoft virtual keycode values will be called from some devices and Psion-proprietary values on others. </p>
+
+<p>For such scenarios, Zebra developed and recommends a means of mapping the Psion proprietary Unicode values of function keys used by an Enterprise Browser application to Microsoft virtual keycode values. </p>
+
+<h3 id="enableandspecifymapping" class="anchor"><a class="heading-anchor" href="#enableandspecifymapping"><span></span></a>Enable and specify mapping</h3>
+
+<p>Mapping the function keys on a Psion device requires adding a few lines to the app's <code>Config.xml</code> file, creating a file to specify the mapping assignments and copying the file to the device. </p>
+
+<p><strong>To map Psion function keys</strong>: </p>
+
+<p><strong>1. Add the three code lines shown below to the app's</strong> <code>Config.xml</code> <strong>file</strong> as a child of the &lt;Configuration&gt; parent node:</p>
+
+<pre class="prettyprint"><code>
+&lt;Configuration&gt; 
+    ...
+   // Copy the three lines below:
+
+   &lt;FunctionKeyMapping&gt; 
+     &lt;FunctionKeyMappingToStandardMSValue value="1"/&gt; 
+   &lt;/FunctionKeyMapping&gt;   
+
+   // and paste them into the "Configuration" node 
+   // of the app's Config.xml file
+
+&lt;/Configuration&gt;
+</code></pre>
+
+<p><strong>2. Create a file called</strong> <code>EBFunctionKeyMapping.xml</code>, and using one of the templates below, specify the Psion function key(s) to be mapped to Microsoft virtual keycode values. </p>
+
+<h4 id="template1mapasinglefunctionkey" class="anchor"><a class="heading-anchor" href="#template1mapasinglefunctionkey"><span></span></a>Template 1- Map a Single Function Key</h4>
+
+<p>Use this template to map a single function key to a specific Microsoft keycode value. For example, to map the F1 key to a Microsoft virtual keycode, specify the Psion proprietary Unicode value in hexadecimal (0xE001) first, followed by the Microsoft virtual keycode value in hexadecimal (0x70) as shown below: </p>
+
+<pre class="prettyprint"><code>
+&lt;FUNCTION_KEY_MAPPING_TO_STANDARD_MS_VALUE&gt; 
+    &lt;SET_FUNCTION_KEY_TO_STANDARD_MS_VALUE  IF_CHAR_VALUE="0xE001" SEND_KEYDOWN_VALUE="0x70"/&gt; 
+&lt;/FUNCTION_KEY_MAPPING_TO_STANDARD_MS_VALUE&gt;
+</code></pre>
+
+<p><br></p>
+
+<h4 id="template2mapmultiplefunctionkeys" class="anchor"><a class="heading-anchor" href="#template2mapmultiplefunctionkeys"><span></span></a>Template 2- Map Multiple Function Keys</h4>
+
+<p>To map multiple function key to Microsoft keycode values, simply repeat the <code>SET_FUNCTION_KEY_TO_STANDARD_MS_VALUE</code> (child tag) statements above within the <code>FUNCTION_KEY_MAPPING_TO_STANDARD_MS_VALUE</code> root tag. The example below maps the F1 through F5 function keys: </p>
+
+<pre class="prettyprint"><code>
+&lt;FUNCTION_KEY_MAPPING_TO_STANDARD_MS_VALUE&gt; 
+   &lt;SET_FUNCTION_KEY_TO_STANDARD_MS_VALUE  IF_CHAR_VALUE="0xE001" SEND_KEYDOWN_VALUE="0x70"/&gt; 
+   &lt;SET_FUNCTION_KEY_TO_STANDARD_MS_VALUE  IF_CHAR_VALUE="0xE002" SEND_KEYDOWN_VALUE="0x71"/&gt; 
+   &lt;SET_FUNCTION_KEY_TO_STANDARD_MS_VALUE  IF_CHAR_VALUE="0xE003" SEND_KEYDOWN_VALUE="0x72"/&gt; 
+   &lt;SET_FUNCTION_KEY_TO_STANDARD_MS_VALUE  IF_CHAR_VALUE="0xE004" SEND_KEYDOWN_VALUE="0x73"/&gt; 
+   &lt;SET_FUNCTION_KEY_TO_STANDARD_MS_VALUE  IF_CHAR_VALUE="0xE005" SEND_KEYDOWN_VALUE="0x74"/&gt; 
+&lt;/FUNCTION_KEY_MAPPING_TO_STANDARD_MS_VALUE&gt;
+</code></pre>
+
+<p>3. Once the <code>EBFunctionKeyMapping.xml</code> mapping file is complete, <strong>copy the file to the</strong> <code>\Program Files\EnterpriseBrowser\</code> <strong>directory on the device</strong>.  </p>
+
+<blockquote>
+  <p>The function key(s) will be mapped as specified in the mapping file the next time Enterprise Browser is launched. </p>
+</blockquote>
+
+<h4 id="contentsofthefunctionkeymappingfile" class="anchor"><a class="heading-anchor" href="#contentsofthefunctionkeymappingfile"><span></span></a>Contents of the Function Key Mapping File</h4>
+
+<ul>
+<li><strong>FUNCTION_KEY_MAPPING_TO_STANDARD_MS_VALUE –</strong> the root tag</li>
+
+<li><strong>SET_FUNCTION_KEY_TO_STANDARD_MS_VALUE -</strong> the child tag associated with the root tag</li>
+
+<li><strong>IF_CHAR_VALUE -</strong> sets the Psion proprietary Unicode value</li>
+
+<li><strong>SEND_KEYDOWN_VALUE -</strong> sets the Microsoft virtual keyCode value </li>
+</ul>
+
+<p>The set value is used internally by Enterprise Browser applications for mapping purposes whenever any function key is pressed.</p>
+
+<p>On Zebra - Psion WM device, when EnterpriseBrowser application is running in foreground, on pressing any function key, if the value of windows character message matches with anyone of the set value of IF_CHAR_VALUE attributes which is provided in EBFunctionKeyMapping.xml file, then the set value of the associated SEND_KEYDOWN_VALUE attribute is mapped and sent to windows keydown message internally in our EnterpriseBrowser application for recieving Microsoft virtual keyCode value instead of Psion proprietary Unicode value.</p>
+
+<p><strong>Notes</strong>:</p>
+
+<ul>
+<li>Maximum number of child tags is 65.</li>
+
+<li>Psion function key mapping is supported on Enterprise Browser 1.5 a later.</li>
+
+<li>Psion function key mapping applies only to Zebra Psion devices running Windows Mobile, including WorkAbout Pro 4 and Omnii XT15 (with Windows Embedded Handheld 6.5).</li>
+
+<li>The format of EBFunctionKeyMapping.xml file should not be altered. </li>
+
+<li>Use the table below for Psion and Microsoft keycode values for function keys F1 to F24.</li>
+</ul>
+
+<table style="color: #333333; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; font-size: 16px; margin-bottom: 0 !important;">
+<thead>
+<tr style="border-top-width: 1px; border-top-color: #cccccc;"><th align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;font-weight: bold;padding: 6px 13px;">Function Keys</th>
+<th align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;font-weight: bold;padding: 6px 13px;">Psion Proprietary Unicode Value</th>
+<th align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;font-weight: bold;padding: 6px 13px;">Microsoft Virtual Keycode Value</th>
+</tr>
+</thead>
+<tbody>
+<tr style="border-top-width: 1px; border-top-color: #cccccc;">
+<td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">F1</td>
+<td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0xE001</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0x70</td>
+</tr>
+<tr style="border-top-width: 1px; border-top-color: #cccccc; background-color: #f8f8f8;"><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">F2</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0xE002</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0x71</td>
+</tr>
+<tr style="border-top-width: 1px; border-top-color: #cccccc;"><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">F3</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0xE003</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0x72</td>
+</tr>
+<tr style="border-top-width: 1px; border-top-color: #cccccc; background-color: #f8f8f8;"><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">F4</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0xE004</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0x73</td>
+</tr>
+<tr style="border-top-width: 1px; border-top-color: #cccccc;"><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">F5</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0xE005</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0x74</td>
+</tr>
+<tr style="border-top-width: 1px; border-top-color: #cccccc; background-color: #f8f8f8;"><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">F6</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0xE006</td>
+<td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0x75</td>
+</tr>
+<tr style="border-top-width: 1px; border-top-color: #cccccc;"><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">F7</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0xE007</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0x76</td>
+</tr>
+<tr style="border-top-width: 1px; border-top-color: #cccccc; background-color: #f8f8f8;"><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">F8</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0xE008</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0x77</td>
+</tr>
+<tr style="border-top-width: 1px; border-top-color: #cccccc;"><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">F9</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0xE009</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0x78</td>
+</tr>
+<tr style="border-top-width: 1px; border-top-color: #cccccc; background-color: #f8f8f8;"><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">F10</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0xE00A</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0x79</td>
+</tr>
+<tr style="border-top-width: 1px; border-top-color: #cccccc;"><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">F11</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0xE00B</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0x7A</td>
+</tr>
+<tr style="border-top-width: 1px; border-top-color: #cccccc; background-color: #f8f8f8;"><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">F12</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0xE00C</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0x7B</td>
+</tr>
+<tr style="border-top-width: 1px; border-top-color: #cccccc;"><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">F13</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0xE00D</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0x7C</td>
+</tr>
+<tr style="border-top-width: 1px; border-top-color: #cccccc; background-color: #f8f8f8;"><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">F14</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0xE00E</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0x7D</td>
+</tr>
+<tr style="border-top-width: 1px; border-top-color: #cccccc;"><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">F15</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0xE00F</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0x7E</td>
+</tr>
+<tr style="border-top-width: 1px; border-top-color: #cccccc; background-color: #f8f8f8;"><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">F16</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0xE010</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0x7F</td>
+</tr>
+<tr style="border-top-width: 1px; border-top-color: #cccccc;"><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">F17</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0xE011</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0x80</td>
+</tr>
+<tr style="border-top-width: 1px; border-top-color: #cccccc; background-color: #f8f8f8;"><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">F18</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0xE012</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0x81</td>
+</tr>
+<tr style="border-top-width: 1px; border-top-color: #cccccc;"><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">F19</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0xE013</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0x82</td>
+</tr>
+<tr style="border-top-width: 1px; border-top-color: #cccccc; background-color: #f8f8f8;"><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">F20</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0xE014</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0x83</td>
+</tr>
+<tr style="border-top-width: 1px; border-top-color: #cccccc;"><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">F21</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0xE015</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0x84</td>
+</tr>
+<tr style="border-top-width: 1px; border-top-color: #cccccc; background-color: #f8f8f8;"><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">F22</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0xE016</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0x85</td>
+</tr>
+<tr style="border-top-width: 1px; border-top-color: #cccccc;"><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">F23</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0xE017</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0x86</td>
+</tr>
+<tr style="border-top-width: 1px; border-top-color: #cccccc; background-color: #f8f8f8;"><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">F24</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0xE018</td><td align="center" style="border-top-color: #cccccc;border-top-width: 1px;border: 1px solid #dddddd;padding: 6px 13px;">0x87</td>
+</tr>
+</tbody></table><p></p>
                                         
 
 
