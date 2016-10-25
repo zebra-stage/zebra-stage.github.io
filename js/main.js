@@ -74,6 +74,58 @@ jQuery(function($) {'use strict';
 	$(document).ready(function() {
 		// make all images use img-responsove class from bootstrap
 		$('img').addClass('img-responsive');
+
+		// replace hrefs for certain docs
+		$('a').each(function() {
+		    var href = $(this).attr('href');
+		    
+		    if (href && href.startsWith("/emdk-for-android/6-0/api")) {
+		    	console.log("Changing: " + href);
+		    	var section = href.replace("/emdk-for-android/6-0/api/","");
+		    	var param = "";
+		    	if( section.startsWith("core/EMDKBase"))
+		    		param = "/?com/symbol/emdk/EMDKBase.html"
+		    	if( section.startsWith("core/EMDKManager"))
+		    		param = "/?com/symbol/emdk/EMDKManager.html"
+		    	if( section.startsWith("core/EMDKResults"))
+		    		param = "/?com/symbol/emdk/EMDKResults.html"
+		    	if( section.startsWith("core/ProfileConfig"))
+		    		param = "/?com/symbol/emdk/ProfileConfig.html"
+		    	if( section.startsWith("core/ProfileManager"))
+		    		param = "/?com/symbol/emdk/ProfileManager.html"
+		    	if( section.startsWith("core/VersionManager"))
+		    		param = "/?com/symbol/emdk/VersionManager.html"
+		    	if( section.startsWith("barcode/BarcodeManager"))
+		    		param = "/?com/symbol/emdk/barcode/BarcodeManager.html"
+		    	if( section.startsWith("barcode/InterfaceConfig"))
+		    		param = "/?com/symbol/emdk/barcode/InterfaceConfig.html"
+		    	if( section.startsWith("barcode/ScanDataCollection"))
+		    		param = "/?com/symbol/emdk/barcode/ScanDataCollection.html"
+		    	if( section.startsWith("barcode/Scanner"))
+		    		param = "/?com/symbol/emdk/barcode/Scanner.html"
+		    	if( section.startsWith("barcode/ScannerConfig"))
+		    		param = "/?com/symbol/emdk/barcode/ScannerConfig.html"
+		    	if( section.startsWith("barcode/ScannerInfo"))
+		    		param = "/?com/symbol/emdk/barcode/ScannerInfo.html"
+		    	if( section.startsWith("barcode/StatusData"))
+		    		param = "/?com/symbol/emdk/barcode/StatusData.html"
+		    	if( section.startsWith("notification"))
+		    		param = "/?com/symbol/emdk/notification/package-summary.html"
+		    	if( section.startsWith("payment"))
+		    		param = "/?com/symbol/emdk/payment/package-summary.html"
+		    	if( section.startsWith("personalshopper"))
+		    		param = "/?com/symbol/emdk/personalshopper/package-summary.html"
+		    	if( section.startsWith("scanandpair"))
+		    		param = "/?com/symbol/emdk/scanandpair/package-summary.html"
+		    	if( section.startsWith("serialcomm"))
+		    		param = "/?com/symbol/emdk/serialcomm/package-summary.html"
+		    	if( section.startsWith("simulscan"))
+		    		param = "/?com/symbol/emdk/simulscan/package-summary.html"
+		        href = "/emdk-for-android/6-0/api" + param;
+		        $(this).attr('href', href);
+		    }
+		});		
+
 		
 		//youtube enable images with special alt-tag
 		var imgTags = $("#mainContent").find('img').each(function( index ) {
