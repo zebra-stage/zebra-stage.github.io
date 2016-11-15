@@ -7,8 +7,8 @@
     <meta name="author" content="Zebra Technologies">
     <meta name="google-site-verification" content="i4B78BrWnNy8ShJwe5feRW3jO3HE6gfYlYqYbxfl8yY">
     <meta name="msvalidate.01" content="6B651B00161BCE79B8950AC09D5C4C75">
-    <meta title="Certificates">
-    <title>Certificates - Zebra Technologies Techdocs</title>
+    <meta title="TLS/SSL Security Compliance">
+    <title>TLS/SSL Security Compliance - Zebra Technologies Techdocs</title>
     <!-- core CSS -->
     <link href="/css/bootstrap.min.css" rel="stylesheet">
     <link href="/css/font-awesome.min.css" rel="stylesheet">
@@ -121,7 +121,7 @@
                     <nav id="toc" data-toggle="toc" data-spy="affix" style="height: 75%; max-width: 225px; overflow-y: auto; ">
                         
                         <ul class="nav">
-                            <li><strong>Certificates</strong></li>
+                            <li><strong>TLS/SSL Security Compliance</strong></li>
                         </ul>
                     </nav>
                     <div class="modal fade" id="modal-smartdocs" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true" data-backdrop="true">
@@ -207,7 +207,7 @@
                         <div class="col-sm-12">
                             <section id="cta" class="wow fadeIn">
                                 <div class="">
-                                    <h1 id="certificates" class="anchor"><a class="heading-anchor" href="#certificates"><span></span></a>Certificates</h1>
+                                    <h1 id="tlsssl-security-compliance" class="anchor"><a class="heading-anchor" href="#tlsssl-security-compliance"><span></span></a>TLS/SSL Security Compliance</h1>
                                     <p>
                                             Enterprise Browser
                                             1.5
@@ -225,176 +225,35 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>Secure Sockets Layer (SSL) Certificates can be used by Enterprise Browser to establish a secure connection (via HTTPS) between a device and a server to protect highly confidential transactions such as those involving financial institutions and commerce sites. The Enterprise Browser Webkit supports Transport Layer Security (TLS) 1.2, and allows certificates for clients and servers to be configured according to the security requirements of any application.</p>
+<p>Compliance of Enterprise Browser with Secure Sockets Layer (SSL) and the newer Transport Layer Security (TLS) protocols is determined by the operating system running on the device and the WebView that's in use. The highest security compliance currently supported by Enterprise Browser on devices running Android or Windows Mobile/CE is TLS 1.2.</p>
 
-<p>This guide explains how client-side certificates are used on Zebra devices running Android and Windows Mobile/CE, how to create them for a device, and how to store and specify their location on the device so that Enterprise Browser can access them when needed. For help creating server-side certificates, please refer to the server's documentation. </p>
-
-<p>See also: <a href="../compliance">TLS/SSL Compliance guide</a>. </p>
+<p>SSL and TLS (which replaced SSL 3.0 in 1999) are transport protocols that encrypt network communications, and are most often used to protect web browsing, email, instant messaging and other web-based apps. See the <a href="../certificates">Certificates guide</a> for information about using TLS to secure communications between one or more servers and Enterprise Browser clients attempting to connect. </p>
 
 <hr>
 
-<h2 id="openssl" class="anchor"><a class="heading-anchor" href="#openssl"><span></span></a>OpenSSL</h2>
+<h3 id="android" class="anchor"><a class="heading-anchor" href="#android"><span></span></a>Android</h3>
 
-<p>Tools such as <a href="https://www.openssl.org/docs/faq.html">OpenSSL</a> can be useful for creating and working with certificates, and most of of its capabilities are accessible through <a href="https://www.sslshopper.com/article-most-common-openssl-commands.html">CLI commands</a>. Some typical usages are shown below. Before attempting to create certificates using the steps below, <a href="https://www.openssl.org/source/">download OpenSSL</a> and install it. </p>
+<p>The WebView engines vary from one Zebra Android device to another, and the level of TLS/SSL support depends on WebView version present in the device. The chart below shows which versions of Android support (or will support) the various levels of TLS and/or SSL. </p>
 
-<h3 id="generateaselfsignedcertificate" class="anchor"><a class="heading-anchor" href="#generateaselfsignedcertificate"><span></span></a>Generate a self-signed certificate</h3>
-
-<p>To create a self-signed certificate, a private key must exist to encrypt into the certificate. <strong>If an existing private key can be used, skip to Step 2</strong>. To generate a new key, begin with Step 1. </p>
-
-<p><strong>To generate a self-signed certificate</strong>: </p>
-
-<p><strong>1. Generate a basic key with no passphrase</strong>:</p>
-
-<pre class="prettyprint"><code>    
-    openssl genrsa -out privkey.pem
-</code></pre>
-
-<p><strong>2. Use the key file generated in Step 1 (or an existing key) to create a self-signed certificate</strong>:</p>
-
-<pre class="prettyprint"><code>    
-    openssl req -new -x509 -key privkey.pem -out capturableacert.pem -days 365
-</code></pre>
-
-<p><strong>3.</strong> A series of questions appears. <strong>Leave all fields blank</strong> (by pressing ENTER) <strong><em>except</em> the "Common Name" field</strong>-- which should contain the domain name that will serve the certificate. </p>
-
-<p><strong>4. Add the private key file to the web server</strong> according to the server's documentation. </p>
-
-<p><strong>5. Add the certificate file to the web client</strong> as described above.</p>
-
-<h3 id="inspectacertificate" class="anchor"><a class="heading-anchor" href="#inspectacertificate"><span></span></a>Inspect a certificate</h3>
-
-<p><strong>To decode the contents of a certificate</strong>:</p>
-
-<pre class="prettyprint"><code>            ::term
-            openssl x509 -in cacert.pem -text -noout
-</code></pre>
-
-<ul>
-<li>The Common Name is shown as "Subject: CN=" </li>
-
-<li>The signing authority is shown as Issuer: CN=, which will be the same as Subject for a self-signed certificate.</li>
-</ul>
-
-<h3 id="convertcertificateformat" class="anchor"><a class="heading-anchor" href="#convertcertificateformat"><span></span></a>Convert certificate format</h3>
-
-<p><strong>To convert a</strong> <code>.der</code> <strong>format certificate to</strong> .<code>pem</code> <strong>format</strong>:</p>
-
-<pre class="prettyprint"><code>
-openssl x509 -inform der -in cacert.der -out cacert.pem
-</code></pre>
-
-<h2 id="android" class="anchor"><a class="heading-anchor" href="#android"><span></span></a>Android</h2>
-
-<p>Enterprise Browser <code>https://</code> requests on Android can be done in two ways, and are subject to the following rules:</p>
-
-<ul>
-<li><strong>Using system browser navigation with a WebView component</strong>:
-
-
-<ul>
-<li>The system browser uses built-in, system-trusted storage for root CAs. </li>
-
-<li>Root certificates should be installed from the system menu, and will be used by any application that uses a WebView UI component (such as a browser).</li>
-
-<li>Reference navigation in EB also will use this method. </li>
-
-<li>EB currently supports only server SSL authentication for WebView.</li>
-
-<li>Browser-based client authentication (introduced in Android 5) is not currently supported in EB.</li></ul>
-</li>
-
-<li><strong>Using certificate formats</strong>:
-
-
-<ul>
-<li><strong>Certificate files must contain the certificate data between "BEGIN" and "END" lines</strong>.</li>
-
-<li>Android accepts any certificate format that represents the certificate as encoded text. These files typically end with a <code>.crt</code> or <code>.pem</code> extension. </li>
-
-<li>Certificates in the <code>.der</code> format are not supported. See the <a href="#openssl">OpenSSL section</a> for conversion instructions.</li></ul>
-</li>
-</ul>
-
-<h2 id="windowsmobilece" class="anchor"><a class="heading-anchor" href="#windowsmobilece"><span></span></a>Windows Mobile/CE</h2>
-
-<p><strong>This section applies only to</strong> <code>https://</code> <strong>requests made by Webkit</strong>.</p>
-
-<h4 id="sslservercertificates" class="anchor"><a class="heading-anchor" href="#sslservercertificates"><span></span></a>SSL Server certificates</h4>
-
-<p>To access <strong>server certificates</strong> (beyond the pre-loaded ones) from apps made with Enterprise Browser for Windows Mobile/CE with Webkit, specify the path to those certificates using the <a href="../configreference/#cafile">CaFile parameter</a> in the <code>Config.xml</code> file. The "CaFile" itself can contain one or more certificates, which are treated by Webkit as trusted authorities. Expired certificates are ignored. </p>
-
-<p>To deploy certificates in a CaFile called <code>mycert.pem</code> for example, copy the certificate file to the device and specify the path to the file in the <code>Config.xml</code> using the syntax below: </p>
-
-<pre class="prettyprint"><code>
-&lt;CaFile Value=”\\mycert.pem”&gt;
-</code></pre>
-
-<p><br></p>
-
-<h4 id="sslclientcertificates" class="anchor"><a class="heading-anchor" href="#sslclientcertificates"><span></span></a>SSL Client certificates</h4>
-
-<p><strong>The use of client certificates</strong> from Windows Mobile/CE with Webkit is <strong>supported only on Enterprise Browser 1.5 and higher</strong>. When a secure server requests a certificate during an SSL handshake, EB will analyze and send any that qualify to the server. <strong>Note: The server must be configured to accept client certificates</strong>. Refer to the server documentation, if necessary. </p>
-
-<p><strong>To generate a client certificate for WM/CE with Webkit</strong>:</p>
-
-<p><strong>1. Generate a basic key file with a passphrase</strong>, noting the passphrase and file name. Refer to the OpenSSL documentation, if necessary. </p>
-
-<p><strong>2. Use the key file generated in Step 1 to create a self-signed certificate</strong>: </p>
-
-<pre class="prettyprint"><code>    
-    openssl req -new -x509 -key privkey.pem -out capturableacert.pem -days 365
-</code></pre>
-
-<p><strong>3.</strong> A series of questions appears. <strong>Leave all fields blank</strong> (by pressing ENTER) <strong><em>except</em> the "Common Name" field,</strong> which should contain the domain name of the server that will accept the client certificate. </p>
-
-<p><strong>4. Create a new text file</strong> using any editor app that can save plain text. </p>
-
-<p><strong>5. Copy and paste the contents of the files created in Steps 1 and 2</strong> into the new file using the guidelines below:</p>
-
-<p>The format of certificate files is customized slightly so that all necessary information is stored conveniently in one place. The following three pieces of information are expected to be in single <code>.pem</code> file:</p>
+<p><img src="eb_tls_support.png" alt="img">
+<em>Enterprise Browser currently supports Android versions up to Android 5.x Lollipop and TLS up to v1.2</em>.
+<br></p>
 
 <hr>
 
-<h4 id="certificate" class="anchor"><a class="heading-anchor" href="#certificate"><span></span></a>Certificate:</h4>
+<h3 id="windowsmobilece" class="anchor"><a class="heading-anchor" href="#windowsmobilece"><span></span></a>Windows Mobile/CE</h3>
 
-<p>This will be a Base64 encoded set of data enclosed by the <strong>-----BEGIN CERTIFICATE-----</strong> and <strong>-----END CERTIFICATE-----</strong> statements. It is also a requirement that the certificate is signed with an organisation name as this is used for matching against server certificates. This organisation name is specified in the subject and issuer lines of the certificate and must therefore also exist within the file.</p>
+<p>On all Zebra devices running Windows Mobile/CE that use the Webkit Engine, Enterprise Browser supports TLS v1.2. On devices that use the IE Engine, TLS/SSL support depends on the IE version present in the device. To determine security compliance, see below.</p>
 
-<h4 id="privatekey" class="anchor"><a class="heading-anchor" href="#privatekey"><span></span></a>Private Key:</h4>
+<h3 id="verifycompliance" class="anchor"><a class="heading-anchor" href="#verifycompliance"><span></span></a>Verify Compliance</h3>
 
-<p>This will be a Base64 encoded set of data enclosed by the <strong>-----BEGIN RSA PRIVATE KEY-----</strong> and <strong>-----END RSA PRIVATE KEY-----</strong> statements. The key encryption will also be detailed within these statements.</p>
+<p>To determine the security compliance on a device, use Enterprise Browser to navigate to one of the URLs below:</p>
 
-<h4 id="password" class="anchor"><a class="heading-anchor" href="#password"><span></span></a>Password:</h4>
+<ul>
+<li><a href="https://www.howsmyssl.com">How's My SSL?</a></li>
 
-<p>This is necessary to decode the certificate and private key and must be specified in the format: <strong>“password:&lt;password&gt;”</strong> </p>
-
-<p>The three components can be specified in any order within a <code>.pem</code> file.</p>
-
-<hr>
-
-<!--
-
-    :::xml
-    // The SSL client certificate file must contain 
-    // the following three sections in any order:  
-
-    -----BEGIN CERTIFICATE-----
-        // Paste contents of file created in Step 2 here
-    -----END CERTIFICATE-----
-
-    -----BEGIN RSA PRIVATE KEY-----
-        // Paste contents of file created in Step 1 here
-    -----END RSA PRIVATE KEY-----
-
-    -----BEGIN PASSWORD-----
-        // Enter the "passphrase" created in Step 1 here  
-    -----END PASSWORD-----
--->
-
-<p><strong>6. Save the client certificate with a</strong> <code>.pem</code> <strong>extension</strong> and push it to the device.    </p>
-
-<p><strong>7. Specify the path to the certificate file</strong> on the device in the <a href="../configreference/#clientcertpath">ClientCertPath parameter</a> of the <code>Config.xml</code> file. </p>
-
-<p><strong>The device will now be able to connect using SSL</strong> (<code>https://</code>) <strong>to the specified server</strong>. </p><p></p>
+<li><a href="https://www.ssllabs.com/ssltest/viewMyClient.html">SSL Labs</a></li>
+</ul><p></p>
                                         
 
 
