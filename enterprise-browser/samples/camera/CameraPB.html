@@ -1,0 +1,110 @@
+<html>
+<head>
+  <META HTTP-Equiv="MinimizeButton" content="visibility:Visible;top:30">
+  <META HTTP-Equiv="quitbutton" Content="visibility:visible;left:30">
+  <META HTTP-Equiv="ReloadButton" Content="visibility:visible">
+  <META HTTP-Equiv="BackButton" Content="visibility:visible">
+  <META HTTP-Equiv="imager" Content="imagerEnumEvent:url('Javascript:Enumimagers(%s);')">
+  <script type="text/javascript" charset="utf-8" src="elements.js"></script>
+  <script type="text/javascript" charset="utf-8" src="ebapi-modules.js"></script>
+  <script type="text/javascript">
+  var selected_Imager="";
+  var objGeneric = new ActiveXObject("PocketBrowser.Generic");
+  function Enumimagers(imagerArray)
+  {
+	var ImagerInfo = "Imagers On Device: " + imagerArray.length + "ID  --  Name:";
+	for (i=0; i < imagerArray.length; i++)
+	{
+	    ImagerInfo = ImagerInfo + imagerArray[i][0] + ' -- ' + imagerArray[i][1] + '<BR>';
+	    document.getElementById("mydropdown").options[i].text = imagerArray[i][0];
+	    document.getElementById("mydropdown").options[i].value = imagerArray[i][0];
+
+	}
+   }
+   function doEnumerate()
+   {
+    objGeneric.InvokeMETAFunction('imager', 'Enumerate');
+   }
+   function selectImager()
+   {
+    var w = document.getElementById("mydropdown").selectedIndex;
+    selected_Imager = document.getElementById("mydropdown").options[w].value;
+    //selImag.innerHTML = selected_Imager + "dropdownlistindex:" + w;
+   }
+   function setImagerPosition()
+   {
+    objGeneric.InvokeMETAFunction('imager',"left:40;right:100;height:100;width:200");
+   }
+   function enableselectedImager()
+   {
+    var temp="enabled:"+selected_Imager;
+    objGeneric.InvokeMETAFunction('imager',temp);
+   }
+   function disableImager()
+    {
+	objGeneric.InvokeMETAFunction('imager', 'disabled');
+    }
+	function myjsonevent(jsonObject)
+    {
+	document.getElementById("clbkStatus").innerHTML = "JSON  response"+jsonObject.transferResult;
+    }
+	function onImageCapture(jsonObject)
+    {
+		document.getElementById("capturedImage").src = jsonObject.imageData;
+	}
+	function captureImager()
+    { 
+	  objGeneric.InvokeMETAFunction('imager',"Destination:url('file://\\Img.bmp')");
+	  objGeneric.InvokeMETAFunction("imager","imagerevent:url('javascript:myjsonevent(%json);')");
+	  objGeneric.InvokeMETAFunction("imager","imagerCaptureEvent:url('javascript:onImageCapture(%json);')");
+      objGeneric.InvokeMETAFunction('imager', 'capture');
+    }
+  </script>
+<style>
+table, td {
+    border: 2px solid black;
+	width:100%;
+}
+td {
+    padding-top: .5em;
+    padding-bottom: .5em;
+}
+
+</style>
+</head>
+<body>
+<div><h2><center>Imager PB API</center></h2></div>
+<table align="center" border=1>
+<tr align="center">
+<td id='clbkStatus' colspan="2">Camera Callback will be displayed here!</td>
+</tr>
+<tr align="center">
+<td colspan="2"><img src="" id="capturedImage"></img></td>
+</tr>
+<tr>
+<br><td align="center">
+imager.enumerate()<br><br><input type=button onclick="doEnumerate();" value="Enumerate Imagers"><BR><BR><BR>
+Select Imager  <select id="mydropdown" onChange="selectImager();">
+<option value=""></option>
+<option value=""></option>
+<option value="SCN5"></option>
+</select>
+</td>
+</tr>
+<tr align="center">
+<br><td colspan="2">imager.left=40<br><br><input type='button' onClick="setImagerPosition()" value="Set Imager Position"/></td>
+</tr>
+<tr align="center">
+<br><td colspan="2">imager.enabled='value'<br><br><input type='button' onClick="enableselectedImager()" value="Enable Selected Imager"/></td>
+</tr>
+<tr>
+<tr align="center">
+<br><td colspan="2">imager.disable();<br><br><input type='button' onClick="disableImager()" value="Disable Selected Imager"/></td>
+</tr>
+<tr>
+<tr align="center">
+<br><td colspan="2">imager.capture()<br><br><input type='button' onClick="captureImager()" value="Capture Image"/></td>
+</tr>
+</table>
+</body>
+</html>
