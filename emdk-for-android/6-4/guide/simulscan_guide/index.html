@@ -553,7 +553,7 @@ The <strong>SimulScanElements</strong> returned from <strong>SimulScanData.getEl
 
 <p>RegionType as shown in the table below:</p>
 
-<table>
+<p></p><table>
 <tbody><tr>
 <td>RegionType</td><td>Data type</td>
 </tr>
@@ -569,7 +569,93 @@ The <strong>SimulScanElements</strong> returned from <strong>SimulScanData.getEl
 <tr>
 <td>Picture</td><td>Byte[] (binary image data)</td>
 </tr>
-</tbody></table>
+</tbody></table><br><br><p></p>
+
+<p>Use the region object's .getRegionType() method to first determine the region type and then cast the region data to a usable type.</p>
+
+<p>See the examples below:</p>
+
+<p><strong>OCR</strong></p>
+
+<pre class="prettyprint"><code>     
+    String sText = "";
+    if (region.getRegionType() == RegionType.OCR)
+    {
+        if (region.getData() != null)
+        {
+           String[] OCRResults = (String[]) region.getData();
+            if (null != OCRResults) {
+                for (int nIndex = 0; nIndex &lt; OCRResults.length; nIndex++)
+                {
+                   if (nIndex != 0) //if not first index, prepend with newline
+                        sText = sText.concat("\n");
+                     sText = sText.concat(OCRResults[nIndex]);
+                }
+           }
+        }
+        txtData.setText(sText);
+    }
+</code></pre>
+
+<p><strong>OMR</strong></p>
+
+<pre class="prettyprint"><code>    
+    if (region.getRegionType() == RegionType.OMR)
+    {
+       if (region.getData() != null)
+       {
+           int iChecked = (Integer)region.getData();
+
+            switch (iChecked) {
+                 case 1 :
+                     sText = sText.concat(omrStatus[0].toString());
+                     break;
+                 case -1 :
+                     sText = sText.concat(omrStatus[1].toString());
+                     break;
+                 default :
+                     break;
+             }
+         }
+         else
+         {
+             sText = sText.concat(omrStatus[1].toString()); //default to unchecked
+         }
+          txtData.setText(sText);
+     }
+</code></pre>
+
+<p><strong>BARCODE</strong></p>
+
+<pre class="prettyprint"><code>    
+    if (region.getRegionType() == RegionType.BARCODE)
+    {
+        if (region.getData() != null)
+        {
+            try
+            {
+               sText = sText.concat((String) region.getData());
+            }
+            catch (ClassCastException e) //will get here if post-processing is off
+           {
+               sText = "Post-processing is off";
+           }
+      }
+      txtData.setText(sText);
+   }
+</code></pre>
+
+<p><strong>PICTURE</strong></p>
+
+<pre class="prettyprint"><code>    
+    if (region.getRegionType() == RegionType.PICTURE)
+    {
+       if (region.getData() != null)
+       {
+           byte[] jpegPicture = (byte[])region.getData();
+       }
+    }
+</code></pre>
 
 <h3 id="importantconsiderations" class="anchor"><a class="heading-anchor" href="#importantconsiderations"><span></span></a>Important considerations</h3>
 
