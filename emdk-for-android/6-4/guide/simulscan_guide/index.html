@@ -295,7 +295,7 @@ SimulScanManager simulscanManager = (SimulScanManager) emdkManager.getInstance(F
 </code></pre>
 
 <blockquote>
-  <p>Note: Release() must be called on SimulScanManager before switching to another EMDK or DataWedge application</p>
+  <p>Note: emdkManager.release(FEATURE_TYPE.SimulScan) must be called before switching to another EMDK or DataWedge application</p>
 </blockquote>
 
 <h3 id="getsimulscanreader" class="anchor"><a class="heading-anchor" href="#getsimulscanreader"><span></span></a>Get SimulScanReader</h3>
@@ -427,6 +427,30 @@ public void onStop(){
 }
 </code></pre>
 
+<h3 id="downloadtemplatesfromtemplatebuilder" class="anchor"><a class="heading-anchor" href="#downloadtemplatesfromtemplatebuilder"><span></span></a>Download templates from Template Builder</h3>
+
+<p>The <strong>SimulScanReader.fetchTemplate(UserName, Password)</strong> method provides a means to download Templates from SimulScan Template Builder.</p>
+
+<p>SimulScan Template Builder can be accessed via https://simulscan.zebra.com/. To access Template Builder, you will need a user name and a password. The same user name and password must be provided as parameters to SimulScanReader's fetchTemplate method.</p>
+
+<p>When the fetching is complete, onSimulScanStatus will be called with the status of FETCH_TEMPLATE_COMPLETED.</p>
+
+<p>If there are errors when calling SimulScanReader's fetchTemplate method. onSimulScanStatus will be called with one of the following status codes:</p>
+
+<ul>
+<li>FETCH_TEMPLATE_LOGIN_ERROR</li>
+
+<li>FETCH_TEMPLATE_NETWORK_ERROR</li>
+
+<li>FETCH_TEMPLATE_CANCELLED</li>
+</ul>
+
+<p>SimulScanReader <strong>must be enabled before</strong> calling fetchTemplate().</p>
+
+<p>fetchTemplate() API call will fail if a read() is in progress, and read() API call is not allowed while a fetchTemplate() is in progress. </p>
+
+<p>Downloaded templates will be saved to the default template directory of the device ( see <strong>SimulScan Default Templates</strong> below)</p>
+
 <h3 id="simulscanconfigindetail" class="anchor"><a class="heading-anchor" href="#simulscanconfigindetail"><span></span></a>SimulScanConfig in detail</h3>
 
 <p>The SimulScanConfig APIs can be used to set various SimulScan configuration parameters for each SimulScan reader. To get the current configuration of a SimulScanReader via a SimulScanConfig object, use the SimulScanReader.getConfig() API. Use the SimulScanConfig object’s public parameters to change the configuration and then call SimulScanReader.setConfig(SimulScanConfig config) to apply the changes.</p>
@@ -486,15 +510,49 @@ public void onSimulScanStatus(SimulScanStatusData statusData) {
             break;
         case IDLE:
             Log.v(TAG, "Idle");
+            switch(statusData.getExtendedState())
+            {
+                case PROCESSING_TIMEOUT:
+                    Log.v(TAG, "Timeout occurred during processing");
+                    break;
+                case IDENTIFICATION_TIMEOUT:
+                    Log.v(TAG, "Timeout occurred during identification");
+                    break;
+                case CANCELLED:
+                    Log.v(TAG, "Cancelled scanning");
+                    break;
+                case FORM_DECODED:
+                    Log.v(TAG, "Form decoded successfully");
+                    break;
+            }
             break;
         case ERROR:
-        Log.e(TAG, "ERROR: " + statusData.extendedInfo. getExtendedStatusDescription ());
+            switch(statusData.getExtendedState())
+            {
+                case FETCH_TEMPLATE_LOGIN_ERROR:
+                    Log.e(TAG, "Fetch template login error");
+                    break;
+                case  FETCH_TEMPLATE_NETWORK_ERROR:
+                    Log.e(TAG, "Network error occurred while trying to fetch templates");
+                    break;
+                case  FETCH_TEMPLATE_CANCELLED:
+                    Log.e(TAG, "User cancelled fetch template");
+                    break;
+                case UNLICENSED_FEATURE:
+                    Log.e(TAG, "Unlicensed Feature detected: " + statusData.getStatusDescription());
+                    break;
+                case UNDEFINED:
+                default:
+                    Log.e(TAG, "Error: " + statusData.getStatusDescription());
+                    break;
+            }
             break;
         case UNKNOWN:
         default:
             break;
     }
-}
+
+    }
 </code></pre>
 
 <p>Use the SimulScanStatusData’s getFriendlyName() API to get the friendly name of the SimulScanReader that has generated the Status event and use the getState() API to get the SimulScanStatus object with the status change information.</p>
@@ -512,10 +570,32 @@ public void onSimulScanStatus(SimulScanStatusData statusData) {
 
 <li>SCANNING : Successfully started scanning</li>
 
-<li>UNKNOWN : Known status</li>
+<li>UNKNOWN : Unknown status</li>
 </ul>
 
-<p>For additional error information use the Extended info parameter of the SimulScanStatusData object.</p>
+<p>Use the SimulScanStatusData’s getExtendedState() method to get extended status information of IDLE and ERROR state.</p>
+
+<p>A list of valid extended states are as follows:</p>
+
+<ul>
+<li>PROCESSING_TIMEOUT : Timeout occurred during processing</li>
+
+<li>IDENTIFICATION_TIMEOUT : Timeout occurred during identification</li>
+
+<li>CANCELLED: Cancelled scanning</li>
+
+<li>UNLICENSED_FEATURE: Unlicensed feature detected. Use SimulScanStatusData’s getStatusDescription() method to identify the unlicensed feature</li>
+
+<li>FORM_DECODED: Form decoded successfully</li>
+
+<li>FETCH_TEMPLATE_LOGIN_ERROR:  Fetch template login error</li>
+
+<li>FETCH_TEMPLATE_NETWORK_ERROR: Network error occurred while trying to fetch templates</li>
+
+<li>FETCH_TEMPLATE_CANCELLED: User cancelled fetch template</li>
+
+<li>UNDEFINED: No extended state</li>
+</ul>
 
 <blockquote>
   <p>Note: If you plan to do any significant processing during the onSimulScanStatus callback, you should do so in a background thread so that it does not block the UI thread.</p>
