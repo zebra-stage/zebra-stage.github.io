@@ -7,8 +7,8 @@
     <meta name="author" content="Zebra Technologies">
     <meta name="google-site-verification" content="i4B78BrWnNy8ShJwe5feRW3jO3HE6gfYlYqYbxfl8yY">
     <meta name="msvalidate.01" content="6B651B00161BCE79B8950AC09D5C4C75">
-    <meta title="DataWedge APIs">
-    <title>DataWedge APIs - Zebra Technologies Techdocs</title>
+    <meta title="Switch to Profile">
+    <title>Switch to Profile - Zebra Technologies Techdocs</title>
     <!-- core CSS -->
     <link href="/css/bootstrap.min.css" rel="stylesheet">
     <link href="/css/font-awesome.min.css" rel="stylesheet">
@@ -124,7 +124,7 @@
                     <nav id="toc" data-toggle="toc" data-spy="affix" style="height: 75%; max-width: 225px; overflow-y: auto; ">
                         
                         <ul class="nav">
-                            <li><strong>DataWedge APIs</strong></li>
+                            <li><strong>Switch to Profile</strong></li>
                         </ul>
                     </nav>
                     <div class="modal fade" id="modal-smartdocs" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true" data-backdrop="true">
@@ -210,7 +210,7 @@
                         <div class="col-sm-12">
                             <section id="cta" class="wow fadeIn">
                                 <div class="">
-                                    <h1 id="datawedge-apis" class="anchor"><a class="heading-anchor" href="#datawedge-apis"><span></span></a>DataWedge APIs</h1>
+                                    <h1 id="switch-to-profile" class="anchor"><a class="heading-anchor" href="#switch-to-profile"><span></span></a>Switch to Profile</h1>
                                     <p>
                                             DataWedge
                                             6.3
@@ -226,148 +226,138 @@
                                 <div class="service-box wow fadeInRight">
                                     <div class="">
 
-                                        <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
+                                        <p></p><h2 id="action_switchtoprofile" class="anchor"><a class="heading-anchor" href="#action_switchtoprofile"><span></span></a>ACTION_SWITCHTOPROFILE</h2>
 
-<p>DataWedge APIs operate primarily through Android intents--specific commands that can be used by other applications to control data capture without the need to directly access the underlying hardware APIs. This guide describes the functionality of the intents supported by DataWedge and their effects on data capture and DataWedge Profiles and settings. </p>
+<p>The <code>SwitchToProfile</code> API Action can be used to switch to the specified Profile, <strong>as long as that Profile is not already associated with another application</strong>. A Profile can be associated with many applications, but an application cannot be associated with more than one Profile. </p>
 
-<p>In DataWedge versions prior to 6.2, applications access DataWedge APIs by broadcasting an intent, and use the primary pieces of information in the intent (action and data) to specify which API function to perform. DataWedge 6.2 defined a new API structure, permitting multiple API calls to be sent as Extras using a single intent Action. </p>
+<h3 id="profilesrecap" class="anchor"><a class="heading-anchor" href="#profilesrecap"><span></span></a>Profiles Recap</h3>
 
-<h3 id="newapisyntax" class="anchor"><a class="heading-anchor" href="#newapisyntax"><span></span></a>New API Syntax</h3>
+<p>DataWedge is based on Profiles and Plug-ins. A Profile contains information about how DataWedge will behave with a given application.</p>
 
-<p>The new syntax defined in DataWedge 6.2 permits multiple DataWedge API calls as extras on a single intent action. The syntax is as follows:</p>
+<p>Profile information consists of:</p>
 
-<pre class="prettyprint"><code>    
-    Intent i = new Intent();
-    i.setAction("com.symbol.datawedge.api.ACTION");
-    String[] profiles = {"MainInventory"};
-    i.putExtra("com.symbol.datawedge.api.DELETE_PROFILE", profiles);
-    i.putExtra("com.symbol.datawedge.api.GET_PROFILES_LIST", "");
+<ul>
+<li>Associated application</li>
+
+<li>Input plug-in configurations</li>
+
+<li>Output plug-in configurations</li>
+
+<li>Process plug-in configurations</li>
+</ul>
+
+<p>DataWedge includes a default Profile, Profile0, which is created automatically the first time DataWedge runs.</p>
+
+<p>Using Profiles, each application can have a specific DataWedge configuration. For example, each user application can have a Profile that outputs scanned data in the required format when that application comes to the foreground. DataWedge can be configured to process the same set of captured data differently based on the requirements of each application.</p>
+
+<h3 id="note" class="anchor"><a class="heading-anchor" href="#note"><span></span></a>Note</h3>
+
+<p>A single Profile can be associated with one or more activities or apps. However, an activity can be associated with no more than one Profile. </p>
+
+<h3 id="usagescenario" class="anchor"><a class="heading-anchor" href="#usagescenario"><span></span></a>Usage Scenario</h3>
+
+<p>Let’s say an application has two activities. ActivityA only requires EAN13 barcodes to be scanned. ActivityB only requires MSR card data. ProfileB is configured to only scan EAN13 barcodes and is left unassociated. ProfileM is configured to only accept MSR input and is left unassociated. When ActivityA launches it uses <code>SwitchToProfile</code> to activate ProfileB. Similarly, when ActivityB launches it uses <code>SwitchToProfile</code> to activate ProfileM.</p>
+
+<p>If another activity/app comes to the foreground, DataWedge auto Profile switching will set the DataWedge Profile accordingly either to the default Profile or to an associated Profile.</p>
+
+<p>When ActivityA (or ActivityB) comes back to the foreground it will use <code>SwitchToProfile</code> to reset the Profile back to ProfileB (or ProfileM).</p>
+
+<h3 id="functionprototype" class="anchor"><a class="heading-anchor" href="#functionprototype"><span></span></a>Function Prototype</h3>
+
+<pre class="prettyprint"><code>Intent i = new Intent();
+i.setAction("com.symbol.datawedge.api.ACTION_SWITCHTOPROFILE");
+i.putExtra("com.symbol.datawedge.api.EXTRA_PROFILENAME", "&lt;profile name&gt;");
 </code></pre>
 
-<h3 id="apissupportingnewsyntax" class="anchor"><a class="heading-anchor" href="#apissupportingnewsyntax"><span></span></a>APIs Supporting New Syntax</h3>
+<h3 id="parameters" class="anchor"><a class="heading-anchor" href="#parameters"><span></span></a>Parameters</h3>
 
-<p>The following APIs can be invoked as extras from a single intent action:</p>
+<p><strong>ACTION</strong> [String]: "com.symbol.datawedge.api.ACTION_SWITCHTOPROFILE"</p>
 
-<ul>
-<li><a href="../6-3/#enabledatawedge">EnableDataWedge</a></li>
+<p><strong>EXTRA_DATA</strong> [String]: "com.symbol.datawedge.api.EXTRA_PROFILENAME"</p>
 
-<li><a href="../6-3/#cloneprofile">CloneProfile</a></li>
+<p><strong>&lt;profile name</strong>&gt;: The Profile name to switch to as a string (case-sensitive).</p>
 
-<li><a href="../6-3/#renameprofile">RenameProfile</a></li>
+<h3 id="returnvalues" class="anchor"><a class="heading-anchor" href="#returnvalues"><span></span></a>Return Values</h3>
 
-<li><a href="../6-3/#deleteprofile">DeleteProfile</a></li>
+<p>(None)</p>
 
-<li><a href="../6-3/#queryprofilelist">QueryProfileList</a></li>
+<p>Error and debug messages are logged to the Android logging system, which can be viewed and filtered by the logcat command. Use logcat from an ADB shell to view the log messages:</p>
 
-<li><a href="../6-3/#getactiveprofile">GetActiveProfile</a></li>
-</ul>
+<pre class="prettyprint"><code>
+$ adb logcat -s DWAPI
+</code></pre>
 
-<h3 id="apisthatrequireprevioussyntax" class="anchor"><a class="heading-anchor" href="#apisthatrequireprevioussyntax"><span></span></a>APIs That Require Previous Syntax</h3>
-
-<p>The following API calls require a distinct intent action for each: </p>
-
-<ul>
-<li><a href="../6-3/#softscantrigger">SoftScanTrigger</a></li>
-
-<li><a href="../6-3/#scannerinputplugin">ScannerInputPlugin</a></li>
-
-<li><a href="../6-3/#enumeratescanners">EnumerateScanners</a> </li>
-
-<li><a href="../6-3/#setdefaultprofile">SetDefaultProfile</a></li>
-
-<li><a href="../6-3/#resetdefaultprofile">ResetDefaultProfile</a></li>
-
-<li><a href="../6-3/#switchtoprofile">SwitchToProfile</a></li>
-</ul>
-
-<blockquote>
-  <p><strong>DataWedge 6.3 supports current and legacy API syntaxes</strong>. </p>
-</blockquote>
-
-<p><strong>Important: DataWedge API commands of all versions are not queued, <u>and might be ignored</u></strong> if sent while DataWedge is busy processing an earlier intent. When an API command is sent, DataWedge executes the command only if it is not busy doing something else. Exceptions: </p>
-
-<ul>
-<li><code>STOP_SCANNING</code> - immediately interrupts a scan operation</li>
-
-<li><code>DISABLE_PLUGIN</code> - immediately disables the current scanner input plug-in</li>
-</ul>
-
-<p>To help ensure proper execution, Zebra recommends inserting delay code prior to critical commands. See the <a href="../6-3/#softscantrigger">SoftScanTrigger</a> API for an example.  </p>
-
-<h3 id="requirements" class="anchor"><a class="heading-anchor" href="#requirements"><span></span></a>Requirements</h3>
-
-<p>The use of DataWedge APIs requires experience with Java programming and familiarity with <a href="https://developer.android.com/reference/android/content/Intent.html">Android Intents</a>. It also requires knowledge of DataWedge usage, features and terminology. For more information about DataWedge, see the DataWedge <a href="../../setup">Setup Guide</a> and the <a href="../../overview">Architecture Overview</a>. It also might be helpful to read the DataWedge section of the Integrator Guide included with Zebra devices.</p>
-
-<h3 id="nestedbundles" class="anchor"><a class="heading-anchor" href="#nestedbundles"><span></span></a>Nested Bundles</h3>
-
-<p>DataWedge 6.3 implements the concept of nested bundles, which allows a "bundle" of values to be included as one value in another bundle. Bundles also can be multiple layers deep. For example, the image below illustrates a <code>PARAM_LIST</code> bundle nested within the <code>PLUGIN_CONFIG[0]</code> bundle nested within the API call <code>SET_CONFIG</code>. Nesting is required to configure with intents the many parameters contained in a Profile.</p>
-
-<p>The image further illustrates that the <code>SET_CONFIG</code> API call can implement a second nested bundle, <code>PLUGIN_CONFIG[n]</code>, which can contain its own <code>PARAM_LIST</code>. </p>
-
-<p><img style="height:450px" src="dw_nested_bundles.png">
-<br></p>
+<p>Error messages are logged for invalid actions, parameters and failures (e.g. Profile not found or associated with an application).</p>
 
 <h3 id="example" class="anchor"><a class="heading-anchor" href="#example"><span></span></a>Example</h3>
 
-<p>The Java code below implements a nested bundle. </p>
+<pre class="prettyprint"><code>// define action and data strings
+String switchToProfile = "com.symbol.datawedge.api.ACTION_SWITCHTOPROFILE";
+String extraData = "com.symbol.datawedge.api.EXTRA_PROFILENAME";
 
-<pre class="prettyprint"><code>
-Bundle bMain = new Bundle();
-bMain.putString("PROFILE_NAME","Profile2");
-bMain.putString("PROFILE_ENABLED", "true");
-bMain.putString("CONFIG_MODE","CREATE_IF_NOT_EXIST");
-bMain.putString("RESET_CONFIG", "true");
+public void onResume() {
+        super.onResume();
 
+        // create the intent
+        Intent i = new Intent();
 
-Bundle bundleApp1 = new Bundle();
-bundleApp1.putString("PACKAGE_NAME","com.symbol.emdk.simulscansample1");
-bundleApp1.putStringArray("ACTIVITY_LIST", new String[]{
-        "com.symbol.emdk.simulscansample1.DeviceControl",
-        "com.symbol.emdk.simulscansample1.MainActivity",
-        "com.symbol.emdk.simulscansample1.ResultsActivity.*",
-        "com.symbol.emdk.simulscansample1.ResultsActivity2",
-        "com.symbol.emdk.simulscansample1.SettingsFragment1"});
+        // set the action to perform
+        i.setAction(switchToProfile);
 
+        // add additional info
+        i.putExtra(extraData, "myProfile");
 
-Bundle bundleApp2 = new Bundle();
-bundleApp2.putString("PACKAGE_NAME","com.example.intents.datawedgeintent");
-bundleApp2.putStringArray("ACTIVITY_LIST", new String[]{
-        "com.example.intents.datawedgeintent.DeviceControl",
-        "com.example.intents.datawedgeintent.MainActivity",
-        "com.example.intents.datawedgeintent.ResultsActivity",
-        "com.example.intents.datawedgeintent.SettingsFragment1"});
-
-Bundle bundleApp3 = new Bundle();
-bundleApp3.putString("PACKAGE_NAME","*");
-bundleApp3.putStringArray("ACTIVITY_LIST", new String[]{"*"});
-
-
-Bundle bundleApp4 = new Bundle();
-bundleApp4.putString("PACKAGE_NAME","com.symbol.myzebraapp");
-bundleApp4.putStringArray("ACTIVITY_LIST", new String[]{"*"});
-
-bMain.putParcelableArray("APP_LIST", new Bundle[]{
-        bundleApp1
-        ,bundleApp2
-        ,bundleApp3
-        ,bundleApp4
-});
-
-Intent i = new Intent();
-i.setAction("com.symbol.datawedge.api.ACTION");
-i.putExtra("com.symbol.datawedge.api.SET_CONFIG", bMain);
-sendBroadcast(i);
+        // send the intent to DataWedge
+        context.this.sendBroadcast(i);
+}
 </code></pre>
 
-<hr>
+<h3 id="comments" class="anchor"><a class="heading-anchor" href="#comments"><span></span></a>Comments</h3>
 
-<p><strong>Related Guides</strong>:</p>
+<p>This API function will have no effect if the specified Profile does not exist or is already associated with an application.</p>
+
+<p>DataWedge has a one-to-one relationship between Profiles and activities; a Profile can be associated only with a single activity. When a Profile is first created, it's not associated with any application, and will not be activated until associated. This makes it possible to create multiple unassociated Profiles.</p>
+
+<p>This API function activates such Profiles.</p>
+
+<p>For example, let's say that ProfileA is unassociated and ProfileB is associated with activity B. If activity A is launched and uses the <code>SwitchToProfile</code> function to switch to ProfileA, then ProfileA will be active whenever activity A is in the foreground. When activity B comes to the foreground, DataWedge will automatically switch to ProfileB. </p>
+
+<p>When activity A returns to the foreground, the app must use <code>SwitchToProfile</code> again to switch back to ProfileA. This would be done in the <code>onResume</code> method of activity A.</p>
+
+<h3 id="notes" class="anchor"><a class="heading-anchor" href="#notes"><span></span></a>Notes</h3>
 
 <ul>
-<li><a href="../6-3">DataWedge APIs</a></li>
+<li>Because DataWedge will automatically switch Profile when the activity is paused, Zebra recommends that this API function be called from the onResume method of the activity.</li>
 
-<li><a href="../../demo">DataWedge Demo App</a></li>
+<li>After switching to a Profile, this unassociated Profile does not get assigned to the application/activity and is available to be used in the future with a different app/activity.</li>
+
+<li>For backward compatibility, DataWedge’s automatic Profile switching is not affected by the above API commands. This why the commands work only with unassociated Profiles and apps.</li>
 </ul>
+
+<p>DataWedge auto Profile switching works as follows: </p>
+
+<p><strong>Every second…</strong></p>
+
+<ul>
+<li>Sets <strong>newProfileId</strong> to the associated Profile ID of the current foreground activity. </li>
+
+<li>If no associated Profile is found, sets <strong>newProfileId</strong> to the associated Profile ID of the current foreground app. </li>
+
+<li>If no associated Profile is found, sets <strong>newProfileId</strong> to the current default Profile (which  MAY NOT be Profile0). </li>
+
+<li>Checks the <strong>newProfileId</strong> against the <strong>currentProfileId</strong>. If they are different: 
+
+
+<ul>
+<li>deactivates current Profile</li>
+
+<li>activates new Profile (<strong>newProfileId</strong>)</li>
+
+<li>sets <strong>currentProfileId</strong> = <strong>newProfileId</strong></li></ul>
+</li>
+</ul>
+
+<hr>
 
 <p><strong>SEE ALSO</strong>:</p>
 
