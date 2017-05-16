@@ -233,9 +233,19 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>The Data Capture API operates primarily through Android intents--specific commands that can be used by other applications to control data capture without the need to directly access the hardware APIs of the device. This guide describes the functionality of the intents supported by DataWedge and their effects on data capture and the DataWedge app itself. </p>
+<p>The Data Capture API operates primarily through Android intents--specific commands that can be used by other applications to control data capture without the need to directly access the hardware APIs of the device. This guide describes the functionality of the intents supported by DataWedge and their effects on data capture and the DataWedge app itself. <strong>DataWedge 6.3 builds on the new structure for launching Android intents introduced with DataWedge 6.2</strong> that can launch multiple intents in a single command. DataWedge continues to support all original commands using their original syntax. </p>
 
-<p><strong>DataWedge 6.3 builds on the new structure for launching Android intents introduced with DataWedge 6.2</strong> that can launch multiple intents in a single command. DataWedge continues to support all original commands using their original syntax. </p>
+<p><strong>Important: API commands are not queued, <u>and might be ignored</u></strong> if sent while DataWedge is busy processing an earlier intent. When an API command is sent, DataWedge executes the command immediately if it is not busy doing something else. Exceptions to this rule are: </p>
+
+<ul>
+<li><code>STOP_SCANNING</code> - interrupts a scan operation</li>
+
+<li><code>DISABLE_PLUGIN</code> - disables the current scanner input plug-in</li>
+</ul>
+
+<p>To help ensure proper execution, delay code can be inserted prior to critical commands. See the <a href="#softscantrigger">SoftScanTrigger</a> API for a delay code sample.  </p>
+
+<hr>
 
 <h4 id="requirements" class="anchor"><a class="heading-anchor" href="#requirements"><span></span></a>Requirements</h4>
 
@@ -247,9 +257,25 @@
 
 <hr>
 
-<h2 id="datawedge63apis" class="anchor"><a class="heading-anchor" href="#datawedge63apis"><span></span></a>DataWedge 6.3 APIs</h2>
+<h2 id="apisyntax" class="anchor"><a class="heading-anchor" href="#apisyntax"><span></span></a>API Syntax</h2>
 
 <p>The APIs in the table below are supported only on DataWedge 6.2 and higher. For the exact usage syntax, sample code for each interface follows the table. </p>
+
+<p>New commands are initiated using the <code>setAction</code> method and included as extras using the <code>putExtra</code> method. For example, the JavaScript below sends two intents: one to delete the "MainInventory" profile and another to query DataWedge for the Profiles list:  </p>
+
+<pre class="prettyprint"><code>    
+    Intent i = new Intent();
+    i.setAction("com.symbol.datawedge.api.ACTION");
+    String[] profiles = {"MainInventory"};
+    i.putExtra("com.symbol.datawedge.api.DELETE_PROFILE", profiles);
+    i.putExtra("com.symbol.datawedge.api.GET_PROFILES_LIST", "");
+</code></pre>
+
+<p>When queried, DataWedge broadcasts the answer in a result intent. <strong>To consume the result, the receiving app must first use</strong> <code>RegisterReceiver</code>, and <strong>then use the result filter corresponding to the original intent</strong>. For example, to consume the result of <code>GET_PROFILES_LIST</code>, use <code>RESULT_GET_PROFILES_LIST</code>. </p>
+
+<h2 id="datawedge63apis" class="anchor"><a class="heading-anchor" href="#datawedge63apis"><span></span></a>DataWedge 6.3 APIs</h2>
+
+<p>The APIs in the table below are supported by DataWedge 6.3 and higher. For the exact usage syntax, sample code for each interface follows the table. </p>
 
 <table rules="all" width="100%" frame="border" cellspacing="0" cellpadding="4">
 <caption class="title"></caption>
@@ -380,6 +406,17 @@
 
 <p>The sample code shown below is for APIs supported only on DataWedge 6.2 and higher. </p>
 
+<h5 id="create_profile" class="anchor"><a class="heading-anchor" href="#create_profile"><span></span></a>CREATE_PROFILE</h5>
+
+<pre class="prettyprint"><code>    
+    private void createProfile() { 
+    Intent i = new Intent(); 
+    i.setAction("com.symbol.datawedge.api.ACTION"); 
+    i.putExtra("com.symbol.datawedge.api.CREATE_PROFILE", ""); 
+    this.sendBroadcast(i); 
+}
+</code></pre>
+
 <h4 id="delete_profile" class="anchor"><a class="heading-anchor" href="#delete_profile"><span></span></a>DELETE_PROFILE</h4>
 
 <pre class="prettyprint"><code>    
@@ -450,9 +487,9 @@
 
 <hr>
 
-<h2 id="datawedge6xapis" class="anchor"><a class="heading-anchor" href="#datawedge6xapis"><span></span></a>DataWedge 6.x APIs</h2>
+<h2 id="legacydatawedgeapis" class="anchor"><a class="heading-anchor" href="#legacydatawedgeapis"><span></span></a>Legacy DataWedge APIs</h2>
 
-<p>The following APIs are supported on DataWedge 6.x and higher using the syntax described below. </p>
+<p>The following legacy APIs are remain supported by DataWedge 6.2 and higher using the syntax described below. </p>
 
 <h3 id="softscantrigger" class="anchor"><a class="heading-anchor" href="#softscantrigger"><span></span></a>SoftScanTrigger</h3>
 
@@ -485,7 +522,7 @@ i.putExtra(EXTRA_DATA, "&lt;parameter&gt;");
 
 <p>None.</p>
 
-<p>Error and debug messages will be logged to the Android logging system which then can be viewed and filtered by the logcat command. You can use logcat from an ADB shell to view the log messages, e.g.</p>
+<p>Error and debug messages will be logged to the Android logging system, which then can be viewed and filtered by the logcat command. You can use logcat from an ADB shell to view the log messages, e.g.</p>
 
 <pre class="prettyprint"><code>$ adb logcat -s DWAPI
 </code></pre>
@@ -510,7 +547,7 @@ context.this.sendBroadcast(i);
 
 <h4 id="comments" class="anchor"><a class="heading-anchor" href="#comments"><span></span></a>COMMENTS</h4>
 
-<p>The received API commands are not queued; API commands are processed immediately. Commands received while the current API command is still being processed may be ignored. For example, attempting to send the soft scan trigger start command immediately after sending the scanner enable command will result in the soft scan trigger command being ignored because the scanner enable will not have had time to complete. In this case, the soft scan trigger command should be delayed sufficiently for the scanner enable to complete; one example of how this could be done is given below.</p>
+<p>The soft scan trigger command should be delayed sufficiently to enable the scanner to complete the task. For example, use of delay code similar to that shown below could be used.</p>
 
 <pre class="prettyprint"><code>int triggerDelay = 250; // delay in milliseconds
 
