@@ -285,18 +285,49 @@
 
 <h2 id="substitutionvariables" class="anchor"><a class="heading-anchor" href="#substitutionvariables"><span></span></a>Substitution Variables</h2>
 
-<p>The following substitution variables are available in the configuration file:</p>
+<p>The following substitution variables are supported for use in the <code>Config.xml</code> file:</p>
 
-<table class="re-table">
-    <tbody><tr>
+<div class="parm-table">
+<table class="MsoNormalTable" style="" id="table2" border="1" cellpadding="3" cellspacing="0">
+
+    <tbody><tr bgcolor="#e0e0eb">
         <th>Variable</th>
-        <th>-&gt; Expanded Value</th>
+        <th>Description</th>
     </tr>
-    <tr>
-        <td>%INSTALLDIR%</td>
-        <td>-&gt; The directory into which the Enterprise Browser has been installed.</td>
-    </tr>
+      <tr>
+        <td>%INSTALLDIR%<br>(read-write)</td>
+        <td>
+        Installation directory of the Enterprise Browser app<br>(i.e. <strong>/Android/Data/com.symbol.enterprisebrowser</strong>)
+        </td>
+      </tr>
+      <tr>
+        <td>%PRIMARYDIR%<br>(read-write)</td>
+        <td>
+        The root directory of internal device storage<br>(i.e. <strong>/storage/sdcard0</strong>)
+        </td>
+      </tr>
+      <tr>
+        <td>%SECONDARYDIR%<br>(read-only)</td>
+        <td>
+        The root directory of external storage<br>(i.e. <strong>/storage/sdcard1</strong>)
+        </td>
+      </tr>
+      <tr>
+        <td>%PERSISTCONFDIR%<br>(read-write)</td>
+        <td>
+        A directory that persists after an Enterprise Reset of the device<br>(<strong>i.e. /enterprise/device/enterprisebrowser</strong>)
+        </td>
+      </tr>
 </tbody></table>
+</div>
+
+<p><strong>Notes</strong>:</p>
+
+<ul>
+<li><p><strong>Zebra recommends using the %PERSISTCONFDIR% variable only with MDM and/or EMM systems</strong> or in mass deployment scenarios.</p></li>
+
+<li><p><strong>The %SECONDARYDIR% variable is read-only</strong>; Enterprise Browser cannot write to an external SD Card.</p></li>
+</ul>
 
 <hr>
 
@@ -567,7 +598,7 @@
 
 <h3 id="buttonxmlfile" class="anchor"><a class="heading-anchor" href="#buttonxmlfile"><span></span></a>buttonxmlfile</h3>
 
-<p><strong>Applies only to Android devices running KitKat and higher</strong>. Specifies the location of <code>button.xml</code>, an optional file containing configuration settings to customize the on-screen buttons on the device.  <strong>Note</strong>: This tag is not included in the default <code>Config.xml</code> file. If added as shown below, Enterprise Browser will extract the <code>button.xml</code> file (if present) from the EB installation folder. For more information, see the <a href="../customize">Customize EB Functions</a> guide.</p>
+<p><strong>Applies only to Android devices running KitKat and higher</strong>. Specifies the location of <code>button.xml</code>, an optional file containing configuration settings for the custom on-screen buttons on the device. <strong>Note</strong>: This tag is not included in the default <code>Config.xml</code> file. If added as shown below, Enterprise Browser will extract the <code>button.xml</code> file (if present) from the EB installation folder. For more information, see the <a href="../customize">Customize EB Functions</a> guide.</p>
 
 <p><strong>Possible Values</strong>:</p>
 
@@ -745,9 +776,19 @@
 
 <h3 id="jslibraries" class="anchor"><a class="heading-anchor" href="#jslibraries"><span></span></a>JSLibraries</h3>
 
-<p><strong>Applies only to devices running Android KitKat and higher</strong>. Causes the Enterprise Browser JavaScript API libraries (<code>ebapi-modules.js</code> and <code>elements.js</code>) to be injected into the DOM of every HTML page. Disabled by default. Enabling this feature (value=1) removes the requirement to manually include a reference to the API libraries on every page from which an API is called. It is designed for use when the source HTML is difficult or impossible to modify. </p>
+<p><strong>Applies only to devices running Android KitKat and higher</strong>. Causes the Enterprise Browser JavaScript API libraries (<code>ebapi-modules.js</code> and <code>elements.js</code>) to be injected into the DOM of every HTML page. Disabled by default. Enabling this feature (value=1) removes the requirement to manually include a reference to the API libraries on every page from which an API is called, but will not conflict with such references. </p>
 
-<p><strong>Important: If the source HTML issues API calls using meta tags or body/window-onload commands, Zebra recommends using <a href="../dominjection">DOM Injection</a> for best results when inserting API libraries</strong>. </p>
+<p><strong>Important Notes</strong>: </p>
+
+<ul>
+<li><strong>The JSLibraries parameter should be used only if the existing HTML pages <u>DO NOT</u> invoke EB APIs using HTML meta tags and/or onload attributes</strong>. </li>
+
+<li>The standard method of accessing Enterprise Browser API libraries (<code>ebapi-modules.js</code> and <code>elements.js</code>) is to include a reference to the appropriate library on every HTML page from which an EB API is called. </li>
+
+<li>The standard API access method should be used whenever possible and is detailed on each of the <a href="../../api">API pages</a>. </li>
+
+<li>For scenarios in which it is difficult or impossible to modify the HTML source to include EB API references, Zebra recommends invoking APIs using <a href="../dominjection">DOM Injection</a> for best results. </li>
+</ul>
 
 <p><strong>Possible Values</strong>:</p>
 
@@ -1731,7 +1772,7 @@
 
 <h3 id="webstoragedbpath" class="anchor"><a class="heading-anchor" href="#webstoragedbpath"><span></span></a>WebStorageDBPath</h3>
 
-<p><strong>Applies to Windows Mobile/CE using the Zebra Webkit only</strong>. Sets the path to an existing directory for storage of web storage databases.  Case sensitive. </p>
+<p><strong>Applies to Windows Mobile/CE only</strong>. <!-- 7/7/17 removed "...using the Zebra Webkit only" per eng.--> Sets the path to an existing directory for storage of web storage databases.  Case sensitive. </p>
 
 <p><strong>Possible Values</strong>:</p>
 
@@ -1791,7 +1832,7 @@
 
 <h3 id="applicationcacheenabled" class="anchor"><a class="heading-anchor" href="#applicationcacheenabled"><span></span></a>ApplicationCacheEnabled</h3>
 
-<p><strong>Applies only to Android devices running KitKat and higher</strong>. Allows an HTML5 app to be stored locally for off-line operation, improved speed and reduced server load. Disabled by default. <strong>Note: This is unrelated to the web cache feature</strong>.  </p>
+<p><strong>Applies to Windows Mobile/CE only</strong>.<!-- **Applies only to Android devices running KitKat and higher**.  7/7/17- changed to WM/CE only, per eng.--> Allows an HTML5 app to be stored locally for off-line operation, improved speed and reduced server load. Disabled by default. <strong>Note: This is unrelated to the web cache feature</strong>.  </p>
 
 <!-- removed, per eng. This is not a user-accessible dir. 
 Application cache data is stored on the device in:<br> 
@@ -2218,7 +2259,7 @@ Whether or not to preload the NPAPI plugin to mimic the NoSIP ActiveX object in 
 <p><strong>Possible Values</strong>:</p>
 
 <ul>
-<li>URL: PortNo</li>
+<li>URL:PortNo</li>
 </ul>
 
 <h4 id="example-76" class="anchor"><a class="heading-anchor" href="#example-76"><span></span></a>Example</h4>
@@ -2229,11 +2270,12 @@ Whether or not to preload the NPAPI plugin to mimic the NoSIP ActiveX object in 
 
 <h3 id="no_proxy" class="anchor"><a class="heading-anchor" href="#no_proxy"><span></span></a>No_Proxy</h3>
 
-<p><strong>Applies to the Zebra Webkit engine only</strong>. Used to specify sites to be accessed directly rather than through a proxy. Accepts a comma-separated list of host names, domain names (beginning with a dot), IP addresses, or CIDR-format IP network addresses. Examples: myhost, .mydomain.com, 192.168.1.1 and 192.168.0.0/24. 
-<strong>Possible Values</strong>:</p>
+<p><strong>Applies to Windows Mobile/CE only</strong>. <!-- **Applies to the Zebra Webkit engine only**. 7/7/17- changed to WM/CE only, per eng.--> Used to specify sites to be accessed directly rather than through a proxy. Accepts a comma-separated list of host names, domain names (beginning with a dot), IP addresses, or CIDR-format IP network addresses. Examples: myhost, .mydomain.com, 192.168.1.1 and 192.168.0.0/24. </p>
+
+<p><strong>Possible Values</strong>:</p>
 
 <ul>
-<li>Comma separated list of direct access addresses.</li>
+<li>Comma-separated list of direct access addresses</li>
 </ul>
 
 <h4 id="example-77" class="anchor"><a class="heading-anchor" href="#example-77"><span></span></a>Example</h4>
@@ -2865,7 +2907,7 @@ Whether or not to preload the NPAPI plugin to mimic the NoSIP ActiveX object in 
 
 <h3 id="scandecodewav" class="anchor"><a class="heading-anchor" href="#scandecodewav"><span></span></a>ScanDecodeWav</h3>
 
-<p>Specifies a '.wav'/'.ogg' file to be played when a scanned barcode is successfully decoded. File must be resident on the device. Overrides all scanner beeper settings. Case sensitive. '.ogg' file is supported on Android platform only. The ScanDecodeWav config tag doesnot rely on DecodeDuration, DecodeFrequency and DecodeVolume config tags. This feature is applicable to WM/CE platform &amp; Android KitKat and above platform only. See <a href="#scandecodewav-on-android-platform">remarks</a> section below.</p>
+<p>Specifies a '.wav'/'.ogg' file to be played when a scanned barcode is successfully decoded. File must be resident on the device. Overrides all scanner beeper settings. Case sensitive. '.ogg' file is supported on Android platform only. The ScanDecodeWav config tag does not rely on DecodeDuration, DecodeFrequency and DecodeVolume config tags. <strong>Applies only to Windows Mobile/CE and Android KitKat and above</strong>. Also see <a href="#remarks">remarks</a> section below.</p>
 
 <p><strong>Possible Values</strong>:</p>
 
@@ -3121,7 +3163,7 @@ For Android - If alarm.ogg file is present under '/sdcard' directory in the devi
 <li>The user presses the stop button. </li>
 </ol>
 
-<p>The browser will automatically append the querystring value "badlink" containing the URL of the page that could not be reached, and 'stop=true' if the page was loaded because the user pressed the stop button. The page specified in the badlink setting should be a device-resident file using the <code>file://</code> protocol so it’s accessible by the browser. </p>
+<p>The browser will automatically append the query string value "badlink" containing the URL of the page that could not be reached, and 'stop=true' if the page was loaded because the user pressed the stop button. The page specified in the badlink setting should be a device-resident file using the <code>file://</code> protocol so it’s accessible by the browser. </p>
 
 <p><strong>Known issues</strong>: If the device has no network connection, a navigation timeout message may be displayed on Windows Mobile devices that use the IE engine. On CE5 and CE6, the IE engine will truncate the request variables when navigation to a badlink occurs and the reason for the failure might not be displayed. </p>
 
@@ -3284,7 +3326,7 @@ For Android - If alarm.ogg file is present under '/sdcard' directory in the devi
 
 <h3 id="viewportenabled" class="anchor"><a class="heading-anchor" href="#viewportenabled"><span></span></a>ViewportEnabled</h3>
 
-<p>Controls viewport meta tag processing (enabled by default). Must be greater than zero. </p>
+<p><strong>Applies to Windows Mobile/CE only</strong>. Controls viewport meta tag processing (enabled by default). Must be greater than zero. </p>
 
 <p><strong>Possible Values</strong>:</p>
 
@@ -3318,7 +3360,7 @@ For Android - If alarm.ogg file is present under '/sdcard' directory in the devi
 
 <h3 id="cafile" class="anchor"><a class="heading-anchor" href="#cafile"><span></span></a>CaFile</h3>
 
-<p><strong>Applies to Windows Mobile/CE only</strong>. Specifies the location of a device-resident file containing CA certificates in PEM format for authentication of a server. Please <a href="http://www.openssl.org/docs/ssl/SSL_CTX_load_verify_locations.html">refer to openSSL</a> for more information. </p>
+<p><strong>Applies to Windows Mobile/CE only</strong>. Specifies the location of a device-resident file containing CA certificates in PEM format for authentication of a server. Please <a href="https://www.openssl.org/docs/man1.0.2/ssl/SSL_CTX_load_verify_locations.html">refer to openSSL</a> for more information. </p>
 
 <blockquote>
   <p>Note: Enterprise Browser supports only a single PEM certificate file. If multiple certificates must be passed to the Webkit browser on WM/CE, the contents of multiple <code>.pem</code> certificates can be combined into a single file using a text editor. The combined file can then be specified in the CaFile parameter. </p>
