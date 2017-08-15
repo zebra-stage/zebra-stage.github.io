@@ -250,56 +250,103 @@ i.putExtra("com.symbol.datawedge.api.SET_DISABLED_APP_LIST", "&lt;bundle&gt;");
 
 <p>The main bundle <code>DISABLED_APP_LIST</code> contains the following properties:</p>
 
-<ul>
-<li><p><strong>CONFIG_MODE</strong> [String]: (Default=OVERWRITE)</p>
-
-<p></p><ul>
-<li><strong>UPDATE</strong>: Adds the specified packages and/or activities to the existing list </li></ul><p></p>
-
-<p></p></li><li><strong>REMOVE</strong>: Removes the specified packages and/or activities from existing list</li><p></p>
-
-<p></p><li><strong>OVERWRITE</strong>: Replaces the existing list with the specified list. <strong>Erases existing list if no apps are specified</strong>.   </li><p></p></ul><p></p>
-
-<li><p><strong>APP_LIST</strong> [Bundle array]: </p>
+<p><strong>CONFIG_MODE</strong> [String]:</p>
 
 <ul>
-<li><strong>APP_LIST [0]</strong>:</li>
+<li><strong>UPDATE</strong>: Adds the specified packages and/or activities to the existing list </li>
 
-<li><strong>PACKAGE_NAME [String]</strong>: "com.symbol.emdk.barcodesample1"</li>
+<li><strong>REMOVE</strong>: Removes the specified packages and/or activities from existing list</li>
 
-<li><strong>ACTIVITY_LIST &lt;List&gt;</strong>: [“com.symbol.emdk.barcodesample1.MainActivity” ,”com.symbol.emdk.barcodesample1.ResultsActivity”]</li></ul></li>
+<li><strong>OVERWRITE</strong>: Replaces the existing list with the specified list. <strong>Erases existing list if no apps are specified</strong>.</li>
+</ul>
 
-<li><p><strong>APP_LIST [1]</strong>:</p>
+<p><strong>APP_LIST</strong> [Bundle array]: </p>
 
-<p></p><ul>
-<li><strong>PACKAGE_NAME</strong>: "com.symbol.emdk.notificationsample1"</li></ul><p></p>
+<ul>
+<li><strong>APP_LIST [0]</strong>:
 
-<p></p></li><li><strong>ACTIVITY_LIST &lt;List&gt;</strong>: [“*”]</li><p></p>
 
+<ul>
+<li><strong>PACKAGE_NAME</strong> [String]: Package name of the app. Required field; wildcard ("*") not supported. </li>
+
+<li><strong>ACTIVITY_LIST</strong> [Array of strings]: Leave blank or use wildcard ("*") to indicate whole package.  </li></ul>
+</li>
+</ul>
 
 <hr>
 
-<h3 id="returnvalues" class="anchor"><a class="heading-anchor" href="#returnvalues"><span></span></a>Return Values</h3>
+<h4 id="examples" class="anchor"><a class="heading-anchor" href="#examples"><span></span></a>Examples</h4>
 
-<p><strong>APP_LIST [ ]</strong>:</p>
-
-<ul>
-<li><p><strong>APP_LIST [0]</strong>:</p>
+<p><strong>APP_LIST [0]</strong>:</p>
 
 <ul>
-<li><strong>PACKAGE_NAME [String]</strong>: "com.symbol.emdk.barcodesample1"</li>
+<li><strong>PACKAGE_NAME</strong> ["com.symbol.emdk.notificationsample1"]</li>
 
-<li><strong>ACTIVITY_LIST &lt;List&gt;</strong>: [“com.symbol.emdk.barcodesample1.MainActivity” ,”com.symbol.emdk.barcodesample1.ResultsActivity”]</li></ul></li>
+<li><strong>ACTIVITY_LIST</strong> [“com.symbol.emdk.barcodesample1.MainActivity” ,”com.symbol.emdk.barcodesample1.ResultsActivity”] </li>
+</ul>
 
-<li><p><strong>APP_LIST [1]</strong>:</p>
+<p>For the scenario above...</p>
 
-<p></p><ul>
-<li><strong>PACKAGE_NAME</strong>: "com.symbol.emdk.notificationsample1"</li></ul><p></p>
+<ul>
+<li><p><strong>In UPDATE mode</strong>, if the specified package name already exists in the Disabled Apps List, DataWedge adds the specified activities to those previously specified for the package. If not, it adds the package and the specified activities.</p></li>
 
-<p></p></li><li><strong>ACTIVITY_LIST &lt;List&gt;</strong>: [“*”]</li><p></p></ul><p></p>
+<li><p><strong>In REMOVE mode</strong>, if the specified package name exists in the Disabled Apps List, DataWedge removes it. It otherwise returns an <code>INVALID_PARAMETER</code> error.</p></li>
+</ul>
 
+<hr>
 
-<p>See <a href="#notes">Notes</a>. </p>
+<p><strong>APP_LIST [1]</strong>:</p>
+
+<ul>
+<li><strong>PACKAGE_NAME</strong> [String]: "com.symbol.emdk.notificationsample1"</li>
+
+<li><strong>ACTIVITY_LIST</strong> [“*”]</li>
+</ul>
+
+<p>For the scenario above...</p>
+
+<ul>
+<li><strong>In UPDATE mode</strong>, DataWedge is disabled for all activities of the specified package.</li>
+
+<li><strong>In REMOVE mode</strong>, DataWedge removes the specified package from the disabled list and ignores the wildcard character, which is not considered as a substring of the package name or activity name. To remove one or more individual activities, specify the whole package name and the activities for removal.</li>
+</ul>
+
+<hr>
+
+<p><strong>APP_LIST [2]</strong>:</p>
+
+<ul>
+<li><strong>PACKAGE_NAME</strong>: "com.symbol.emdk.notificationsample1"</li>
+</ul>
+
+<p>For the scenario above...</p>
+
+<ul>
+<li><strong>In UPDATE mode</strong>, DataWedge is disabled for all the activities of the specified package.</li>
+
+<li><strong>In REMOVE mode</strong>, DataWedge removes the specified package from the disabled list (enabling the app to use DataWedge). </li>
+</ul>
+
+<p><strong>Important: The APP_LIST bundle extra must be specified only when using UPDATE and REMOVE configuration modes. It is not required for OVERWRITE mode, which in that case replaces the existing disabled list with NULL, thereby deleting all packages and activities in the disabled list</strong>.</p>
+
+<hr>
+
+<h3 id="resultcodes" class="anchor"><a class="heading-anchor" href="#resultcodes"><span></span></a>Result Codes</h3>
+
+<p>DataWedge will return the following error codes if the app includes the intent extras <code>RECEIVE_RESULT</code> and <code>COMMAND_IDENTIFIER</code> to enable the app to get results using the DataWedge result intent mechanism. See <a href="#example">Example</a>, below. </p>
+
+<ul>
+<li><strong>PARAMETER_INVALID -</strong> CONFIG_MODE not defined or has invalid string value. Also returned 
+if mode is set to UPDATE or REMOVE and APP_LIST is not provided.</li>
+
+<li><strong>INVALID PACKAGE OR ACTIVITY -</strong> Package or activity name contains invalid characters</li>
+
+<li><strong>APP_ALREADY_IN_DISABLED_LIST -</strong> package or activity already in Disabled App List</li>
+
+<li><strong>APP_ALREADY_ASSOCIATED -</strong> Activity is associated with an app</li>
+
+<li><strong>APP_NOT_IN_DISABLED_LIST -</strong> Package or activity not in disabled app list</li>
+</ul>
 
 <p>Error and debug messages are logged to the Android logging system, which can be viewed and filtered by the logcat command. Use logcat from an ADB shell to view the log messages:</p>
 
@@ -355,81 +402,11 @@ i.putExtra("com.symbol.datawedge.api.GET_DISABLED_APP_LIST", bMain);
 sendBroadcast(i);
 </code></pre>
 
-<h3 id="returnvalues-1" class="anchor"><a class="heading-anchor" href="#returnvalues-1"><span></span></a>Return Values</h3>
-
-<p>DataWedge will return the following error codes if the app includes the intent extras <code>RECEIVE_RESULT</code> and <code>COMMAND_IDENTIFIER</code> to enable the app to get results using the DataWedge result intent mechanism. See <a href="#example">Example</a>, below. </p>
-
-<ul>
-<li><strong>PARAMETER_INVALID -</strong> CONFIG_MODE not defined or has invalid string value
-If mode is set to ‘UPDATE’ or ‘REMOVE’ and ‘APP_LIST’ is not provided.</li>
-
-<li><strong>INVALID PACKAGE OR ACTIVITY -</strong> Package or activity name contains invalid characters</li>
-
-<li><strong>APP_ALREADY_IN_DISABLED_LIST -</strong> package or activity already in Disabled App List</li>
-
-<li><strong>APP_ALREADY_ASSOCIATED -</strong> Activity is associated with an app</li>
-
-<li><strong>APP_NOT_IN_DISABLED_LIST -</strong> Package or activity not in disabled app list</li>
-</ul>
-
-<p>Error and debug messages are logged to the Android logging system, which can be viewed and filtered by the logcat command. Use logcat from an ADB shell to view the log messages:</p>
-
-<pre class="prettyprint"><code>
-$ adb logcat -s DWAPI
-</code></pre>
-
-<p>Error messages are logged for invalid actions, parameters and failures (e.g. Profile not found or associated with an application).</p>
-
 <hr>
-
-<p>OLD OLD OLD</p>
-
-<h3 id="example-1" class="anchor"><a class="heading-anchor" href="#example-1"><span></span></a>Example</h3>
-
-<pre class="prettyprint"><code>// define action and data strings
-String switchToProfile = "com.symbol.datawedge.api.ACTION";
-String extraData = "com.symbol.datawedge.api.SWITCH_TO_PROFILE";
-
-public void onResume() {
-        super.onResume();
-
-        // create the intent
-        Intent i = new Intent();
-
-        // set the action to perform
-        i.setAction(switchToProfile);
-
-        // add additional info
-        i.putExtra(extraData, "myProfile");
-
-        // send the intent to DataWedge
-        context.this.sendBroadcast(i);
-}
-</code></pre>
 
 <h3 id="notes" class="anchor"><a class="heading-anchor" href="#notes"><span></span></a>Notes</h3>
 
-<blockquote>
-  <blockquote>
-    <blockquote>
-      <p>FIXXXXX </p>
-    </blockquote>
-  </blockquote>
-</blockquote>
-
-<p>APP_LIST [0] example
-If mode set as ‘UPDATE’, DataWedg first check whether above package already in the disable list, if so list will be updated with adding given two activities, otherwise it will add package and two activities to list.
-If mode set as ‘REMOVE’, DataWedge will first check whether given package and activities are available in disabled list. If so it will remove those from the list, otherwise it will return the error as invalid parameters.</p>
-
-<p>APP_LIST [1] example
-If mode set as ‘UPDATE’ then DataWedge will be disabled for all the activities of this package.
-If mode set as ‘REMOVE’, DataWedge will remove whole package from the disabled list. 
-NOTE: DataWege consider wildcard (*) in this scenario only; it is not considered wildcard as substring of package name or activity name. In that case user, should mention whole package name and activity names as parameters.</p>
-
-<p>[after that]
-If bundle extra ‘APP_LIST’ is not given as parameter in bundle data, it is valid only when configuration mode is set to ‘OVERWRITE; in that case, it is considered as request to replace existing disabled list with NULL, and hence delete the whole packages and activities in the disabled list.        </p>
-
-<p>If a package or activity is associated with an app, modifications will not per permitted (must be confirmed; I got that from the result codes) </p>
+<p>(none)</p>
 
 <hr>
 
