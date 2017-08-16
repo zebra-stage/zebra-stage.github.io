@@ -364,6 +364,28 @@ i.putExtra("com.symbol.datawedge.api.SET_CONFIG", &lt;mainbundle&gt;);
 
 <p><strong>ACTIVITY_LIST</strong> [List]: A list of activities for the <code>PACKAGE_NAME</code>. Wildcard (*) character also supported.</p>
 
+<h3 id="resultcodes" class="anchor"><a class="heading-anchor" href="#resultcodes"><span></span></a>Result Codes</h3>
+
+<p>DataWedge will return the following error codes if the app includes the intent extras <code>RECEIVE_RESULT</code> and <code>COMMAND_IDENTIFIER</code> to enable the app to get results using the DataWedge result intent mechanism. See <a href="#example">Example</a>, below. </p>
+
+<ul>
+<li><strong>PLUGIN_NOT_SUPPORTED -</strong> FAILURE</li>
+
+<li><strong>BUNDLE_EMPTY -</strong> FAILURE </li>
+
+<li><strong>PROFILE_NAME_EMPTY -</strong> FAILURE</li>
+
+<li><strong>PROFILE_NOT_FOUND -</strong> FAILURE</li>
+
+<li><strong>PLUGIN_BUNDLE_INVALID -</strong> FAILURE</li>
+
+<li><strong>PARAMETER_INVALID -</strong> FAILURE </li>
+
+<li><strong>APP_ALREADY_ASSOCIATED -</strong> FAILURE</li>
+
+<li><strong>OPERATION_NOT_ALLOWED -</strong> FAILURE</li>
+</ul>
+
 <h3 id="returnvalues" class="anchor"><a class="heading-anchor" href="#returnvalues"><span></span></a>Return Values</h3>
 
 <p>(None)</p>
@@ -478,6 +500,49 @@ $ adb logcat -s DWAPI
     i.setAction("com.symbol.datawedge.api.ACTION");
     i.putExtra("com.symbol.datawedge.api.SET_CONFIG", bMain);
     sendBroadcast(i);
+</code></pre>
+
+<h4 id="generateandreceiveresultcodes" class="anchor"><a class="heading-anchor" href="#generateandreceiveresultcodes"><span></span></a>Generate and receive result codes</h4>
+
+<p>Command and configuration intent parameters determine whether to send result codes (disabled by default). When using <code>SEND_RESULT</code>, the <code>COMMAND_IDENTIFIER</code> is used to match the result code with the originating intent. Sample usage of these parameters is shown below. </p>
+
+<p><strong>Note: Modify this generic code to match the API being used</strong>.  </p>
+
+<pre class="prettyprint"><code>// send the intent
+    Intent i = new Intent();
+    i.setAction(ACTION);
+    i.putExtra("com.symbol.datawedge.api.CREATE_PROFILE", "Profile1");
+
+// request and identify the result code
+    i.putExtra("SEND_RESULT","true");
+    i.putExtra("COMMAND_IDENTIFIER","123456789");
+    sendBroadcast(i);
+
+// register to receive the result
+    public void onReceive(Context context, Intent intent){
+
+        String command = intent.getStringExtra("COMMAND");
+        String commandidentifier = intent.getStringExtra("COMMAND_IDENTIFIER");
+        String result = intent.getStringExtra("RESULT");
+
+        Bundle bundle = new Bundle();
+        String resultInfo = "";
+        if(intent.hasExtra("RESULT_INFO")){
+            bundle = intent.getBundleExtra("RESULT_INFO");
+            Set&lt;String&gt; keys = bundle.keySet();
+            for (String key: keys) {
+                resultInfo += key + ": "+bundle.getString(key) + "\n";
+            }
+        }
+
+        String text = "Command: "+command+"\n" +
+                      "Result: " +result+"\n" +
+                      "Result Info: " +resultInfo + "\n" +
+                      "CID:"+commandidentifier;
+
+        Toast.makeText(context, text, Toast.LENGTH_LONG).show();
+
+    };
 </code></pre>
 
 <hr>
