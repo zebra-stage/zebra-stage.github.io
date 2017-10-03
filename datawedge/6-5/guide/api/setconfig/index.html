@@ -406,15 +406,15 @@ $ adb logcat -s DWAPI
 
 <p>Error messages are logged for invalid actions and parameters</p>
 
-<h3 id="examples" class="anchor"><a class="heading-anchor" href="#examples"><span></span></a>Examples</h3>
+<h2 id="examplecode" class="anchor"><a class="heading-anchor" href="#examplecode"><span></span></a>Example Code</h2>
 
-<h4 id="codefornestedbundles" class="anchor"><a class="heading-anchor" href="#codefornestedbundles"><span></span></a>Code for nested bundles</h4>
+<h3 id="nestedbundles" class="anchor"><a class="heading-anchor" href="#nestedbundles"><span></span></a>Nested bundles</h3>
 
 <pre class="prettyprint"><code>// MAIN BUNDLE PROPERTIES
     Bundle bMain = new Bundle();
-    bMain.putString("PROFILE_NAME","Profile12");
-    bMain.putString("PROFILE_ENABLED","true");
-    bMain.putString("CONFIG_MODE","CREATE_IF_NOT_EXIST");
+    bMain.putString("PROFILE_NAME","Profile12");            // &lt;- "Profile12" is a bundle
+    bMain.putString("PROFILE_ENABLED","true");              // &lt;- that will be enabled
+    bMain.putString("CONFIG_MODE","CREATE_IF_NOT_EXIST");   // &lt;- or created if necessary.
 
 // PLUGIN_CONFIG BUNDLE PROPERTIES
     Bundle bConfig = new Bundle();
@@ -428,16 +428,23 @@ $ adb logcat -s DWAPI
     bParams.putString("scanner_input_enabled","true");
 // 
 // NOTE: The "scanner_selection" parameter (above) supports "auto" selection
-// or the assignment of a scanner device index, which is obtained by using the
-// ENUMERATE_SCANNERS API.
+// --OR-- the assignment of a scanner device index, which is obtained by 
+// using the ENUMERATE_SCANNERS API.  
+//
+//      Syntax for scanner index:
+//
+//              Bundle bParams = new Bundle();
+//      diff--&gt; bParams.putString("current-device-id","0");
+//              bParams.putString("scanner_input_enabled","true");
+//
 // 
-// PUT bParams into bConfig
+// NEST THE BUNDLE "bParams" WITHIN THE BUNDLE "bConfig"
     bConfig.putBundle("PARAM_LIST", bParams);
 
-// PUT bConfig into bMain
+// THEN NEST THE "bConfig" BUNDLE WITHIN THE MAIN BUNDLE "bMain"
     bMain.putBundle("PLUGIN_CONFIG", bConfig);
 
-// APP_LIST BUNDLES
+// CREATE APP_LIST BUNDLES (apps and/or activities to be associated with the Profile)
     Bundle bundleApp1 = new Bundle();
     bundleApp1.putString("PACKAGE_NAME","com.symbol.emdk.simulscansample1");
     bundleApp1.putStringArray("ACTIVITY_LIST", new String[]{
@@ -459,12 +466,11 @@ $ adb logcat -s DWAPI
     bundleApp3.putString("PACKAGE_NAME","*");
     bundleApp3.putStringArray("ACTIVITY_LIST", new String[]{"*"});
 
-
     Bundle bundleApp4 = new Bundle();
     bundleApp4.putString("PACKAGE_NAME","com.symbol.myzebraapp");
     bundleApp4.putStringArray("ACTIVITY_LIST", new String[]{"*"});
 
-// PUT THEM ALL TOGETHER INTO THE MAIN BUNDLE
+// NEXT APP_LIST BUNDLE(S) INTO THE MAIN BUNDLE
     bMain.putParcelableArray("APP_LIST", new Bundle[]{
             bundleApp1
             ,bundleApp2
@@ -479,7 +485,172 @@ $ adb logcat -s DWAPI
     this.sendBroadcast(i);
 </code></pre>
 
-<h4 id="codetosendabdfconfiguration" class="anchor"><a class="heading-anchor" href="#codetosendabdfconfiguration"><span></span></a>Code to send a BDF configuration</h4>
+<h3 id="setkeystrokeoutput" class="anchor"><a class="heading-anchor" href="#setkeystrokeoutput"><span></span></a>Set KEYSTROKE Output</h3>
+
+<pre class="prettyprint"><code>@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+    registerReceivers();
+}
+
+@Override
+protected void onResume() {
+    super.onResume();
+    setKeystrokeOutputPluginConfiguration();
+}
+
+private void registerReceivers() {
+    IntentFilter filter = new IntentFilter();
+    filter.addAction("com.symbol.datawedge.api.RESULT_ACTION");
+    filter.addCategory("android.intent.category.DEFAULT");
+    registerReceiver(datawedgeKeystrokeNIntentStatusBR, filter);
+}
+
+private BroadcastReceiver datawedgeKeystrokeNIntentStatusBR = new BroadcastReceiver() {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        String command = intent.getStringExtra("COMMAND").equals("") ? "EMPTY" : intent.getStringExtra("COMMAND");
+        String commandIdentifier = intent.getStringExtra("COMMAND_IDENTIFIER").equals("") ? "EMPTY" : intent.getStringExtra("COMMAND_IDENTIFIER");
+        String result = intent.getStringExtra("RESULT").equals("") ? "EMPTY" : intent.getStringExtra("RESULT");
+
+        Bundle bundle;
+        String resultInfo = "";
+        if (intent.hasExtra("RESULT_INFO")) {
+            bundle = intent.getBundleExtra("RESULT_INFO");
+            Set&lt;String&gt; keys = bundle.keySet();
+            for (String key : keys) {
+                resultInfo += key + ": " + bundle.getString(key) + "\n";
+            }
+        }
+
+         String text="\n"+"Command:      " + command + "\n" +
+                          "Result:       " + result + "\n" +
+                          "Result Info:  " + resultInfo + "\n" +
+                          "CID:          " + commandIdentifier;
+
+        Log.d("TAG”,text);
+    }
+};
+
+public void setKeystrokeOutputPluginConfiguration() {
+
+    Bundle configBundle = new Bundle();
+    configBundle.putString("PROFILE_NAME","UserProfile");
+    configBundle.putString("PROFILE_ENABLED","true");
+    configBundle.putString("CONFIG_MODE","CREATE_IF_NOT_EXIST");
+
+    Bundle bConfig = new Bundle();
+
+    bConfig.putString("PLUGIN_NAME", "KEYSTROKE");
+    Bundle bParams = new Bundle();
+    bParams.putString("keystroke_output_enabled","true");
+    bParams.putString("keystroke_action_char","9"); // 0, 9 , 10, 13
+    bParams.putString("keystroke_delay_extended_ascii","500");
+    bParams.putString("keystroke_delay_control_chars","800");
+    bConfig.putBundle("PARAM_LIST", bParams);
+
+    configBundle.putBundle("PLUGIN_CONFIG", bConfig);
+
+    Intent i = new Intent();
+    i.setAction("com.symbol.datawedge.api.ACTION");
+    i.putExtra("com.symbol.datawedge.api.SET_CONFIG", configBundle);
+    i.putExtra("SEND_RESULT", "true");
+    i.putExtra("COMMAND_IDENTIFIER", "KEYSTROKE_API");
+    this.sendBroadcast(i);
+}
+
+@Override
+protected void onDestroy() {
+    super.onDestroy();
+    unregisterReceiver(datawedgeKeystrokeNIntentStatusBR);
+}
+</code></pre>
+
+<h3 id="setintentoutput" class="anchor"><a class="heading-anchor" href="#setintentoutput"><span></span></a>Set INTENT Output</h3>
+
+<pre class="prettyprint"><code>@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+    registerReceivers();
+}
+
+@Override
+protected void onResume() {
+    super.onResume();
+    setIntentOutputPluginConfiguration();
+}
+
+private void registerReceivers() {
+    IntentFilter filter = new IntentFilter();
+    filter.addAction("com.symbol.datawedge.api.RESULT_ACTION");
+    filter.addCategory("android.intent.category.DEFAULT");
+    registerReceiver(datawedgeKeystrokeNIntentStatusBR, filter);
+}
+
+private BroadcastReceiver datawedgeKeystrokeNIntentStatusBR = new BroadcastReceiver() {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        String command = intent.getStringExtra("COMMAND").equals("") ? "EMPTY" : intent.getStringExtra("COMMAND");
+        String commandIdentifier = intent.getStringExtra("COMMAND_IDENTIFIER").equals("") ? "EMPTY" : intent.getStringExtra("COMMAND_IDENTIFIER");
+        String result = intent.getStringExtra("RESULT").equals("") ? "EMPTY" : intent.getStringExtra("RESULT");
+
+        Bundle bundle;
+        String resultInfo = "";
+        if (intent.hasExtra("RESULT_INFO")) {
+            bundle = intent.getBundleExtra("RESULT_INFO");
+            Set&lt;String&gt; keys = bundle.keySet();
+            for (String key : keys) {
+                resultInfo += key + ": " + bundle.getString(key) + "\n";
+            }
+        }
+        String text ="\n" + "Command:      " + command + "\n" +
+                            "Result:       " + result + "\n" +
+                            "Result Info:  " + resultInfo + "\n" +
+                            "CID:          " + commandIdentifier;
+        Log.d("TAG”,text);
+    }
+};
+
+public void setIntentOutputPluginConfiguration() {
+
+    Bundle bMain = new Bundle();
+    Bundle bConfig = new Bundle();
+    Bundle bParams = new Bundle();
+
+    bParams.putString("intent_output_enabled","true");
+    bParams.putString("intent_action","com.symbol.dwudiusertokens.udi");
+    bParams.putString("intent_category","zebra.intent.dwudiusertokens.UDI");
+    bParams.putInt("intent_delivery",2); //Use "0" for Start Activity, "1" for Start Service, "2" for Broadcast
+
+    bConfig.putString("PLUGIN_NAME", "INTENT");
+    bConfig.putString("RESET_CONFIG","false");
+    bConfig.putBundle("PARAM_LIST", bParams);
+
+    bMain.putBundle("PLUGIN_CONFIG", bConfig);
+    bMain.putString("PROFILE_NAME","UserProfile");
+    bMain.putString("PROFILE_ENABLED","true");
+    bMain.putString("CONFIG_MODE","CREATE_IF_NOT_EXIST");
+
+    Intent i = new Intent();
+    i.setAction("com.symbol.datawedge.api.ACTION");
+    i.putExtra("com.symbol.datawedge.api.SET_CONFIG",bMain);
+    i.putExtra("SEND_RESULT", "true");
+    i.putExtra("COMMAND_IDENTIFIER", "INTENT_API");
+    this.sendBroadcast(i);
+}
+
+@Override
+protected void onDestroy() {
+    super.onDestroy();
+    unregisterReceiver(datawedgeKeystrokeNIntentStatusBR);
+}
+</code></pre>
+
+<h3 id="setbdfprocessing" class="anchor"><a class="heading-anchor" href="#setbdfprocessing"><span></span></a>Set BDF processing</h3>
+
+<p>Process Plug-ins manipulate the acquired data in a specified way before sending it to the associated app via the Output Plug-in. <a href="../../process/bdf">About BDF</a>. <a href="../../process/adf">About ADF</a>. </p>
 
 <pre class="prettyprint"><code>// Main bundle properties
     Bundle bMain = new Bundle();
@@ -509,7 +680,7 @@ $ adb logcat -s DWAPI
     this.sendBroadcast(i);
 </code></pre>
 
-<h4 id="generateandreceiveresultcodes" class="anchor"><a class="heading-anchor" href="#generateandreceiveresultcodes"><span></span></a>Generate and receive result codes</h4>
+<h3 id="setgetresultcodes" class="anchor"><a class="heading-anchor" href="#setgetresultcodes"><span></span></a>Set/Get Result Codes</h3>
 
 <p>Command and configuration intent parameters determine whether to send result codes (disabled by default). When using <code>SEND_RESULT</code>, the <code>COMMAND_IDENTIFIER</code> is used to match the result code with the originating intent. Sample usage of these parameters is shown below. </p>
 
@@ -554,9 +725,9 @@ $ adb logcat -s DWAPI
 
 <hr>
 
-<h3 id="scannerinputparameters" class="anchor"><a class="heading-anchor" href="#scannerinputparameters"><span></span></a>Scanner Input Parameters</h3>
+<h2 id="scannerinputparameters" class="anchor"><a class="heading-anchor" href="#scannerinputparameters"><span></span></a>Scanner Input Parameters</h2>
 
-<p><strong>Important</strong>: Support for decode parameters can vary depending on the scanning device selected. For device-specific support notes, please refer to the <a href="https://www.zebra.com/us/en/sitesearch.html?q=integrator">Integrator Guide</a> that accompanied the unit. </p>
+<p><strong>Important</strong>: Support for decode parameters can vary depending on the selected scanning device. For device-specific support notes, please refer to the <a href="https://www.zebra.com/us/en/sitesearch.html?q=integrator">Integrator Guide</a> that accompanied the unit. </p>
 
 <blockquote>
   <p>All parameters are case sensitive.</p>
@@ -578,7 +749,7 @@ $ adb logcat -s DWAPI
 </tr>
 <tr class="c3"><td class="c4" colspan="1" rowspan="1"><p class="c1"><span class="c0">scanner_input_enabled</span></p></td><td class="c2" colspan="1" rowspan="1"><p class="c1"><span class="c0">false</span></p><p class="c1"><span class="c0">true</span></p></td></tr>
 <tr class="c3" bgcolor="#e0e0eb"><td class="c4" colspan="1" rowspan="1"><p class="c1"><span class="c0">trigger-wakeup</span></p></td><td class="c2" colspan="1" rowspan="1"><p class="c1"><span class="c0">false</span></p><p class="c1"><span class="c0">true</span></p></td></tr>
-<tr class="c3"><td class="c4" colspan="1" rowspan="1"><p class="c1"><span class="c0">scanner_selection</span></p></td><td class="c2" colspan="1" rowspan="1"><p class="c1"><span class="c0">auto</span></p><p class="c1"><span class="c0">0–n (valid scanner index from <a href="../enumeratescanners">ENUMERATE_SCANNERS</a>)</span></p></td></tr>
+<tr class="c3"><td class="c4" colspan="1" rowspan="1"><p class="c1"><span class="c0">scanner_selection</span></p></td><td class="c2" colspan="1" rowspan="1"><p class="c1"><span class="c0">auto</span></p><p class="c1"><span class="c0">0–n (valid scanner index from <a href="../enumeratescanners">ENUMERATE_SCANNERS API</a>)</span></p></td></tr>
 <tr class="c3" bgcolor="#e0e0eb"><td class="c4" colspan="1" rowspan="1"><p class="c1"><span class="c0">decoder_upca</span></p></td><td class="c2" colspan="1" rowspan="1"><p class="c1"><span class="c0">false</span></p><p class="c1"><span class="c0">true</span></p></td></tr>
 <tr class="c3"><td class="c4" colspan="1" rowspan="1"><p class="c1"><span class="c0">decoder_upce0</span></p></td><td class="c2" colspan="1" rowspan="1"><p class="c1"><span class="c0">false</span></p><p class="c1"><span class="c0">true</span></p></td></tr>
 <tr class="c3" bgcolor="#e0e0eb"><td class="c4" colspan="1" rowspan="1"><p class="c1"><span class="c0">decoder_ean13</span></p></td><td class="c2" colspan="1" rowspan="1"><p class="c1"><span class="c0">false</span></p><p class="c1"><span class="c0">true</span></p></td></tr>
@@ -753,7 +924,11 @@ $ adb logcat -s DWAPI
 
 <hr>
 
-<h3 id="keystrokeoutputparameters" class="anchor"><a class="heading-anchor" href="#keystrokeoutputparameters"><span></span></a>Keystroke Output Parameters</h3>
+<h2 id="keystrokeoutputparameters" class="anchor"><a class="heading-anchor" href="#keystrokeoutputparameters"><span></span></a>Keystroke Output Parameters</h2>
+
+<blockquote>
+  <p>All parameters are case sensitive.</p>
+</blockquote>
 
 <table class="c19">
 <tbody>
