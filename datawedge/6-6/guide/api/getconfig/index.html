@@ -247,6 +247,36 @@ i.putExtra("com.symbol.datawedge.api.GET_CONFIG", "&lt;profile name&gt;");
 
 <p><strong>EXTRA VALUE</strong> [Bundle]: "&lt;Profile name&gt;", "&lt;Plug-in&gt;"</p>
 
+<p><strong>SCANNER_IDENTIFIER</strong> [String]: in each scanner info bundle for each scanner supported in the device (introduced in DataWedge 6.5). Both parameters are supported in DataWedge 6.6; the scanner identifier value takes precedence if an index also is referenced in the code.  </p>
+
+<p><code>scanner_selection_by_identifier</code> [string]- takes a value from the list of Scanner Identifiers below:</p>
+
+<p><strong>Possible values</strong>:</p>
+
+<ul>
+<li><strong>AUTO</strong> - Automatic scanner selection</li>
+
+<li><strong>INTERNAL_IMAGER</strong> - Built-in imager scanner</li>
+
+<li><strong>INTERNAL_LASER</strong> - Built-in laser scanner</li>
+
+<li><strong>INTERNAL_CAMERA</strong> - Built-in camera scanner</li>
+
+<li><strong>SERIAL_SSI</strong> - Pluggable Z-back scanner for ET50/ET55 </li>
+
+<li><strong>BLUETOOTH_SSI</strong> - RS507 Bluetooth scanner</li>
+
+<li><strong>BLUETOOTH_RS6000</strong> - RS6000 Bluetooth scanner</li>
+
+<li><strong>BLUETOOTH_DS3678</strong> - DS3678 Bluetooth scanner</li>
+
+<li><strong>PLUGABLE_SSI</strong> - Serial SSI scanner RS429 (for use with WT6000)</li>
+
+<li><strong>PLUGABLE_SSI_RS5000</strong> - Serial SSI scanner RS5000 (for use with WT6000)</li>
+
+<li><strong>USB_SSI_DS3608</strong> - DS3608 pluggable USB scanner</li>
+</ul>
+
 <h2 id="returnvalues" class="anchor"><a class="heading-anchor" href="#returnvalues"><span></span></a>Return Values</h2>
 
 <p>Returns a nested bundle with the Profile name, status and a Profile config bundle containing the param list as a bundle.  </p>
@@ -315,7 +345,7 @@ $ adb logcat -s DWAPI
                 String[] profilesList = intent.getStringArrayExtra("com.symbol.datawedge.api.GET_CONFIG_RESULT")
 </code></pre>
 
-<h4 id="codetoquerytheconfigofplugins" class="anchor"><a class="heading-anchor" href="#codetoquerytheconfigofplugins"><span></span></a>Code to query the config of plug-ins</h4>
+<h3 id="getplugins" class="anchor"><a class="heading-anchor" href="#getplugins"><span></span></a>Get Plug-ins</h3>
 
 <pre class="prettyprint"><code>// SENDING THE INTENT
     Bundle bMain = new Bundle();
@@ -324,7 +354,7 @@ $ adb logcat -s DWAPI
     ArrayList&lt;String&gt; pluginName = new ArrayList&lt;&gt;();
     pluginName.add("BARCODE");
 
-//pluginName.add("INTENT"); to add more plugins
+// pluginName.add("INTENT"); to add more plugins
 
     bConfig.putStringArrayList("PLUGIN_NAME", pluginName);
     bMain.putBundle("PLUGIN_CONFIG", bConfig);
@@ -366,7 +396,7 @@ $ adb logcat -s DWAPI
 };
 </code></pre>
 
-<h4 id="codetoqueryappassociations" class="anchor"><a class="heading-anchor" href="#codetoqueryappassociations"><span></span></a>Code to query app associations</h4>
+<h3 id="getappassociations" class="anchor"><a class="heading-anchor" href="#getappassociations"><span></span></a>Get app associations</h3>
 
 <pre class="prettyprint"><code>// SENDING THE INTENT
     selectedProfileName = "DWDemo";
@@ -414,7 +444,7 @@ $ adb logcat -s DWAPI
     };
 </code></pre>
 
-<h4 id="querythescannerstatus" class="anchor"><a class="heading-anchor" href="#querythescannerstatus"><span></span></a>Query the scanner status</h4>
+<h3 id="getscannerstatus" class="anchor"><a class="heading-anchor" href="#getscannerstatus"><span></span></a>Get scanner status</h3>
 
 <pre class="prettyprint"><code>// SENDING THE INTENT
     Intent i = new Intent();
@@ -452,6 +482,36 @@ $ adb logcat -s DWAPI
             }
         };
     };
+</code></pre>
+
+<h3 id="getscanneridentifier" class="anchor"><a class="heading-anchor" href="#getscanneridentifier"><span></span></a>Get scanner identifier</h3>
+
+<pre class="prettyprint"><code>//Bundle extras = intent.getExtras();
+
+if (intent.hasExtra(RESULT_ACTION_EXTRA_GET_CONFIG)) {
+    Bundle results = intent.getBundleExtra(RESULT_ACTION_EXTRA_GET_CONFIG);
+    if(results!=null){
+        if(results.containsKey(BUNDLE_EXTRA_PLUGIN_CONFIG)){
+            ArrayList&lt;Bundle&gt; list = (ArrayList&lt;Bundle&gt;)results.get(BUNDLE_EXTRA_PLUGIN_CONFIG);
+            Bundle x = new Bundle();
+
+            if(list!=null){
+                for(Bundle it : list){
+                    if(it.containsKey(BUNDLE_EXTRA_PARAM_LIST)){
+                        Bundle b =(Bundle)it.get(BUNDLE_EXTRA_PARAM_LIST);
+                        String sEnabled = b.getString("scanner_input_enabled");
+                        String sSelection = b.getString("scanner_selection");
+                        String sSelectionId = b.getString("scanner_selection_by_identifier");
+                        String sType = b.getString("scanner_type");
+
+                        Log.d(TAG,"scanner_selection : "+sSelection);
+                        Log.d(TAG,"scanner_selection_by_identifier  : "+sSelectionId);
+                    }
+                }
+            }
+        }
+    }
+}
 </code></pre>
 
 <hr>
