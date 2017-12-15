@@ -244,9 +244,9 @@ i.putExtra("com.symbol.datawedge.api.SET_REPORTING_OPTIONS", bReporting);
 
 <p><strong>ACTION</strong> [String]: <code>com.symbol.datawedge.api.ACTION</code></p>
 
-<p><strong>EXTRA_DATA</strong> [String]: <code>com.symbol.datawedge.api.SET_REPORTING_OPTIONS</code></p>
+<p><strong>EXTRA_DATA</strong> [bundle]: <code>com.symbol.datawedge.api.SET_REPORTING_OPTIONS</code></p>
 
-<p><strong>Reporting Options</strong>:</p>
+<p><strong>Reporting Options Bundle</strong>:</p>
 
 <ul>
 <li><strong>reporting_enabled -</strong> controls whether to enable reports, generated following import operations. 
@@ -289,24 +289,89 @@ $ adb logcat -s DWAPI
 
 <p>Error messages are logged for invalid actions and parameters.</p>
 
+<h3 id="resultcodes" class="anchor"><a class="heading-anchor" href="#resultcodes"><span></span></a>Result Codes</h3>
+
+<p>DataWedge returns the following error codes if the app includes the intent extras <code>RECEIVE_RESULT</code> and <code>COMMAND_IDENTIFIER</code> to enable the app to get results using the DataWedge result intent mechanism. See <a href="#example">Example Code</a>, below.</p>
+
+<ul>
+<li><strong>BUNDLE_EMPTY -</strong> FAILURE</li>
+
+<li><strong>FAILURE –</strong> FAILURE</li>
+
+<li><strong>SUCCESS -</strong> SUCCESS</li>
+</ul>
+
+<p>Also see the <a href="../resultinfo">Result Codes guide</a> for more information. </p>
+
 <h2 id="examplecode" class="anchor"><a class="heading-anchor" href="#examplecode"><span></span></a>Example Code</h2>
+
+<h3 id="enablereporting" class="anchor"><a class="heading-anchor" href="#enablereporting"><span></span></a>Enable Reporting</h3>
 
 <p>The code below enables reporting on the device, enables reports for manual and automatic imports, and enables manual-import reports to be displayed: </p>
 
 <pre class="prettyprint"><code>
-Intent i = new Intent();
-i.setAction(ACTION);
+private BroadcastReceiver resultsReceiver = new BroadcastReceiver() {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        String command = intent.getStringExtra("COMMAND").equals("") ? "EMPTY" : intent.getStringExtra("COMMAND");
+        String commandIdentifier = intent.getStringExtra("COMMAND_IDENTIFIER").equals("") ? "EMPTY" : intent.getStringExtra("COMMAND_IDENTIFIER");
+        String result = intent.getStringExtra("RESULT").equals("") ? "EMPTY" : intent.getStringExtra("RESULT");
 
-Bundle bReporting = new Bundle();
-bReporting.putString("reporting_enabled", "false"); //true, false
-bReporting.putString("reporting_generate_option", "both"); //manual, auto, both
-bReporting.putString("reporting_show_for_manual_import", "true"); //true, false
+        Bundle bundle;
+        String resultInfo = "";
+        if (intent.hasExtra("RESULT_INFO")) {
+            bundle = intent.getBundleExtra("RESULT_INFO");
+            Set&lt;String&gt; keys = bundle.keySet();
+            for (String key : keys) {
+                resultInfo += key + ": " + bundle.getString(key) + "\n";
+            }
+        }
+        String text ="\n" + "Command:      " + command + "\n" +
+                "Result:       " + result + "\n" +
+                "Result Info:  " + resultInfo + "\n" +
+                "CID:          " + commandIdentifier;
+        Log.d("TAG",text);
+    }
+};
 
-i.putExtra("com.symbol.datawedge.api.SET_REPORTING_OPTIONS", bReporting);
-i.putExtra(ACTION_EXTRA_SEND_RESULT,"true");
-i.putExtra("COMMAND_IDENTIFIER", "123456789");
-this.sendBroadcast(i);
+public void setReportingOptions() {
+    Intent i = new Intent();
+    i.setAction("com.symbol.datawedge.api.ACTION");
+    Bundle bReporting = new Bundle();
+    bReporting.putString("reporting_enabled", "true"); //true, false
+    bReporting.putString("reporting_generate_option", "manual"); //manual, auto, both
+    bReporting.putString("reporting_show_for_manual_import", "false"); //true, false
+
+    i.putExtra("com.symbol.datawedge.api.SET_REPORTING_OPTIONS", bReporting);
+    i.putExtra("SEND_RESULT","true");
+    i.putExtra("COMMAND_IDENTIFIER", "123456789");
+    this.sendBroadcast(i);
+}
+
+private void registerReceivers() {
+    IntentFilter filter = new IntentFilter();
+    filter.addAction("com.symbol.datawedge.api.RESULT_ACTION");
+    filter.addCategory("android.intent.category.DEFAULT");
+    registerReceiver(resultsReceiver, filter);
+}
 </code></pre>
+
+<!-- PRIOR EXAMPLE GIVEN BY ENGINEERING (replaced by above 12/15/17)
+    :::java
+    Intent i = new Intent();
+    i.setAction(ACTION);
+
+    Bundle bReporting = new Bundle();
+    bReporting.putString("reporting_enabled", "false"); //true, false
+    bReporting.putString("reporting_generate_option", "both"); //manual, auto, both
+    bReporting.putString("reporting_show_for_manual_import", "true"); //true, false
+
+    i.putExtra("com.symbol.datawedge.api.SET_REPORTING_OPTIONS", bReporting);
+    i.putExtra(ACTION_EXTRA_SEND_RESULT,"true");
+    i.putExtra("COMMAND_IDENTIFIER", "123456789");
+    this.sendBroadcast(i);
+
+ -->
 
 <hr>
 
