@@ -7,8 +7,8 @@
     <meta name="author" content="Zebra Technologies">
     <meta name="google-site-verification" content="i4B78BrWnNy8ShJwe5feRW3jO3HE6gfYlYqYbxfl8yY">
     <meta name="msvalidate.01" content="6B651B00161BCE79B8950AC09D5C4C75">
-    <meta title="DataWedge Tutorials">
-    <title>DataWedge Tutorials - Zebra Technologies TechDocs</title>
+    <meta title="DataWedge Intent Example">
+    <title>DataWedge Intent Example - Zebra Technologies TechDocs</title>
     <!-- core CSS -->
     <link href="/css/bootstrap.min.css" rel="stylesheet">
     <link href="/css/font-awesome.min.css" rel="stylesheet">
@@ -124,7 +124,7 @@
                     <nav id="toc" data-toggle="toc" data-spy="affix" style="height: 75%; max-width: 225px; overflow-y: auto; ">
                         
                         <ul class="nav">
-                            <li><strong>DataWedge Tutorials</strong></li>
+                            <li><strong>DataWedge Intent Example</strong></li>
                         </ul>
                     </nav>
                     <div class="modal fade" id="modal-smartdocs" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true" data-backdrop="true">
@@ -210,7 +210,7 @@
                         <div class="col-sm-12">
                             <section id="cta" class="wow fadeIn">
                                 <div class="">
-                                    <h1 id="datawedge-tutorials" class="anchor"><a class="heading-anchor" href="#datawedge-tutorials"><span></span></a>DataWedge Tutorials</h1>
+                                    <h1 id="datawedge-intent-example" class="anchor"><a class="heading-anchor" href="#datawedge-intent-example"><span></span></a>DataWedge Intent Example</h1>
                                     <p>
                                             DataWedge
                                             6.6
@@ -226,7 +226,152 @@
                                 <div class="service-box wow fadeInRight">
                                     <div class="">
 
-                                        <p></p><h1 id="tutorialstocome" class="anchor"><a class="heading-anchor" href="#tutorialstocome"><span></span></a>TUTORIALS TO COME</h1><p></p>
+                                        <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
+
+<p>This example includes a simplified application that shows how to use the DataWedge service on Zebra mobile computing devices to receive scanned barcode data via an intent. </p>
+
+<hr>
+
+<h3 id="configuredatawedge" class="anchor"><a class="heading-anchor" href="#configuredatawedge"><span></span></a>Configure DataWedge</h3>
+
+<p><strong>Configure DataWedge to output scans via intent</strong>: </p>
+
+<p>1. <strong>Launch DataWedge</strong> via Applications --&gt; DataWedge</p>
+
+<p>2. <strong>Select a Profile</strong> (Profile0 is used by DataWedge for all apps not explicitly assigned a Profile)</p>
+
+<p>3. Confirm the following <strong>Profile settings</strong>:</p>
+
+<ul>
+<li>The Profile is <strong>enabled</strong></li>
+
+<li>Barcode input is <strong>enabled</strong></li>
+
+<li>Intent output is <strong>enabled</strong></li>
+</ul>
+
+<p>4. <strong>Configure the intent output</strong> as follows:</p>
+
+<ul>
+<li>Intent action: <strong>com.dwexample.ACTION</strong> (to match value defined in <a href="https://github.com/darryncampbell/DataWedge-Intent-Example-1/blob/master/app/src/main/res/values/strings.xml">strings.xml</a>)</li>
+
+<li>Intent category: (<strong>leave blank</strong>)</li>
+
+<li>Intent delivery: <strong>Broadcast intent</strong></li>
+</ul>
+
+<p>The image below shows the correct Profile settings:
+  <img src="datawedge_settings.png" alt="Datawedge Configuration"></p>
+
+<hr>
+
+<h3 id="runapplication" class="anchor"><a class="heading-anchor" href="#runapplication"><span></span></a>Run Application</h3>
+
+<p>1. Visit the <a href="https://github.com/darryncampbell/DataWedge-Intent-Example-1">project page</a> and download, build and launch the sample app. 
+<br></p>
+
+<p>2. <strong>Upon first launch</strong>, a screen appears similar to the image below: 
+<img src="application_before_scan.png" alt="Application_before">
+<br></p>
+
+<p>3. <strong>After scanning a barcode</strong>, fields are populated as pictured below:
+<img src="application_after_scan.png" alt="Application_after">
+<br></p>
+
+<hr>
+
+<h2 id="sourcecode" class="anchor"><a class="heading-anchor" href="#sourcecode"><span></span></a>Source Code</h2>
+
+<p>Below is the sourcecode for the main activity of the sample app. <br>
+For the <code>build.gradle</code> and other resources, visit the <a href="https://github.com/darryncampbell/DataWedge-Intent-Example-1">app's project page on github</a>.</p>
+
+<pre class="prettyprint"><code>    
+    //
+    // WARNING: This app is for demonstration purposes only.
+    // It is not intended for use in a production environment
+    //
+    package com.darryncampbell.datawedgeintentexample1;
+
+    import android.content.BroadcastReceiver;
+    import android.content.Context;
+    import android.content.Intent;
+    import android.content.IntentFilter;
+    import android.support.v7.app.AppCompatActivity;
+    import android.os.Bundle;
+    import android.util.Log;
+    import android.widget.ArrayAdapter;
+    import android.widget.Spinner;
+    import android.widget.TextView;
+    import android.widget.Toast;
+
+    import java.util.ArrayList;
+
+    public class MainActivity extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        IntentFilter filter = new IntentFilter();
+        filter.addCategory(Intent.CATEGORY_DEFAULT);
+        filter.addAction(getResources().getString(R.string.activity_intent_filter_action));
+        registerReceiver(myBroadcastReceiver, filter);
+    }
+
+    @Override
+    protected void onDestroy()
+    {
+        super.onDestroy();
+        unregisterReceiver(myBroadcastReceiver);
+    }
+
+    private BroadcastReceiver myBroadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            Bundle b = intent.getExtras();
+
+            //
+            // The following is useful for debugging to verify
+            // the format of received intents from DataWedge...
+            //
+            // for (String key : b.keySet())
+            // {
+            //   Log.v(LOG_TAG, key);
+            // }
+            //
+
+            if (action.equals(getResources().getString(R.string.activity_intent_filter_action))) {
+                //
+                //  Received a barcode scan
+                //
+                try {
+                    displayScanResult(intent, "via Broadcast");
+                } catch (Exception e) {
+                    //
+                    // Catch if the UI does not exist when broadcast is received 
+                    //
+                }
+            }
+        }
+    };
+
+    private void displayScanResult(Intent initiatingIntent, String howDataReceived)
+    {
+        String decodedSource = initiatingIntent.getStringExtra(getResources().getString(R.string.datawedge_intent_key_source));
+        String decodedData = initiatingIntent.getStringExtra(getResources().getString(R.string.datawedge_intent_key_data));
+        String decodedLabelType = initiatingIntent.getStringExtra(getResources().getString(R.string.datawedge_intent_key_label_type));
+
+        final TextView lblScanSource = (TextView) findViewById(R.id.lblScanSource);
+        final TextView lblScanData = (TextView) findViewById(R.id.lblScanData);
+        final TextView lblScanLabelType = (TextView) findViewById(R.id.lblScanDecoder);
+        lblScanSource.setText(decodedSource + " " + howDataReceived);
+        lblScanData.setText(decodedData);
+        lblScanLabelType.setText(decodedLabelType);
+    }
+}
+</code></pre><p></p>
                                         
 
 
