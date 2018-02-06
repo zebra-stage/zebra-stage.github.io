@@ -253,7 +253,7 @@ i.putExtra("com.symbol.datawedge.api.SET_CONFIG", &lt;mainbundle&gt;);
 
 <h4 id="mainbundle" class="anchor"><a class="heading-anchor" href="#mainbundle"><span></span></a>MAIN BUNDLE</h4>
 
-<p>The main SetConfig bundle includes the following properties:</p>
+<p>The main <code>SET_CONFIG</code> bundle includes the following properties:</p>
 
 <ul>
 <li><strong>PROFILE_NAME</strong> [String]: The name of the Profile on which to perform action(s)</li>
@@ -439,6 +439,8 @@ $ adb logcat -s DWAPI
 </code></pre>
 
 <p>Error messages are logged for invalid actions and parameters</p>
+
+<hr>
 
 <h2 id="examplecode" class="anchor"><a class="heading-anchor" href="#examplecode"><span></span></a>Example Code</h2>
 
@@ -757,7 +759,7 @@ protected void onDestroy() {
     };
 </code></pre>
 
-<h3 id="usetheinternalimagerforscanning" class="anchor"><a class="heading-anchor" href="#usetheinternalimagerforscanning"><span></span></a>Use the internal imager for scanning:</h3>
+<h3 id="usetheinternalimagerforscanning" class="anchor"><a class="heading-anchor" href="#usetheinternalimagerforscanning"><span></span></a>Use the internal imager for scanning</h3>
 
 <pre class="prettyprint"><code>Bundle bConfig = new Bundle();
 
@@ -770,6 +772,106 @@ bParams.putString("scanner_input_enabled", "true");
 //
 bParams.putString("scanner_selection_by_identifier", "INTERNAL_IMAGER");
 bConfig.putBundle("PARAM_LIST",bParams);
+</code></pre>
+
+<h3 id="configureanintercharacterdelay" class="anchor"><a class="heading-anchor" href="#configureanintercharacterdelay"><span></span></a>Configure an inter-character delay</h3>
+
+<pre class="prettyprint"><code>private Integer ctrlCharacterDelayValue;
+private Integer genericCharacterDelayValue;
+private Boolean flagExtendedASCIIOnly;
+
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+
+    registerReceivers();
+    ctrlCharacterDelayValue = null;
+    genericCharacterDelayValue = null;
+    flagExtendedASCIIOnly = null;
+}
+
+private void registerReceivers() {
+    IntentFilter filter = new IntentFilter();
+    filter.addAction("com.symbol.datawedge.api.RESULT_ACTION");
+    filter.addCategory(Intent.CATEGORY_DEFAULT);
+    registerReceiver(broadcastReceiver, filter);
+}
+
+@Override
+protected void onDestroy() {
+    super.onDestroy();
+    unregisterReceiver(broadcastReceiver);
+}
+
+//Set configuration
+public void setKeystrokeOutputPluginConfiguration(View v) {
+
+    Bundle configBundle = new Bundle();
+    configBundle.putString("PROFILE_NAME","Profile0 (default)");
+    configBundle.putString("PROFILE_ENABLED","true");
+    configBundle.putString("CONFIG_MODE","UPDATE");
+
+    Bundle bConfig = new Bundle();
+
+    bConfig.putString("PLUGIN_NAME", "KEYSTROKE");
+    Bundle bParams = new Bundle();
+    bParams.putString("keystroke_output_enabled","true");
+    if(ctrlCharacterDelayValue!=null){
+        bParams.putString("keystroke_delay_control_chars",ctrlCharacterDelayValue+"");
+    }
+    if(genericCharacterDelayValue !=null){
+        bParams.putString("keystroke_character_delay", genericCharacterDelayValue +"");
+    }
+    if(flagExtendedASCIIOnly!=null){
+        bParams.putString("keystroke_delay_multibyte_chars_only", flagExtendedASCIIOnly +"");
+    }
+
+    bConfig.putBundle("PARAM_LIST", bParams);
+    configBundle.putBundle("PLUGIN_CONFIG", bConfig);
+
+    Intent i = new Intent();
+    i.setAction("com.symbol.datawedge.api.ACTION");
+    i.putExtra("com.symbol.datawedge.api.SET_CONFIG", configBundle);
+    i.putExtra("SEND_RESULT", "true");
+    i.putExtra("COMMAND_IDENTIFIER", "KEYSTROKE_API");
+    this.sendBroadcast(i);
+    }
+
+//broadcast receiver
+private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        String action = intent.getAction();
+        Log.d(TAG, "#DataWedge-APP# Action: " + action);
+
+
+    //result of set config
+        if(action.equals("com.symbol.datawedge.api.RESULT_ACTION")){
+            Bundle extrasBundle = intent.getExtras();
+            Set&lt;String&gt; keys = extrasBundle.keySet();
+            if(keys!=null&amp;&amp;keys.contains("RESULT")){
+                String result = (String)extrasBundle.get("RESULT");
+                Log.d(TAG,"Result:"+result);
+                //get additional info
+                Bundle resultInforBundle = (Bundle) extrasBundle.get("RESULT_INFO");
+                Object resultCode = resultInforBundle.get("RESULT_CODE");
+                if(resultCode instanceof String){
+                    String code = (String)resultCode;
+                    Log.d(TAG,"Code:"+code);
+                }else if(resultCode instanceof String[]){
+                    String[] codesArray = (String[])resultCode;
+                    if(codesArray!=null){
+                        for(String code : codesArray){
+                            Log.d(TAG,"Code:"+code);
+                        }
+                    }
+                }
+            }
+
+        }//end result of set config
+    }//end onReceive
+};
 </code></pre>
 
 <hr>
