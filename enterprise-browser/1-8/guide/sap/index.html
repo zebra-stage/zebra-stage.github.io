@@ -254,6 +254,8 @@
 
 <li><a href="../apioverview">Enterprise Browser APIs</a></li>
 
+<li><a href="/keycapture/#mappingproprietaryfunctionkeycodes">Function Key Mapping Guide</a></li>
+
 <li><a href="../">PocketBrowser and RhoElements Migration Guides</a></li>
 
 <li><a href="../DOMinjection">DOM Injection guide</a></li>
@@ -267,19 +269,19 @@
 
 <p>The basic steps for accessing ITSmobile from an Enterprise Browser app are shown below with descriptions of (or links to) the detailed procedures for each. </p>
 
-<h3 id="setthestartpage" class="anchor"><a class="heading-anchor" href="#setthestartpage"><span></span></a>Set the Start Page</h3>
+<h3 id="1setstartpage" class="anchor"><a class="heading-anchor" href="#1setstartpage"><span></span></a>1. Set Start Page</h3>
 
 <p>Enterprise Browser must be set to start with the SAP ITSmobile application. Specify the URL of the SAP ITSmobile application in the <a href="../configreference/#startpage">StartPage</a> parameter of the EB app's <code>Config.xml</code> file. </p>
 
-<h3 id="enablejavascriptapis" class="anchor"><a class="heading-anchor" href="#enablejavascriptapis"><span></span></a>Enable JavaScript APIs</h3>
+<h3 id="2enableapis" class="anchor"><a class="heading-anchor" href="#2enableapis"><span></span></a>2. Enable APIs</h3>
 
-<p>If the app uses Enterprise Browser APIs, the <a href="../apioverview">API modules</a> must be present on the device and referenced from every HTML page that calls them. If the HTML is not available or cannot be edited, <strong>APIs also can be accessed through meta tags</strong> (see DefaultMetaTags section, below), which does not require changes to the HTML files. </p>
+<p>If the app uses Enterprise Browser APIs, the <a href="../apioverview">API modules</a> must be present on the device and referenced from every HTML page that calls them. If the HTML is not available or cannot be edited, <strong>access the API(s) through meta tags</strong>, which does not require changes to the HTML files. See "Invoke API through DefaultMetaTags," below. </p>
 
-<h3 id="handlekeyevents" class="anchor"><a class="heading-anchor" href="#handlekeyevents"><span></span></a>Handle KeyEvents</h3>
+<h3 id="3handlekeyevents" class="anchor"><a class="heading-anchor" href="#3handlekeyevents"><span></span></a>3. Handle KeyEvents</h3>
 
-<p>Enterprise Browser can handle events triggered by keypresses either by using the KeyCapture common API or the <code>onkeyup / onkeydown / onkeypress</code> JavaScript APIs. Zebra generally recommends the KeyCapture method of capturing hardware keys because of several known limitations in the JavaScript APIs on devices running Windows Mobile with the IE rendering engine. For situations in which JavaScript is the only choice, consider swithing to the Zebra Webkit engine, if possible. </p>
+<p>Enterprise Browser can handle events triggered by keypresses, either by using the KeyCapture common API or the <code>onkeyup / onkeydown / onkeypress</code> JavaScript APIs. Zebra generally recommends the KeyCapture method, particularly on devices running Windows Mobile with the IE rendering engine because of several known limitations in the JavaScript APIs. For situations in which JavaScript is the only choice, consider switching to the Zebra Webkit engine, if possible. </p>
 
-<p>KeyCapture API functionality varies based on the device and its operating system and rendering engine. Use the following table to determine available functionality.  </p>
+<p>KeyCapture API functionality varies based on the device, its operating system and the rendering engine in use. The following table can help identify available functionality.  </p>
 
 <table>
 <tbody><tr>
@@ -326,7 +328,7 @@
 
 <p><br></p>
 
-<h3 id="usingkeycaptureapi" class="anchor"><a class="heading-anchor" href="#usingkeycaptureapi"><span></span></a>Using KeyCapture API</h3>
+<h3 id="4capturekeys" class="anchor"><a class="heading-anchor" href="#4capturekeys"><span></span></a>4. Capture Keys</h3>
 
 <p>The KeyCapture API can be invoked directly from one of the app's HTML pages or through a meta tag, which us useful if the HTML is not available or cannot be edited. Both methods are shown below. </p>
 
@@ -338,7 +340,6 @@
 <li><p>Configure KeyCapture functionality in the <code>config.xml</code> file as below:</p>
 
 <pre class="prettyprint"><code>  
-
   &lt;DefaultMetaTags&gt;
     &lt;MetaTag VALUE="KeyCapture~KeyValue:All;Dispatch:True;KeyEvent:url('javascript:fireKeyEvent(%json);');" /&gt; 
   &lt;/DefaultMetaTags&gt;
@@ -347,7 +348,6 @@
 <li><p>Add the following JavaScript method as described in the <a href="../DOMinjection">DOM Injection guide</a>. The same <code>fireKeyEvent</code> method has been configured in the <code>Config.xml</code> under the <code>DefaultMetaTags</code> attribute.</p>
 
 <pre class="prettyprint"><code>  
-
   //Add the fireKeyEvent in the HTML page for handling in WM device with IE Engine
   function fireKeyEvent(event)
   {
@@ -363,21 +363,18 @@
 <li><p><strong>To capture keys via JavaScript Object</strong> using backward compatibility API:</p>
 
 <pre class="prettyprint"><code>  
-
   keyCapture.keyValue = 'All'; //Here keyCapture is 2.2 KeyCapture JavaScript Object.
 </code></pre></li>
 
 <li><p><strong>To capture keys via Meta Tags</strong> using backward compatibility API:</p>
 
 <pre class="prettyprint"><code>  
-
   &lt;META HTTP-Equiv="KeyCapture" Content="KeyValue:All; Dispatch:True; KeyEvent:url('javascript:MyCallBack(%json);')"&gt;
 </code></pre></li>
 
 <li><p><strong>To capture keys via ActiveX Object</strong> using backward compatibility API:</p>
 
 <pre class="prettyprint"><code>  
-
   var mygeneric = new ActiveXObject("PocketBrowser.Generic");
   var temp = "KeyValue:All;Dispatch:True;KeyEvent:url('javascript:MyCallBack('%s');')";
   mygeneric.InvokeMETAFunction("KeyCapture", temp);
@@ -386,34 +383,27 @@
 <li><p><strong>To capture keys via Enterprise Browser KeyCapture API</strong>:</p>
 
 <pre class="prettyprint"><code>  
-
   EB.KeyCapture.captureKey(true,"ALL", MyCallBack);
 </code></pre></li>
 
 <li><p><strong>To capture keys via JavaScript onkeydown event attribute</strong>:</p>
 
 <pre class="prettyprint"><code>
-
 &lt;html&gt;
   &lt;head&gt;
-
   &lt;script&gt;
   function jsKeyEvent(event)
   {
     alert(event.keyCode);
   }
-
   &lt;/script&gt;
-
   &lt;/head&gt;
-
   &lt;body onkeydown="jsKeyEvent(event);"&gt;&lt;/body&gt;
-
 &lt;/html&gt;
 </code></pre></li>
 </ul>
 
-<p><br></p>
+<hr>
 
 <h4 id="invokeapithroughdefaultmetatags" class="anchor"><a class="heading-anchor" href="#invokeapithroughdefaultmetatags"><span></span></a>Invoke API through DefaultMetaTags</h4>
 
@@ -422,7 +412,6 @@
 <p><strong>To apply DefaultMetaTags</strong>:</p>
 
 <pre class="prettyprint"><code>        
-
         &lt;DefaultMetaTags&gt;
           &lt;MetaTag VALUE="KeyCapture~KeyValue:All;Dispatch:True;KeyEvent:url('javascript:fireKeyEvent(%json);');" /&gt;
         &lt;/DefaultMetaTags&gt;
@@ -439,19 +428,29 @@
       &lt;/DefaultMetaTags&gt;
 </code></pre>
 
-<h3 id="functionkeys" class="anchor"><a class="heading-anchor" href="#functionkeys"><span></span></a>Function Keys</h3>
+<h3 id="5setfunctionkeys" class="anchor"><a class="heading-anchor" href="#5setfunctionkeys"><span></span></a>5. Set Function Keys</h3>
 
-<p>Function Keys can be configured to perform custom tasks on the device, and are captured in the same way as other keys. However, Function Keys are sometimes predefined by the operating system to perform certain default behaviors. For example, some Zebra devices reserve the F6 and F7 keys to control the speaker volume. In such cases, those keys cannot be captured by Enterprise Browser. <strong>For Windows Mobile/CE, also see important <a href="../configreference/#remarks">interaction notes</a></strong>.</p>
+<p>Function Keys can be configured to perform custom tasks on the device, and are captured in the same way as other keys. However, Function Keys are sometimes predefined by the operating system to perform certain default behaviors. For example, the F6 and F7 keys on some Zebra devices are reserved for controlling speaker volume. In such cases, Enterprise Browser cannot reassign those keys. <strong>For Windows Mobile/CE, also see important <a href="../configreference/#remarks">interaction notes</a></strong>.</p>
 
 <h4 id="windowskeysonandroid" class="anchor"><a class="heading-anchor" href="#windowskeysonandroid"><span></span></a>Windows Keys on Android</h4>
 
-<p>On devices with a hardware keyboard, Android apps made with Enterprise 1.2 or later might benefit by using the <a href="../configreference/#iswindowskey">&lt;isWindowKey&gt;</a> tag in the <code>Config.xml</code> file. This tag makes Android F1-F12 keys return the key codes of a Windows Mobile device, enabling apps to support Android and Windows devices with a single code base. This feature is available only on Enterprise Browser 1.2 and higher, and supports PocketBrowser 2.x/3.x and RhoElements 2.x KeyCapture APIs.</p>
+<p>On devices equipped with a hardware keyboard, Android apps created with Enterprise 1.2 or later might benefit by using the <a href="../configreference/#iswindowskey">&lt;isWindowKey&gt;</a> tag in the <code>Config.xml</code> file. This tag makes Android F1-F12 behave like those of a Windows Mobile device (returning the same key codes). This enables an app to support Android and Windows devices using a single instance of the application code. This feature is available only on Enterprise Browser 1.2 and higher, and supports PocketBrowser 2.x/3.x and RhoElements 2.x KeyCapture APIs.</p>
+
+<h4 id="microsoftproprietarykeycodevalues" class="anchor"><a class="heading-anchor" href="#microsoftproprietarykeycodevalues"><span></span></a>Microsoft Proprietary keycode values</h4>
+
+<p>The function keys of certain Zebra devices running Windows Mobile, including the WorkAbout Pro 4 and Omnii XT15 (with Windows Embedded Handheld 6.5), return a proprietary set of Unicode values via Windows character messages rather than the expected values. </p>
+
+<p>For help handling these situations, please see the Enterprise Browser <a href="../keycapture/#mappingproprietaryfunctionkeycodes">Function Key Mapping Guide</a>.</p>
+
+<!-- 
+Notes regarding WorkAbout Pro 4 WEH(WM) and Omnii XT15 WEH(WM) to be added.
+ -->
 
 <hr>
 
 <h2 id="uirendering" class="anchor"><a class="heading-anchor" href="#uirendering"><span></span></a>UI Rendering</h2>
 
-<p>UI rendering varies by the rendering engine present in the device. Rendering also can be effected by web page layout and design, font selection and other factors. Many of the styles available today are not supported by the default IE rendering engine, and pages rendered on WM/CE devices using the IE engine will render differently than devices with the Zebra Webkit engine. When designing web pages for Enterprise Browser, <strong>Zebra recommends adhering to <a href="https://developers.google.com/web/fundamentals/design-and-ui/responsive/fundamentals/?hl=en">Responsive Web Design</a> practices whenever possible</strong>.</p>
+<p>UI rendering varies depending on the rendering engine present in the device. Rendering also can be effected by web page layout and design, font selection and other factors. Many of the styles available today are not supported by the default IE rendering engine, and pages rendered on WM/CE devices using the IE engine will render differently than devices with the Zebra Webkit engine. When designing web pages for Enterprise Browser, <strong>Zebra recommends adhering to <a href="https://developers.google.com/web/fundamentals/design-and-ui/responsive/fundamentals/?hl=en">Responsive Web Design</a> practices whenever possible</strong>.</p>
 
 <p>To simply the usage of applications running on Enterprise Browser, users can now configure hardware function keys to perform ZoomIn and ZoomOut operations without having to make changes to the application.</p>
 
@@ -555,22 +554,59 @@
 <li>Desktop browser (IE/Chrome/Mozilla/Opera) </li>
 </ul>
 
-<p><strong>2. In the working browser, enter the URL below</strong> to display the UserAgent values: </p>
+<p><strong>2. Using the working browser, enter the URL below</strong> to display the UserAgent values: </p>
 
 <p><a href="https://www.whatismybrowser.com/detect/what-is-my-user-agent">https://www.whatismybrowser.com/detect/what-is-my-user-agent</a></p>
 
-<p><strong>2a. Alternatively, execute the JavaScript commands below</strong> at the browser's JavaScript console on the working device to retrieve its UserAgent values from the sample HTML page:</p>
+<p><strong>2a. Alternatively, add one of the JavaScript snippets below</strong> to the HTML on the working device. When the modified page is reloaded, the UserAgent value will be displayed. Copy that value and go to Step 3. </p>
+
+<h4 id="javascriptalertdisplay" class="anchor"><a class="heading-anchor" href="#javascriptalertdisplay"><span></span></a>JavaScript Alert Display</h4>
+
+<p>Extracts and displays the UserAgent value as a JavaScript Alert <strong>not recommended for production use</strong></p>
 
 <pre class="prettyprint"><code>
-var userAgentValue = navigator.userAgent.toString();
-alert(userAgentValue); //Note: alert is not recommended
-
-//Example UserAgent values:
-
-"Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36"
+&lt;html&gt;
+...
+&lt;head&gt;
+&lt;title&gt;UserAgent Sample Page&lt;/title&gt;
+  &lt;script type="text/javascript"&gt;  
+        function getUserAgentValue(){
+                var userAgentValue = navigator.userAgent.toString();
+                alert(userAgentValue); //Note: JavaScript Alerts are not recommended for use in production apps.
+        }      
+  &lt;/script&gt;
+&lt;/head&gt;
+&lt;body onload="getUserAgentValue();"&gt;&lt;/body&gt;
+...
+&lt;/html&gt;
 </code></pre>
 
-<p><strong>3. Copy the</strong> <code>Config.xml</code> <strong>from to non-working device</strong> to the local development host, open the file in a text editor and locate the UserAgent tag. </p>
+<h4 id="onpagedisplay" class="anchor"><a class="heading-anchor" href="#onpagedisplay"><span></span></a>On-page Display</h4>
+
+<p>Extracts and displays the UserAgent value inside an HTML page </p>
+
+<pre class="prettyprint"><code>
+&lt;html&gt;
+&lt;head&gt;
+&lt;title&gt;UserAgent Sample Page&lt;/title&gt;
+  &lt;script type="text/javascript"&gt;  
+        function getUserAgentValue(){
+                var outputDiv = document.getElementById("myUserAgentValue");
+                outputDiv.innerHTML = "&lt;b&gt;UserAgent Value:&lt;/b&gt;&lt;br/&gt;" + userAgentValue;
+        }      
+  &lt;/script&gt;
+&lt;/head&gt;
+&lt;body onload="getUserAgentValue();"&gt;
+&lt;h1&gt;UserAgent Sample Page&lt;/h1&gt;
+&lt;hr&gt;
+&lt;div id="myUserAgentValue"&gt;&lt;b&gt;UserAgent Value:&lt;/b&gt;&lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+
+<p><strong>3. Use the Config Editor utility</strong> to extract, edit and redeploy the <code>Config.xml</code> file as described beginning with in Step 4. </p>
+
+<p>As an alternative to Config Editor, copy the** <code>Config.xml</code> <strong>from to non-working device</strong> to the local development host, open the file in a text editor and locate the UserAgent tag. </p>
 
 <p>The <code>Config.xml</code> file is located: </p>
 
@@ -589,10 +625,12 @@ alert(userAgentValue); //Note: alert is not recommended
 <pre class="prettyprint"><code>"Mozilla/5.0 (Linux; Android 4.4.3; TC700H Build/01-23257-K-15-04-00-MV) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/33.0.0.0 Mobile Safari/537.36".
 </code></pre>
 
-<p>Copy all the data within the quotes and paste it into the UserAgent config tag inside quotes as shown below:</p>
+<p>Copy all the data within the quotes and paste it into the UserAgent tag (in the <code>Config.xml</code> file) inside quotes as shown below:</p>
 
 <pre class="prettyprint"><code>&lt;UserAgent value="Mozilla/5.0 (Linux; Android 4.4.3; TC700H Build/01-23257-K-15-04-00-MV) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/33.0.0.0 Mobile Safari/537.36"/&gt;
 </code></pre>
+
+<hr>
 
 <h4 id="method2" class="anchor"><a class="heading-anchor" href="#method2"><span></span></a>Method 2</h4>
 
@@ -600,6 +638,8 @@ alert(userAgentValue); //Note: alert is not recommended
 
 <pre class="prettyprint"><code>"Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; Windows Phone 6.5.3.5)"
 </code></pre>
+
+<hr>
 
 <h3 id="tobecontinued" class="anchor"><a class="heading-anchor" href="#tobecontinued"><span></span></a>TO BE CONTINUED...</h3>
 
@@ -621,28 +661,14 @@ alert(userAgentValue); //Note: alert is not recommended
 
 <hr>
 
-<h2 id="functionkeymapping" class="anchor"><a class="heading-anchor" href="#functionkeymapping"><span></span></a>Function Key Mapping</h2>
-
-<p>Function Key Mapping SAP Guide</p>
-
-<p>(Regarding WorkAbout Pro 4 WEH(WM) and Omnii XT15 WEH(WM) Device - Function Key Usage Notes to be added)</p>
-
-<p>As SAP application is highly dependent on function keys. But on few WM devices as mentioned above when user presses any function key, it returns a proprietary set of Unicode values via Windows character messages rather than the values expected from Windows keydown/keyup messages.</p>
-
-<p>For example, pressing the F1 key returns the hexadecimal value E001 (57345 decimal) rather than the hex value 0x70 (112 decimal) as generally expected. This can lead to compatibility issues for Enterprise Browser apps when running on such WM devices.</p>
-
-<p>Therefore, we need to add a note for such scenario mentioning that this can be handled by Function Key Mapping.</p>
-
-<p>Please to refer Enterprise Browser Function Key Mapping Guide i.e. http://techdocs.zebra.com/enterprise-browser/1-7/guide/keycapture/#mappingproprietaryfunctionkeycodes</p>
-
-<hr>
-
 <p><strong>Related Guides</strong>: </p>
 
 <ul>
 <li><a href="../configreference">Enterprise Browser Config.xml Reference</a></li>
 
 <li><a href="../apioverview">Enterprise Browser APIs</a></li>
+
+<li><a href="/keycapture/#mappingproprietaryfunctionkeycodes">Function Key Mapping Guide</a></li>
 
 <li><a href="../">PocketBrowser and RhoElements Migration Guides</a></li>
 
