@@ -231,11 +231,13 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>The <code>SerialCommManager</code> is the primary object used communicate with remote devices using serial or USB ports of the mobile device.</p>
+<p>The <code>serialCommManager</code> is the primary object created by the <code>SerialCommManager</code> class. It is used to communicate with remote devices through a serial or USB port on the mobile device.</p>
+
+<hr>
 
 <h3 id="getserialcommmanager" class="anchor"><a class="heading-anchor" href="#getserialcommmanager"><span></span></a>Get SerialCommManager</h3>
 
-<p>An EMDK app must be opened before getting the <code>SerialCommManager</code> object and must release the <code>SerialCommManager</code> before quitting.</p>
+<p>An EMDK app must be opened before getting the <code>serialCommManager</code> object and must release the <code>SerialCommManager</code> before quitting.</p>
 
 <p>To get the <code>SerialCommManager</code>:</p>
 
@@ -256,9 +258,9 @@ if (serialCommManager != null) {
 
 <hr>
 
-<h3 id="enumerateserialcommport" class="anchor"><a class="heading-anchor" href="#enumerateserialcommport"><span></span></a>Enumerate SerialComm/Port</h3>
+<h3 id="getserialcommport" class="anchor"><a class="heading-anchor" href="#getserialcommport"><span></span></a>Get SerialComm/Port</h3>
 
-<p>An app can get <code>SerialComm</code> by enumerating the <code>SerialPortInfo</code>. </p>
+<p>An app can get a <code>SerialComm</code> port object by enumerating the <code>SerialPortInfo</code>. </p>
 
 <p>First use the <code>SerialCommManager.getSupportedPorts()</code> first and pass one of the received <code>SerialPortInfo</code> objects to <code>SerialCommManager.getPort(SerialPortInfo portInfo)</code>: </p>
 
@@ -266,6 +268,14 @@ if (serialCommManager != null) {
 List&lt;SerialPortInfo&gt; serialPorts = serialCommManager.getSupportedPorts();
 serialComm = serialCommManager.getPort(serialPorts.get(0));
 </code></pre>
+
+<p><strong>Support Notes</strong>: </p>
+
+<ul>
+<li><strong>TC70/TC75</strong> devices enumerate only one port. </li>
+
+<li><strong>VC80X</strong> devices enumerate two or more ports.</li>
+</ul>
 
 <hr>
 
@@ -312,7 +322,9 @@ byte[] readBuffer = serialComm.read(10000); //Timeout after 10 seconds
 
 <h3 id="getsetconfig" class="anchor"><a class="heading-anchor" href="#getsetconfig"><span></span></a>Get/Set Config</h3>
 
-<h4 id="getconfig" class="anchor"><a class="heading-anchor" href="#getconfig"><span></span></a>Get config</h4>
+<p><strong>Note</strong>: TC70/TC75 devices running Lollipop and Marshmallow do not support <code>getConfig</code> or <code>setConfig</code> functions. </p>
+
+<h4 id="getconfig" class="anchor"><a class="heading-anchor" href="#getconfig"><span></span></a>Get Config</h4>
 
 <p>Get the current configuration settings of the <code>SerialComm</code> channel: </p>
 
@@ -329,25 +341,23 @@ SerialCommConfig config = serialComm.getConfig();
 <p>Set the <code>SerialComm</code> settings for the currently selected port: </p>
 
 <pre class="prettyprint"><code>
-SerialCommConfig config = serialComm.getConfig();
-config.baudRate = 9600;
-config.dataBit = SerialCommConfig.DataBits.EIGHT;
-config.parity = SerialCommConfig.ParityBits.EVEN;
-config.stopBit = SerialCommConfig.StopBits.ONE;
-serialComm.setConfig(config);
+//Get the supported configuration for the serial port:
+SerialCommConfig config = serialComm.getConfig(); 
+config.baudRate = SerialCommConfig.BaudRates.BR_9600; //Set baud rate
+config.dataBit = SerialCommConfig.DataBits.EIGHT; //Set dataBit
+config.parity = SerialCommConfig.ParityBits.EVEN; //Set parity
+config.stopBit = SerialCommConfig.StopBits.ONE; //Set stopBit
+config.flowControlMode = SerialCommConfig.FlowControlMode.RTS_CTS; //Set flow control
+serialComm.setConfig(config); // Save the configuration for the port
 </code></pre>
 
-<p>If the given value is not supported or invalid, an exception will be thrown with an error code and failure description. The <code>SerialComm</code> object must be enabled before calling <code>getConfig()</code> and <code>setConfig()</code> methods.</p>
+<p>If the given value is not supported or is invalid, an exception will be thrown with an error code and failure description. The <code>SerialComm</code> object must be enabled before calling <code>getConfig()</code> and <code>setConfig()</code> methods.</p>
 
 <hr>
 
 <h3 id="signalstate" class="anchor"><a class="heading-anchor" href="#signalstate"><span></span></a>Signal State</h3>
 
-<ul>
-<li>Supported on EMDK 6.1.0 and higher</li>
-
-<li>Not supported on all BSPs</li>
-</ul>
+<p><strong>Note: Some BSPs do not support this function</strong>. </p>
 
 <h4 id="getsignalstate" class="anchor"><a class="heading-anchor" href="#getsignalstate"><span></span></a>Get Signal State</h4>
 
@@ -372,7 +382,9 @@ serialComm.setSignalState(SerialComm.ControlSignal.DTR, signalState);
 
 <h2 id="samplecode" class="anchor"><a class="heading-anchor" href="#samplecode"><span></span></a>Sample Code</h2>
 
-<pre class="prettyprint"><code>
+<p>The code below demonstrates how to get the <code>SerialCommManager</code> object, enumerate, get, configure and write to a serial port, and to disable it when the app is finished using it.  </p>
+
+<pre class="prettyprint"><code>    
 public class MainActivity extends Activity implements EMDKListener {
     SerialComm serialComm;
     SerialCommManager serialCommManager;
@@ -380,30 +392,58 @@ public class MainActivity extends Activity implements EMDKListener {
     private String TAG = MainActivity.class.getSimpleName();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        EMDKResults results = EMDKManager.getEMDKManager(getApplicationContext(), this);
+        super.onCreate(savedInstanceState);
+        //
+        // Get the EMDK manager:
+        EMDKResults results = EMDKManager.getEMDKManager(getApplicationContext(), this); 
     }
     @Override
     public void onOpened(EMDKManager emdkManager) {
         this.emdkManager = emdkManager;
         Log.d(TAG, "EMDK Opened and ready to use.");
-        serialCommManager = (SerialCommManager) this.emdkManager.getInstance(FEATURE_TYPE.SERIALCOMM_EX);
+        //
+        // Get the serialCommManager instance:
+        serialCommManager = (SerialCommManager) this.emdkManager.getInstance(FEATURE_TYPE.SERIALCOMM_EX); 
         try {
             //...
+            // Note: For most devices, this method (below) will return only one port.
+            // On the VC80, this could return two or more ports.
+            //
+            // Get the list of supported ports on the device. 
             List&lt;SerialPortInfo&gt; serialPorts = serialCommManager.getSupportedPorts();
-            serialComm = serialCommManager.getPort(serialPorts.get(0));
+            //
+            // Get the serialComm/port object by passing a SerialPortInfo object:
+            serialComm = serialCommManager.getPort(serialPorts.get(0)); 
             //...
-            serialComm.enable();
+            //
+            // Enable the serial port:
+            serialComm.enable(); 
+            //
+            // Get the supported configuration for the serial port:
+            SerialCommConfig config = serialComm.getConfig(); 
+            config.baudRate = SerialCommConfig.BaudRates.BR_9600; // Set baud rate
+            config.dataBit = SerialCommConfig.DataBits.EIGHT; // Set dataBit
+            config.parity = SerialCommConfig.ParityBits.EVEN; // Set parity
+            config.stopBit = SerialCommConfig.StopBits.ONE; // Set stopBit
+            config.flowControlMode = SerialCommConfig.FlowControlMode.RTS_CTS; // Set flow control
+            serialComm.setConfig(config); // Set the configuration for the port
+
             //...
             String writeData = "Text to write";
-            int bytesWritten = serialComm.write(writeData.getBytes(), writeData.getBytes().length);
+            //
+            // Write the data in writeData object to serial port:
+            int bytesWritten = serialComm.write(writeData.getBytes(), writeData.getBytes().length); 
             //...
-            serialComm.disable();
+            //
+            // Disable the serial port after using:
+            serialComm.disable(); 
             //...
+            //
+            // Release the serialCommManager after using:
             emdkManager.release(FEATURE_TYPE.SERIALCOMM_EX);
         }
         catch (Exception ex)
         {
-
         }
     }
     @Override
