@@ -229,80 +229,41 @@
                                 <div class="service-box wow fadeInRight">
                                     <div class="">
 
-                                        <p></p><h2 id="barcodeapi" class="anchor"><a class="heading-anchor" href="#barcodeapi"><span></span></a>Barcode API</h2>
+                                        <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
 <p>The EMDK Barcode API provides applications with the ability to read numerous barcode label formats using a variety of built-in and pluggable cameras, imagers, lasers and scanners. For the full list, see <a href="../about/#devicessupported">scanners supported by EMDK for Android</a>.</p>
 
-<h3 id="apinotes" class="anchor"><a class="heading-anchor" href="#apinotes"><span></span></a>API Notes</h3>
+<h3 id="barcodeapinotes" class="anchor"><a class="heading-anchor" href="#barcodeapinotes"><span></span></a>Barcode API Notes</h3>
 
-<p>The <code>BarcodeManager</code> is the primary object to enumerate the supported scanner devices and access the scanner devices to read barcodes.</p>
+<p>The <code>BarcodeManager</code> is the primary object to enumerate the supported scanner devices and access scanners for reading barcodes.</p>
 
-<p><strong>Points to consider during application design</strong>:</p>
+<p><strong>Points to consider when designing a barcode scanning app</strong>:</p>
 
 <ul>
-<li><p>For scanning barcodes, an app should use either the barcode APIs or the DataCapture feature of ProfileManager. Apps cannot access both at the same time. </p></li>
+<li><p><strong>Apps should use either barcode APIs or DataCapture</strong> (a feature of the ProfileManager); an app cannot use both at the same time. </p></li>
 
-<li><p>The EMDKManager &gt; BarcodeManager takes precedence over the DataCapture feature of the ProfileManager.</p></li>
+<li><p><strong>The</strong> <code>EMDKManager</code> &gt; <code>BarcodeManager</code> <strong>takes precedence</strong> over DataCapture. </p></li>
 
-<li><p>The EMDKManager &gt; BarcodeManager must be released before another application can use it.</p></li>
+<li><p><strong>Control of scanning hardware is exclusive</strong>. When a scanning app takes control of a scanner, it must release it when quitting or going to the background before other apps can access any scanner.</p></li>
 
-<li><p>When a scanner is disconnected and reconnected, calling any method on the barcode object will result in an <code>INVALID_OBJECT</code> error. As a remedy, register the application for connection notifications so it can be notified of reconnections and programmatically re-initialize the scanner.</p></li>
+<li><p><strong>Disabling the scanner immediately cancels any pending read in progress</strong> and closes the session, giving other applications access to scanners. </p></li>
 
-<li><p>If a Bluetooth Scanner is not paired, enabling that scanner will automatically launch the pairing utility, prompting the user to scan a barcode (displayed on the mobile device) to pair the scanner with the mobile device.</p></li>
+<li><p><strong>If</strong> <code>BarcodeManager</code> <strong>is used in an app, it must be explicitly released</strong> before any other application (including DataWedge) can access scanners.</p></li>
 
-<li><p>Control of scanning hardware is exclusive. When a scanning app takes control of a scanner, it must release it when quitting or going to the background before other apps can access that scanner.  </p></li>
+<li><p><strong>When a scanner is disconnected and reconnected</strong>, calling any method on the barcode object will result in an <code>INVALID_OBJECT</code> error. As a remedy, register the application for connection notifications so it can be notified of reconnections and programmatically re-initialize the scanner, when necessary.</p></li>
 
-<li><p>Disabling the scanner cancels the pending read in progress and closes the session, allowing others applications to use the device. </p></li>
+<li><p><strong>If a Bluetooth Scanner is not paired</strong>, enabling that scanner will automatically launch the pairing utility, prompting the user to scan a barcode (displayed on the mobile device) to pair the scanner with the mobile device.</p></li>
 </ul>
-
-<p><strong>To disable the scanner, use the code below</strong>:</p>
-
-<pre class="prettyprint"><code>    
-    // Release the barcode manager resources:
-    //
-        if (emdkManager != null) {
-            emdkManager.release(FEATURE_TYPE.BARCODE);
-        }
-</code></pre>
-
-<!-- Full code sample provided by engineering:
-        :::java
-    // De-initialize scanner
-    //
-    if (scanner != null) {
-        try {
-            scanner.cancelRead();
-            scanner.disable();
-
-            scanner.removeDataListener(this);
-            scanner.removeStatusListener(this);
-
-            scanner.release();
-
-            scanner = null;
-        } catch (Exception e) {
-
-            textViewStatus.setText("Status: " + e.getMessage());
-        }
-    }
-
-    // Remove connection listener
-    //
-    if (barcodeManager != null) {
-        barcodeManager.removeConnectionListener(this);
-        barcodeManager = null;
-    }
-
-    // Release the barcode manager resources
-    //
-    if (emdkManager != null) {
-        emdkManager.release(FEATURE_TYPE.BARCODE);
-    }
- -->
 
 <hr>
 
-<h3 id="gettingbarcodemanager" class="anchor"><a class="heading-anchor" href="#gettingbarcodemanager"><span></span></a>Getting Barcode Manager</h3>
+<h2 id="usingthebarcodeapi" class="anchor"><a class="heading-anchor" href="#usingthebarcodeapi"><span></span></a>Using the Barcode API</h2>
+
+<p>The guidance below is typical of many scanarios, but the process can vary depending individual needs. </p>
+
+<hr>
+
+<h3 id="1getbarcodemanager" class="anchor"><a class="heading-anchor" href="#1getbarcodemanager"><span></span></a>1. Get Barcode Manager</h3>
 
 <p>EMDK must be opened before getting the <code>BarcodeManager</code> object: </p>
 
@@ -314,7 +275,7 @@
 
 <hr>
 
-<h3 id="gettingscanner" class="anchor"><a class="heading-anchor" href="#gettingscanner"><span></span></a>Getting Scanner</h3>
+<h3 id="2getscanner" class="anchor"><a class="heading-anchor" href="#2getscanner"><span></span></a>2. Get Scanner</h3>
 
 <p>There are two options for taking control of a scanner:</p>
 
@@ -351,25 +312,35 @@ Iterator&lt;ScannerInfo&gt; it = deviceList.iterator();
 
 <hr>
 
-<h3 id="usingscanner" class="anchor"><a class="heading-anchor" href="#usingscanner"><span></span></a>Using Scanner</h3>
+<h3 id="3usescanner" class="anchor"><a class="heading-anchor" href="#3usescanner"><span></span></a>3. Use Scanner</h3>
 
-<p>The scanner must be enabled first to open a session with the hardware. If scanner is already enabled by another application, this will throw an exception with error as "scanner in use." Zebra recommends disabling the scanner when finished using it. It will otherwise remain locked by the current application and will be unavailable other applications that want to use it.</p>
+<p>The scanner must be enabled first to open a session with the hardware. If any scanner is enabled by another application, an exception will occur with the "scanner in use" error. Zebra recommends disabling the scanner when finished using it. Scanners otherwise remain locked by the application and are unavailable to other applications.</p>
 
-<p>The <code>Scanner.enable()</code> method is an async call and exception will be thrown if any error occurs during a request. After the scanner is successfully enabled, the <code>IDLE</code> status event is sent to the application using a registered status listener. If an error occurs while enabling the scanner, the <code>ERROR</code> status is sent to application using the registered status listener.</p>
+<p>The <code>Scanner.enable()</code> method is an asynchronous call and an exception will be thrown if any error occurs during a request. After the scanner is successfully enabled, the <code>IDLE</code> status event is sent to the application using a registered status listener. If an error occurs while enabling the scanner, the <code>ERROR</code> status is sent to application using the registered status listener.</p>
 
-<p>Issuing any read request while the previous read is pending will result in an error. Zebra recommends waiting for the <code>IDLE</code> status from the application before issuing the next command to read barcodes.</p>
+<p>Issuing any read request while the previous read is pending will result in an error. Zebra recommends waiting for the <code>IDLE</code> status from the application before issuing subsequent commands to read barcodes.</p>
 
-<h3 id="configuringthescanner" class="anchor"><a class="heading-anchor" href="#configuringthescanner"><span></span></a>Configuring the Scanner</h3>
+<hr>
 
-<p>The EMDK Barcode API provides three categories of scanner configuration to control the behavior of the scanner. The scanner configurations are "Decoder Parameters," "Reader Parameters" and "Scan Parameters." </p>
+<h3 id="4configurethescanner" class="anchor"><a class="heading-anchor" href="#4configurethescanner"><span></span></a>4. Configure the Scanner</h3>
+
+<p>The EMDK Barcode API provides three categories of scanner configuration to control the behavior of the scanner: </p>
+
+<ul>
+<li>Decoder Parameters</li>
+
+<li>Reader Parameters </li>
+
+<li>Scan Parameters </li>
+</ul>
 
 <p>An app can get current settings by calling the <code>Scanner.getConfig()</code> method after the scanner is successfully enabled. This method returns a <code>ScannerConfig</code> object.</p>
 
-<p>An app can modify the <code>ScannerConfig</code> object returned by <code>Scanner.getconfig</code>. The modified <code>ScannerConfig</code> object must be set by calling <code>Scanner.setConfig(ScannerConfig)</code> before the settings will take effect. The user must call the <code>Scanner.setConfig(ScannerConfig)</code> only when the scanner is enabled and in idle state. The modified settings applied will persist until the scanner object is released. This means that when an app calls <code>enable()</code> after <code>disable()</code>, all the latest configuration parameter values will be set automatically.  </p>
+<p>An app can modify the <code>ScannerConfig</code> object returned by <code>Scanner.getconfig</code>. The modified <code>ScannerConfig</code> object must be set by calling <code>Scanner.setConfig(ScannerConfig)</code> before the settings will take effect. The user must call the <code>Scanner.setConfig(ScannerConfig)</code> only when the scanner is enabled and in an idle state. The modified settings applied will persist until the scanner object is released. This means that when an app calls <code>enable()</code> after <code>disable()</code>, all the latest configuration parameter values are set automatically.  </p>
 
-<p>Setting scanner configurations is not allowed while a read is pending. If a read is pending, the developer must call the <code>Scanner.cancelRead()</code> and must wait for the idle status through the register status listener before setting the configuration.</p>
+<p>Setting scanner configurations is not allowed while a read is pending. If a read is pending, the developer must call the <code>Scanner.cancelRead()</code> and wait for the idle status through the register status listener before setting the configuration.</p>
 
-<p>The code below disables the Code 128 symbology and sets beam timer for the imager:</p>
+<p>The sample code below disables the Code 128 symbology and sets the beam timer for the imager:</p>
 
 <pre class="prettyprint"><code>    
     try {
@@ -404,7 +375,7 @@ Iterator&lt;ScannerInfo&gt; it = deviceList.iterator();
 
 <hr>
 
-<h3 id="decoderparameters" class="anchor"><a class="heading-anchor" href="#decoderparameters"><span></span></a>Decoder Parameters</h3>
+<h4 id="setdecoderparameters" class="anchor"><a class="heading-anchor" href="#setdecoderparameters"><span></span></a>Set Decoder Parameters</h4>
 
 <p>The <code>ScannerConfig.DecoderParams</code> class provides an interface for the developer to enable or disable decoder symbologies, such as Code39, Code128, Code93, UPCEAN, etc.&nbsp; </p>
 
@@ -416,7 +387,7 @@ Iterator&lt;ScannerInfo&gt; it = deviceList.iterator();
 
 <hr>
 
-<h3 id="readerparameters" class="anchor"><a class="heading-anchor" href="#readerparameters"><span></span></a>Reader Parameters</h3>
+<h4 id="setreaderparameters" class="anchor"><a class="heading-anchor" href="#setreaderparameters"><span></span></a>Set Reader Parameters</h4>
 
 <p>The <code>ScannerConfig.ReaderParams</code> class provides an interface for configuring scanner engine-specific settings for <code>LaserSpecific</code>, <code>ImagerSpecific</code> and <code>CameraSpecific</code> related parameters such as picklist, aim type, aim timer, beam timer, illumination mode, etc.</p>
 
@@ -433,7 +404,7 @@ Iterator&lt;ScannerInfo&gt; it = deviceList.iterator();
 
 <hr>
 
-<h3 id="scanparameters" class="anchor"><a class="heading-anchor" href="#scanparameters"><span></span></a>Scan Parameters</h3>
+<h4 id="setscanparameters" class="anchor"><a class="heading-anchor" href="#setscanparameters"><span></span></a>Set Scan Parameters</h4>
 
 <p>The <code>ScannerConfig.ScanParams</code> class provides an interface for configuring scanner parameters such as decode LED time, vibrate on successful decode, beep on successful decode, beep audio file, etc. </p>
 
@@ -441,6 +412,22 @@ Iterator&lt;ScannerInfo&gt; it = deviceList.iterator();
 
 <pre class="prettyprint"><code>    
     config.scanParams.decodeLEDTime = 75;
+</code></pre>
+
+<hr>
+
+<h3 id="5releasingthescanner" class="anchor"><a class="heading-anchor" href="#5releasingthescanner"><span></span></a>5. Releasing the Scanner</h3>
+
+<p>Control of scanning hardware is exclusive. When a scanning app takes control of a scanner, it must release it when quitting or going to the background before other apps can access that scanner. Disabling the scanner immediately cancels any pending read in progress and closes the session, giving other applications access to scanners. </p>
+
+<p><strong>To disable the scanner, use the code below</strong>:</p>
+
+<pre class="prettyprint"><code>    
+    // Release the barcode manager resources:
+    //
+        if (emdkManager != null) {
+            emdkManager.release(FEATURE_TYPE.BARCODE);
+        }
 </code></pre>
 
 <hr>
