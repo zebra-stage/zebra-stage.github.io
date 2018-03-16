@@ -42,14 +42,14 @@
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                     </button>
-                    <a class="navbar-brand" href="/"><img src="/images/logo.png" alt="logo" style="max-height:42px;float: inherit;
+                    <a class="navbar-brand" href="/"><img src="/images/logo.png" alt="logo" style="max-height:66px;float: inherit;
     padding-right: 3px;"></a> 
                     
                    
                 </div>
                 <div class="collapse navbar-collapse navbar-left">
                     <ul class="nav navbar-nav">
-                        <li class="navbar-text pull-left"><strong>TechDocs</strong></li>
+                        <li class="navbar-text pull-left"><strong>TECHDOCS</strong></li>
                         <li class="dropdown">
                           <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown"> EMDK For Android 6.6
                           <span class="caret"></span></button>
@@ -267,189 +267,200 @@
 
 <h2 id="addingsomecode" class="anchor"><a class="heading-anchor" href="#addingsomecode"><span></span></a>Adding Some Code</h2>
 
+<p><strong>1.</strong> Now we will start to add some code. </p>
+
+<pre class="prettyprint"><code>First you must add references to the libraries:  
+
+    
+    import com.symbol.emdk.EMDKManager;
+    import com.symbol.emdk.EMDKManager.EMDKListener;
+    import com.symbol.emdk.barcode.ScanDataCollection;
+    import com.symbol.emdk.barcode.Scanner.DataListener;
+    import com.symbol.emdk.barcode.Scanner.StatusListener;
+    import com.symbol.emdk.barcode.StatusData;   
+
+Then you must extend the activity to implement EMDKListener. 
+
+After that you also need to implement StatusListener for notifying client applications to notify scan events. Override its `onStatus` function.
+
+Finally implement DataListener for notifying client applications when the scan data is available. Override its `onData` function. 
+
+
+    :::java
+    public class MainActivity extends Activity implements EMDKListener, StatusListener, DataListener{  
+        //some lines of code omitted for clarity
+        @Override  
+        public void onClosed() {  
+               // TODO Auto-generated method stub  
+        }  
+        @Override  
+        public void onOpened(EMDKManager emdkManager) {  
+               // TODO Auto-generated method stub  
+        }
+        @Override
+        public void onData(ScanDataCollection scanDataCollection) {
+                    // TODO Auto-generated method stub
+        }
+        @Override
+        public void onStatus(StatusData statusData) {
+                    // TODO Auto-generated method stub
+        }
+    }
+
+We will now create some global variables to hold the instance objects of EMDKManager, BarcodeManager and Scanner. These variables would be used throughout the code.
+
+We will then add some UI elements starting with a [TextView](http://developer.android.com/reference/android/widget/TextView.html) to display the status of scanning operation and then [EditText](http://developer.android.com/reference/android/widget/EditText.html) to populate scanned barcode data.
+
+
+    :::java
+    // Declare a variable to store EMDKManager object
+    private EMDKManager emdkManager = null;
+
+    // Declare a variable to store Barcode Manager object
+    private BarcodeManager barcodeManager = null;
+
+    // Declare a variable to hold scanner device to scan
+    private Scanner scanner = null;
+
+    // Text view to display status of EMDK and Barcode Scanning Operations
+    private TextView statusTextView = null;
+
+    // Edit Text that is used to display scanned barcode data
+    private EditText dataView = null;
+
+    //boolean flag to start scanning after scanner initialization, Used in OnStatus callback to insure scanner is idle before read() is called 
+    private boolean startRead = false;
+</code></pre>
+
+<p><strong>3.</strong> Now, let us design the simple UI that has a <a href="http://developer.android.com/reference/android/widget/TextView.html">TextView</a> to display the status of scanning operation and above that an <a href="http://developer.android.com/reference/android/widget/EditText.html">EditText</a> to populate scanned barcode data.</p>
+
+<pre class="prettyprint"><code>So, remove all the code, inside "res/layout/activity_main.xml" and add following XML layout code for UI.
+
+    
+    &lt;RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dip"
+    tools:context=".MainActivity" &gt;
+
+      &lt;EditText
+      android:id="@+id/editText1"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_above="@+id/textViewStatusTitle"
+      android:layout_centerHorizontal="true"
+      android:ems="10"
+      android:fadeScrollbars="true"
+      android:inputType="none|textMultiLine" /&gt;
+
+      &lt;TextView
+      android:id="@+id/textViewStatus"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_centerInParent="true"
+      android:text="" /&gt;
+
+      &lt;TextView
+      android:id="@+id/textViewStatusTitle"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_above="@+id/textViewStatus"
+      android:layout_centerHorizontal="true"
+      android:layout_marginBottom="15dp"
+      android:text="Status:" /&gt;
+
+    &lt;/RelativeLayout&gt;
+</code></pre>
+
+<p><strong>3.</strong> In the onCreate method, we take reference of UI elements that are declared in "res/layout/activity_main.xml" in order to use them in our <a href="http://developer.android.com/reference/android/app/Activity.html">Activity</a>. We then call getEMDKManager so that the EMDK can be initialized and checked to see if it is ready. </p>
+
+<pre class="prettyprint"><code>    
+    // Reference to UI elements
+    statusTextView = (TextView) findViewById(R.id.textViewStatus);
+    dataView = (EditText) findViewById(R.id.editText1);
+
+    // The EMDKManager object will be created and returned in the callback.
+    EMDKResults results = EMDKManager.getEMDKManager(
+            getApplicationContext(), this);
+    // Check the return status of getEMDKManager and update the status Text
+    // View accordingly
+    if (results.statusCode != EMDKResults.STATUS_CODE.SUCCESS) {
+        statusTextView.setText("EMDKManager Request Failed");
+    }
+</code></pre>
+
+<p><strong>4.</strong> We will write a method <code>initializeScanner</code> to initialize and enable the scanner and its listeners by using Barcode Manager object. The <code>enable</code> method enables the scanner hardware. This method does not turn on the laser start scanning, it will make the scanner device available to your application. If the same of scanner is enabled by other applications, calling enable() will throw a ScannerException. You must call <code>disable()</code> when you are done the scanning, otherwise it will remain locked and be unavailable to other applications.</p>
+
+<pre class="prettyprint"><code>    
+    // Method to initialize and enable Scanner and its listeners
+    private void initializeScanner() throws ScannerException {
+        if (scanner == null) {
+            // Get the Barcode Manager object
+            barcodeManager = (BarcodeManager) this.emdkManager
+                    .getInstance(FEATURE_TYPE.BARCODE);
+            // Get default scanner defined on the device
+            scanner = barcodeManager.getDevice(DeviceIdentifier.DEFAULT);
+            // Add data and status listeners
+            scanner.addDataListener(this);
+            scanner.addStatusListener(this);
+            // Hard trigger. When this mode is set, the user has to manually
+            // press the trigger on the device after issuing the read call.
+            scanner.triggerType = TriggerType.HARD;
+            // Enable the scanner
+            scanner.enable();
+            //set startRead flag to true. this flag will be used in the OnStatus callback to insure 
+            //the scanner is at an IDLE state and a read is not pending before calling scanner.read()
+            startRead = true;
+        }
+    }
+</code></pre>
+
+<p><strong>5.</strong> We will also need a method to release scanner resources when we are no longer using them. We will name this method <code>deInitilazeScanner</code>.</p>
+
+<pre class="prettyprint"><code>    
+    private void deInitializeScanner() throws ScannerException {
+        if (scanner != null) {
+
+            try {
+                if(scanner.isReadPending()){
+                    scanner.cancelRead();
+                }
+                scanner.disable();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            try {
+                scanner.removeDataListener(this);
+                scanner.removeStatusListener(this);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            try {
+                scanner.release();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        scanner = null;
+        }
+    }
+</code></pre>
+
+<p><strong>6.</strong> Now we need to use the <code>onOpened</code> method to get a reference to the EMDKManager. The EMDKListener interface will trigger this event when the EMDK is ready to be used. The EMDKListener interface must be implemented in order to get a reference to the EMDKManager APIs. This event will pass the EMDKManager instance and we assign it to the global variable <code>emdkManager</code> that we created in the earlier steps. We have used that instance to get an instance <a href="/emdk-for-android/6-6/api/barcode/BarcodeManager">Barcode Manager</a> to enable scanning.</p>
+
+<pre class="prettyprint"><code>    
+    this.emdkManager = emdkManager;
+
+    try {
+        // Call this method to enable Scanner and its listeners
+        initializeScanner();
+    } catch (ScannerException e) {
+        e.printStackTrace();
+    }
+</code></pre>
+
 <ol>
-<li><p>Now we will start to add some code. </p>
-
-<p>First you must add references to the libraries:  </p>
-
-<pre class="prettyprint"><code>
-import com.symbol.emdk.EMDKManager;
-import com.symbol.emdk.EMDKManager.EMDKListener;
-import com.symbol.emdk.barcode.ScanDataCollection;
-import com.symbol.emdk.barcode.Scanner.DataListener;
-import com.symbol.emdk.barcode.Scanner.StatusListener;
-import com.symbol.emdk.barcode.StatusData;   
-</code></pre>
-
-<p>Then you must extend the activity to implement EMDKListener. </p>
-
-<p>After that you also need to implement StatusListener for notifying client applications to notify scan events. Override its <code>onStatus</code> function.</p>
-
-<p>Finally implement DataListener for notifying client applications when the scan data is available. Override its <code>onData</code> function. </p>
-
-<pre class="prettyprint"><code>
-public class MainActivity extends Activity implements EMDKListener, StatusListener, DataListener{  
-    //some lines of code omitted for clarity
-    @Override  
-    public void onClosed() {  
-           // TODO Auto-generated method stub  
-    }  
-    @Override  
-    public void onOpened(EMDKManager emdkManager) {  
-           // TODO Auto-generated method stub  
-    }
-    @Override
-    public void onData(ScanDataCollection scanDataCollection) {
-                // TODO Auto-generated method stub
-    }
-    @Override
-    public void onStatus(StatusData statusData) {
-                // TODO Auto-generated method stub
-    }
-}
-</code></pre>
-
-<p>We will now create some global variables to hold the instance objects of EMDKManager, BarcodeManager and Scanner. These variables would be used throughout the code.</p>
-
-<p>We will then add some UI elements starting with a <a href="http://developer.android.com/reference/android/widget/TextView.html">TextView</a> to display the status of scanning operation and then <a href="http://developer.android.com/reference/android/widget/EditText.html">EditText</a> to populate scanned barcode data.</p>
-
-<pre class="prettyprint"><code>
-// Declare a variable to store EMDKManager object
-private EMDKManager emdkManager = null;
-
-// Declare a variable to store Barcode Manager object
-private BarcodeManager barcodeManager = null;
-
-// Declare a variable to hold scanner device to scan
-private Scanner scanner = null;
-
-// Text view to display status of EMDK and Barcode Scanning Operations
-private TextView statusTextView = null;
-
-// Edit Text that is used to display scanned barcode data
-private EditText dataView = null;
-</code></pre></li>
-
-<li><p>Now, let us design the simple UI that has a <a href="http://developer.android.com/reference/android/widget/TextView.html">TextView</a> to display the status of scanning operation and above that an <a href="http://developer.android.com/reference/android/widget/EditText.html">EditText</a> to populate scanned barcode data.</p>
-
-<p>So, remove all the code, inside "res/layout/activity_main.xml" and add following XML layout code for UI.</p>
-
-<pre class="prettyprint"><code>
-&lt;RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-xmlns:tools="http://schemas.android.com/tools"
-android:layout_width="match_parent"
-android:layout_height="match_parent"
-android:padding="16dip"
-tools:context=".MainActivity" &gt;
-
-  &lt;EditText
-  android:id="@+id/editText1"
-  android:layout_width="wrap_content"
-  android:layout_height="wrap_content"
-  android:layout_above="@+id/textViewStatusTitle"
-  android:layout_centerHorizontal="true"
-  android:ems="10"
-  android:fadeScrollbars="true"
-  android:inputType="none|textMultiLine" /&gt;
-
-  &lt;TextView
-  android:id="@+id/textViewStatus"
-  android:layout_width="wrap_content"
-  android:layout_height="wrap_content"
-  android:layout_centerInParent="true"
-  android:text="" /&gt;
-
-  &lt;TextView
-  android:id="@+id/textViewStatusTitle"
-  android:layout_width="wrap_content"
-  android:layout_height="wrap_content"
-  android:layout_above="@+id/textViewStatus"
-  android:layout_centerHorizontal="true"
-  android:layout_marginBottom="15dp"
-  android:text="Status:" /&gt;
-
-&lt;/RelativeLayout&gt;
-</code></pre>
-
-<blockquote>
-  <p>Note: Press CTRL+SHFT+F or CMD+SHFT+F for indentation.     </p>
-</blockquote></li>
-
-<li><p>In the onCreate method, we take reference of UI elements that are declared in "res/layout/activity_main.xml" in order to use them in our <a href="http://developer.android.com/reference/android/app/Activity.html">Activity</a>. We then call getEMDKManager so that the EMDK can be initialized and checked to see if it is ready. </p>
-
-<pre class="prettyprint"><code>
-// Reference to UI elements
-statusTextView = (TextView) findViewById(R.id.textViewStatus);
-dataView = (EditText) findViewById(R.id.editText1);
-
-// The EMDKManager object will be created and returned in the callback.
-EMDKResults results = EMDKManager.getEMDKManager(
-        getApplicationContext(), this);
-// Check the return status of getEMDKManager and update the status Text
-// View accordingly
-if (results.statusCode != EMDKResults.STATUS_CODE.SUCCESS) {
-    statusTextView.setText("EMDKManager Request Failed");
-}
-</code></pre></li>
-
-<li><p>We will write a method <code>initializeScanner</code> to initialize and enable the scanner and its listeners by using <a href="/emdk-for-android/6-6/api/barcode/BarcodeManager">Barcode Manager</a> object. The <code>enable</code> method enables the scanner hardware. This method does not make the scanner to scan or turn on the laser. Basically it will make the scanner device available for your application. If the same of scanner is enabled by other applications, this will throws ScannerExceptions. You must call <code>disable()</code> when you are done the scanning, otherwise it will remain locked and be unavailable to other applications.</p>
-
-<p>Once the barcode is enabled, we will call <code>read</code> method on scanner. The scanning API provides <code>read</code> method that starts an asynchronous Scan. The method will not turn ON the scanner. It will, however, put the scanner in a state in which the scanner can be turned ON either by pressing a hardware trigger or can be turned ON automatically. This is determined by the <code>Scanner.TriggerType</code>. The data notification must registered in order to scan and get the Scan Data. The read request can be canceled by issuing a <code>cancelRead</code>. If a <code>read()</code> is submitted while another read is pending, the method call will fail. It is recommended to check whether a read is pending by calling <code>isReadPending()</code> before submitting a <code>read()</code>. A read() can also be submitted from within <code>onData</code> and <code>onStatus</code> events. If called within <code>onStatus</code>, it should be called only when IDLE status is received. If called within <code>onData</code>, then checking for <code>isReadPending()</code> is recommended.</p>
-
-<blockquote>
-  <p>Note: The <code>read</code> method allows you to scan the barcode only once. If you want to scan the barcodes multiple times then call <code>read</code> multiple times. Hence later in this tutorial, we will also call <code>read</code> in the <code>onData</code> callback method, which is executed every time a barcode is scanned. </p>
-</blockquote>
-
-<pre class="prettyprint"><code>
-// Method to initialize and enable Scanner and its listeners
-private void initializeScanner() throws ScannerException {
-    if (scanner == null) {
-        // Get the Barcode Manager object
-        barcodeManager = (BarcodeManager) this.emdkManager
-                .getInstance(FEATURE_TYPE.BARCODE);
-        // Get default scanner defined on the device
-        scanner = barcodeManager.getDevice(DeviceIdentifier.DEFAULT);
-        // Add data and status listeners
-        scanner.addDataListener(this);
-        scanner.addStatusListener(this);
-        // Hard trigger. When this mode is set, the user has to manually
-        // press the trigger on the device after issuing the read call.
-        scanner.triggerType = TriggerType.HARD;
-        // Enable the scanner
-        scanner.enable();
-        // Starts an asynchronous Scan. The method will not turn ON the
-        // scanner. It will, however, put the scanner in a state in which
-        // the scanner can be turned ON either by pressing a hardware
-        // trigger or can be turned ON automatically.
-        scanner.read();
-    }
-}
-</code></pre></li>
-
-<li><p>Now we need to use the <code>onOpened</code> method to get a reference to the EMDKManager. The EMDKListener interface will trigger this event when the EMDK is ready to be used. The EMDKListener interface must be implemented in order to get a reference to the EMDKManager APIs. This event will pass the EMDKManager instance and we assign it to the global variable <code>emdkManager</code> that we created in the earlier steps. We have used that instance to get an instance <a href="/emdk-for-android/6-6/api/barcode/BarcodeManager">Barcode Manager</a> to enable scanning.</p>
-
-<blockquote>
-  <p>Note: 
-  Rename the argument of <code>onOpened</code> method from <code>arg0</code> to <code>emdkManager</code>  </p>
-</blockquote>
-
-<pre class="prettyprint"><code>
-this.emdkManager = emdkManager;
-
-try {
-    // Call this method to enable Scanner and its listeners
-    initializeScanner();
-} catch (ScannerException e) {
-    e.printStackTrace();
-}
-
-// Toast to indicate that the user can now start scanning
-Toast.makeText(MainActivity.this,
-        "Press Hard Scan Button to start scanning...",
-        Toast.LENGTH_SHORT).show();  
-</code></pre></li>
-
-
 <li><p>As mentioned earlier that whenever a barcode is scanned, its data will be received in a callback <code>onData</code> method upon data availability. So we need to get that data, process it in the format we want and populate in the <a href="http://developer.android.com/reference/android/widget/EditText.html">EditText</a> of UI.</p>
 
 <p>The received data should be processed on a background thread not to block the UI thread. Hence we will use Android's own <a href="http://developer.android.com/reference/android/os/AsyncTask.html">AsyncTask</a> to process the scanned data on background thread. So we create AsyncTask <code>AsyncDataUpdate</code> that takes <a href="/emdk-for-android/6-6/api/barcode/ScanDataCollection">ScanDataCollection</a>, which has the scanned data. It then processes this object in <code>doInBackground</code> method to filter the barcode data and label type in strings, which is then passed to the UI thread in <code>onPostExecute</code> method of AsyncTask to Populate.</p>
@@ -731,7 +742,14 @@ this.emdkManager = null;
 
 <h2 id="whatsnext" class="anchor"><a class="heading-anchor" href="#whatsnext"><span></span></a>What's Next</h2>
 
-<p>Now that you have learned how to perform Basic Scanning operations on your Symbol Android devices through applications without using Profile Wizard, let us try to understand the API in depth and perform some advanced scanning. So in the next tutorial, we will concentrate on <a href="/emdk-for-android/6-6/api">Barcode/Scanning APIs</a> in depth and use it to perform advanced scanning operations by creating a tutorial.</p><p></p>
+<p>Now that you have learned how to perform Basic Scanning operations on your Symbol Android devices through applications without using Profile Wizard, let us try to understand the API in depth and perform some advanced scanning. So in the next tutorial, we will concentrate on <a href="/emdk-for-android/6-6/api">Barcode/Scanning APIs</a> in depth and use it to perform advanced scanning operations by creating a tutorial.</p>
+
+<h2 id="contentbackup" class="anchor"><a class="heading-anchor" href="#contentbackup"><span></span></a>CONTENT BACKUP</h2>
+
+<p>Once the barcode is enabled, we will call <code>read</code> method on scanner. The scanning API provides <code>read</code> method that starts an asynchronous Scan. The method will not turn ON the scanner. It will, however, put the scanner in a state in which the scanner can be turned ON either by pressing a hardware trigger or can be turned ON automatically. This is determined by the <code>Scanner.TriggerType</code>. The data notification must registered in order to scan and get the Scan Data. The read request can be canceled by issuing a <code>cancelRead</code>. If a <code>read()</code> is submitted while another read is pending, the method call will fail. It is recommended to check whether a read is pending by calling <code>isReadPending()</code> before submitting a <code>read()</code>. A read() can also be submitted from within <code>onData</code> and <code>onStatus</code> events. If called within <code>onStatus</code>, it should be called only when IDLE status is received. If called within <code>onData</code>, then checking for <code>isReadPending()</code> is recommended.</p>
+
+<pre class="prettyprint"><code>&gt; Note: The `read` method allows you to scan the barcode only once. If you want to scan the barcodes multiple times then call `read` multiple times. Hence later in this tutorial, we will also call `read` in the `onData` callback method, which is executed every time a barcode is scanned. 
+</code></pre><p></p>
                                         
 
 
