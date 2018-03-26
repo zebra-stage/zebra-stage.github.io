@@ -208,103 +208,147 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>Zebra devices that ship with ActiveEdge “easy activation points” built into the right and left sides of the device allow users to quickly access applications or perform tasks such as barcode scanning with a single tap. Typically a user would be holding the device with one hand and moving either their thumb or finger to "activation points” strategically placed for easy access.</p>
+<p>ActiveEdge Touch Zones are touch-sensitive areas on the device screen that can be configured to perform desired actions when tapped. Touch Zones can be configured as single-purpose buttons or customizable drawers that slide out from the left or right side of the screen. ActiveEdge Touch Zones are displayed on top of any other application, even if they're configured in "full-screen" mode. 
+<br></p>
 
-<p>The ActiveEdge service detects when one of the activation points are touched and performs the pre-configured action:</p>
-
-<p><img alt="" style="height:350px" src="img1.jpg"></p>
+<p>With a single touch, ActiveEdge lets users: </p>
 
 <ul>
-<li>Barcode scanning</li>
+<li><strong>Scan a barcode</strong></li>
 
-<li>Open a “drawer” of applications to launch</li>
+<li><strong>Launch an app</strong></li>
 
-<li>Launch a specific application or Android intent</li>
+<li><strong>Launch a specific app activity</strong></li>
+
+<li><strong>Trigger an Android intent</strong></li>
+</ul>
+
+<p><img alt="" style="height:350px" src="active_edge_01.png">
+<br></p>
+
+<p>An App Drawer can contain as many as three app icons (shown below), giving workers quick access to an organization's line-of-business apps:
+<img alt="" style="height:350px" src="active_edge_02.png">
+<br></p>
+
+<p>A Touch Zone also can invoke the device's barcode scanner (shown) or trigger an intent: 
+<img alt="" style="height:100px" src="img2.jpg">
+<br></p>
+
+<p>ActiveEdge works only on <a href="../about/#supporteddevices">specific devices</a>. </p>
+
+<hr>
+
+<h2 id="settingactiveedgezones" class="anchor"><a class="heading-anchor" href="#settingactiveedgezones"><span></span></a>Setting ActiveEdge Zones</h2>
+
+<p>ActiveEdge Touch Zones are configured through the ActiveEdge settings panel or through a file pushed to the device by an administrator. <strong>IMPORTANT: Once a configuration file is deployed to a device, the ActiveEdge settings panel can no longer be used to change settings on that device</strong>, only to view them. For more information, see <a href="../setup">ActiveEdge Setup</a> or contact an IT administrator.  </p>
+
+<p><img alt="" style="height:350px" src="settings_panel.jpg">
+<em>The ActiveEdge settings panel</em>
+<br></p>
+
+<p><strong>Notes</strong>: </p>
+
+<ul>
+<li><strong>Touch Zones are active only in portrait mode</strong>. </li>
+
+<li><strong>Left and Right ActiveEdge Zones do not change</strong> when device is inverted (upside down). </li>
+
+<li><strong>Only one Touch Zone can contain an App Drawer</strong> at a time. </li>
 </ul>
 
 <hr>
 
-<h3 id="activeedgezones" class="anchor"><a class="heading-anchor" href="#activeedgezones"><span></span></a>ActiveEdge Zones</h3>
+<h3 id="scanbarcode" class="anchor"><a class="heading-anchor" href="#scanbarcode"><span></span></a>Scan Barcode</h3>
 
-<p>The ActiveEdge zones are two discreet “soft” tap areas that users would touch to perform the associated actions. To use the ActiveEdge Zones, the simply touch or tap the area of the zone and the associated action will be triggered. </p>
+<p>When tapping an ActiveEdge Zone configured for barcode scanning, the device immediately activates the default scanner and attempts to acquire data. This is done by sending a <a href="/datawedge/latest/guide/api/softscantrigger/">Soft Scan Trigger</a> intent to <a href="/datawedge">DataWedge</a>, the Zebra scanning service preinstalled on all Zebra devices. Acquired data is usually passed to the foreground app as keystrokes, but is governed by DataWedge Profile settings (see below). <strong>Refer to <a href="/datawedge/latest/guide/profiles/">DataWedge Profiles</a> for more information about DataWedge processing and handling options</strong>.</p>
 
-<p>Each ActiveEdge Zone can be configured to perform the following actions</p>
+<p><img alt="" style="height:100px" src="img2.jpg">
+<em>ActiveEdge scanner icon displayed on tap-down</em>
+<br></p>
+
+<p><strong>Tapping Scan Barcode executes the following behavior</strong>: </p>
 
 <ul>
-<li>Barcode Scanning</li>
+<li><strong>Activates the scanner currently selected in DataWedge</strong> and attempts to acquire data.
 
-<li>Open a Drawer</li>
 
-<li>Launch an Application</li>
+<ul>
+<li><strong>If data is acquired and an app is in the foreground</strong>, it is processed according to DataWedge Profile assigned to the foreground app (if any) and passed to that app (usually as keystrokes).</li>
 
-<li>Launch an Intent</li>
+<li><strong>If data is acquired and no app is in the foreground</strong> (or if the foreground app is not associated with a Profile), acquired data is handled according to the "Launcher" Profile or Profile0, if enabled.</li></ul>
+</li>
+
+<li><strong>Continues trying to acquire data</strong> as long as button is held or subsequently pressed.</li>
+
+<li><strong>Scanning is canceled when data is acquired</strong> or button is released. </li>
+
+<li><strong>Acquired data is typically delivered as keystrokes</strong> to the foreground application. </li>
 </ul>
 
-<p><strong>NOTE</strong>: The following are invalid combinations (left/right zones):
-Drawer / Drawer</p>
+<p><strong>IMPORTANT: Control of barcode scanning hardware is exclusive</strong>. When ActiveEdge or DataWedge are using the scanner, other apps are prevented from doing so. Likewise, another scanning app running on the device could prevent ActiveEdge from accessing the scanner and/or acquiring data. </p>
 
 <blockquote>
-  <p>There is no “Double-tap” or “Press and Hold” functionality at this time. The “Left” and “Right” ActiveEdge Zone will always remain the “Left” and “Right” zone whether the device is in Portrait Standard or Portrait Inversed mode. However, the zones will become inactive if the device is rotated to Landscape mode</p>
+  <p>ActiveEdge does not block use of the scanner by other apps when it's not being used for scanning. </p>
 </blockquote>
 
 <hr>
 
-<h3 id="barcodescanning" class="anchor"><a class="heading-anchor" href="#barcodescanning"><span></span></a>Barcode Scanning</h3>
+<h3 id="appdrawer" class="anchor"><a class="heading-anchor" href="#appdrawer"><span></span></a>App Drawer</h3>
 
-<p><img alt="" src="img2.jpg"></p>
-
-<p>When the ActiveEdge Zone is configured for barcode scanning, a "Soft Scann Trigger" intent is sent to DataWedge. DataWedge then activates the default scanner for scanning. The user must be continue to press the ActiveEdge zone to keep the scanner active until a barcode is read or the user wishes to cancel this action. After a barcode is read, DataWedge handles the processing based on the way DataWedge profiles are configured.</p>
-
-<p>Typically, this means that the barcode data will be sent as keystrokes to the current application that is in the foreground. However an application can have a DataWedge profile configured to do something else with the data. If no foreground application is running, the “Launcher” DataWedge profile will be used if it is enabled. </p>
-
-<p><strong>Note</strong>: Standard device rules apply with applications “competing” for the scanner. If an application currently has the scanner "locked", ActiveEdge scanning will not function (just as other applications would). In this case, pressing the ActiveEdge zone that has been configured for barcode scanning will result in no operation.</p>
-
-<p>Equally, the ActiveEdge service shall not lock use of the scanner. When a button that is configured for barcode scanning is pressed, ActiveEdge will immediately release the scanner either after the barcode is read or the user releases the ActiveEdge zone.</p>
-
-<hr>
-
-<h3 id="applicationdrawer" class="anchor"><a class="heading-anchor" href="#applicationdrawer"><span></span></a>Application Drawer</h3>
+<p>When an ActiveEdge Zone is configured as an App Drawer, tapping the zone slides open the drawer to expose icons for as many as three apps for launching.</p>
 
 <p><img alt="" src="img3.jpg"></p>
 
-<p>When the ActiveEdge Zone is configured to open a drawer, a drawer will slide out and up to three applications will be accessible for launching.</p>
+<ul>
+<li><strong>To open the drawer</strong>: tap the ActiveEdge zone. The drawer appears on top of any running application, even if set to "full-screen" mode. </li>
+
+<li><strong>To close the drawer</strong>: tap the "handle" of the drawer's outer edge. Tapping elsewhere on the display does not close the drawer.</li>
+</ul>
+
+<p><strong>Notes</strong>: </p>
 
 <ul>
-<li><strong>Opening the drawer</strong>: Tap the ActiveEdge zone to open the drawer. The drawer will always appear on top of any application that is running, including a "full-screen" application. The drawer will always be accessible when in the “open” state.</li>
+<li><strong>Only one Touch Zone can contain an App Drawer</strong> at a time. </li>
 
-<li><strong>Closing the drawer</strong>: Tapping on the "handle" of the drawer will close the drawer. Tapping elsewhere on the display while the drawer is open will not close the drawer.</li>
+<li><strong>There are no “double-tap” or “press and hold” functions</strong> for apps in the App Drawer. </li>
+
+<li><strong>Touch Zones are active only in portrait mode</strong>. </li>
+
+<li><strong>Left and Right ActiveEdge Zones do not change</strong> when device is inverted (upside down). </li>
 </ul>
 
 <hr>
 
-<h3 id="launchinganapplication" class="anchor"><a class="heading-anchor" href="#launchinganapplication"><span></span></a>Launching an Application</h3>
+<h3 id="launchanapp" class="anchor"><a class="heading-anchor" href="#launchanapp"><span></span></a>Launch an App</h3>
 
-<p>When the ActiveEdge Zone is configured to launch an application, the following will happen:</p>
+<p>When an ActiveEdge Zone is configured to launch an app, tapping that zone immediately runs the specified app. This is unlike the App Drawer, which displays multiple app icons for launching, but does not launch an app unless its icon is tapped. </p>
+
+<p><strong>Notes</strong>: </p>
 
 <ul>
-<li>The application icon of the associated application will be shown on tap-down and the application will be opened.</li>
+<li>On tap-down, the icon of the associated app is shown and the app is launched.</li>
 
-<li>The icon will be removed on tap-up when the ActiveEdge Zone is released. This is similar to how the Scanning option works: The barcode icon is shown for as long as the ActiveEdge Zone is pressed.</li>
+<li>When the ActiveEdge Zone is released (tap-up), the icon disappears. This action is similar to that of the scanning option, which displays the scanning icon as long as the ActiveEdge Zone is pressed.</li>
+
+<li>After initially launching an app in this way, subsequent presses of the zone have no effect. </li>
 </ul>
-
-<blockquote>
-  <p>Pressing the ActiveEdge Zone for a second time while the associated application is already in the foreground shall have no effect</p>
-</blockquote>
 
 <hr>
 
-<h3 id="launchingintents" class="anchor"><a class="heading-anchor" href="#launchingintents"><span></span></a>Launching Intents</h3>
+<h3 id="triggeranintent" class="anchor"><a class="heading-anchor" href="#triggeranintent"><span></span></a>Trigger an intent</h3>
 
-<p>When the ActiveEdge Zone is configured to launch an intent, the following will happen:</p>
+<p>An ActiveEdge Zone can be configured to trigger an intent. This is useful for launching activities "behind the scenes" such as Android services or other apps that might be listening for a particular broadcast intent. </p>
+
+<p><strong>Notes</strong>: </p>
 
 <ul>
-<li>An Android icon will be shown on tap-down and the Intent will be sent.</li>
+<li>On tap-down, an Android icon is shown and the intent is triggered.</li>
 
-<li>The icon will be removed on tap-up when the ActiveEdge Zone is released. This is similar to how the Scanning option works: The barcode icon is shown for as long as the ActiveEdge Zone is pressed.</li>
+<li>When the ActiveEdge Zone is released (tap-up), the icon is removed on tap-up and the ActiveEdge Zone is released. This is similar the operation of the scanning option; the barcode icon is shown while the ActiveEdge Zone is touched and disappears upon release.</li>
 </ul>
 
 <blockquote>
-  <p>Each press of the ActiveEdge Zone will cause the Intent to be sent.</p>
+  <p>Each press of the ActiveEdge Zone triggers a new intent.</p>
 </blockquote>
 
 <hr>
