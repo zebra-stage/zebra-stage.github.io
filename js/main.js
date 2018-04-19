@@ -426,6 +426,13 @@ function changeVersion(version_from,version_to,default_url){
 
 }
 
+function changeLanguage(fromurl, tourl, lang){
+	var new_url = $(location).attr('href').replace(fromurl,tourl);
+	console.log(new_url);
+	window.location = new_url
+
+
+}
 
 // more tree binding functions
 function addExpandableArrows() {
