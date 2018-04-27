@@ -238,7 +238,7 @@
 
 <h2 id="prerequisites" class="anchor"><a class="heading-anchor" href="#prerequisites"><span></span></a>Prerequisites</h2>
 
-<p>The following software must be installed prior to using the EMDK for Android:</p>
+<p>The following software must be installed prior to using EMDK for Android:</p>
 
 <p><strong>Windows</strong>:</p>
 
@@ -452,6 +452,121 @@ EXTERNAL_VIBRATOR1 - External Vibrator</li></ul>
 
 <li><strong>The picklist field</strong>, used for enabling picklist mode, remains supported but is no longer being advanced. Use the <code>picklistEx</code> field instead.</li>
 </ul>
+
+<hr>
+
+<h2 id="usagenotes" class="anchor"><a class="heading-anchor" href="#usagenotes"><span></span></a>Usage Notes</h2>
+
+<h3 id="generalinterest" class="anchor"><a class="heading-anchor" href="#generalinterest"><span></span></a>General Interest</h3>
+
+<ol>
+<li>Initial settings for a project can be found at <strong><a href="../../tutorial/tutCreateProjectAndroidStudio/">Creating a Project using Android Studio</a></strong></li>
+
+<li>Integrator is a utility that can be used to install EMDK for Android components to installations of Android Studio development environment on the host PC.</li>
+
+<li>If two applications are making modifications to the same profile, the settings of last modification will be effective for that profile. If both applications need their own settings to be effective and still want to use the same profile name, both applications must set the profile every time they come to foreground. However, if both applications need to create or modify the same DataCapture profile simultaneously, it will cause one application operation to fail.</li>
+
+<li>Zebra recommends closing all Android Studio windows before proceeding with uninstallation. Failure to do so might not remove the plug-in component from Android Studio. To remove it manually, go to plug-ins folder ("<android studio="" installation="" path="">\plugins") and delete folder "com.symbol.emdk.wizard.intellijIdea."</android></li>
+
+<li><strong>Wi-Fi</strong>: To use the Advanced Options under Wi-Fi, follow these steps:
+
+
+<ul>
+<li>PMKID must be enabled to enable PreAuth (PreAuth =1 and PMKID =1)   </li>
+
+<li>FT must be enabled to enable FTRIC (FT=1 and FTRIC =1)</li>
+
+<li>OKC must be disabled (OKC =0 and PMKID =1) to use PMKID caching</li>
+
+<li><strong>Important Note</strong>: The default “Fast Power Savings” value must be used for the “Power Save” parameter under the Advanced Options. Using the “Do Not Change” value will fail.   </li></ul>
+</li>
+
+<li><strong>Analytics Manager</strong>: “Enable File Upload” option is deprecated and removed (in MX 6.0). Use “File Upload” switch under newly introduced “Feature Switch” section instead. When migrating the profile to new MX version, please note that the configuration will lose the user selection for this field. Zebra recommends editing the configuration to set the “File Upload” options as required in the Analytics Manager configuration.</li>
+
+<li>If the Bluetooth pairing information for RS507 in previous connection attempts has been deleted on the device side, the next connection attempt might fail. The workaround is to clean-boot the RS507 and retry.</li>
+
+<li>When a BarcodeManager instance is created, EMDK disables DataWedge, effecting any application using DataWedge. When BarcodeManager is released, EMDK re-enables DataWedge.</li>
+
+<li>If an application is to use BarcodeManager and ScanAndPairManager features, the first feature instance must be released before getting the other feature instance. Simultaneous use of BarcodeManager and ScanAndPairManager is not allowed.</li>
+
+<li>ProfileManager has been enhanced to support simultaneous usage in multiple applications. This means that an individual application is need required to release <strong>EMDKManager &gt; ProfileManager</strong> before going to the background. In previous versions, if an application going to the background did not release the ProfileManager, no other applications could access ProfileManager. However, the following restrictions still apply:
+
+
+<ul>
+<li>Only one instance of EMDKManager can be used in an application.</li>
+
+<li>Only one instance of ProfileManager can be used in an application.</li>
+
+<li>Other than the ProfileManager, all other features (i.e. EMDKManager &gt; BarcodeManager) used in an application must be released before another application can use that feature.</li>
+
+<li>All instances of all features including EMDKManager must be released before exiting the application.</li></ul>
+</li>
+
+<li>A specific EMDK Profile Manager feature such as KeyMapping Manager might not be supported on all devices supported by EMDK. For details about feature support for specific devices, see the <a href="/mx">MX Feature Matrix</a> and follow instructions there.</li>
+
+<li>EMDK does not support Managed Profiles in devices running Android Marshmallow and higher. In a device with Managed Profiles enabled, when an EMDK sample app is installed via File Browser, MDM, etc. only a Personal (unmanaged) app of the EMDK sample will be created and function properly. A Work (managed) app of the EMDK sample will not be created. If an EMDK sample app is installed via Android Debug Bridge (ADB) in a device with Managed Profiles enabled, the Work app as well as the Personal app of the EMDK sample will be created in the device. Only the Personal app will behave as expected, not the Work (Managed) app.</li>
+
+<li>To EMDK applications cannot use the same serial port at the same time. In addition, if DataWedge serial input is enabled for a port in an active profile, it should be disabled before using the port in EMDK. If the port is already in use, attempts to use the port by EMDK will fail.</li>
+
+<li>If a VC80x device is connected to a computer via USB cable, serial port communications are blocked. Zebra recommends removing the USB cable before using the serial port.</li>
+</ol>
+
+<hr>
+
+<h3 id="apirelatedusage" class="anchor"><a class="heading-anchor" href="#apirelatedusage"><span></span></a>API-related Usage</h3>
+
+<ol>
+<li>A profile name argument (the first argument of <code>processProfile</code> API) is mandatory.</li>
+
+<li>If the profile name is given in the <code>extraData</code> (third argument of processProfile API) and if it does not match the profile name (first argument of <code>processProfile</code> API), the profile will NOT be modified.</li>
+
+<li>The profile name provided in <code>extraData</code> (third argument of <code>processProfile</code> API) is ignored if a profile segment is present in <code>criteria</code> (first argument of <code>processProfile</code> API).</li>
+
+<li>Developers must implement <code>EMDKListener</code> and wait for <code>onOpened()</code> before making any API call. If making any API calls inside <code>onResume()</code>, check the status of the <code>EMDKManager</code> object first. In some cases, <code>onResume()</code> can be called before the <code>onOpened()</code> callback, and the <code>EMDKManager</code> object can become null.</li>
+
+<li>The <code>EMDKManager.release()</code> without an argument specifying the specific feature type (ex: FEATURE_TYPE.BARCODE) releases all the resources bound to underlying features. <strong>This API must be called <u>before exiting the application only</u></strong>. Zebra recommends the using <code>onDestroy()</code> callback for this purpose.</li>
+
+<li><strong>Profile API</strong>: The profile applied by passing <code>extraData</code> in Profile Manager's process profile method is stored in the memory until the Profile Manager is released or process profile method is called with <code>PROFILE_FLAG.RESET</code>.</li>
+
+<li>To determine if the <code>processProfile</code> API is successful, check the “statusCode." If the statusCode is set to “CHECK_XML," traverse through the response XML (embedded in <code>EMDKResults</code>) to obtain the error. The EMDK samples demonstrate the manipulation of response XML for errors.</li>
+
+<li>In some cases the <code>EMDKResults.getExtendedStatusMessage()</code> might not provide correct status information.</li>
+
+<li><strong>Barcode API</strong>: Setting scanner configurations is not allowed while a read is pending. This behavior is demonstrated in the <a href="../samples/barcode">BarcodeSample1</a> code as well.</li>
+
+<li><strong>Barcode API</strong>: To handle barcode scanning during device suspend-resume cycle (ex: pressing Power key) or background-foreground switching (ex: pressing Home key), it is required to release BarcodeManager instance by calling <code>EMDKManager.release(FEATURE_TYPE.BARCODE)</code> during suspend/switching to background and gain new BarcodeManager instance by calling <code>EMDKManager.getInstance(FEATURE_TYPE.BARCODE)</code> during resume/switching to foreground. Zebra recommends using <code>onPause()</code> and <code>onResume()</code> callbacks for this purpose. This behavior is demonstrated in the <a href="../samples/barcode">BarcodeSample1</a> code as well.</li>
+
+<li><strong>Barcode API</strong>: The RS507 Bluetooth scanner supports device wake-up from suspend by pressing RS507 trigger. To use this feature, the RS507 scanner should not be disabled when the device goes to suspend. The generally recommended practice is to release the barcode scanner during device suspend or moving an app to the background.</li>
+
+<li>EMDK API calls such as Barcode, SimulScan and SerialComm are designed to be called sequentially. If called within separate threads, such as from AsyncTasks, some kind of synchronization mechanism should be employed to prevent multiple EMDK API calls getting called simultaneously.</li>
+
+<li><strong>Barcode API</strong> While using Bluetooth and Pluggable scanners such as RS507, RS6000, RS4000, when the scanner DISCONNECTED event is received, the created scanner object must be released and cannot be used for future scanning tasks. When the subsequent CONNECTED event is received, a new scanner object must be created and used for scanning. See the <a href="../tutorial/tutBluetoothScannerAPI/">Using Bluetooth Scanner</a> tutorial or the <a href="../samples/barcode">BarcodeSample1</a> application for more programming information. Zebra recommends maintaining a time gap between every DISCONNECT and CONNECT for the Pluggable scanner devices.</li>
+
+<li>The beam timer for RS507 scanners has a maximum value of 10 (seconds).</li>
+
+<li><strong>Barcode API</strong> Specifying any custom audio file with the same name as one of the system audio files (/system/media/audio/notifications/) for <code>decodeAudioFeedbackUri</code> in <code>ScannerConfig.ScannerParams</code> will play a system audio file instead of the specified custom audio file. This is working as designed.</li>
+
+<li><strong>SimulScan API</strong> When <code>SimulScanReader.read()</code> is called and if there are any unlicensed features in the selected template, an ERROR state is returned with extended status as "<code>UNLICENSED_FEATURE</code>" for each unlicensed feature in the template. Use <code>SimulScanStatusData.getStatusDescription()</code> to view the name of the unlicensed feature(s).</li>
+
+<li><strong>ScanAndPair API</strong>: Using the Bluetooth Name requires location permission to discover the nearby Bluetooth devices on devices running Android Marshmallow and higher. These permissions are enabled by default in EMDK. Turning off these permissions manually (<strong>Settings &gt; Apps &gt; EMDK Service &gt; Permissions</strong>) in the EMDK service would result in failure to pair the Bluetooth device using ScanAndPair.</li>
+
+<li><strong>Barcode and SimulScan APIs</strong> require camera permission to use the device camera for scanning and document capture on devices running Android Marshmallow and higher. These permissions are enabled by default in EMDK. Turning off these permissions manually (<strong>Settings &gt; Apps &gt; EMDK Service &gt; Permissions</strong>) in the EMDK service would result in failure to use the camera in Barcode and SimulScan.</li>
+
+<li><strong>SerialComm API</strong> Calling <code>SerialComm.enable()</code>, <code>SerialComm.read()</code> and <code>SerialComm.write()</code> while serial cables are disconnected might not throw an exception. Some kind of a mechanism should be employed to determine whether a cable is connected.</li>
+
+<li><strong>MultiBarcode scanning</strong>:
+
+
+<ul>
+<li>Barcodes can be of multiple label types. If the required number of barcodes (from 1-10, as set using the <code>BarcodeCount</code> parameter) is not in view of the scanner, the scanner will not decode any data. </li>
+
+<li>If the scanner's field of view contains a number of barcodes greater than the value set by <code>BarcodeCount</code>, the scanner will randomly decode any barcode(s) until the count is reached. For example, if the count is set to two and eight barcodes are in the field of view, the scanner returns data for the first two barcodes it sees, and returns the data in random order.</li>
+
+<li>There is no guarantee that the order of returned data will be the same on any two scans; order of individual barcode data can vary with each scan.</li>
+
+<li>In multi-barcode scanning mode, when a picklist reader parameter is set to a value other than “Disabled," the user is expected to move the crosshair to the specified number of barcodes to be scanned. Set this value (from 2-10) using the <code>BarcodeCount</code> parameter. Data is returned only after the specified number of barcodes is read.</li></ul>
+</li>
+</ol>
 
 <hr>
 
