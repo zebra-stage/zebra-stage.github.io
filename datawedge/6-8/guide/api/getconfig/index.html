@@ -785,6 +785,84 @@ private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
 };
 </code></pre>
 
+<h3 id="getserialinputconfig" class="anchor"><a class="heading-anchor" href="#getserialinputconfig"><span></span></a>Get SERIAL input config</h3>
+
+<pre class="prettyprint"><code>final String RESULT_ACTION = "com.symbol.datawedge.api.RESULT_ACTION";
+final static String DEFAULT_CATEGORY = "android.intent.category.DEFAULT";
+
+TextView status;
+
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    IntentFilter filter = new IntentFilter();
+    filter.addAction(RESULT_ACTION);
+    filter.addCategory(DEFAULT_CATEGORY);
+    registerReceiver(dwResultReciever, filter);
+}
+
+public void btnGetOnClick(View view) {
+    status.setText("");
+
+    //MAIN BUNDLE PROPERTIES
+    Bundle bMain = new Bundle();
+    bMain.putString("PROFILE_NAME", "Profile0 (default)");
+    //bMain.putString("PROFILE_NAME", "DWDemo");
+
+    //PLUGIN_CONFIG BUNDLE PROPERTIES
+    Bundle bConfig = new Bundle();
+
+    ArrayList&lt;String&gt; pluginName = new ArrayList&lt;&gt;();
+    pluginName.add("SERIAL");
+
+    bConfig.putStringArrayList("PLUGIN_NAME", pluginName);
+    bMain.putBundle("PLUGIN_CONFIG", bConfig);
+
+    Intent i = new Intent();
+    i.setAction("com.symbol.datawedge.api.ACTION");
+    i.putExtra("SEND_RESULT", "true");
+    i.putExtra("com.symbol.datawedge.api.GET_CONFIG", bMain);
+    this.sendBroadcast(i);
+}
+
+private BroadcastReceiver dwResultReciever = new BroadcastReceiver() {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        String text = "";
+        if (intent.getAction().equalsIgnoreCase("com.symbol.datawedge.api.RESULT_ACTION")) {
+            if (intent.hasExtra("com.symbol.datawedge.api.RESULT_GET_CONFIG")) {
+                Bundle bundle = intent.getBundleExtra("com.symbol.datawedge.api.RESULT_GET_CONFIG");
+                if (bundle != null &amp;&amp; !bundle.isEmpty()) {
+                    String profileName = bundle.getString("PROFILE_NAME");
+                    String profileEnabled = bundle.getString("PROFILE_ENABLED");
+                    ArrayList&lt;Bundle&gt; configBundleList = bundle.getParcelableArrayList("PLUGIN_CONFIG");
+                    if (configBundleList != null) {
+                        for (Bundle configBundle : configBundleList) {
+                            if (configBundle.getString("PLUGIN_NAME").equalsIgnoreCase("SERIAL")) {
+                                Parcelable[] deviceBundleList = configBundle.getParcelableArray("DEVICE_LIST");
+
+                                for (Parcelable parcelableDevice : deviceBundleList) {
+                                    Bundle device = (Bundle) parcelableDevice;
+
+                                    Log.d("TAG", "#Serial# " + device.getString("serial_port_id"));
+                                    Log.d("TAG", "#Serial# " + device.getString("serial_input_enabled"));
+                                    Log.d("TAG", "#Serial# " + device.getString("serial_baudrate"));
+                                    Log.d("TAG", "#Serial# " + device.getString("serial_databits"));
+                                    Log.d("TAG", "#Serial# " + device.getString("serial_parity"));
+                                    Log.d("TAG", "#Serial# " + device.getString("serial_stopbits"));
+                                    Log.d("TAG", "#Serial# " + device.getString("serial_flow"));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            status.setText("Status:\n" + text);
+        }
+    }
+};
+</code></pre>
+
 <hr>
 
 <p><strong>SEE ALSO</strong>:</p>

@@ -232,7 +232,10 @@
 
 <p>Used to create, update or replace a DataWedge Profile and its settings. In DataWedge 6.6 and higher, this API also can be used to configure multiple Plug-ins with a single intent action. Beginning with DataWedge 6.7, the behavior of inter-character delay is enhanced. See the <a href="../../output/keystroke">Keystroke Output guide</a> for more information.  </p>
 
-<p>This API contains <a href="../overview/#nestedbundles">nested bundles</a>. </p>
+<p>This API implements <a href="../overview/#nestedbundles">nested bundles</a>, which contain multiple configuration parameters in a single data field. </p>
+
+<p><img style="height:350px" src="nested_bundles_labelled.png">
+<br></p>
 
 <p>To create a Profile without configuring its settings parameters, see <a href="../createprofile">CREATE_PROFILE</a>.</p>
 
@@ -293,22 +296,14 @@ i.putExtra("com.symbol.datawedge.api.SET_CONFIG", &lt;mainbundle&gt;);
 <ul>
 <li><strong>BARCODE</strong> input</li>
 
+<li><strong>SERIAL</strong> input</li>
+
 <li><strong>INTENT</strong> output</li>
 
 <li><strong>KEYSTROKE</strong> output</li>
 
 <li><strong>BDF</strong> (basic data formatting) processing</li>
 </ul>
-
-<!-- 
-To be implemented in the future: 
-  * ADF (advanced data formatting) processing 
-  * DCP input
-  * IP output
-  * MSR input
-  * SIMULSCAN input 
-
- -->
 
 <p><strong>Notes</strong>: </p>
 
@@ -318,48 +313,85 @@ To be implemented in the future:
 <li>For DataWedge 6.5 and below, each intent involving a Plug-in requires a separate intent Action.</li>
 </ul>
 
-<p><strong>PARAM_LIST</strong> [Bundle]: A parameter list bundle nested within the <code>PLUGIN_CONFIG</code> bundle. Includes the list of parameters that should be updated under the specified Plug-in. Setting an empty string in any parameter value resets that parameter to its default setting. </p>
+<p><strong>PARAM_LIST</strong> [Bundle]: A parameter list bundle nested within the <code>PLUGIN_CONFIG</code> bundle. Includes the list of parameters to be updated under the specified Plug-in. <strong>Setting an empty string in any parameter value resets that parameter to its default setting</strong>. </p>
+
+<p><img alt="" style="height:448px" src="nested_example_pt1.png">
+<img alt="" style="height:482px" src="nested_example_pt2.png">
+<em>A visual representation of nested SET_CONFIG bundles. <a href="#examplecode">See example code</a>.</em> 
+<br></p>
 
 <h4 id="param_listbundle" class="anchor"><a class="heading-anchor" href="#param_listbundle"><span></span></a>PARAM_LIST BUNDLE</h4>
 
 <p>The <code>PARAM_LIST</code> bundle is configured by specifying the parameter name and value from the table below. Applies to parameters matching the <code>PLUGIN_NAME</code> specified in <code>PLUGIN_CONFIG</code> bundle. </p>
 
 <ul>
-<li><p><strong>BARCODE –</strong> takes a value from the <a href="#scannerinputparameters">Scanner Input Parameters</a> table below; specify decoder and other input settings as <code>EXTRA_DATA</code> in the <code>PARAM_LIST</code> nested bundle</p>
+<li><p><strong>BARCODE –</strong> takes a value from the <a href="#scannerinputparameters">Scanner Input Parameters</a> table below; specify decoder and other input settings as <code>EXTRA_DATA</code> in the <code>PARAM_LIST</code> nested bundle.</p>
 
-<p><code>scanner_selection_by_identifier</code> [string]- takes a value from the list of <a href="#scanneridentifiers">Scanner Identifiers</a> below</p></li>
+<ul>
+<li><code>scanner_selection_by_identifier</code> [string]- takes a value from the list of <a href="#scanneridentifiers">Scanner Identifiers</a> below.</li></ul></li>
 
-<li><p><strong>BDF -</strong> Applies Basic Data Formatting rules to the acquired data. </p>
+<li><p><strong>SERIAL -</strong> takes values as indicated below: 
+<br></p>
 
-<p><code>bdf_enabled</code> [string]- true/false</p>
+<ul>
+<li><code>serial_port_id</code> [string] - 0–n (a valid port index)</li>
 
-<p><code>bdf_prefix</code> [string]- Prefix to acquired data</p>
+<li><code>serial_input_enabled</code> [string] - true/false</li>
 
-<p><code>bdf_suffix</code> [string]- Suffix to acquired data</p>
+<li><code>serial_baudrate</code> [string] - 300, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200, 230400, 460800 or 921600</li>
 
-<p><code>bdf_send_data</code> [string]- true/false</p>
+<li><code>serial_databits</code> [string] - 7 or 8</li>
 
-<p><code>bdf_send_hex</code> [string]- true/false</p>
+<li><code>serial_parity</code> [string] - NONE, ODD, EVEN, MARK or SPACE</li>
 
-<p><code>bdf_send_tab</code> [string]- true/false</p>
+<li><code>serial_stopbits</code> [string] - 1 or 2</li>
 
-<p><code>bdf_send_enter</code> [string]- true/false</p></li>
+<li><code>serial_flow</code> [string] - FLOW_NONE, FLOW_RTS_CTS or FLOW_XON_XOFF</li></ul></li>
 
-<li><p><strong>INTENT -</strong> Use values as indicated below: </p>
+<li><p><strong>INTENT -</strong> takes values as indicated below: 
+<br></p>
 
-<p><code>intent_output_enabled</code> [string]- true/false</p>
+<ul>
+<li><code>intent_output_enabled</code> [string]- true/false</li>
 
-<p><code>intent_action</code> [string]</p>
+<li><code>intent_action</code> [string] - exact name of the action</li>
 
-<p><code>intent_category</code> [string] </p>
+<li><code>intent_category</code> [string] - exact name of the category</li>
 
-<p><code>intent_delivery</code> [string]- Use "0" for Start Activity, "1" for Start Service, "2" for Broadcast</p></li>
+<li><code>intent_delivery</code> [string]:
+
+
+<ul>
+<li>0 - Start Activity</li>
+
+<li>1 - Start Service</li>
+
+<li>2 - Broadcast</li></ul>
+
+<p></p></li></ul><p></p></li>
 </ul>
 
 <!-- `intent_flag_receiver_foreground` [string] &lt;true/false&gt; -->
 
 <ul>
-<li><strong>KEYSTROKE -</strong> takes a value from the <a href="#keystrokeoutputparameters">Keystroke Output Parameters</a> table below; specify output settings as <code>EXTRA_DATA</code> in the <code>PARAM_LIST</code> nested bundle</li>
+<li><p><strong>KEYSTROKE -</strong> takes a value from the <a href="#keystrokeoutputparameters">Keystroke Output Parameters</a> table below; specify output settings as <code>EXTRA_DATA</code> in the <code>PARAM_LIST</code> nested bundle.</p></li>
+
+<li><p><strong>BDF -</strong> Applies <a href="../../process/bdf">Basic Data Formatting</a> rules to the acquired data. Takes values: </p>
+
+<ul>
+<li><p><code>bdf_enabled</code> [string]- true/false</p></li>
+
+<li><p><code>bdf_prefix</code> [string]- prepend acquired data</p></li>
+
+<li><p><code>bdf_suffix</code> [string]- append acquired data</p></li>
+
+<li><p><code>bdf_send_data</code> [string]- true/false</p></li>
+
+<li><p><code>bdf_send_hex</code> [string]- true/false</p></li>
+
+<li><p><code>bdf_send_tab</code> [string]- true/false</p></li>
+
+<li><p><code>bdf_send_enter</code> [string]- true/false</p></li></ul></li>
 </ul>
 
 <h4 id="app_list" class="anchor"><a class="heading-anchor" href="#app_list"><span></span></a>APP_LIST</h4>
@@ -411,21 +443,21 @@ To be implemented in the future:
 <p>DataWedge returns the following error codes if the app includes the intent extras <code>RECEIVE_RESULT</code> and <code>COMMAND_IDENTIFIER</code> to enable the app to get results using the DataWedge result intent mechanism. See <a href="#example">Example</a>, below. </p>
 
 <ul>
-<li><strong>PLUGIN_NOT_SUPPORTED -</strong> FAILURE</li>
+<li><strong>PLUGIN_NOT_SUPPORTED -</strong> An attempt was made to configure a plug-in that is not supported by DataWedge intent APIs</li>
 
-<li><strong>BUNDLE_EMPTY -</strong> FAILURE </li>
+<li><strong>BUNDLE_EMPTY -</strong> The bundle contains no data </li>
 
-<li><strong>PROFILE_NAME_EMPTY -</strong> FAILURE</li>
+<li><strong>PROFILE_NAME_EMPTY -</strong> An attempt was made to configure a Profile name with no data</li>
 
-<li><strong>PROFILE_NOT_FOUND -</strong> FAILURE</li>
+<li><strong>PROFILE_NOT_FOUND -</strong> An attempt was made to perform an operation on a Profile that does not exist</li>
 
-<li><strong>PLUGIN_BUNDLE_INVALID -</strong> FAILURE</li>
+<li><strong>PLUGIN_BUNDLE_INVALID -</strong> A passed plug-in parameter bundle is empty or contains insufficient information</li>
 
-<li><strong>PARAMETER_INVALID -</strong> FAILURE </li>
+<li><strong>PARAMETER_INVALID -</strong> The passed parameters were empty, null or invalid </li>
 
-<li><strong>APP_ALREADY_ASSOCIATED -</strong> FAILURE</li>
+<li><strong>APP_ALREADY_ASSOCIATED -</strong> An attempt was made to associate an app that was already associated with another Profile</li>
 
-<li><strong>OPERATION_NOT_ALLOWED -</strong> FAILURE</li>
+<li><strong>OPERATION_NOT_ALLOWED -</strong> An attempt was made to rename or delete a protected Profile or to associate an app with Profile0</li>
 </ul>
 
 <p>Also see the <a href="../resultinfo">Result Codes guide</a> for more information.  </p>
@@ -519,6 +551,58 @@ $ adb logcat -s DWAPI
     i.putExtra("com.symbol.datawedge.api.SET_CONFIG", bMain);
 
     this.sendBroadcast(i);
+</code></pre>
+
+<h3 id="setserialinputconfiguration" class="anchor"><a class="heading-anchor" href="#setserialinputconfiguration"><span></span></a>Set Serial Input Configuration</h3>
+
+<pre class="prettyprint"><code>//
+// Port 1 Configuration [Start]
+//
+Bundle bPort1 = new Bundle();
+bPort1.putString("serial_port_id", "0"); //Supported Values: 0,1
+bPort1.putString("serial_input_enabled", "true"); // Supported Values: true, false
+bPort1.putString("serial_baudrate", "1200"); // Supported Values (some): 300, 1200, 2400, 4800, 19200, and more
+bPort1.putString("serial_databits", "8"); //Supported Values: 8, 7
+bPort1.putString("serial_parity", "ODD"); //Supported Values: NONE, ODD, EVEN, MARK, SPACE
+bPort1.putString("serial_stopbits", "1"); //Supported Values: 1, 2
+bPort1.putString("serial_flow", "FLOW_RTS_CTS"); //Supported Values: FLOW_NONE, FLOW_RTS_CTS, FLOW_DSR_DTR, FLOW_XON_XOFF
+//
+// Port 1 Configuration [End]
+//
+// Port 2 Configuration [Start]
+//
+Bundle bPort2 = new Bundle();
+bPort2.putString("serial_port_id", "1");
+bPort2.putString("serial_input_enabled", "true");
+bPort2.putString("serial_baudrate", "300");
+bPort2.putString("serial_databits", "7");
+//bPort2.putString("abc", "123");
+bPort2.putString("serial_stopbits", "2");
+bPort2.putString("serial_flow", "FLOW_DSR_DTR");
+bPort2.putString("serial_parity", "EVEN");
+//
+// Port 2 Configuration [End]
+//
+Bundle bConfig = new Bundle();
+bConfig.putString("RESET_CONFIG", "false");
+bConfig.putString("PLUGIN_NAME", "SERIAL");
+bConfig.putParcelableArray("DEVICE_LIST", new Bundle[]{
+        bPort1, bPort2
+});
+
+Bundle bMain = new Bundle();
+bMain.putString("PROFILE_NAME", "Profile0 (default)");
+bMain.putString("CONFIG_MODE", "UPDATE");
+bMain.putBundle("PLUGIN_CONFIG", bConfig);
+
+Intent i = new Intent();
+i.setAction("com.symbol.datawedge.api.ACTION");
+i.putExtra("com.symbol.datawedge.api.SET_CONFIG", bMain);
+i.putExtra("SEND_RESULT", "true");
+i.putExtra("com.symbol.datawedge.api.RESULT_CATEGORY", DEFAULT_CATEGORY);
+i.putExtra("COMMAND_IDENTIFIER", "DW_SERIAL_COMMAND");
+
+this.sendBroadcast(i);
 </code></pre>
 
 <h3 id="setkeystrokeoutput" class="anchor"><a class="heading-anchor" href="#setkeystrokeoutput"><span></span></a>Set KEYSTROKE Output</h3>
