@@ -460,166 +460,168 @@ try {
 }
 </code></pre></li>
 
-<li><p>When a barcode is scanned, its data is received in the <code>onData</code> method callback. This step gets that data, processes it in the desired format and populates the <a href="http://developer.android.com/reference/android/widget/EditText.html">EditText</a> UI element.</p></li>
-</ol>
+<li><p>When a barcode is scanned, its data is received in the <code>onData</code> method callback. This step gets that data, processes it in the desired format and populates the <a href="http://developer.android.com/reference/android/widget/EditText.html">EditText</a> UI element.</p>
 
-<p>The received data should be processed in a background thread so as not to block the UI thread. This can be done using Android's <a href="http://developer.android.com/reference/android/os/AsyncTask.html">AsyncTask</a>. Create the AsyncTask <code>AsyncDataUpdate</code> that takes <a href="/emdk-for-android/6-10/api/barcode/ScanDataCollection">ScanDataCollection</a> that has the scanned data. The <code>doInBackground</code> method parses the barcode data and label type into strings, which are passed to the UI thread in the <code>onPostExecute</code> method of AsyncTask to populate.</p>
+<p>The received data should be processed in a background thread so as not to block the UI thread. This can be done using Android's <a href="http://developer.android.com/reference/android/os/AsyncTask.html">AsyncTask</a>. Create the AsyncTask <code>AsyncDataUpdate</code> that takes <a href="/emdk-for-android/6-10/api/barcode/ScanDataCollection">ScanDataCollection</a> that has the scanned data. The <code>doInBackground</code> method parses the barcode data and label type into strings, which are passed to the UI thread in the <code>onPostExecute</code> method of AsyncTask to populate. <br><br></p>
 
 <p>As referenced earlier, it's possible to call the <code>read()</code> method in this callback so that the user can scan multiple barcodes.</p>
 
-<pre class="prettyprint"><code>    
-    // Update the scan data on UI
-    int dataLength = 0;
+<pre class="prettyprint"><code>
+// Update the scan data on UI
+int dataLength = 0;
 
-    // AsyncTask that configures the scanned data on background
-    // thread and updated the result on UI thread with scanned data and type of
-    // label
-    private class AsyncDataUpdate extends
-            AsyncTask&lt;ScanDataCollection, Void, String&gt; {
+// AsyncTask that configures the scanned data on background
+// thread and updated the result on UI thread with scanned data and type of
+// label
+private class AsyncDataUpdate extends
+        AsyncTask&lt;ScanDataCollection, Void, String&gt; {
 
-        @Override
-        protected String doInBackground(ScanDataCollection... params) {
+<pre><code>@Override
+protected String doInBackground(ScanDataCollection... params) {
 
-            // Status string that contains both barcode data and type of barcode
-            // that is being scanned
-            String statusStr = "";
+    // Status string that contains both barcode data and type of barcode
+    // that is being scanned
+    String statusStr = "";
 
-            try {
+    try {
 
-                // Starts an asynchronous Scan. The method will NOT turn ON the
-                // scanner, but puts it in a state in which the scanner can be turned 
-                // on automatically or by pressing a hardware trigger
+        // Starts an asynchronous Scan. The method will NOT turn ON the
+        // scanner, but puts it in a state in which the scanner can be turned 
+        // on automatically or by pressing a hardware trigger
 
-                scanner.read(); 
-                ScanDataCollection scanDataCollection = params[0];
+        scanner.read(); 
+        ScanDataCollection scanDataCollection = params[0];
 
-                // The ScanDataCollection object gives scanning result and the
-                // collection of ScanData. So check the data and its status
+        // The ScanDataCollection object gives scanning result and the
+        // collection of ScanData. So check the data and its status
 
-                if (scanDataCollection != null
-                        &amp;&amp; scanDataCollection.getResult() == ScannerResults.SUCCESS) {
+        if (scanDataCollection != null
+                &amp;amp;&amp;amp; scanDataCollection.getResult() == ScannerResults.SUCCESS) {
 
-                    ArrayList&lt;ScanData&gt; scanData = scanDataCollection
-                            .getScanData();
+            ArrayList&amp;lt;ScanData&amp;gt; scanData = scanDataCollection
+                    .getScanData();
 
-                    // Iterate through scanned data and prepare the statusStr
-                    for (ScanData data : scanData) {
+            // Iterate through scanned data and prepare the statusStr
+            for (ScanData data : scanData) {
 
-                        // Get the scanned data
-                        String a = data.getData();
-                        // Get the type of label being scanned
-                        LabelType labelType = data.getLabelType();
-                        // Concatenate barcode data and label type
-                        statusStr = barcodeData + " " + labelType;
-                    }
-                }
-
-            } catch (ScannerException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                // Get the scanned data
+                String a = data.getData();
+                // Get the type of label being scanned
+                LabelType labelType = data.getLabelType();
+                // Concatenate barcode data and label type
+                statusStr = barcodeData + " " + labelType;
             }
-
-            // Return result to populate on UI thread
-            return statusStr;
         }
 
-        @Override
-        protected void onPostExecute(String result) {
-            // Update the dataView EditText on UI thread with barcode data and
-            // its label type
-            if (dataLength++ &gt; 50) {
-                // Clear the cache after 50 scans
-                dataView.getText().clear();
-                dataLength = 0;
-            }
-            dataView.append(result + "\n");
-        }
-
-        @Override
-        protected void onPreExecute() {
-        }
-
-        @Override
-        protected void onProgressUpdate(Void... values) {
-        }
+    } catch (ScannerException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
     }
 
-We call this AsyncTask in overridden `onData` method, by creating an instance of `AsyncDataUpdate` and passing the `scanDataCollection` for further processing.
+    // Return result to populate on UI thread
+    return statusStr;
+}
 
-    :::java
-    // Use the scanned data, process it on background thread using AsyncTask
-    // and update the UI thread with the scanned results
-    new AsyncDataUpdate().execute(scanDataCollection);
+@Override
+protected void onPostExecute(String result) {
+    // Update the dataView EditText on UI thread with barcode data and
+    // its label type
+    if (dataLength++ &amp;gt; 50) {
+        // Clear the cache after 50 scans
+        dataView.getText().clear();
+        dataLength = 0;
+    }
+    dataView.append(result + "\n");
+}
+
+@Override
+protected void onPreExecute() {
+}
+
+@Override
+protected void onProgressUpdate(Void... values) {
+}
 </code></pre>
 
-<ol>
-<li>Whether scanning the barcode by pressing the hard scan key or keeping it idle, it returns the status of the scanner at a specific point in time in the overridden <code>onStatus</code> method of the implemented <code>StatusListener</code> interface. Since the status also is being displayed along with barcode data, the app can make use of this method and populate the status.</li>
-</ol>
+}
+</code></pre>
+
+<p>We call this AsyncTask in overridden <code>onData</code> method, by creating an instance of <code>AsyncDataUpdate</code> and passing the <code>scanDataCollection</code> for further processing.</p>
+
+<pre class="prettyprint"><code>
+// Use the scanned data, process it on background thread using AsyncTask
+// and update the UI thread with the scanned results
+new AsyncDataUpdate().execute(scanDataCollection);
+</code></pre></li>
+
+<li><p>Whether scanning the barcode by pressing the hard scan key or keeping it idle, it returns the status of the scanner at a specific point in time in the overridden <code>onStatus</code> method of the implemented <code>StatusListener</code> interface. Since the status also is being displayed along with barcode data, the app can make use of this method and populate the status.</p>
 
 <p>Just like scanned data, the scanner status is being processed in a background thread. Hence another <a href="http://developer.android.com/reference/android/os/AsyncTask.html">AsyncTask</a> (named <code>AsyncStatusUpdate</code>) is created to take <a href="/emdk-for-android/6-10/api/barcode/StatusData">StatusData</a> and processes it in the <code>doInBackground</code> method to retrieve the state in string format. This is populated in status Text View in the UI thread in the <code>onPostExecute</code> method of the AsyncTask. </p>
 
-<pre class="prettyprint"><code>    
-    // AsyncTask that configures the current state of scanner on background
-    // thread and updates the result on UI thread
-    private class AsyncStatusUpdate extends AsyncTask&lt;StatusData, Void, String&gt; {
+<pre class="prettyprint"><code>
+// AsyncTask that configures the current state of scanner on background
+// thread and updates the result on UI thread
+private class AsyncStatusUpdate extends AsyncTask&lt;StatusData, Void, String&gt; {
 
-        @Override
-        protected String doInBackground(StatusData... params) {
-            String statusStr = "";
-            // Get the current state of scanner in background
-            StatusData statusData = params[0];
-            ScannerStates state = statusData.getState();
-            // Different states of Scanner
-            switch (state) {
-            // Scanner is IDLE
-            case IDLE:
-                statusStr = "The scanner enabled and its idle";
-                break;
-            // Scanner is SCANNING
-            case SCANNING:
-                statusStr = "Scanning..";
-                break;
-            // Scanner is waiting for trigger press
-            case WAITING:
-                statusStr = "Waiting for trigger press..";
-                break;
-            // Scanner is not enabled
-            case DISABLED:
-                statusStr = "Scanner is not enabled";
-                break;
-            default:
-                break;
-            }
-
-            // Return result to populate on UI thread
-            return statusStr;
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            // Update the status text view on UI thread with current scanner
-            // state
-            statusTextView.setText(result);
-        }
-
-        @Override
-        protected void onPreExecute() {
-        }
-
-        @Override
-        protected void onProgressUpdate(Void... values) {
-        }
+<pre><code>@Override
+protected String doInBackground(StatusData... params) {
+    String statusStr = "";
+    // Get the current state of scanner in background
+    StatusData statusData = params[0];
+    ScannerStates state = statusData.getState();
+    // Different states of Scanner
+    switch (state) {
+    // Scanner is IDLE
+    case IDLE:
+        statusStr = "The scanner enabled and its idle";
+        break;
+    // Scanner is SCANNING
+    case SCANNING:
+        statusStr = "Scanning..";
+        break;
+    // Scanner is waiting for trigger press
+    case WAITING:
+        statusStr = "Waiting for trigger press..";
+        break;
+    // Scanner is not enabled
+    case DISABLED:
+        statusStr = "Scanner is not enabled";
+        break;
+    default:
+        break;
     }
 
-We call this AsyncTask in overridden `onStatus` method, by creating an instance of `AsyncStatusUpdate` and passing the `StatusData` for further processing.
+    // Return result to populate on UI thread
+    return statusStr;
+}
 
-    :::java
-    // process the scan status event on the background thread using
-    // AsyncTask and update the UI thread with current scanner state
-    new AsyncStatusUpdate().execute(statusData);
+@Override
+protected void onPostExecute(String result) {
+    // Update the status text view on UI thread with current scanner
+    // state
+    statusTextView.setText(result);
+}
+
+@Override
+protected void onPreExecute() {
+}
+
+@Override
+protected void onProgressUpdate(Void... values) {
+}
 </code></pre>
 
-<ol>
+}
+</code></pre>
+
+<p>We call this AsyncTask in overridden <code>onStatus</code> method, by creating an instance of <code>AsyncStatusUpdate</code> and passing the <code>StatusData</code> for further processing.</p>
+
+<pre class="prettyprint"><code>
+// process the scan status event on the background thread using
+// AsyncTask and update the UI thread with current scanner state
+new AsyncStatusUpdate().execute(statusData);
+</code></pre></li>
+
 <li><p>Override the <code>onDestroy</code> method to release the EMDKManager resources:  </p>
 
 <pre class="prettyprint"><code>
@@ -646,9 +648,9 @@ protected void onStop() {
   super.onStop();
   try {
     if (scanner != null) {
-        // releases the scanner hardware resources for other application
-        // to use. You must call this as soon as you're done with the
-        // scanning.
+        // Releases the scanner hardware resources for other application
+        // to use. Must be called as soon as scanning is done. 
+        //
         scanner.removeDataListener(this);
         scanner.removeStatusListener(this);
         scanner.disable();
@@ -659,7 +661,6 @@ protected void onStop() {
   }
 }
 </code></pre></li>
-
 
 <li><p>Lastly, clean up the objects created by EMDK manager in <code>onClosed</code> method in case EMDK closed abruptly:</p>
 
@@ -683,34 +684,34 @@ this.emdkManager = null;
 <h2 id="runningtheapplication" class="anchor"><a class="heading-anchor" href="#runningtheapplication"><span></span></a>Running the Application</h2>
 
 <ol>
-<li><p>Connect the device (having latest EMDK runtime) to USB port. </p>
-
-<blockquote>
-  <p>Note: <br>
-  Make sure the device is in USB debug.</p>
-</blockquote></li>
+<li><p>Connect the device (with the latest EMDK runtime) to a USB port on the development host. 
+<strong>Note</strong>: The device must be in USB Debug mode.</p></li>
 
 <li><p>Run the application.</p>
 
 <p><img src="../../images/BasicScanningTutorialImages/home_screen.png" alt="img"></p>
 
-<p>You can see a <a href="http://developer.android.com/guide/topics/ui/notifiers/toasts.html">Toast</a>, which indicates that the Scanner has been enabled and you can start scanning by pressing hard scan button of the device.</p></li>
+<p>A <a href="http://developer.android.com/guide/topics/ui/notifiers/toasts.html">Toast message</a> appears indicating that the Scanner has been enabled and scans can begin by pressing hard scan button of the device.</p></li>
 
-<li><p>Now if you press the hard scan button, the status listener in the code starts working and current status of Scanner is displayed in Status <a href="http://developer.android.com/reference/android/widget/TextView.html">TextView</a>, which is <code>Scanning</code>.  </p>
+<li><p>Pressing the hard scan button causes the status listener in the code to start working; the current status of Scanner (which is "Scanning") is displayed in the Status <a href="http://developer.android.com/reference/android/widget/TextView.html">TextView</a>.  </p>
 
 <p><img src="../../images/BasicScanningTutorialImages/status_scanning.png" alt="img"></p></li>
 
-<li><p>Once you are done with scanning and release the hard scan button, data gets populated on <a href="http://developer.android.com/reference/android/widget/EditText.html">EditText</a> and status is again updated in Status <a href="http://developer.android.com/reference/android/widget/TextView.html">TextView</a>, which is <code>Idle</code>.</p>
+<li><p>Once finished with scanning, release the hard scan button. Data is populated to <a href="http://developer.android.com/reference/android/widget/EditText.html">EditText</a> and status "Idle" is displayed in the Status <a href="http://developer.android.com/reference/android/widget/TextView.html">TextView</a>.</p>
 
-<p><img src="../../images/BasicScanningTutorialImages/status_idle.png" alt="img">  </p>
-
-<p>This is how <a href="/emdk-for-android/6-10/api">Barcode/Scanning APIs</a> introduced in EMDK V 3.0 can be used to perform Basic Scanning operations on your Symbol devices without using Profile Wizard. We will see the <a href="/emdk-for-android/6-10/api">Barcode/Scanning APIs</a> in depth to perform advanced scanning operations in the next tutorial. </p></li>
+<p><img src="../../images/BasicScanningTutorialImages/status_idle.png" alt="img">  </p></li>
 </ol>
+
+<p>This is how <a href="/emdk-for-android/6-10/api">Barcode/Scanning APIs</a> can be used to perform Basic Scanning operations on Zebra devices without using the Profile Wizard. </p>
+
+<hr>
 
 <h2 id="importantprogrammingtips" class="anchor"><a class="heading-anchor" href="#importantprogrammingtips"><span></span></a>Important Programming Tips</h2>
 
+<h3 id="editthemanifest" class="anchor"><a class="heading-anchor" href="#editthemanifest"><span></span></a>Edit the manifest</h3>
+
 <ol>
-<li><p>It is required to do the following changes in the application's AndroidManifest.xml:  </p>
+<li><p>Be sure to make the following required changes in the application's AndroidManifest.xml:  </p>
 
 <blockquote>
   <p>Note:</p>
@@ -734,21 +735,24 @@ this.emdkManager = null;
 &lt;uses-library android:name="com.symbol.emdk"/&gt;
 </code></pre></li>
 
-<li><p>Installing the EMDK for Android application without deploying the EMDK runtime on the Symbol device will fail because of missing shared library on the device.</p></li>
+<li><p>Installing the EMDK for Android application without deploying the EMDK runtime on the Zebra device fails if the shared library is missing from the device.</p></li>
 
-<li><p>Use the DataWedge v1.7.12 or higher version to test the ProfileManager.processProfile() for DataWedge profiles.</p></li>
+<li><p>Use DataWedge v1.7.12 or higher to test the <code>ProfileManager.processProfile()</code> for DataWedge profiles.</p></li>
 </ol>
+
+<h3 id="contentbackup" class="anchor"><a class="heading-anchor" href="#contentbackup"><span></span></a>Content Backup</h3>
+
+<p>Once the barcode is enabled, the <code>read</code> method is called on the scanner and the scanning API provides starts an asynchronous scan. The method does turn on the scanner, but puts the scanner in a state in which it can be turned ON either automatically or by pressing a hardware trigger as determined by the <code>Scanner.TriggerType</code>. The data notification must registered in order to scan and get the scan data. The read request can be canceled by issuing a <code>cancelRead</code>. If a <code>read()</code> is submitted while another read is pending, the method call fails. Therefore, <strong>Zebra recommends checking whether a read is pending by calling</strong> <code>isReadPending()</code> before submitting a <code>read()</code>. A read() also can be submitted from within <code>onData</code> and <code>onStatus</code> events. If called within <code>onStatus</code>, it should be called only when IDLE status is received. If called within <code>onData</code>, then checking for <code>isReadPending()</code> is recommended.</p>
+
+<blockquote>
+  <p>Note: The <code>read</code> method allows a single barcode scan only. If multiple scans are desired, the <code>read</code> method must be called multiple times.</p>
+</blockquote>
+
+<hr>
 
 <h2 id="whatsnext" class="anchor"><a class="heading-anchor" href="#whatsnext"><span></span></a>What's Next</h2>
 
-<p>Now that you have learned how to perform Basic Scanning operations on your Symbol Android devices through applications without using Profile Wizard, let us try to understand the API in depth and perform some advanced scanning. So in the next tutorial, we will concentrate on <a href="/emdk-for-android/6-10/api">Barcode/Scanning APIs</a> in depth and use it to perform advanced scanning operations by creating a tutorial.</p>
-
-<h2 id="contentbackup" class="anchor"><a class="heading-anchor" href="#contentbackup"><span></span></a>CONTENT BACKUP</h2>
-
-<p>Once the barcode is enabled, we will call <code>read</code> method on scanner. The scanning API provides <code>read</code> method that starts an asynchronous Scan. The method will not turn ON the scanner. It will, however, put the scanner in a state in which the scanner can be turned ON either by pressing a hardware trigger or can be turned ON automatically. This is determined by the <code>Scanner.TriggerType</code>. The data notification must registered in order to scan and get the Scan Data. The read request can be canceled by issuing a <code>cancelRead</code>. If a <code>read()</code> is submitted while another read is pending, the method call will fail. It is recommended to check whether a read is pending by calling <code>isReadPending()</code> before submitting a <code>read()</code>. A read() can also be submitted from within <code>onData</code> and <code>onStatus</code> events. If called within <code>onStatus</code>, it should be called only when IDLE status is received. If called within <code>onData</code>, then checking for <code>isReadPending()</code> is recommended.</p>
-
-<pre class="prettyprint"><code>&gt; Note: The `read` method allows you to scan the barcode only once. If you want to scan the barcodes multiple times then call `read` multiple times. Hence later in this tutorial, we will also call `read` in the `onData` callback method, which is executed every time a barcode is scanned. 
-</code></pre><p></p>
+<p>After completing this basic tutorial, the next logical step might be to explore the <a href="/emdk-for-android/6-10/api">Barcode/Scanning APIs</a> in depth, and use them to perform advanced scanning operations.</p><p></p>
                                         
 
 
