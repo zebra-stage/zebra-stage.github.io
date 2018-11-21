@@ -244,7 +244,7 @@
 
 <li><strong>DataWedge 6.9/7.0 -</strong> Added support for Voice Input and Global Scanner Configuration</li>
 
-<li><strong>DataWedge 7.1 -</strong> Added support for Data Capture Plus (DCP) configuration</li>
+<li><strong>DataWedge 7.1 -</strong> Added support for configurations: Data Capture Plus (DCP), Magnetic Stripe Reader (MSR), Internet Protocol (IP), full profile </li>
 </ul>
 
 <h3 id="functionprototype" class="anchor"><a class="heading-anchor" href="#functionprototype"><span></span></a>Function Prototype</h3>
@@ -797,7 +797,7 @@ private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
 };
 </code></pre>
 
-<h3 id="getserialinputconfig" class="anchor"><a class="heading-anchor" href="#getserialinputconfig"><span></span></a>Get SERIAL input config</h3>
+<h3 id="getserialinputconfiguration" class="anchor"><a class="heading-anchor" href="#getserialinputconfiguration"><span></span></a>Get SERIAL input configuration</h3>
 
 <pre class="prettyprint"><code>final String RESULT_ACTION = "com.symbol.datawedge.api.RESULT_ACTION";
 final static String DEFAULT_CATEGORY = "android.intent.category.DEFAULT";
@@ -875,9 +875,112 @@ private BroadcastReceiver dwResultReciever = new BroadcastReceiver() {
 };
 </code></pre>
 
-<h3 id="getdatacaptureplusdcpconfiguration" class="anchor"><a class="heading-anchor" href="#getdatacaptureplusdcpconfiguration"><span></span></a>Get Data Capture Plus (DCP) Configuration</h3>
+<h3 id="getsimulscaninputconfiguration" class="anchor"><a class="heading-anchor" href="#getsimulscaninputconfiguration"><span></span></a>Get SIMULSCAN input configuration</h3>
 
-<pre class="prettyprint"><code>public void getConfig() { 
+<pre class="prettyprint"><code>public void getConfig()
+{
+    Bundle bMain = new Bundle();
+    bMain.putString("PROFILE_NAME", "Profile007");
+    Bundle bConfig = new Bundle();
+    ArrayList&lt;String&gt; pluginName = new ArrayList&lt;&gt;();
+    pluginName.add("SIMULSCAN");
+
+    bConfig.putStringArrayList("PLUGIN_NAME", pluginName);
+    bMain.putBundle("PLUGIN_CONFIG", bConfig);
+    Intent i = new Intent();
+    i.setAction("com.symbol.datawedge.api.ACTION");
+    i.putExtra("com.symbol.datawedge.api.GET_CONFIG", bMain);
+    this.sendBroadcast(i);
+}
+
+private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        String action = intent.getAction();
+
+        String strFinalResult = "";
+        String command = intent.getStringExtra("COMMAND");
+        String commandidentifier = intent.getStringExtra("COMMAND_IDENTIFIER");
+        String result = intent.getStringExtra("RESULT");
+        Bundle bundle = new Bundle();
+        String resultInfo = "";
+
+        if (action.equals("com.symbol.datawedge.api.RESULT_ACTION")) {
+
+            if (intent.hasExtra("RESULT_INFO")) {
+                bundle = intent.getBundleExtra("RESULT_INFO");
+                Set&lt;String&gt; keys = bundle.keySet();
+                for (String key : keys) {
+                    String val = bundle.getString(key);
+                    if(val == null) {
+
+                        if(bundle.getStringArray(key) != null) {
+                            val="";
+                            for (String s : bundle.getStringArray(key)) {
+                                val += "" + s + "\n";
+                            }
+                        }
+                    }
+
+                    resultInfo += key + ": " + val + "\n";
+                }
+
+            } else if (intent.hasExtra("com.symbol.datawedge.api.RESULT_GET_CONFIG")) {
+
+                Bundle resultGetConfig = intent.getBundleExtra("com.symbol.datawedge.api.RESULT_GET_CONFIG");
+                Set&lt;String&gt; keys = resultGetConfig.keySet();
+                String profileName = resultGetConfig.getString("PROFILE_NAME");
+                for (String key : keys) {
+                    if (key.equalsIgnoreCase("PLUGIN_CONFIG")) {
+                        ArrayList&lt;Bundle&gt; bundleArrayList = resultGetConfig.getParcelableArrayList("PLUGIN_CONFIG");
+                        for (Bundle configBundle : bundleArrayList) {
+
+                                strFinalResult += "\nPlugin " + configBundle.getString("PLUGIN_NAME") + " Settings\n";
+                                for (String configBundleKey : configBundle.keySet()) {
+                                    if (configBundleKey.equalsIgnoreCase("PARAM_LIST")) {
+
+                                        Bundle params = configBundle.getBundle("PARAM_LIST");
+
+                                        for (String paramKey :  params.keySet()) {
+
+                                            if(paramKey.equalsIgnoreCase("simulscan_template_params")) {
+                                                Bundle simulscan_template_params = params.getBundle("simulscan_template_params");
+                                                if (simulscan_template_params != null) {
+                                                    strFinalResult += "\n\tDynamic template params";
+                                                    for (String template_param : simulscan_template_params.keySet()) {
+                                                        strFinalResult += "\n\t\t" + template_param + ": " + simulscan_template_params.get(template_param);
+                                                    }
+                                                }
+                                            }
+                                            else
+                                            {
+                                                strFinalResult += "\n\t" + paramKey + ": " + params.get(paramKey);
+                                            }
+
+                                        }
+                                    }
+                                }
+                                strFinalResult += "\n";
+                        }
+                    }
+                }
+                Log.d("TAG","#IntentApp#\n\nGet config info received\n" + strFinalResult);
+            }
+
+            if (command != null) {
+                if (command.equalsIgnoreCase("com.symbol.datawedge.api.SET_CONFIG")) {
+                    Log.d("TAG","#IntentApp# \n\nSetConfig status received: " + result + "\nResultInfo: " + resultInfo);
+                }
+            }
+        }
+    }
+};
+</code></pre>
+
+<h3 id="getdcpinputconfiguration" class="anchor"><a class="heading-anchor" href="#getdcpinputconfiguration"><span></span></a>Get DCP input configuration</h3>
+
+<pre class="prettyprint"><code>// Get Data Capture Plus Input configuration
+public void getConfig() { 
 
     Bundle bMain = new Bundle(); 
     bMain.putString("PROFILE_NAME", "Profile007"); 
@@ -958,9 +1061,101 @@ private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
 }; 
 </code></pre>
 
-<h3 id="getfullprofileconfigurationinasinglebroadcast" class="anchor"><a class="heading-anchor" href="#getfullprofileconfigurationinasinglebroadcast"><span></span></a>Get Full Profile Configuration in a Single Broadcast</h3>
+<h3 id="getmsrinputconfiguration" class="anchor"><a class="heading-anchor" href="#getmsrinputconfiguration"><span></span></a>Get MSR input configuration</h3>
 
-<pre class="prettyprint"><code>// Get full profile configuration in a single intent and process the result
+<pre class="prettyprint"><code>// Get Magnetic Stripe Reader Input configuration
+public void getConfig()
+{
+    Bundle bMain = new Bundle();
+    bMain.putString("PROFILE_NAME", "Profile007");
+    Bundle bConfig = new Bundle();
+    bConfig.putString("PLUGIN_NAME", "MSR");
+    bMain.putBundle("PLUGIN_CONFIG", bConfig);
+    Intent i = new Intent();
+    i.setAction("com.symbol.datawedge.api.ACTION");
+    i.putExtra("com.symbol.datawedge.api.GET_CONFIG", bMain);
+    this.sendBroadcast(i);
+}
+
+private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        String action = intent.getAction();
+
+        String strFinalResult = "";
+        String command = intent.getStringExtra("COMMAND");
+        String commandidentifier = intent.getStringExtra("COMMAND_IDENTIFIER");
+        String result = intent.getStringExtra("RESULT");
+        Bundle bundle = new Bundle();
+        String resultInfo = "";
+
+        if (action.equals("com.symbol.datawedge.api.RESULT_ACTION")) {
+
+            if (intent.hasExtra("RESULT_INFO")) {
+                bundle = intent.getBundleExtra("RESULT_INFO");
+                Set&lt;String&gt; keys = bundle.keySet();
+                for (String key : keys) {
+                    String val = bundle.getString(key);
+                    if(val == null) {
+
+                        if(bundle.getStringArray(key) != null) {
+                            val="";
+                            for (String s : bundle.getStringArray(key)) {
+                                val += "" + s + "\n";
+                            }
+                        }
+                    }
+
+                    resultInfo += key + ": " + val + "\n";
+                }
+
+            } else if (intent.hasExtra("com.symbol.datawedge.api.RESULT_GET_CONFIG")) {
+
+                Bundle resultGetConfig = intent.getBundleExtra("com.symbol.datawedge.api.RESULT_GET_CONFIG");
+                Set&lt;String&gt; keys = resultGetConfig.keySet();
+                String profileName = resultGetConfig.getString("PROFILE_NAME");
+                for (String key : keys) {
+                    if (key.equalsIgnoreCase("PLUGIN_CONFIG")) {
+                        ArrayList&lt;Bundle&gt; bundleArrayList = resultGetConfig.getParcelableArrayList("PLUGIN_CONFIG");
+                        for (Bundle configBundle : bundleArrayList) {
+
+                                strFinalResult += "\nPlugin " + configBundle.getString("PLUGIN_NAME") + " Settings\n";
+                                for (String configBundleKey : configBundle.keySet()) {
+                                    if (configBundleKey.equalsIgnoreCase("PARAM_LIST")) {
+
+                                        Bundle params = configBundle.getBundle("PARAM_LIST");
+
+                                        for (String paramKey :  params.keySet()) {
+
+                                            strFinalResult += "\n\t" + paramKey + ": " + params.get(paramKey);
+
+                                        }
+                                    }
+                                }
+                                strFinalResult += "\n";
+
+                        }
+                    }
+                }
+
+                Log.d("TAG","#IntentApp#\n\nGet config info received\n" + strFinalResult);
+
+            }
+
+            if (command != null) {
+                if (command.equalsIgnoreCase("com.symbol.datawedge.api.SET_CONFIG")) {
+                    Log.d("TAG","#IntentApp# \n\nSetConfig status received: " + result + "\nResultInfo: " + resultInfo);
+                }
+            }
+
+        }
+    }
+};
+</code></pre>
+
+<h3 id="getfullprofileconfiguration" class="anchor"><a class="heading-anchor" href="#getfullprofileconfiguration"><span></span></a>Get full profile configuration</h3>
+
+<pre class="prettyprint"><code>// Get full profile configuration in a single broadcast intent and process the result
 
 @Override
 protected void onCreate(Bundle savedInstanceState) {
@@ -1221,6 +1416,98 @@ private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
                 Log.d("TAG", "#IntentApp#\n\nGet config info received\n" + strFinalResult);
 
             }
+        }
+    }
+};
+</code></pre>
+
+<h3 id="getipoutput" class="anchor"><a class="heading-anchor" href="#getipoutput"><span></span></a>Get IP output</h3>
+
+<pre class="prettyprint"><code>// Get Internet Protocol Output
+public void getConfig()
+{
+    Bundle bMain = new Bundle();
+    bMain.putString("PROFILE_NAME", "Profile007");
+    Bundle bConfig = new Bundle();
+    bConfig.putString("PLUGIN_NAME", "IP");
+    bMain.putBundle("PLUGIN_CONFIG", bConfig);
+    Intent i = new Intent();
+    i.setAction("com.symbol.datawedge.api.ACTION");
+    i.putExtra("com.symbol.datawedge.api.GET_CONFIG", bMain);
+    this.sendBroadcast(i);
+}
+
+private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        String action = intent.getAction();
+
+        String strFinalResult = "";
+        String command = intent.getStringExtra("COMMAND");
+        String commandidentifier = intent.getStringExtra("COMMAND_IDENTIFIER");
+        String result = intent.getStringExtra("RESULT");
+        Bundle bundle = new Bundle();
+        String resultInfo = "";
+
+        if (action.equals("com.symbol.datawedge.api.RESULT_ACTION")) {
+
+            if (intent.hasExtra("RESULT_INFO")) {
+                bundle = intent.getBundleExtra("RESULT_INFO");
+                Set&lt;String&gt; keys = bundle.keySet();
+                for (String key : keys) {
+                    String val = bundle.getString(key);
+                    if(val == null) {
+
+                        if(bundle.getStringArray(key) != null) {
+                            val="";
+                            for (String s : bundle.getStringArray(key)) {
+                                val += "" + s + "\n";
+                            }
+                        }
+                    }
+
+                    resultInfo += key + ": " + val + "\n";
+                }
+
+            } else if (intent.hasExtra("com.symbol.datawedge.api.RESULT_GET_CONFIG")) {
+
+                Bundle resultGetConfig = intent.getBundleExtra("com.symbol.datawedge.api.RESULT_GET_CONFIG");
+                Set&lt;String&gt; keys = resultGetConfig.keySet();
+                String profileName = resultGetConfig.getString("PROFILE_NAME");
+                for (String key : keys) {
+                    if (key.equalsIgnoreCase("PLUGIN_CONFIG")) {
+                        ArrayList&lt;Bundle&gt; bundleArrayList = resultGetConfig.getParcelableArrayList("PLUGIN_CONFIG");
+                        for (Bundle configBundle : bundleArrayList) {
+
+                                strFinalResult += "\nPlugin " + configBundle.getString("PLUGIN_NAME") + " Settings\n";
+                                for (String configBundleKey : configBundle.keySet()) {
+                                    if (configBundleKey.equalsIgnoreCase("PARAM_LIST")) {
+
+                                        Bundle params = configBundle.getBundle("PARAM_LIST");
+
+                                        for (String paramKey :  params.keySet()) {
+
+                                            strFinalResult += "\n\t" + paramKey + ": " + params.get(paramKey);
+
+                                        }
+                                    }
+                                }
+                                strFinalResult += "\n";
+
+                        }
+                    }
+                }
+
+                Log.d("TAG","#IntentApp#\n\nGet config info received\n" + strFinalResult);
+
+            }
+
+            if (command != null) {
+                if (command.equalsIgnoreCase("com.symbol.datawedge.api.SET_CONFIG")) {
+                    Log.d("TAG","#IntentApp# \n\nSetConfig status received: " + result + "\nResultInfo: " + resultInfo);
+                }
+            }
+
         }
     }
 };
