@@ -262,18 +262,18 @@
 
 <h3 id="substitution" class="anchor"><a class="heading-anchor" href="#substitution"><span></span></a>Substitution</h3>
 
-<p>Android apps made with <strong>EB 2.0 (and higher) can use <a href="../configreference/#substitutionvariables">substitution variables</a></strong> such as those for the device's "primary directory" (%PRIMARYDIR%) and an app's "install directory" (%INSTALLDIR%) in place of fully qualified path names. This can help make coding easier and less error prone while simplifying enterprise deployment across varied devices. </p>
+<p>Android apps made with <strong>EB 2.0 (and higher) can use <a href="../configreference/#substitutionvariables">substitution variables</a></strong> such as those for the device's "primary directory" (%PRIMARYDIR%) and an app's "install directory" (%INSTALLDIR%) in place of fully qualified (absolute) path names. This can help make coding easier and less error prone while simplifying enterprise deployment across varied devices. <strong>Zebra recommends using substitution variables rather than absolute paths whenever possible</strong>.</p>
 
 <p><strong>EB 2.0 and higher also supports <a href="../pageactions">page-based actions</a></strong>, which can execute JavaScript code and/or predefined commands based on the contents of a page. In some instances, this feature can be used as a substitute for DOM injection with similar effect. </p>
 
 <h4 id="dominjectionissupportedby" class="anchor"><a class="heading-anchor" href="#dominjectionissupportedby"><span></span></a>DOM injection is supported by:</h4>
 
 <ul>
-<li><strong>Android with stock webkit</strong></li>
+<li><strong>Android apps that use the stock webkit</strong></li>
 
-<li><strong>Windows Mobile/CE with Zebra Webkit</strong></li>
+<li><strong>Windows Mobile/CE apps using the Zebra Webkit</strong></li>
 
-<li><strong>Windows CE with IE engine</strong></li>
+<li><strong>Windows CE apps using the IE engine</strong></li>
 </ul>
 
 <p><strong><em>DOM injection is NOT supported on Windows Mobile devices using the IE engine</em></strong>. </p>
@@ -285,15 +285,15 @@
 
 <li>JavaScript or CSS files stored on a server </li>
 
-<li>Meta tags described in a <code>tags</code> file (stored on the device)</li>
+<li>Meta tags described in the <code>tags</code> file (stored on the device)</li>
 
 <li>Local files specified using absolute paths or <a href="../configreference/#substitutionvariables">EB substitution variables</a> (i.e. <code>%INSTALLDIR%</code>)</li>
 
-<li>Elements (JavaScript, CSS and/or meta tags) on all navigated pages or only those specified</li>
+<li>Elements (JavaScript, CSS and/or meta tags) on all navigated pages</li>
 
 <li>Elements on specified pages</li>
 
-<li>Elements on pages that contain some unique string</li>
+<li>Elements on pages that contain a specified string</li>
 
 <li>Elements on pages based on a URL</li>
 </ul>
@@ -302,18 +302,16 @@
   <p><strong>Zebra recommends using substitution variables rather than absolute paths whenever possible</strong>.</p>
 </blockquote>
 
-<hr>
-
-<h2 id="howtousedominjection" class="anchor"><a class="heading-anchor" href="#howtousedominjection"><span></span></a>How to Use DOM Injection</h2>
+<h3 id="requirements" class="anchor"><a class="heading-anchor" href="#requirements"><span></span></a>Requirements</h3>
 
 <p>To use DOM injection, <strong>ALL of the following must be true</strong>:</p>
 
 <ul>
-<li>The app was made with Enterprise Browser 1.3 (or higher)</li>
+<li>The app being injected was made with Enterprise Browser 1.3 (or higher)</li>
 
 <li>A <code>tags</code> file containing elements to be injected has been created and pushed to the target device</li>
 
-<li>The path to the <code>tags</code> file is specified in the app's <code>Config.xml</code> file (see Step 2, below)</li>
+<li>The path to the <code>tags</code> file is specified in the app's <code>Config.xml</code> file (see <a href="#step2updateconfigxml">Step 2</a>)</li>
 
 <li>The target device is running one of the following: 
 
@@ -327,155 +325,174 @@
 </li>
 </ul>
 
-<p><strong><em>DOM injection is NOT currently supported on Windows Mobile devices using the IE engine</em></strong>. </p>
+<hr>
 
 <h2 id="step1preparethetagsfile" class="anchor"><a class="heading-anchor" href="#step1preparethetagsfile"><span></span></a>Step 1- Prepare the "tags" file</h2>
 
-<p><strong>Create a text file</strong> to contain the desired DOM-injection elements using the tagging syntax below. This becomes the list of elements to be injected into the DOM and specifies the pages to receive the injections. </p>
+<p><strong>Create a text file</strong> to contain the desired DOM-injection elements, which are defined using the tagging syntax below. This becomes the list of elements (i.e. JavaScript, CSS and/or meta tags) to be injected into the DOM and specifies the pages to receive the injections. </p>
 
-<p>FIXXXXX</p>
+<h3 id="pagestag" class="anchor"><a class="heading-anchor" href="#pagestag"><span></span></a>'Pages' tag</h3>
 
-<h3 id="pages" class="anchor"><a class="heading-anchor" href="#pages"><span></span></a>Pages</h3>
+<p>The <code>pages</code> tag is used to specify the page(s) into which DOM elements are injected. This tag supports specification of an app's individual HTML pages ("startPage, scanPage" etc.), server-based application pages (specified as individual or relative URLs) and the wildcard character (*), which injects the specified elements into all navigated pages of the app. </p>
 
-<p>This attribute decides where the given tags to be injected. If wildcard character (*) is used, the given file or meta tag will be injected on all navigated pages</p>
+<p><strong>Note: The</strong> <code>.html</code> <strong>file extension is assumed. All other file extensions must be specified</strong>.</p>
 
-<p>&lt;-below shows an example of injecting a javascript file from installed directory using substitution variable on all navigated pages-&gt;</p>
+<h4 id="examples" class="anchor"><a class="heading-anchor" href="#examples"><span></span></a>Examples</h4>
 
-<pre class="prettyprint"><code>&lt;script type='text/javascript' src='file://%INSTALLDIR%/enroll.js' pages='*' /&gt;
-</code></pre>
-
-<p>User can also mention specific relative url on which it can be injected (applicable only for server pages). In this case, files or meta tags will be injected only on those specific urls. Relative path here refers to the path component of a URL to the specific page (path to the page after domain name).</p>
-
-<p>&lt;-below shows an example of injecting a javascript file from installed directory using substitution variable on a specific page-&gt;
-If the complete url to the page is
-http://192.168.10.1:9999/mypages/page2.html 
-then the tag inside the ‘tags’ file would be as follows</p>
-
-<pre class="prettyprint"><code>&lt;script type='text/javascript' src='file://%INSTALLDIR%/enroll.js' pages='/mypages/page2.html' /&gt;
-</code></pre>
-
-<p>User can also mention multiple relative urls if needed. In such cases files or meta tags will be injected only to those pages. In such cases user should ensure that the pages should be separated by semi column (;)</p>
-
-<p>&lt;-below shows an example of injecting a javascript file from installed directory using substitution variable on multiple pages-&gt;</p>
-
-<pre class="prettyprint"><code>&lt;script type='text/javascript' src='file://%INSTALLDIR%/enroll.js' pages='/mypages/page2.html; /mypages/page5.html ' /&gt;
-</code></pre>
-
-<h3 id="pagecontent" class="anchor"><a class="heading-anchor" href="#pagecontent"><span></span></a>Pagecontent</h3>
-
-<p>This attribute is newly introduced in Enterprise Browser 2.0 version. It is used for injecting dom files on navigated pages where a specific string is present.
-If user not willing to inject files or meta tags on specific pages and if he couldn’t find unique URI path to those pages, then Enterprise Browser team recommends the user to take advantage of this attribute.
-Setting this attribute value will make Enterprise Browser to search for a specific string on the navigated pages before injecting the required files or meta tags. If Enterprise Browser finds the user given ‘pagecontent’ sting value on any navigated pages, it then inject the files or meta tags.</p>
-
-<p>&lt;-below example inject enroll.js file to the page which has a string ‘Enter your Group ID’ -&gt;</p>
-
-<pre class="prettyprint"><code>&lt;script type='text/javascript' src='file://%INSTALLDIR%/enroll.js' pagecontent='Enter your Group ID' pages='*' /&gt;
-</code></pre>
-
-<p>User responsibility includes finding a unique string on the pages to fill the ‘pagecontent’ attribute value
-&lt;-below example inject mystyle.css file to the page which has a string ‘'Enter your User Name -&gt;</p>
-
-<pre class="prettyprint"><code>&lt;link rel='stylesheet' type='text/css' href='file://%INSTALLDIR%/mystyle.css'  pagecontent='Enter your User Name' pages='*' /&gt;
-</code></pre>
-
-<p>User can also give a HTML element as given below</p>
-
-<pre class="prettyprint"><code>&lt;script type='text/javascript' src='file://%INSTALLDIR%/previous.js' pagecontent='&lt;input class="clr-button branded-highlight-bg branded-highlight-item" data-ats-id="Previous-button" name="Previous" onclick="" style="margin-right:5px;" type="button" value="Previous"&gt;' pages='*' /&gt;
-</code></pre>
-
-<p>Note: when giving big values ensure space and quotes are not creating any syntax error. In above example page content takes attribute value with single quote and user should ensure its value should not have single quote repeated. Enterprise Browser team recommends to use smaller unique values to avoid syntax error. No multiline values are supported.</p>
-
-<p>In the samples below, notice a syntax similar to that of ordinary HTML tags for including scripts, style sheets and meta data. Parts of the tags as they apply to DOM injection are explained in further detail below. </p>
+<p>In the examples below, notice a syntax similar to that of ordinary HTML tags for including scripts, style sheets and meta data. Parts of the tags as they apply to DOM injection are explained in further detail below. </p>
 
 <blockquote>
   <p><strong>Zebra recommends using substitution variables rather than absolute paths whenever possible</strong>.</p>
 </blockquote>
 
-<h4 id="injectajavascriptfileonallpagesusingabsolutepath" class="anchor"><a class="heading-anchor" href="#injectajavascriptfileonallpagesusingabsolutepath"><span></span></a>Inject a JavaScript file on all pages using absolute path:</h4>
+<h5 id="injectajavascriptfileintoallpagesfrominstalleddirectorysubstitutionvariable" class="anchor"><a class="heading-anchor" href="#injectajavascriptfileintoallpagesfrominstalleddirectorysubstitutionvariable"><span></span></a>Inject a JavaScript file into all pages from "installed" directory (substitution variable):</h5>
+
+<pre class="prettyprint"><code>
+&lt;script type='text/javascript' src='file://%INSTALLDIR%/enroll.js' pages='*' /&gt;
+</code></pre>
+
+<p><br></p>
+
+<h5 id="injectajavascriptfileintooneserverpageusingrelativereference" class="anchor"><a class="heading-anchor" href="#injectajavascriptfileintooneserverpageusingrelativereference"><span></span></a>Inject a JavaScript file into one server page using relative reference:</h5>
+
+<pre class="prettyprint"><code>
+&lt;script type='text/javascript' src='file://%INSTALLDIR%/enroll.js' pages='/mypages/page2.html; /mypages/page5.html' /&gt;
+</code></pre>
+
+<p><em>On server-based apps, DOM injection references are relative to the startPage URL. <br>For example, "http://myserver.com/mypages/startPage.html"</em> could be the full URL for the example above. </p>
+
+<p><br></p>
+
+<h5 id="injectajavascriptfileintoallpagesusingabsolutepath" class="anchor"><a class="heading-anchor" href="#injectajavascriptfileintoallpagesusingabsolutepath"><span></span></a>Inject a JavaScript file into all pages using absolute path:</h5>
 
 <pre class="prettyprint"><code>&lt;script type='text/javascript' src='file:///storage/emulated/0/Android/data/com.symbol.enterprisebrowser/mytest.js' pages='*'/&gt;
 </code></pre>
 
 <p><br></p>
 
-<h4 id="injectacssfileonallpagesusingabsolutepath" class="anchor"><a class="heading-anchor" href="#injectacssfileonallpagesusingabsolutepath"><span></span></a>Inject a CSS file on all pages using absolute path:</h4>
+<h5 id="injectacssfileintoallpagesusingabsolutepath" class="anchor"><a class="heading-anchor" href="#injectacssfileintoallpagesusingabsolutepath"><span></span></a>Inject a CSS file into all pages using absolute path:</h5>
 
 <pre class="prettyprint"><code>&lt;link rel='stylesheet' type='text/css' href='file:///storage/emulated/0/Android/data/com.symbol.enterprisebrowser/mystyle.css'  pages='*' /&gt;
 </code></pre>
 
 <p><br></p>
 
-<h4 id="injectajavascriptfilefrominstalleddirectoryusingsubstitutionvariable" class="anchor"><a class="heading-anchor" href="#injectajavascriptfilefrominstalleddirectoryusingsubstitutionvariable"><span></span></a>Inject a JavaScript file from "installed" directory using substitution variable:</h4>
-
-<pre class="prettyprint"><code>&lt;script type='text/javascript' src='file://%INSTALLDIR%/enroll.js' pages='*' /&gt;
-</code></pre>
-
-<p><br></p>
-
-<h4 id="injectacssfilefromtherootdirectoryusingsubstitutionvariable" class="anchor"><a class="heading-anchor" href="#injectacssfilefromtherootdirectoryusingsubstitutionvariable"><span></span></a>Inject a CSS file from the root directory using substitution variable:</h4>
+<h5 id="injectacssfileintoallpagesfromtherootdirectorysubstitutionvariable" class="anchor"><a class="heading-anchor" href="#injectacssfileintoallpagesfromtherootdirectorysubstitutionvariable"><span></span></a>Inject a CSS file into all pages from the root directory (substitution variable):</h5>
 
 <pre class="prettyprint"><code>&lt;link rel='stylesheet' type='text/css' href='file://%PRIMARYDIR%/mystyle.css'  pages='*' /&gt;
 </code></pre>
 
 <p><br></p>
 
-<h4 id="injectajavascriptfilefromaserverintoallpages" class="anchor"><a class="heading-anchor" href="#injectajavascriptfilefromaserverintoallpages"><span></span></a>Inject a JavaScript file from a server into all pages:</h4>
+<h5 id="injectajavascriptfilefromaserverintoallpages" class="anchor"><a class="heading-anchor" href="#injectajavascriptfilefromaserverintoallpages"><span></span></a>Inject a JavaScript file from a server into all pages:</h5>
 
-<pre class="prettyprint"><code>&lt;script type='text/javascript' src='http://192.168.10.1:8081/test.js' pages='*'/&gt;
+<pre class="prettyprint"><code>&lt;script type='text/javascript' src='http://myserver.com/test.js' pages='*'/&gt;
 </code></pre>
 
 <p><br></p>
 
-<h4 id="injectametatagtorefreshallpagesevery30seconds" class="anchor"><a class="heading-anchor" href="#injectametatagtorefreshallpagesevery30seconds"><span></span></a>Inject a meta tag to refresh all pages every 30 seconds:</h4>
+<h5 id="injectametatagtorefreshallpagesevery30seconds" class="anchor"><a class="heading-anchor" href="#injectametatagtorefreshallpagesevery30seconds"><span></span></a>Inject a meta tag to refresh all pages every 30 seconds:</h5>
 
 <pre class="prettyprint"><code>&lt;meta http-equiv="refresh" content="30" pages='*' /&gt;
 </code></pre>
 
 <p><br></p>
 
-<h4 id="enablethescanneronallpages" class="anchor"><a class="heading-anchor" href="#enablethescanneronallpages"><span></span></a>Enable the scanner on all pages</h4>
+<h5 id="enablethescanneronallpages" class="anchor"><a class="heading-anchor" href="#enablethescanneronallpages"><span></span></a>Enable the scanner on all pages</h5>
 
 <pre class="prettyprint"><code>&lt;meta HTTP-Equiv="scanner" Content="Enable" pages='*'/&gt; 
 </code></pre>
 
 <p><br></p>
 
+<hr>
+
+<h3 id="pagecontenttag" class="anchor"><a class="heading-anchor" href="#pagecontenttag"><span></span></a>'Pagecontent' tag</h3>
+
+<p><strong><em>Supported in Enterprise Browser 2.0 (and higher) only</em></strong>. </p>
+
+<p>The <code>pagecontent</code> tag is used for injecting DOM files on navigated pages only when a specific string or HTML element is present on the page. This allows the developer to set specific conditions under which an action is executed, for example to run a log-in script. </p>
+
+<p><strong>Note: The</strong> <code>.html</code> <strong>file extension is assumed. All other file extensions must be specified</strong>.</p>
+
+<h4 id="examples-1" class="anchor"><a class="heading-anchor" href="#examples-1"><span></span></a>Examples</h4>
+
+<h5 id="injectenrolljsfileifpagecontainsthestringenterloginid" class="anchor"><a class="heading-anchor" href="#injectenrolljsfileifpagecontainsthestringenterloginid"><span></span></a>Inject <code>enroll.js</code> file if page contains the string ‘Enter Login ID’:</h5>
+
+<pre class="prettyprint"><code>
+&lt;script type='text/javascript' src='file://%INSTALLDIR%/enroll.js' pagecontent='Enter Login ID' pages='*' /&gt;
+</code></pre>
+
+<p><br></p>
+
+<h5 id="injectmystylecssfileifpagecontainsthestringenterusername" class="anchor"><a class="heading-anchor" href="#injectmystylecssfileifpagecontainsthestringenterusername"><span></span></a>Inject <code>mystyle.css</code> file if page contains the string Enter User Name:</h5>
+
+<pre class="prettyprint"><code>
+&lt;link rel='stylesheet' type='text/css' href='file://%INSTALLDIR%/mystyle.css'  pagecontent='Enter User Name' pages='*' /&gt;
+</code></pre>
+
+<p><br></p>
+
+<h5 id="injectpreviousjswhenaspecifichtmlelementispresent" class="anchor"><a class="heading-anchor" href="#injectpreviousjswhenaspecifichtmlelementispresent"><span></span></a>Inject <code>previous.js</code> when a specific HTML element is present:</h5>
+
+<pre class="prettyprint"><code>
+&lt;script type='text/javascript' src='file://%INSTALLDIR%/previous.js' pagecontent='&lt;input class="clr-button branded-highlight-bg branded-highlight-item" data-ats-id="Previous-button" name="Previous" onclick="" style="margin-right:5px;" type="button" value="Previous"&gt;' pages='*' /&gt;
+</code></pre>
+
+<p><br></p>
+
+<p><strong>Notes</strong>: </p>
+
+<ul>
+<li>When specifying lengthy HTML elements, check syntax carefully to avoid errors. </li>
+
+<li>Multi-line values are not supported.</li>
+</ul>
+
 <p>Attributes of DOM Injection tags: </p>
 
-<p><strong>Note that the "pages" attribute specifies the file name of the page into which the element defined in the tag will be injected</strong>. </p>
+<p><strong>Note that the "pages" attribute specifies the file name of the page into which the element defined in the tag is injected</strong>. </p>
 
 <p><strong>The following rules apply</strong>: </p>
 
 <ul>
-<li><u><strong>All tags in the "<code>tags</code>" file <em>must</em> contain the injection-specific "pages" attribute</strong></u>.</li>
+<li><u><strong>All tags in the</strong> <code>tags</code> <strong>file <em>must</em> contain the injection-specific "pages" attribute</strong></u>.</li>
 
 <li>The <code>.html</code> file extension is assumed; specify the extension only if different.</li>
 
-<li>For local files, actions work from the directory relative to the installation root; include qualified path or substitution variable (<strong>recommended</strong>) only if different. </li>
+<li><strong>For local files</strong>, actions work from the directory relative to the installation root; include qualified path or substitution variable (<strong>recommended</strong>) only if different. </li>
 
-<li>For server-based CSS or JavaScript files, actions work relative to the app's start page; include qualified URL if different.</li>
+<li><strong>For server-based CSS or JavaScript files</strong>, actions work relative to the app's start page; include full URL if different.</li>
 
-<li>Wildcard (*) characters are accepted to inject all files in a relative or specified directory.</li>
+<li><strong>Wildcard (*) characters are accepted</strong> to inject all files in a relative or specified directory.</li>
 
 <li><strong>URLs are supported for server-based CSS and JavaScript files only</strong>.</li>
 
 <li>All meta tag data must be contained completely within the <code>tags</code> file.</li>
 
-<li>If using server-based JavaScript, see JavaScript injection section (below) for dependency cautions.</li>
+<li><strong>If using server-based JavaScript</strong>, see JavaScript injection section (below) for dependency cautions.</li>
 
-<li>An optional <strong>pagecontent attribute</strong> can be used to add a page-specific string for triggering injection.</li>
+<li><strong>An optional pagecontent attribute can be used</strong> to add a page-specific string for triggering injection (EB 2.0 and higher only).</li>
+
+<li>Attribute values must not be left blank.</li>
+
+<li>All tags must have beginning (&lt;) and ending (/&gt;) angle brackets.</li>
+
+<li>Each tag in the <code>tags</code> file must be on a separate line.</li>
+
+<li>Local pages support only the <code>pages='*’</code> syntax. To inject tags into a specific local page, use <code>pages='*'</code> in combination with the <code>pagecontent</code> attribute.</li>
 </ul>
 
-<h5 id="whentagsarecompletedstorethetagsfileonthedeviceandtakenoteofthepath" class="anchor"><a class="heading-anchor" href="#whentagsarecompletedstorethetagsfileonthedeviceandtakenoteofthepath"><span></span></a>When tags are completed, <strong>store the tags file on the device</strong> and take note of the path.</h5>
+<h5 id="whenalltagsarecompletedstorethetagsfileonthedeviceandtakenoteofthefilenameandpath" class="anchor"><a class="heading-anchor" href="#whenalltagsarecompletedstorethetagsfileonthedeviceandtakenoteofthefilenameandpath"><span></span></a>When all tags are completed, store the tags file on the device and take note of the file name and path.</h5>
 
 <hr>
 
-<h3 id="step2specifypathtotagsfileinconfigxml" class="anchor"><a class="heading-anchor" href="#step2specifypathtotagsfileinconfigxml"><span></span></a>Step 2- Specify path to tags file in Config.xml</h3>
+<h3 id="step2updateconfigxml" class="anchor"><a class="heading-anchor" href="#step2updateconfigxml"><span></span></a>Step 2- Update Config.xml</h3>
 
-<p>The tags file created in Step 1 must reside on the device. </p>
+<p>The <code>tags</code> file created in Step 1 must reside on the device. </p>
 
 <ul>
-<li><p><strong>Specify the path to the tags file</strong> by adding a line like the one below in the <code>&lt;Application&gt;</code> section in the app's <code>Config.xml</code> file:  </p>
+<li><p><strong>Specify the path to the tags file</strong> by adding a line (similar to the one below) in the <code>&lt;Application&gt;</code> section in the app's <code>Config.xml</code> file:  </p>
 
 <pre class="prettyprint"><code>
 &lt;Application&gt;
@@ -489,25 +506,23 @@ Setting this attribute value will make Enterprise Browser to search for a specif
 <p>For information about how to configure the <code>Config.xml</code> file, see the <a href="../configreference">Config.xml Reference Guide</a>. <strong>Note</strong>: The &lt;CustomDOMElements&gt; tag cannot be configured using the <a href="../OndeviceConfig">On-device Config Editor utility</a>.  </p>
 
 <blockquote>
-  <p><strong>The value inside the &lt;CustomDOMElements&gt; tag is empty by default. DOM injection cannot function unless a path to the tags file on the device is specified</strong>. </p>
+  <p><strong>The value inside the &lt;CustomDOMElements&gt; tag is empty by default. DOM injection cannot function unless a path to the <code>tags</code> file on the device is specified</strong>. </p>
 </blockquote>
+
+<hr>
 
 <h2 id="javascriptinjection" class="anchor"><a class="heading-anchor" href="#javascriptinjection"><span></span></a>JavaScript Injection</h2>
 
-<p>JavaScript can be injected either through file protocol or by using an absolute path, <a href="../configreference/#substitutionvariables">substitution variable</a>, or server path relative to the Enterprise Browser app's start page. Different rules apply to injection of local and server-based JavaScript, and might affect the app if dependencies exist between the JavaScript modules in use. </p>
+<p>JavaScript can be injected either through file protocol or by using an absolute path, <a href="../configreference/#substitutionvariables">substitution variable</a>, or server path relative to the EB app's start page. <strong>Different rules apply to injection of local and server-based JavaScript, and might affect the app if dependencies exist between the JavaScript modules in use</strong>. </p>
 
 <h4 id="injectlocaljavascript" class="anchor"><a class="heading-anchor" href="#injectlocaljavascript"><span></span></a>Inject Local JavaScript</h4>
 
-<p>When using the file protocol, the JavaScript file(s) must be resident on the target device, and have path(s) specified in the <code>src</code> attribute of the script tag using the <code>file://</code> designation. For example, the following lines will inject four JavaScript files into all pages of the app-relative directory:</p>
+<p>When using the file protocol, the JavaScript file(s) must be resident on the target device and have path(s) specified in the <code>src</code> attribute of the script tag using the <code>file://</code> designation. For example, the following lines inject four JavaScript files into all pages of the app-relative directory:</p>
 
 <pre class="prettyprint"><code>
-&lt;script type='text/javascript' src='file://\Program Files\EnterpriseBrowser\rho\apps\app\elements.js' pages='*' /&gt; 
+&lt;script type='text/javascript' src='file:///storage/emulated/0/Android/data/com.symbol.enterprisebrowser/mytest.js' pages='*'/&gt;
 
-&lt;script type='text/javascript' src='file://\Program Files\EnterpriseBrowser\rho\apps\app\jquery.js' pages='*' /&gt; 
-
-&lt;script type='text/javascript' src='file://\Program Files\EnterpriseBrowser\rho\apps\app\jquery-1.11.3.js' pages='*' /&gt;
-
-&lt;script type='text/javascript' src='file://\Program Files\EnterpriseBrowser\rho\apps\app\test.js' pages='*' /&gt;  
+&lt;script type="text/javascript" src=" http://192.168.19.2:9090/scripts/test.js" pages="/dominjection/index.html" /&gt;
 </code></pre>
 
 <p><strong>Notes</strong></p>
@@ -515,7 +530,7 @@ Setting this attribute value will make Enterprise Browser to search for a specif
 <ul>
 <li>Local JavaScript files are injected consecutively in the order in which they are listed in the tags file.</li>
 
-<li>Each JavaScript file will be loaded completely before the next file is loaded. </li>
+<li>Each JavaScript file is loaded completely before the next file begins to load. </li>
 
 <li>DOM injections occur every time a page is loaded, <strong>so changes to JavaScript files injected in this way can be put into effect simply by refreshing the relevant page</strong>.</li>
 </ul>
@@ -533,37 +548,37 @@ Setting this attribute value will make Enterprise Browser to search for a specif
 </code></pre></li>
 </ul>
 
-<p>With server-based injection, Enterprise Browser will be commanding the engine to inject JavaScript to the DOM asynchronously, which might cause <code>jquery.js</code> to be loaded before <code>element.js</code>, for example. Therefore, <strong>if JavaScript files are interdependent, additional steps might be required to avoid failure due to a dependency issue</strong>. </p>
+<p>With server-based injection, Enterprise Browser commands the engine to inject JavaScript to the DOM asynchronously, which (for example) might cause <code>jquery.js</code> to be loaded before <code>element.js</code>. Therefore, <strong>if JavaScript files are interdependent, additional steps might be required to avoid failure due to a dependency issue</strong> (see below). </p>
 
 <p>In another example, the tags file below is used to inject the <code>rhoapi-modules.js</code> and <code>test.js</code> files into the page <code>/dominjection/index.html</code>. </p>
 
 <pre class="prettyprint"><code>    
-    &lt;script type="text/javascript" src="./rhoapi-modules.js" pages="/dominjection/index.html" /&gt;
+    &lt;script type="text/javascript" src="http://192.168.19.2:9090/scripts/rhoapi-modules.js" pages="/dominjection/index.html" /&gt;
 
     &lt;script type="text/javascript" src="./test.js" pages="/dominjection/index.html" /&gt;
 </code></pre>
 
-<p>If an attribute contained in the rhoapi-modules file--for example the Rho namespace--is required by <code>test.js</code>, an error might occur if <code>test.js</code> is injected first. To guard against this, it might be useful for <code>test.js</code> to include some logic like the JavaScript below so that it waits until its dependent JavaScript (<code>rhoapi-modules.js</code>) is loaded.</p>
+<p>If an attribute contained in the rhoapi-modules file--for example the Rho namespace--is required by <code>test.js</code>, an error might occur if <code>test.js</code> is injected first. To guard against this, it might be useful for <code>test.js</code> to include some logic (like the JavaScript below) so that it waits until its dependent JavaScript (<code>rhoapi-modules.js</code>) is loaded.</p>
 
 <p>Sample JavaScript to delay loading: </p>
 
 <pre class="prettyprint"><code>    
     (function() {
 
-        // Poll for jQuery to come into existence
-        var checkReady = function(callback) {
-            if (window.Rho) {
-                callback(Rho);
-            }
-            else {
-                window.setTimeout(function() { checkReady(callback); }, 100); //check here
-            }
-        };
-        // Start polling...
-        checkReady(function(Rho) {
-          alert(Rho.Application.appName); //use rho api here
-        });
-    })();
+    // Poll for jQuery to come into existence
+    var checkReady = function(callback) {
+        if (window.EB) {
+            callback(EB);
+        }
+        else {
+            window.setTimeout(function() { checkReady(callback); }, 100); //check here
+        }
+    };
+    // Start polling...
+    checkReady(function(EB) {
+      alert(EB.Application.appName); //use EB api here
+    });
+})();
 </code></pre>
 
 <h2 id="sampletagsfile" class="anchor"><a class="heading-anchor" href="#sampletagsfile"><span></span></a>Sample Tags File</h2>
