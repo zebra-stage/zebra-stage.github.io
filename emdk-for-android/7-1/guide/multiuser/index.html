@@ -237,21 +237,21 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>EMDK for Android 7.1 (and higher) supports Android multi-user mode, which allows for Primary and Secondary users, each with its own sets of apps, capabilities and access privileges. When running an EMDK app on a device with multile users, EMDK is enabled only for the active user. Apps should therefore be designed to release internal device resources and the EMDKManager whenever they are not in the foreground and to reacquire them when returning. This is done by listening with intents: </p>
+<p>EMDK for Android 7.1 (and higher) supports Android multi-user mode, which allows a device to have Primary and Secondary users, each with its own sets of apps, capabilities and access privileges. When running an EMDK app on a device with multiple users, EMDK is enabled only for the active user. <strong>Apps must be designed to release internal device resources and the EMDKManager whenever the app goes to the background</strong> and to reacquire them when returning to the foreground. This is done by listening with intents: </p>
 
 <ul>
-<li><code>ACTION_USER_BACKGROUND</code> - surrender resources when heard</li>
+<li><code>ACTION_USER_BACKGROUND</code> - release internal resources when heard</li>
 
 <li><code>ACTION_USER_FOREGROUND</code> - reacquire resources when heard</li>
 </ul>
 
-<p>The EMDK service releases external component resources automatically when an app goes to the background. Therefore scanners, serial devices and other resources become invalid when switching to a different user and must be reacquired before use. </p>
+<p>The EMDK service automatically releases <strong><em>external</em></strong> component resources (i.e. scanner, serial and SimulScan objects) when an app goes to the background to make them available to the foreground app. <strong>Scanning resources must be programmatically reacquired when the EMDK app returns to the foreground</strong>.</p>
 
 <hr>
 
 <h3 id="example" class="anchor"><a class="heading-anchor" href="#example"><span></span></a>Example</h3>
 
-<p>The code below demonstrates how an app should release and reacquire EMDK resources when switching users on the device.</p>
+<p>The code below demonstrates how an app should release and reacquire EMDK resources when switching users on a device.</p>
 
 <pre class="prettyprint"><code>
 public class MainActivity extends Activity implements EMDKListener, DataListener, StatusListener, ScannerConnectionListener {
@@ -331,7 +331,6 @@ public class MainActivity extends Activity implements EMDKListener, DataListener
             }
         }
     };
-
 
     @Override
     protected void onDestroy() {
