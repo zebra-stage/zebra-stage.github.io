@@ -84,7 +84,7 @@
                                 Samples
                             </a>
                         </li>
-<!--                         <li>
+                        <!--                         <li>
                             <a href="/dcs/rfid/xamarin/2-15/guide/programming-guides">
                                 Guides
                             </a>
@@ -184,7 +184,7 @@
                                                 <p></p>
                                                 <h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-                                                <p>This Tutorial provides a walk-through of the steps to perform Read Access operation using <a href="../../apis">RFID API3</a></p>
+                                                <p>This Tutorial provides a walk-through of the steps to perform Read Access operation using Xamarin RFID SDK</p>
 
 
                                                 <h3 id="createtheproject" class="anchor"><a class="heading-anchor" href="#createtheproject"><span></span></a>Create the Project</h3>
@@ -201,9 +201,9 @@
                                                         <p>Create necessary fields like EPC ID as <code>String</code> tagId and access parameters <code>TagAccess.ReadAccessParams</code></p>
                                                         <pre class="prettyprint"><code>
 // Read user memory bank for the given tag ID 
-String tagId = "1234ABCD00000000000025B1"; 
-TagAccess tagAccess = new TagAccess(); 
-TagAccess.ReadAccessParams readAccessParams = tagAccess.new ReadAccessParams();
+String tagId = "1234ABCD00000000000025B1";
+TagAccess tagAccess = new TagAccess();
+TagAccess.ReadAccessParams readAccessParams = new TagAccess.ReadAccessParams(tagAccess);
 </code></pre>
                                                         <h2 id="code2" class="anchor"><a class="heading-anchor" href="#code2"><span></span></a>Performing operation</h2>
 
@@ -211,18 +211,18 @@ TagAccess.ReadAccessParams readAccessParams = tagAccess.new ReadAccessParams();
 
                                                         <pre class="prettyprint"><code>
 // Read user memory bank for the given tag ID 
-String tagId = "1234ABCD00000000000025B1"; 
-TagAccess tagAccess = new TagAccess(); 
-TagAccess.ReadAccessParams readAccessParams = tagAccess.new ReadAccessParams();
-TagData readAccessTag; readAccessParams.setAccessPassword(0); 
+String tagId = "1234ABCD00000000000025B1";
+TagAccess tagAccess = new TagAccess();
+TagAccess.ReadAccessParams readAccessParams = new TagAccess.ReadAccessParams(tagAccess);
+readAccessParams.AccessPassword = 0;
 // read 4 words 
-readAccessParams.setCount(4); 
+readAccessParams.Count = 4;
 // user memory bank
-readAccessParams.setMemoryBank(MEMORY_BANK.MEMORY_BANK_USER); 
+readAccessParams.MemoryBank = MEMORY_BANK.MemoryBankUser;
 // start reading from word offset 0
-readAccessParams.setOffset(0); 
+readAccessParams.Offset = 0;
 // read operation
-TagData tagData = reader.Actions.TagAccess.readWait(tagId, readAccessParams, null);
+TagData tagData = Reader.Actions.TagAccess.ReadWait(tagId, readAccessParams, null);
 </code></pre>
 
                                                         <h2 id="code2" class="anchor"><a class="heading-anchor" href="#code2"><span></span></a>Grab the results</h2>
@@ -230,37 +230,50 @@ TagData tagData = reader.Actions.TagAccess.readWait(tagId, readAccessParams, nul
                                                         <p><code>readWait</code> returns result as <code>TagData</code></p>
 
                                                         <pre class="prettyprint"><code>
-if (tagData != null) {
-    ACCESS_OPERATION_CODE readAccessOperation = tagData.getOpCode();
-    if (readAccessOperation != null) {
-        if (tagData.getOpStatus() != null && !tagData.getOpStatus().equals(ACCESS_OPERATION_STATUS.ACCESS_SUCCESS)) {
-            String strErr = tagData.getOpStatus().toString().replaceAll("_", " ");
-            Toast.makeText(getActivity(), strErr.toLowerCase(), Toast.LENGTH_SHORT).show();
-        } else {
-            if (tagData.getOpCode() == ACCESS_OPERATION_CODE.ACCESS_OPERATION_READ) {
-                Toast.makeText(getActivity(), R.string.msg_read_succeed + " "+tagData.getMemoryBankData(), Toast.LENGTH_SHORT).show();
-            } else {
+try
+{
+    // read operation
+    TagData tagData = Reader.Actions.TagAccess.ReadWait(tagId, readAccessParams, null);
+    if (tagData != null)
+    {
+        ACCESS_OPERATION_CODE readAccessOperation = tagData.OpCode;
+        if (readAccessOperation != null)
+        {
+            if (tagData.OpStatus != null && tagData.OpStatus != ACCESS_OPERATION_STATUS.AccessSuccess)
+            {
+                String strErr = tagData.OpStatus.ToString().Replace("_", "");
+                Console.WriteLine("READ ACCESS OPERATION Failed :" + strErr);
+            }
+            else
+            {
+                if (tagData.OpCode == ACCESS_OPERATION_CODE.AccessOperationRead)
+                {
+                    Console.WriteLine("READ ACCESS OPERATION Success:" + tagData.MemoryBankData);
+                }
             }
         }
-    } else {
-        Toast.makeText(getActivity(), R.string.err_access_op_failed, Toast.LENGTH_SHORT).show();
-        Constants.logAsMessage(Constants.TYPE_DEBUG, "ACCESS READ", "memoryBankData is null");
+        else
+        {
+            Console.WriteLine("ACCESS READ memoryBankData is null");
+        }
     }
-} else {
-    Toast.makeText(getActivity(), R.string.err_access_op_failed, Toast.LENGTH_SHORT).show();
+}
+catch (OperationFailureException ex)
+{
+    Console.WriteLine("ACCESS READ" + ex.VendorMessage + " " + ex.StatusDescription);
 }
 </code></pre>
 
                                                         <h2 id="code2" class="anchor"><a class="heading-anchor" href="#code2"><span></span></a>Closer look</h2>
                                                         <ul>
                                                             <li>Configure required memory bank using <code>readAccessParams.setMemoryBank</code></li>
-                                                            <li><code>tagData.getOpStatus()</code> returns sucess or error code as <code>ACCESS_OPERATION_STATUS</code></li>
-                                                            <li><code>tagData.getOpCode()</code> provides type of access operation performed </li>
+                                                            <li><code>tagData.OpStatus</code> returns sucess or error code as <code>ACCESS_OPERATION_STATUS</code></li>
+                                                            <li><code>tagData.OpCode</code> provides type of access operation performed </li>
                                                         </ul>
                                                         <h2 id="code2" class="anchor"><a class="heading-anchor" href="#code2"><span></span></a>What's Next</h2>
                                                         <ul>
-                                                            <li>Change the <code>setCount</code> and <code>setOffset</code> as per requirement</li>
-                                                            <li>Use access password <code>setAccessPassword</code> to perform operation on protected memorybank</li>
+                                                            <li>Change the <code>Count</code> and <code>Offset</code> as per requirement</li>
+                                                            <li>Use access password <code>AccessPassword</code> to perform operation on protected memorybank</li>
                                                         </ul>
                                             </div>
                                         </div>
