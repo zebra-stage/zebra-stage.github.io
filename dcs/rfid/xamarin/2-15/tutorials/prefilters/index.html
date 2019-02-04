@@ -184,7 +184,7 @@
                                                 <p></p>
                                                 <h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-                                                <p>This Tutorial provides a walk-through of the steps to perform Pre-Filter configuration using <a href="../../apis">RFID API3</a></p>
+                                                <p>This Tutorial provides a walk-through of the steps to perform Pre-Filter configuration using Xamarin RFID SDK</p>
 
 
                                                 <h3 id="createtheproject" class="anchor"><a class="heading-anchor" href="#createtheproject"><span></span></a>Create the Project</h3>
@@ -219,28 +219,33 @@
                                                 </p>
                                                 <pre class="prettyprint"><code>
 // Add state aware pre-filter for given EPC or Tag ID
-    private void addfilters(String tag) {
-        // Add state aware pre-filter
-        PreFilters filters = new PreFilters();
-        PreFilters.PreFilter filter = filters.new PreFilter();
-        filter.setAntennaID((short) 1);// Set this filter for Antenna ID 1
-        filter.setTagPattern(tag);// Tags which starts with passed pattern
-        filter.setTagPatternBitCount(tag.length() * 4);
-        filter.setBitOffset(32); // skip PC bits (always it should be in bit length)
-        filter.setMemoryBank(MEMORY_BANK.MEMORY_BANK_EPC);
-        filter.setFilterAction(FILTER_ACTION.FILTER_ACTION_STATE_AWARE); // use state aware singulation
-        filter.StateAwareAction.setTarget(TARGET.TARGET_INVENTORIED_STATE_S1); // inventoried flag of session S1 of matching tags to B
-        filter.StateAwareAction.setStateAwareAction(STATE_AWARE_ACTION.STATE_AWARE_ACTION_INV_B);
-        // not to select tags that match the criteria
-        try {
-            reader.Actions.PreFilters.add(filter);
-        } catch (InvalidUsageException e) {
-            e.printStackTrace();
-        } catch (OperationFailureException e) {
-            e.printStackTrace();
-        }
+private void addfilters(String tag)
+{
+    // Add state aware pre-filter
+    PreFilters filters = new PreFilters();
+    PreFilters.PreFilter filter = new PreFilters.PreFilter(filters);
+    filter.AntennaID = 1;// Set this filter for Antenna ID 1
+    filter.SetTagPattern(tag);// Tags which starts with passed pattern
+    filter.TagPatternBitCount = tag.Length * 4;
+    filter.BitOffset = 32; // skip PC bits (always it should be in bit length)
+    filter.MemoryBank = MEMORY_BANK.MemoryBankEpc;
+    filter.FilterAction = FILTER_ACTION.FilterActionStateAware; // use state aware singulation
+    filter.StateAwareAction.Target = TARGET.TargetInventoriedStateS1; // inventoried flag of session S1 of matching tags to B
+    filter.StateAwareAction.StateAwareAction = STATE_AWARE_ACTION.StateAwareActionInvB;
+    // not to select tags that match the criteria
+    try
+    {
+        Reader.Actions.PreFilters.Add(filter);
     }
-
+    catch (InvalidUsageException e)
+    {
+        e.PrintStackTrace();
+    }
+    catch (OperationFailureException e)
+    {
+        e.PrintStackTrace();
+    }
+}
 </code></pre>
 
                                                 <h2 id="code2" class="anchor"><a class="heading-anchor" href="#code2"><span></span></a>Set singulation control</h2>
@@ -252,50 +257,58 @@
 
                                                 <pre class="prettyprint"><code>
 // Set the singulation control matching with prefilter
-    private void setSingulationForFilter() {
-        try {
-            Antennas.SingulationControl s1_singulationControl = reader.Config.Antennas.getSingulationControl(1);
-            s1_singulationControl.setSession(SESSION.SESSION_S1);
-            s1_singulationControl.Action.setInventoryState(INVENTORY_STATE.INVENTORY_STATE_B);
-            s1_singulationControl.Action.setPerformStateAwareSingulationAction(true);
-            reader.Config.Antennas.setSingulationControl(1, s1_singulationControl);
-        } catch (InvalidUsageException e) {
-            e.printStackTrace();
-        } catch (OperationFailureException e) {
-            e.printStackTrace();
-        }
-    }
+private void setSingulationForFilter()
+{
+    try
+    {
+        // Get Singulation Control for the antenna 1 
+        Antennas.SingulationControl singulationControl;
+        singulationControl = Reader.Config.Antennas.GetSingulationControl(1);
 
+        // Set Singulation Control for the antenna 1 
+        singulationControl.Session = SESSION.SessionS1;
+        singulationControl.Action.InventoryState = INVENTORY_STATE.InventoryStateB;
+        singulationControl.Action.SetPerformStateAwareSingulationAction(true);
+        Reader.Config.Antennas.SetSingulationControl(1, singulationControl);
+    }
+    catch (OperationFailureException ex)
+    {
+        Console.WriteLine(" Singulation configuration failed " + ex.VendorMessage);
+    }
+}
 </code></pre>
                                                 <h2 id="code2" class="anchor"><a class="heading-anchor" href="#code2"><span></span></a>Performing operation</h2>
 
                                                 <p>Inventory or Access operation when performed after setting pre-filters, use the tags filtered out of pre-filters for their operation.</p>
 
                                                 <pre class="prettyprint"><code>
-try {
-    reader.Actions.Inventory.perform();
-    Thread.sleep(rnd.nextInt(5000));
-    reader.Actions.Inventory.stop();
-} catch (InvalidUsageException e) {
-    e.printStackTrace();
-} catch (OperationFailureException e) {
-    e.printStackTrace();
-} catch (InterruptedException e) {
-    e.printStackTrace();
+try
+{
+    Reader.Actions.Inventory.Perform();
+    Thread.Sleep(5000);
+    Reader.Actions.Inventory.Stop();
+}
+catch (InvalidUsageException e)
+{
+    e.PrintStackTrace();
+}
+catch (OperationFailureException e)
+{
+    e.PrintStackTrace();
 }
 </code></pre>
 
 
                                                 <h2 id="code2" class="anchor"><a class="heading-anchor" href="#code2"><span></span></a>Closer look</h2>
                                                 <ul>
-                                                    <li>Pre-Filter i.e. select command moves matching tags to given state and then applying matching singulation results in intersted tags getting inventoried </li>
-                                                    <li><code>setStateAwareAction</code> has various conditions set to matching and non matching group of tags</li>
-                                                    <li>After pre-filter application tag moves its state if matching and then it participates in inventory irrespective to SESSION behavior - given session is also matching</li>
+                                                    <li>Pre-Filter i.e. select command moves matching tags to given state and then applying matching singulation results in interested tags getting inventoried </li>
+                                                    <li><code>StateAwareAction</code> has various conditions set to matching and non matching group of tags</li>
+                                                    <li>After pre-filter application tag moves its state if matching and then it participates in inventory irrespective to SESSION behaviour - given session is also matching</li>
                                                 </ul>
 
                                                 <h2 id="code2" class="anchor"><a class="heading-anchor" href="#code2"><span></span></a>What's Next</h2>
                                                 <ul>
-                                                    <li>Alter <code>singulationControl.Action.setInventoryState(INVENTORY_STATE.INVENTORY_STATE_B)</code> with <code>INVENTORY_STATE.INVENTORY_STATE_A</code> to select non matching tags</li>
+                                                    <li>Alter <code>singulationControl.Action.InventoryState = INVENTORY_STATE.InventoryStateB;</code> with <code>INVENTORY_STATE.InventoryStateA</code> to select non matching tags</li>
                                                 </ul>
 
 
