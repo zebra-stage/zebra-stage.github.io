@@ -339,12 +339,14 @@
     <td style="text-align:center">●</td>
     <td style="text-align:center">●</td>
   </tr>
+<!--  // Will be in next release
   <tr>
     <td>MC93 </td>
     <td></td>
     <td></td>
-    <td style="text-align:center">●</td>
+    <td style="text-align:center">&#x25cf;</td>
   </tr>
+  -->
   <tr>
     <td>PS20</td>
     <td></td>
@@ -405,6 +407,107 @@
 
 <li>Backend Server Port: inbound (e.g. port 8443)
 <br></li></ul></li>
+</ol>
+
+<h3 id="servercertificate" class="anchor"><a class="heading-anchor" href="#servercertificate"><span></span></a>Server Certificate</h3>
+
+<p>An SSL certificate is needed for secure connections. Generate the CSR (Certificate Signing Request) with private key and submit it to the trusted CA. The CA issues the SSL Certificate signed with the public key (in .p7b format). Use this issued certificate to generate the SSL certificate with the private key. The final, complete SSL certificate contains the server certificate, any intermediate certificates, the public key and private key. The procedure to accomplish this is separated into two sections below:</p>
+
+<ul>
+<li><strong>Procure server certificate</strong> (.p7b format) with public key </li>
+
+<li><strong>Generate complete SSL certificate</strong> (.pfx format) with both public and private keys </li>
+</ul>
+
+<p>If the server certificate with public key already exists, skip to the second section <em>Generate complete SSL Certificate</em>. If the complete SSL certificate already exists, skip to section <em>Server Installation</em>. <br><br>
+<strong>Procure server certificate:</strong> Create a private key and generate the CSR. Submit the CSR to the CA for signing. The server certificate issued should be in .p7b format.</p>
+
+<ol>
+<li>Download and install the SSL toolkit <a href="https://www.openssl.org/source/">OpenSSL</a> for Windows. Follow the instructions stated to download the file based on your Windows configuration.<br></li>
+
+<li>Add a new "openSSL" environment variable to the Windows system and set the value to the location where openSSL is installed (e.g. "C:\Program Files\OpenSSL-Win64\bin\").<br></li>
+
+<li>Create a folder named "ServerCert".  Open the command prompt to this folder path.<br></li>
+
+<li>Create a private key. It prompts to enter the passphrase - <em>make note of this passphrase</em>, which is used in Device Tracker. Run the command: <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<code>openSSL genrsa -des3 -out dtrkdemo.key 2048</code><br>
+where "dtrkdemo.key" can be replaced with a custom file name.</li>
+
+<li>Create a CSR based on the new private key. Run the command:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<code>openSSL req key dtrkdemo.key -new -out dtrkdemo.csr</code><br>
+where "dtrkdemo.key" (same file name as in step 4) and "dtrkdemo.csr" (new file created) can be replaced with custom file names. 
+It prompts to enter the private key password (created in step 5). Enter in the required fields when prompted (the information entered must match that registered with the CA):
+
+
+<ul>
+<li><strong>Country Name</strong> - Enter the two-letter code without punctuation for country, for example: US or CA.</li>
+
+<li><strong>State or Province</strong> - Enter the full state or province name without abbreviation, for example: California.</li>
+
+<li><strong>Locality or City</strong> - Enter the city or town name without abbreviation, for example: Berkeley or Saint Louis.</li>
+
+<li><strong>Organization Name</strong> - Enter the company. If the company or department contains a special character such as "&amp;" or "@", the symbol must be spelled out or omitted in order to enroll successfully. </li>
+
+<li><strong>Organizational Unit Name</strong> - Enter the name of the department or organization unit making the request. This is optional, to skip, press Enter on the keyboard.</li>
+
+<li><strong>Common Name</strong> - Enter the fully qualified host name, for example: "dtrk.zebra.com". <em>This is the same name to be used in the Server Installation in step 5 for the Domain name.</em></li>
+
+<li><strong>Email Address</strong> - Enter the contact email address.<br>
+When prompted for the challenge password, it is not required - <em>do not supply one</em>. </li></ul>
+</li>
+
+<li>Submit the CSR created to the CA. They will supply a certificate in .p7b format, e.g. ssl_certificate.p7b.</li>
+</ol>
+
+<!-- **Note:** Symantec certificates can only be used on web servers using the Common Name specified during enrollment. For example, a certificate for the domain "zebra.com" will receive a warning if accessing a site named "www.zebra.com" or "secure.zebra.com" since "www.zebra.com" and "secure.zebra.com" are different from "zebra.com." <br>
+-->
+
+<!--
+E. Run the following command to generate a private key and CSR file: <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`openSSL req -newkey rsa:2048 -nodes -keyout zdvc_private_key.key -out zdvc_cert_sign_req.csr`<br>
+ Where "zdvc_cert_sign_req.csr" and "zdvc_private_key.key" can be replaced with custom file names.<br> 
+F. Enter in the required fields when prompted:
+
+   * **Country Name** - Enter the two-letter code without punctuation for country, for example: US or CA.
+   * **State or Province** - Enter the full state or province name without abbreviation, for example: California.
+   * **Locality or City** - Enter the city or town name without abbreviation, for example: Berkeley or Saint Louis.
+   * **Company** - Enter the company. If the company or department contains a special characteres such as "&" or "@" the symbol must be spelled out or omitted in order to enroll successfully. 
+   * **Organizational Unit** - Enter the name of the department or organization unit making the request. This is optional, to skip, press Enter on the keyboard.
+   * **Common Name** - Enter the Host and Domain Name, following the same format as these examplese: "www.zebra.com" or "zebra.com". **Note:** Symantec certificates can only be used on web servers using the Common Name specified during enrollment. For example, a certificate for the domain "zebra.com" will receive a warning if accessing a site named "www.zebra.com" or "secure.zebra.com" since "www.zebra.com" and "secure.zebra.com" are different from "zebra.com." <br>
+
+ G. Enter the challenge password when prompted. _This is the password needed when generating the certificate in .pfx format._<br>
+ H. A .csr file is created in the "CSR_Request" folder. Submit this file to the CA to have it signed. <br>
+ I. Obtain the certificate bundle from the CA in .pkcs format and certificate in .p7b format (which includes the public key). -->
+
+<p><strong>Generate complete SSL Certificate:</strong> Zebra requires the certificate be procured in .p7b format and combined with the private key (.key file) to generate the SSL certificate in .pfx file format. If the certificate is in a different format, use an SSL certificate converter tool to convert to the proper format.  <br></p>
+
+<ol>
+<li>Create an ssl_certificate.cer file with the command:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<code>openssl pkcs7 -print_certs -in ssl_certificate.p7b -out ssl_certificate.cer</code><br>
+where "ssl_certificate.p7b" is the certificate issued by the CA.</li>
+
+<li>Create SSL certificate "ssl_certificate.pfx" with command (using the private key password created from step 4 in the previous section): 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<code>openssl pkcs12 -export -in ssl_certificate.cer -inkey dtrkdemo.key -out ssl_certificate.pfx</code><br>
+where "dtrkdemo.key" is the private key generated from step 4 in the previous section and "ssl_certificate.cer" is the file generated from the previous step 1.</li>
+
+<li>Import the SSL certificate on the server. Double-click the certificate on the local computer and follow the Certificate Import wizard.</li>
+
+<li>Use SSL certificate "ssl_certificate.pfx" and the private key password for Device Tracker server installation and setup in the sections that follow.
+<!--
+A. Create an empty directory named "generated_certs" to contain the .pfx certificate.<br>
+B. Copy the following certificate files to "generated_certs" folder: primary certificate (e.g. "ssl_certificate.p7b"), private key (e.g. "zdvc_private_key.key"), and intermediate CA certificate (e.g. "IntermediateCA.cer").  _The intermediate CA certificate is optional - use if required in the certificate chain._  <br>
+C. Open a command prompt. Execute the following command to generate "ssl_certificate.cer":<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`openssl pkcs7 -print_certs -in ssl_certificate.p7b -out ssl_certificate.cer`
+<br>
+D. At the command prompt, execute the following command:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`openssl pkcs12 -export -in ssl_certificate.cer -inkey zdvc_private_key.key -out ssl_certificate.pfx -certfile IntermediateCA.cer`
+    <br>
+    Where "-certfile IntermediateCA.cer" is optional.
+<br>
+E. When prompted, enter the certificate password to export "ssl_certificate.pfx". This is the challenge password specified in step 2.G. above.<br>
+F. Copy the SSL certificate "ssl_certificate.pfx" with domain name “name.company.com” to a designated folder.
+<br>
+--></li>
 </ol>
 
 <h3 id="serverinstallation" class="anchor"><a class="heading-anchor" href="#serverinstallation"><span></span></a>Server Installation</h3>
@@ -491,54 +594,6 @@ D. Enter the backend URL for your server, for example <code>https://name.company
 E. Click the Scan button. A successful result returns green checks for each step:
 <img src="SSLTools.JPG" alt="img">
 <em>Figure 8. SSLTools.com results</em></li>
-</ol>
-
-<h3 id="servercertificateprocurement" class="anchor"><a class="heading-anchor" href="#servercertificateprocurement"><span></span></a>Server Certificate Procurement</h3>
-
-<p>Procedure to procure the server certificate, if needed:</p>
-
-<ol>
-<li><p><strong>Intermediate Root Certificate Generation and CSR (Certificate Signing Request) Signing from CA.</strong> Procedure to generate a CSR to send to a CA for signing, configuring a custom intermediate root certificate for SSL: <br>
-A. Download <a href="https://www.openssl.org/source/">OpenSSL</a> for Windows. Follow the instructions stated to download the file based on your Windows configuration.<br>
-B. Install the downloaded OpenSSL EXE/MSI.<br>
-C. Add a new "openSSL" environment variable to the Windows system and set the value to the location where openSSL is installed (e.g. "C:\Program Files\OpenSSL-Win64\bin\").<br>
-D. Create a folder named "CSR_Request".  Open the command prompt to this folder path.<br>
-E. Run the following command to generate a private key and CSR file: <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<code>openSSL req -newkey rsa:2048 -nodes -keyout zdvc_private_key.key -out zdvc_cert_sign_req.csr</code><br>
-Where "zdvc_cert_sign_req.csr" and "zdvc_private_key.key" can be replaced with custom file names.<br>
-F. Enter in the required fields when prompted:</p>
-
-<ul>
-<li><strong>Country Name</strong> - Enter the two-letter code without punctuation for country, for example: US or CA.</li>
-
-<li><strong>State or Province</strong> - Enter the full state or province name without abbreviation, for example: California.</li>
-
-<li><strong>Locality or City</strong> - Enter the city or town name without abbreviation, for example: Berkeley or Saint Louis.</li>
-
-<li><strong>Company</strong> - Enter the company. If the company or department contains a special characteres such as "&amp;" or "@" the symbol must be spelled out or omitted in order to enroll successfully. </li>
-
-<li><strong>Organizational Unit</strong> - Enter the name of the department or organization unit making the request. This is optional, to skip, press Enter on the keyboard.</li>
-
-<li><strong>Common Name</strong> - Enter the Host and Domain Name, following the same format as these examplese: "www.zebra.com" or "zebra.com". <strong>Note:</strong> Symantec certificates can only be used on web servers using the Common Name specified during enrollment. For example, a certificate for the domain "zebra.com" will receive a warning if accessing a site named "www.zebra.com" or "secure.zebra.com" since "www.zebra.com" and "secure.zebra.com" are different from "zebra.com." <br></li></ul>
-
-<p>G. Enter the challenge password when prompted. <em>This is the password needed when generating the certificate in .pfx format.</em><br>
-H. A .csr file is created in the "CSR_Request" folder. Submit this file to the CA to have it signed. <br>
-I. Obtain the certificate bundle from the CA in .pkcs format and certificate in .p7b format (which includes the public key).</p></li>
-
-<li><p><strong>Generate SSL Certificate.</strong> An SSL certificate is required for secured connections based on the intermediate root certificate from step 2. Zebra recommends the certificate to be procured in .p7b format and the certificate private key to be a .key file. If the certificates are in different format, use a SSL certificate converter tool to convert to the proper format.  <br>
-A. Create an empty directory named "generated_certs" to contain the .pfx certificate.<br>
-B. Copy the following certificate files to "generated_certs" folder: primary certificate (e.g. "ssl_certificate.p7b"), private key (e.g. "zdvc_private_key.key"), and intermediate CA certificate (e.g. "IntermediateCA.cer").  <em>The intermediate CA certificate is optional - use if required in the certificate chain.</em>  <br>
-C. Open a command prompt. Execute the following command to generate "ssl_certificate.cer":<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<code>openssl pkcs7 -print_certs -in ssl_certificate.p7b -out ssl_certificate.cer</code>
-<br>
-D. At the command prompt, execute the following command:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<code>openssl pkcs12 -export -in ssl_certificate.cer -inkey zdvc_private_key.key -out ssl_certificate.pfx -certfile IntermediateCA.cer</code>
-<br>
-Where "-certfile IntermediateCA.cer" is optional.
-<br>
-E. When prompted, enter the certificate password to export "ssl_certificate.pfx". This is the challenge password specified in step 2.G. above.<br>
-F. Copy the SSL certificate "ssl_certificate.pfx" with domain name “name.company.com” to a designated folder.
-<br></p></li>
 </ol>
 
 <h2 id="clientinstallsetup" class="anchor"><a class="heading-anchor" href="#clientinstallsetup"><span></span></a>Client Install &amp; Setup</h2>
