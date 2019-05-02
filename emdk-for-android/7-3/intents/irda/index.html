@@ -235,9 +235,470 @@
                                 <div class="service-box wow fadeInRight">
                                     <div class="">
 
-                                        <p></p><h1 id="underconstruction" class="anchor"><a class="heading-anchor" href="#underconstruction"><span></span></a><code>UNDER CONSTRUCTION</code></h1>
+                                        <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2><p></p>
+<p>EMDK for Android 7.3 (and later) contains interfaces for controlling hardware that conforms to the Infrared Data Association (IrDA) specification, an infrared line-of-sight technology that's used for data transfer between small portable devices such as mobile computers, printers, handheld remote controls and some medical devices. IrDA also refers to the protocols used for wireless data transfer using IrDA-equipped devices. </p>
+
+<p>Zebra's IrDA implementation supports the following protocols:</p>
+
+<ul>
+<li>TinyTP</li>
+
+<li>IrLMP</li>
+
+<li>IrLAP/ LSAP</li>
+
+<li>IrSIR</li>
+</ul>
+
+<p>Zebra IrDA APIs operate through Android intents – specific commands that can be used by Android applications to control IrDA hardware on IrDA-equipped Zebra devices. This guide explains how to communicate wirelessly between IrDA devices using IrDA Intent APIs on Zebra mobile devices. </p>
+
+<h3 id="requirements" class="anchor"><a class="heading-anchor" href="#requirements"><span></span></a>Requirements</h3>
+
+<p>Use of IrDA APIs requires experience with Java and Android app development, and familiarity with Android intents. For successful IrDA communication, <strong>target device(s) must contain</strong>: </p>
+
+<ul>
+<li>One or more IrDA-equipped Zebra devices</li>
+
+<li>DataWedge version 7.3.11 or later on the device</li>
+
+<li>IrDA transceivers in clear line of sight during data transmission</li>
+</ul>
+
+<hr>
+
+<h2 id="irdaintentapis" class="anchor"><a class="heading-anchor" href="#irdaintentapis"><span></span></a>IrDA Intent APIs</h2>
+
+<p>IrDA intent APIs can be used in applications that require control of IrDA communication. Supported intent actions and commands are listed below. </p>
+
+<p><strong>IrDA Intents and Actions</strong>:</p>
+
+<ul>
+<li><p><code>com.symbol.irda.api.ACTION_DO</code>:</p>
+
+<ul>
+<li>Send data
+<br>
+<br></li></ul></li>
+
+<li><p><code>com.symbol.irda.api.ACTION_GET</code>:</p>
+
+<ul>
+<li>Get server name</li>
+
+<li>Get driver version</li>
+
+<li>Get connection idle time
+<br>
+<br></li></ul></li>
+
+<li><p><code>com.symbol.irda.api.ACTION_REGISTER</code>:</p>
+
+<ul>
+<li>Register/Unregister callbacks
+<br>
+<br></li></ul></li>
+
+<li><p><code>com.symbol.irda.api.ACTION_UPDATE</code>:</p>
+
+<p></p><ul>
+<li>Set server name</li></ul><p></p>
+
+<p></p></li><li>Set connection idle time
+<br></li><p></p></ul><p></p>
+
+
+<h5 id="usageinformationforeachcommandfollowsinthesectionsbelow" class="anchor"><a class="heading-anchor" href="#usageinformationforeachcommandfollowsinthesectionsbelow"><span></span></a>Usage information for each command follows in the sections below.</h5>
+
+<hr>
+
+<h2 id="senddata" class="anchor"><a class="heading-anchor" href="#senddata"><span></span></a>Send Data</h2>
+
+<p>To send data over IrDA, data must be converted to byte arrays. Large data is broken into small chunks of bytes prior to delivery to the receiving device. The first <code>SEND_DATA</code> command typically requires extra time to complete; <code>SEND_DATA</code> commands sent within 30 seconds of the first complete more quickly. The 30-second time frame is adjustable; see <a href="#setconnectionidletime">Set Connection Idle Time</a> section for details.</p>
+
+<h3 id="samplecode" class="anchor"><a class="heading-anchor" href="#samplecode"><span></span></a>Sample Code</h3>
+
+<h4 id="tosenddataviairda" class="anchor"><a class="heading-anchor" href="#tosenddataviairda"><span></span></a>To send data via IrDA:</h4>
+
+<pre class="prettyprint"><code>    
+    Intent intent = new Intent(); //Create new intent
+
+    //Specify the IrDA action
+    intent.setAction("com.symbol.irda.api.ACTION_DO");
+
+    //Set to run at foreground priority, with a shorter timeout interval 
+    intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND); 
+
+    //Text to be sent over IrDA
+    String text = "Hello IrDA"; 
+
+    //Convert to byte array to be accepted by SEND_DATA
+    byte[] byteArray = text.getBytes();
+
+    //Supported value up to 1024 bytes
+    intent.putExtra("SEND_DATA", byteArray); 
+
+    //Designate the broadcast receiver to receive the response
+    Intent responseIntent = new Intent(getApplicationContext(), MyBroadcastReceiver.class); 
+
+    //Set to run at foreground priority, with a shorter timeout interval
+    responseIntent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
+
+    //Any extras are useful to identify feedback
+    responseIntent.putExtra("COMMAND", "SEND_DATA"); 
+
+    //Create pending intent
+    PendingIntent piResponse = PendingIntent.getBroadcast(getApplicationContext().getApplicationContext(), REQUEST_CODE, responseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+    //Send pending intent as CALLBACK_RESPONSE
+    //IrDA API responds to the pending intent specified here
+    intent.putExtra("CALLBACK_RESPONSE", piResponse); 
+
+    //Send the broadcast
+    sendBroadcast(intent); 
+</code></pre>
+
+<p>To determine command success, see <a href="#getfeedbackforcommands">Get Feedback for Commands</a>. </p>
+
+<hr>
+
+<h2 id="setservername" class="anchor"><a class="heading-anchor" href="#setservername"><span></span></a>Set Server Name</h2>
+
+<p>For IrDA communication, the Zebra device serves as the “client” and the device it communicates with is the “server." To identify the device it communicates with, set the server name of the device. If a server name is not specified, the default “<strong>IrDA:TinyTP</strong>” is used.</p>
+
+<h3 id="samplecode-1" class="anchor"><a class="heading-anchor" href="#samplecode-1"><span></span></a>Sample Code</h3>
+
+<p>Set the server name:</p>
+
+<pre class="prettyprint"><code>    
+    //Create new intent 
+    Intent intent = new Intent(); 
+
+    //Specify the IrDA action
+    intent.setAction("com.symbol.irda.api.ACTION_UPDATE");
+
+    //Set to run at foreground priority with a shorter timeout interval 
+    intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND); 
+
+    //Server name to be used
+    intent.putExtra("SERVER_NAME", "&lt;NEW SERVER NAME&gt;"); 
+
+    //Mention the broadcast receiver to receive the response
+    Intent responseIntent = new Intent(getApplicationContext(), MyBroadcastReceiver.class); 
+
+    //Set to run at foreground priority with a shorter timeout interval
+    responseIntent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
+
+    //Any extras are useful to identify feedback 
+    responseIntent.putExtra("COMMAND", "SET_SERVER_NAME"); 
+
+    //Create pending intent
+    PendingIntent piResponse = PendingIntent.getBroadcast(getApplicationContext().getApplicationContext(), REQUEST_CODE, responseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+    //Send pending intent as CALLBACK_RESPONSE
+    //IrDA API responds to the pending intent specified here
+    intent.putExtra("CALLBACK_RESPONSE", piResponse); 
+
+    //Send the broadcast
+    sendBroadcast(intent); 
+</code></pre>
+
+<p>The new server name is kept in device memory until device restart, after which the server name is reset to the “<strong>IrDA:TinyTP</strong>” default server name. To determine command success, see <a href="#getfeedbackforcommands">Get Feedback for Commands</a>.</p>
+
+<hr>
+
+<h2 id="registercallbacks" class="anchor"><a class="heading-anchor" href="#registercallbacks"><span></span></a>Register Callbacks</h2>
+
+<p>The application must be registered for callbacks to receive messages or responses from the server. Once the callback is processed, the application can act accordingly depending on the response received.</p>
+
+<h3 id="samplecode-2" class="anchor"><a class="heading-anchor" href="#samplecode-2"><span></span></a>Sample Code</h3>
+
+<h4 id="registerandreceivecallbacksfromtheserver" class="anchor"><a class="heading-anchor" href="#registerandreceivecallbacksfromtheserver"><span></span></a>Register and receive callbacks from the server:</h4>
+
+<pre class="prettyprint"><code>    
+    //Create new intent
+    Intent intent = new Intent(); 
+
+    //Specify the IrDA action
+    intent.setAction("com.symbol.irda.api.ACTION_REGISTER");
+
+    //Set to run at foreground priority, with a shorter timeout interval 
+    intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND); 
+
+    //Intent to be sent back with status (via explicit broadcast)
+    Intent responseIntent = new Intent(this, MyBroadcastReceiver.class);
+
+    //Cross-check the extras specified here vs the intent received to the broadcast receiver to identify the related response
+    responseIntent.putExtra("COMMAND", "REGISTER_CALLBACK_CALL");
+
+    //Set to run at foreground priority, with a shorter timeout interval 
+    responseIntent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND); 
+    PendingIntent piResponse = PendingIntent.getBroadcast(getApplicationContext(), REQUEST_CODE, responseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+    //Send pending intent as CALLBACK_RESPONSE
+    //IrDA API responds to the pending intent specified here
+    intent.putExtra("CALLBACK_RESPONSE", piResponse); 
+
+    //Intent called whenever data is received from the server
+    int flags2 = 0;
+    int requestCode2 = 3;
+    Intent dataCallBackIntent = new Intent(this, MyBroadcastReceiver.class);
+    dataCallBackIntent.putExtra("COMMAND", "REGISTERED_CALLBACK_DATA");
+
+    //Set to run at foreground priority, with a shorter timeout interval
+    dataCallBackIntent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND); 
+    PendingIntent piDataCallback = PendingIntent.getBroadcast(getApplicationContext(), requestCode2, dataCallBackIntent, flags2);
+
+    //Send pending intent as DATA_CALLBACK
+    //IrDA API responds to the pending intent specified here when a data is received from the server
+    intent.putExtra("DATA_CALLBACK", piDataCallback); 
+
+    //Send the broadcast
+    sendBroadcast(intent); 
+</code></pre>
+
+<p>After executing the code above, callbacks from the server are delivered to the broadcast receiver. </p>
+
+<p>The extras specified for the <code>dataCallBackIntent</code> versus the broadcast receiver intent can be cross-checked to identify the related response as follows:</p>
+
+<h4 id="checkthecommandparameter" class="anchor"><a class="heading-anchor" href="#checkthecommandparameter"><span></span></a>Check the COMMAND parameter:</h4>
+
+<pre class="prettyprint"><code>    
+    public class MyBroadcastReceiver extends BroadcastReceiver {
+
+    @Override
+    public void onReceive(Context context, Intent intent) {
+
+        String command = intent.getStringExtra("COMMAND");
+
+        String status = "";
+        if(command != null &amp;&amp; command.equalsIgnoreCase("REGISTERED_CALLBACK_DATA")) {
+            byte[] data = intent.getByteArrayExtra("DATA_CALLBACK");
+            status += " "+ data.length + " bytes received!";
+        }
+        Log.d("TAG",status);
+    }
+}
+</code></pre>
+
+<p>To receive the response from the server, extract the information from <code>DATA_CALLBACK</code>.</p>
+
+<hr>
+
+<h2 id="unregistercallbacks" class="anchor"><a class="heading-anchor" href="#unregistercallbacks"><span></span></a>Unregister Callbacks</h2>
+
+<p>For each callback that is registered, a corresponding call is needed to unregister the callback. Set the DATA_CALLBACK parameter to NULL to unregister the callback.</p>
+
+<h3 id="samplecode-3" class="anchor"><a class="heading-anchor" href="#samplecode-3"><span></span></a>Sample Code</h3>
+
+<h4 id="unregisterthecallback" class="anchor"><a class="heading-anchor" href="#unregisterthecallback"><span></span></a>Unregister the callback:</h4>
+
+<pre class="prettyprint"><code>    
+    //Create new intent
+    Intent intent = new Intent();  
+
+    //Specify the IrDA action
+    intent.setAction("com.symbol.irda.api.ACTION_REGISTER");
+
+    //Set to run at foreground priority, with a shorter timeout interval 
+    intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND); 
+
+    //Mention the broadcast receiver to receive the response
+    Intent responseIntent = new Intent(this, MyBroadcastReceiver.class);
+
+    /Any extras are useful 
+    responseIntent.putExtra("COMMAND", "UNREGISTER_CALLBACK_CALL"); /        
+</code></pre>
+
+<h4 id="identifythefeedbackatbroadcastreceiver" class="anchor"><a class="heading-anchor" href="#identifythefeedbackatbroadcastreceiver"><span></span></a>Identify the feedback at broadcast receiver</h4>
+
+<pre class="prettyprint"><code>    
+    //Create pending intent
+    PendingIntent piResponse = PendingIntent.getBroadcast(getApplicationContext(), REQUEST_CODE, responseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+    //Send pending intent as CALLBACK_RESPONSE
+    //IrDA API responds to the pending intent specified here
+    intent.putExtra("CALLBACK_RESPONSE", piResponse);
+
+    //Send DATA_CALLBACK as null to stop receiving callbacks from the server
+    intent.putExtra("DATA_CALLBACK", (String)null); 
+
+    //Send the broadcast
+    sendBroadcast(intent); 
+</code></pre>
+
+<hr>
+
+<h2 id="setconnectionidletime" class="anchor"><a class="heading-anchor" href="#setconnectionidletime"><span></span></a>Set Connection Idle Time</h2>
+
+<p>The IrDA port is opened when the first <code>SEND_DATA</code> command is received. The port is kept open for 30 seconds by default. Within this time frame, subsequent <code>SEND_DATA</code> commands are not needed to open the port again. After 30 seconds from the last IrDA API call, the port is closed. This time frame is adjustable by setting the connection idle time.</p>
+
+<h3 id="samplecode-4" class="anchor"><a class="heading-anchor" href="#samplecode-4"><span></span></a>Sample Code</h3>
+
+<h4 id="setconnectionidletime-1" class="anchor"><a class="heading-anchor" href="#setconnectionidletime-1"><span></span></a>Set connection idle time:</h4>
+
+<pre class="prettyprint"><code>    
+    //Create new intent
+    Intent intent = new Intent(); 
+
+    //Specify the IrDA action
+    intent.setAction("com.symbol.irda.api.ACTION_UPDATE"); 
+
+    //Set to run at foreground priority, with a shorter timeout interval.
+    intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND); 
+
+    //Set idle time to 15 seconds
+    intent.putExtra("CONNECTION_IDLE_TIME", 15); 
+
+    //Mention the broadcast receiver to receive the response
+    Intent responseIntent = new Intent(getApplicationContext(), MyBroadcastReceiver.class);
+
+    //Set to run at foreground priority, with a shorter timeout interval.
+    responseIntent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);  
+
+    //Any extras are useful to identify the feedback at the broadcast receiver
+    responseIntent.putExtra("COMMAND", "SET_CONNECTION_IDLE_TIME"); 
+    PendingIntent piResponse = PendingIntent.getBroadcast(getApplicationContext().getApplicationContext(), REQUEST_CODE, responseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+    //Send pending intent as CALLBACK_RESPONSE
+    //IrDA API responds to the pending intent specified here
+    intent.putExtra("CALLBACK_RESPONSE", piResponse); 
+
+    //Send the broadcast
+    sendBroadcast(intent); 
+</code></pre>
+
+<p>To determine command success, see <a href="#getfeedbackforcommands">Get Feedback for Commands</a>. </p>
+
+<hr>
+
+<h2 id="getcommand" class="anchor"><a class="heading-anchor" href="#getcommand"><span></span></a>Get Command</h2>
+
+<p>The Get command retrieves the following properties:</p>
+
+<p><code>CONNECTION_IDLE_TIME</code> - Returns the time (in seconds) the connection remains open before automatically closing 
+<code>SERVER_NAME</code> - Returns the current server name 
+<code>DRIVER_VERSION</code> - Driver version </p>
+
+<h3 id="samplecode-5" class="anchor"><a class="heading-anchor" href="#samplecode-5"><span></span></a>Sample Code</h3>
+
+<h4 id="getdriverversion" class="anchor"><a class="heading-anchor" href="#getdriverversion"><span></span></a>Get driver version:</h4>
+
+<pre class="prettyprint"><code>    
+    //Create new intent
+    Intent intent = new Intent(); 
+
+    //Specify the IrDA action
+    intent.setAction("com.symbol.irda.api.ACTION_GET");
+
+    //Set to run at foreground priority, with a shorter timeout interval 
+    intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND); 
+
+    //Mention the properties to Retrieve
+    String[] propertiesToRetrieve = {"DRIVER_VERSION", "CONNECTION_IDLE_TIME", "SERVER_NAME"};
+
+    //Assign the properties to retrieve to PROPERTIES_TO_GET extra
+    intent.putExtra("PROPERTIES_TO_GET", propertiesToRetrieve);  
+
+    //Mention the broadcast receiver to receive the response
+    Intent responseIntent = new Intent(getApplicationContext(), MyBroadcastReceiver.class);
+
+    //Set to run at foreground priority, with a shorter timeout interval
+    responseIntent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND); 
+
+    //Any extras are useful to identify the feedback at the broadcast receiver 
+    responseIntent.putExtra("COMMAND", "GET_DRIVER_VERSION"); 
+
+    //Create pending intent
+    PendingIntent piResponse = PendingIntent.getBroadcast(getApplicationContext().getApplicationContext(), REQUEST_CODE, responseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+    //Send pending intent as CALLBACK_RESPONSE
+    //IrDA API responds to the pending intent specified here.
+    intent.putExtra("CALLBACK_RESPONSE", piResponse);
+
+    //Send the broadcast 
+    sendBroadcast(intent); 
+</code></pre>
+
+<h4 id="decodethegetcommandresponse" class="anchor"><a class="heading-anchor" href="#decodethegetcommandresponse"><span></span></a>Decode the Get command response</h4>
+
+<p>The Get command response is delivered to the broadcast receiver in the pending intent to retrieve the queried data.</p>
+
+<h4 id="retrievedatafromthegetcommand" class="anchor"><a class="heading-anchor" href="#retrievedatafromthegetcommand"><span></span></a>Retrieve data from the Get command:</h4>
+
+<pre class="prettyprint"><code>    
+    public class MyBroadcastReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+        String status = "";
+        String command = intent.getStringExtra("COMMAND");
+        if(command != null) {
+            switch (command) {
+                case "GET_SERVER_NAME":
+                    status += " "+ intent.getStringExtra("SERVER_NAME");
+                    break;
+                case "GET_CONNECTION_IDLE_TIME":
+                    status += " "+ intent.getIntExtra("CONNECTION_IDLE_TIME",0);
+                    break;
+                case "GET_DRIVER_VERSION":
+                    status += " "+ intent.getStringExtra("DRIVER_VERSION");
+                    break;
+
+            }
+        }
+        Log.d("TAG",status);
+    }
+}
+</code></pre>
+
+<hr>
+
+<h2 id="getfeedbackforcommands" class="anchor"><a class="heading-anchor" href="#getfeedbackforcommands"><span></span></a>Get Feedback for Commands</h2>
+
+<p>The <code>ACTION_DO</code> and <code>ACTION_UPDATE</code> methods send a <code>RESULT_CODE</code> and a <code>RESULT_MESSAGE</code> back to the client app with feedback about whether the specified command succeeded. This response is delivered to the broadcast receiver and passed to the pending intent.</p>
+
+<h3 id="samplecode-6" class="anchor"><a class="heading-anchor" href="#samplecode-6"><span></span></a>Sample Code</h3>
+
+<h4 id="getfeedbackfromcommands" class="anchor"><a class="heading-anchor" href="#getfeedbackfromcommands"><span></span></a>Get feedback from commands:</h4>
+
+<pre class="prettyprint"><code>    
+    public class MyBroadcastReceiver extends BroadcastReceiver {
+
+    @Override
+    public void onReceive(Context context, Intent intent) {
+
+        String status = "";
+        String command = intent.getStringExtra("COMMAND");
+        String resultCode = intent.getStringExtra("RESULT_CODE");
+        String resultMessage = intent.getStringExtra("RESULT_MESSAGE");
+
+        if(command != null)
+            status += "" + command + ": ";
+
+        if(resultCode != null)
+            status += "" + resultCode;
+
+        if(resultMessage != null)
+            status += "\nMessage: " + resultMessage;
+
+        Log.d("TAG",status);
+
+    }
+}
+</code></pre>
+
+<hr>
+
+<h2 id="alsosee" class="anchor"><a class="heading-anchor" href="#alsosee"><span></span></a>Also See</h2>
+
+<ul>
+<li><a href="../datacapture">Data capture intent APIs</a></li>
+
+<li><a href="../battery">Battery intent APIs</a></li>
+
+<li><a href="../../api">Native APIs</a></li>
+</ul><p></p>
                                         
 
 
