@@ -106,7 +106,7 @@
                             </a>
                         </li>
                         <li>
-                            <a href="https://developer.zebra.com/community/home/discussions/emdk">
+                            <a href="https://developer-dev.savanna.zebra.com/community/tools/emdk">
                                     <i class="fa fa-comments-o"></i>
                             </a>
                         </li>
@@ -253,26 +253,28 @@
 <p><strong>Points to consider when designing a barcode scanning app</strong>:</p>
 
 <ul>
-<li><p><strong>Apps should use either barcode APIs or DataCapture</strong> (a feature of the ProfileManager); an app cannot use both at the same time. </p></li>
+<li><strong>For scanning, apps should use either the EMDK barcode APIs or DataWedge</strong> <u>but NOT both at the same time</u>. When an EMDK app uses the barcode APIs, DataWedge is disabled until the app releases scanning resources. <a href="#5releasescanner">Here's how</a>.   </li>
 
-<li><p><strong>The</strong> <code>EMDKManager</code> &gt; <code>BarcodeManager</code> <strong>takes precedence</strong> over DataCapture. </p></li>
+<li><strong>The</strong> <code>EMDKManager</code> &gt; <code>BarcodeManager</code> <strong>takes precedence</strong> over DataCapture. </li>
 
-<li><p><strong>Control of scanning hardware is exclusive</strong>. When a scanning app takes control of a scanner, it must release it when quitting or going to the background before other apps can access any scanner.</p></li>
+<li><strong>Control of scanning hardware is exclusive</strong>. When a scanning app takes control of a scanner, it must release it when quitting or going to the background before other apps can access any scanner on the device. <strong><u>Failure of a scanning app to release scanner resources prevents all other apps from scanning</u></strong>.</li>
 
-<li><p><strong>Disabling the scanner immediately cancels any pending read in progress</strong> and closes the session, giving other applications access to scanners. </p></li>
+<li>Similarly, if <code>BarcodeManager</code> is used in an app, it must be explicitly released before any other application (including DataWedge) can access scanning resources on the device.</li>
 
-<li><p><strong>If</strong> <code>BarcodeManager</code> <strong>is used in an app, it must be explicitly released</strong> before any other application (including DataWedge) can access scanners.</p></li>
+<li><strong>When a scanner is disconnected and reconnected</strong>, calling any method on the barcode object results in an <code>INVALID_OBJECT</code> error. As a remedy, register the application for connection notifications so it can be notified of subsequent connections. Then programmatically re-initialize the scanner as needed.</li>
 
-<li><p><strong>When a scanner is disconnected and reconnected</strong>, calling any method on the barcode object will result in an <code>INVALID_OBJECT</code> error. As a remedy, register the application for connection notifications so it can be notified of reconnections and programmatically re-initialize the scanner, when necessary.</p></li>
-
-<li><p><strong>If a Bluetooth Scanner is not paired</strong>, enabling that scanner will automatically launch the pairing utility, prompting the user to scan a barcode (displayed on the mobile device) to pair the scanner with the mobile device.</p></li>
+<li><strong>If a Bluetooth Scanner is not paired</strong>, enabling that scanner automatically launches the pairing utility, prompting the user to scan a barcode (displayed on the mobile device) to pair the scanner with the mobile device.</li>
 </ul>
+
+<!-- 5/29/19- removed  per engineering. 
+* **Disabling the scanner immediately cancels any pending read in progress** and closes the session, giving other applications access to scanners. 
+ -->
 
 <hr>
 
 <h2 id="usingthebarcodeapi" class="anchor"><a class="heading-anchor" href="#usingthebarcodeapi"><span></span></a>Using the Barcode API</h2>
 
-<p>The guidance below is typical of many scanarios, but the process can vary depending individual needs. </p>
+<p>The guidance below is typical of many scenarios, but the process can vary depending individual needs. </p>
 
 <hr>
 
