@@ -73,6 +73,11 @@
                             </a>
                         </li>
                         <li>
+                            <a href="/datawedge/7-4/guide/gettingstarted">
+                                    Getting Started
+                            </a>
+                        </li>
+                        <li>
                             <a href="/datawedge/7-4/guide/setup">
                                     Setup
                             </a>
@@ -300,156 +305,6 @@ i.putExtra(extraData, "START_SCANNING");
 
 // send the intent to DataWedge 
 this.sendBroadcast(i); 
-</code></pre>
-
-<h3 id="samplescanner_statusnotification" class="anchor"><a class="heading-anchor" href="#samplescanner_statusnotification"><span></span></a>Sample 'SCANNER_STATUS' Notification</h3>
-
-<p>Soft scan trigger commands might be ignored if the scanner is busy at the time a command is executed. <strong>Zebra recommends using the</strong> <code>SCANNER_STATUS</code> <strong>parameter of the <a href="../registerfornotification">NOTIFICATION API</a> to signal that the scanner is ready</strong>. Use the sample code below:</p>
-
-<pre class="prettyprint"><code>@Override
-protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    setContentView(R.layout.activity_main);
-    registerReceivers();
-}
-
-@Override
-protected void onResume(){
-    super.onResume();
-    switchToProfile();
-}
-
-public static final String ACTION = "com.symbol.datawedge.api.ACTION";
-public static final String NOTIFICATION_ACTION = "com.symbol.datawedge.api.NOTIFICATION_ACTION";
-public static final String NOTIFICATION_TYPE_SCANNER_STATUS = "SCANNER_STATUS";
-public static final String SCAN_STATUS_WAITING = "WAITING";
-public static final String NOTIFICATION_TYPE_PROFILE_SWITCH = "PROFILE_SWITCH";
-
-public static final String ACTION_EXTRA_REGISTER_FOR_NOTIFICATION = "com.symbol.datawedge.api.REGISTER_FOR_NOTIFICATION";
-public static final String ACTION_EXTRA_UNREGISTER_FOR_NOTIFICATION = "com.symbol.datawedge.api.UNREGISTER_FOR_NOTIFICATION";
-
-private void registerReceivers() {
-    IntentFilter filter = new IntentFilter();
-    filter.addAction(NOTIFICATION_ACTION);
-    registerReceiver(broadcastReceiver, filter);
-    registerForScannerStatus();
-}
-
-@Override
-protected void onDestroy() {
-    super.onDestroy();
-    unregisterReceiver(broadcastReceiver);
-    unRegisterForScannerStatus();
-}
-
-private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
-    @Override
-    public void onReceive(Context context, Intent intent) {
-        String action = intent.getAction();
-        Log.d(TAG, "#DataWedge-APP# Action: " + action);
-        if(action.equals(NOTIFICATION_ACTION)){
-            // handle notification
-            if(intent.hasExtra("com.symbol.datawedge.api.NOTIFICATION")) {
-                Bundle b = intent.getBundleExtra("com.symbol.datawedge.api.NOTIFICATION");
-                String NOTIFICATION_TYPE  = b.getString("NOTIFICATION_TYPE");
-                if(NOTIFICATION_TYPE!= null) {
-                    switch (NOTIFICATION_TYPE) {
-                        case NOTIFICATION_TYPE_SCANNER_STATUS:
-                            Log.d(TAG, "SCANNER_STATUS: status: " + b.getString("STATUS") + ", profileName: " + b.getString("PROFILE_NAME"));
-                            String status = b.getString("STATUS");
-                            if(status!=null &amp;&amp; status.equals(SCAN_STATUS_WAITING)){
-                                //toggle scanner when scanner is ready
-                                scanToggle();
-                                unRegisterForScannerStatus();
-                            }
-                            break;
-                        case NOTIFICATION_TYPE_PROFILE_SWITCH:
-                            Log.d(TAG, "PROFILE_SWITCH: profileName: " + b.getString("PROFILE_NAME") + ", profileEnabled: " + b.getBoolean("PROFILE_ENABLED"));
-                            break;
-                    }
-                }
-            }
-        }
-    }
-};
-
-
-public void registerForScannerStatus() {
-    Bundle b = new Bundle();
-    b.putString("com.symbol.datawedge.api.APPLICATION_NAME", "com.dwapi.dwnotifiation");
-    b.putString("com.symbol.datawedge.api.NOTIFICATION_TYPE", NOTIFICATION_TYPE_SCANNER_STATUS);
-    Intent i = new Intent();
-    i.setAction(ACTION);
-    i.putExtra(ACTION_EXTRA_REGISTER_FOR_NOTIFICATION, b);
-    this.sendBroadcast(i);
-}
-
-public void unRegisterForScannerStatus() {
-    Bundle b = new Bundle();
-    b.putString("com.symbol.datawedge.api.APPLICATION_NAME", "com.dwapi.dwnotifiation");
-    b.putString("com.symbol.datawedge.api.NOTIFICATION_TYPE", NOTIFICATION_TYPE_SCANNER_STATUS);
-    Intent i = new Intent();
-    i.setAction(ACTION);
-    i.putExtra(ACTION_EXTRA_UNREGISTER_FOR_NOTIFICATION, b);
-    this.sendBroadcast(i);
-}
-
-public void switchToProfile(){
-    Intent i = new Intent();
-    i.setAction(ACTION);
-    i.putExtra("com.symbol.datawedge.api.SWITCH_TO_PROFILE","Launcher");
-    this.sendBroadcast(i);
-}
-
-public void scanToggle(){
-    Intent i = new Intent();
-    i.setAction(ACTION);
-    i.putExtra("com.symbol.datawedge.api.SOFT_SCAN_TRIGGER","TOGGLE_SCANNING");
-    this.sendBroadcast(i);
-}
-</code></pre>
-
-<h3 id="generateandreceiveresults" class="anchor"><a class="heading-anchor" href="#generateandreceiveresults"><span></span></a>Generate and receive results</h3>
-
-<p>Command and configuration intent parameters determine whether to send result codes (disabled by default). When using <code>SEND_RESULT</code>, the <code>COMMAND_IDENTIFIER</code> is used to match the result code with the originating intent. Sample usage of these parameters is shown below. </p>
-
-<p><strong>Note: Modify this generic code to match the API being used</strong>.  </p>
-
-<pre class="prettyprint"><code>// send the intent
-    Intent i = new Intent();
-    i.setAction(ACTION);
-    i.putExtra("com.symbol.datawedge.api.CREATE_PROFILE", "Profile1");
-
-// request and identify the result code
-    i.putExtra("SEND_RESULT","true");
-    i.putExtra("COMMAND_IDENTIFIER","123456789");
-    this.sendBroadcast(i);
-
-// register to receive the result
-    public void onReceive(Context context, Intent intent){
-
-        String command = intent.getStringExtra("COMMAND");
-        String commandidentifier = intent.getStringExtra("COMMAND_IDENTIFIER");
-        String result = intent.getStringExtra("RESULT");
-
-        Bundle bundle = new Bundle();
-        String resultInfo = "";
-        if(intent.hasExtra("RESULT_INFO")){
-            bundle = intent.getBundleExtra("RESULT_INFO");
-            Set&lt;String&gt; keys = bundle.keySet();
-            for (String key: keys) {
-                resultInfo += key + ": "+bundle.getString(key) + "\n";
-            }
-        }
-
-        String text = "Command: "+command+"\n" +
-                      "Result: " +result+"\n" +
-                      "Result Info: " +resultInfo + "\n" +
-                      "CID:"+commandidentifier;
-
-        Toast.makeText(context, text, Toast.LENGTH_LONG).show();
-
-    };
 </code></pre>
 
 <hr>
