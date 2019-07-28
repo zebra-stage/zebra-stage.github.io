@@ -455,7 +455,7 @@ With a device that has a bigger size screen, users may be able to finish their t
 <p>Since it's likely that the EC30-targeted app is being ported from a device with higher resolution than the EC30's 480 x 854 pixels, it's probably better to create all new UI layouts than to squeeze existing ones onto a smaller screen. <strong>A common EC30 UI issue comes when inputting text when in portrait mode</strong>; the narrow keypad doesn't provide enough space between keys. One solution is to switch device orientation to landscape mode whenever text input is required, and to switch back again when finished.  </p>
 
 <p><img alt="image" style="height:250px" src="force_landscape.png">
-<em>It's easier to type on a wider SIP</em>.<br></p>
+<em>It's easier to type on a wider SIP. Click to enlarge</em>.<br></p>
 
 <h5 id="howtotogglelandscapemode" class="anchor"><a class="heading-anchor" href="#howtotogglelandscapemode"><span></span></a>How to Toggle Landscape Mode</h5>
 
@@ -479,70 +479,87 @@ With a device that has a bigger size screen, users may be able to finish their t
 <li><code>onEditorAction()</code></li>
 </ul>
 
-<p><strong>Set and lock desired screen orientation</strong>:   </p>
-
-<ol>
-<li><p>Have the app's <code>activity</code> class implement the listeners below for Touch and EditorAction:</p>
+<h4 id="setandlockdesiredscreenorientation" class="anchor"><a class="heading-anchor" href="#setandlockdesiredscreenorientation"><span></span></a>Set and lock desired screen orientation:</h4>
 
 <pre class="prettyprint"><code>
-public class MainActivity extends AppCompatActivity implements View.OnClickListener, View.OnTouchListener,TextView.OnEditorActionListener { 
+public class MainActivity extends AppCompatActivity implements View.OnClickListener,View.OnTouchListener,TextView.OnEditorActionListener {
 
-……………..
-…………………….
-……………………………
-}
-</code></pre></li>
+    private EditText editTextFirstName = null;
+    private EditText editTextLastName = null;
+    private EditText editTextMobile = null;
 
-<li><p>Override <code>onClick()</code>, <code>onTouch()</code> and <code>onEditorAction()</code> methods, set the three listeners (referenced above) for all text fields in the app UI, and also set a hint for them:</p>
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
 
-<pre class="prettyprint"><code>
-@Override
-public void onClick(View v) {
+        //Set click and touch listeners to edit text fields:
+        editTextFirstName = (EditText) findViewById(R.id.editFirstName);
+        editTextFirstName.setOnClickListener(this);
+        editTextFirstName.setOnTouchListener(this);
+        editTextFirstName.setOnEditorActionListener(this);
 
-switch (v.getId()) {
-case R.id.buttonSubmit:
+        editTextLastName = (EditText) findViewById(R.id.editLastName);
+        editTextLastName.setOnClickListener(this);
+        editTextLastName.setOnTouchListener(this);
+        editTextLastName.setOnEditorActionListener(this);
 
-// Unlock screen after tapping submit button:
-setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR);
-break;
+        editTextMobile = (EditText) findViewById(R.id.editMobile);
+        editTextMobile.setOnClickListener(this);
+        editTextLastName.setOnTouchListener(this);
+        editTextMobile.setOnEditorActionListener(this);
 
-default:
-// If in portrait mode, put device into landscape mode and lock rotation. 
-// If already in landscape mode, just lock rotation:
+        //Set click listener for submit button:
+        Button button = (Button) findViewById(R.id.buttonSubmit);
+        button.setOnClickListener(this);
+    }
 
-if (getResources().getConfiguration().orientation  != Configuration.ORIENTATION_LANDSCAPE){
-setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-} 
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.buttonSubmit:
 
-else {
-setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
-}
+        // Unlock screen after tapping submit button:
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR);
+                break;
 
-break;
-}
-}
+            default:
+        // If in portrait mode, put device in landscape mode and lock rotation. 
+        // If already in landscape mode, just lock rotation:
+                if (getResources().getConfiguration().orientation  != Configuration.ORIENTATION_LANDSCAPE){
+                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+                } else {
+                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
+                }
+                break;
+        }
+    }
 
-@Override
-public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-    if(actionId != EditorInfo.IME_ACTION_DONE) {
+    @Override
+    public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+        if(actionId != EditorInfo.IME_ACTION_DONE) {
+            return false;
+        }
+        //Unlock the screen rotation:
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR);
         return false;
     }
-    //Unlock the screen rotation:
-    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR);
-    return false;
-}
 
-@Override
-public boolean onTouch(View v, MotionEvent event) {
-    Log.d(MainActivity.class.getName(),"onTouch()");
-    //On touch requesting the focus for the view.
-    if (event.getAction() == MotionEvent.ACTION_DOWN) {
-        v.requestFocus();
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
     }
-    return false;
+
+    @Override
+    public boolean onTouch(View v, MotionEvent event) {
+        //On touch requesting the focus for the view.
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            v.requestFocus();
+        }
+        return false;
+    }
 }
-</code></pre></li>
-</ol>
+</code></pre>
 
 <h3 id="inputalternatives" class="anchor"><a class="heading-anchor" href="#inputalternatives"><span></span></a>Input Alternatives</h3>
 
@@ -551,39 +568,86 @@ public boolean onTouch(View v, MotionEvent event) {
 <p><img alt="image" style="height:250px" src="spinner_LR_nav.png">
 <em>Click image to enlarge.</em></p>
 
-<h3 id="samplecode" class="anchor"><a class="heading-anchor" href="#samplecode"><span></span></a>Sample Code</h3>
+<h4 id="touseinputalternatives" class="anchor"><a class="heading-anchor" href="#touseinputalternatives"><span></span></a>To use input alternatives:</h4>
 
-<h4 id="dropdownspinner" class="anchor"><a class="heading-anchor" href="#dropdownspinner"><span></span></a>Drop-down Spinner</h4>
+<ol>
+<li><p>Download the desired controls from the list below:<br>
+<a href="dropdown.aar">dropdown.aar</a> | Drop-down spinner<br>
+<a href="CustomSelectionView.aar">CustomSelectionView.aar</a> | Left-right navigator<br></p></li>
 
-<pre class="prettyprint"><code>&lt;com.zebra.dropdown.DropDown 
-    android:id="@+id/cdp1" 
-    android:layout_width="300dp" 
-    android:layout_height="40dp" 
-    android:layout_marginTop="30dp" 
-    android:layout_marginLeft="10dp" 
-    app:dd_gravity="CENTER" 
-    app:layout_constraintLeft_toLeftOf="parent" 
-    app:layout_constraintTop_toTopOf="parent"
-/&gt; 
+<li><p><strong>Import the code</strong>: <br>
+<strong>File-&gt;Project Structure -&gt; “+" (plus sign in top-left corner) -&gt;import .JAR/.AAR package -&gt; [file name]</strong></p></li>
+
+<li><p><strong>Add control to layout .xml</strong> as below:<br>
+<strong>Drop-down spinner</strong>:<br></p>
+
+<pre class="prettyprint"><code>&lt;com.zebra.dropdown.DropDown
+    android:id="@+id/cdp1"
+    android:layout_width="300dp"
+    android:layout_height="40dp"
+    android:layout_marginTop="30dp"
+    android:layout_marginLeft="10dp"
+    app:dd_gravity="CENTER"
+    app:layout_constraintLeft_toLeftOf="parent"
+    app:layout_constraintTop_toTopOf="parent"/&gt;
 </code></pre>
 
-<h4 id="leftrightnavigator" class="anchor"><a class="heading-anchor" href="#leftrightnavigator"><span></span></a>Left-Right Navigator</h4>
+<p><strong>Left-right navigator</strong>:<br></p>
 
-<pre class="prettyprint"><code>&lt;com.zebra.selectionview.CustomSelectionView 
-    android:id="@+id/csv1" 
-    android:layout_width="300dp" 
-    android:layout_height="40dp" 
-    android:layout_marginTop="30dp" 
-    android:layout_marginLeft="10dp" 
-    app:csv_gravity="CENTER" 
-    app:layout_constraintLeft_toLeftOf="parent" 
-    app:layout_constraintTop_toBottomOf="@+id/cdp1"
-/&gt; 
+<pre class="prettyprint"><code>&lt;com.zebra.selectionview.CustomSelectionView
+    android:id="@+id/csv1"
+    android:layout_width="300dp"
+    android:layout_height="40dp"
+    android:layout_marginTop="30dp"
+    android:layout_marginLeft="10dp"
+    app:csv_gravity="CENTER"
+    app:layout_constraintLeft_toLeftOf="parent"
+    app:layout_constraintTop_toBottomOf="@+id/cdp1"/&gt;
+</code></pre></li>
+
+<li><p><strong>Add items in the control</strong> using the <code>setItemList()</code> method as below: </p>
+
+<pre class="prettyprint"><code>
+public class MainActivity extends AppCompatActivity {
+
+<pre><code>private DropDown mCustomDropDown;
+private CustomSelectionView mCustomSelectionView;
+
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+    setContentView(R.layout.activity_main);
+
+    ArrayList&amp;lt;String&amp;gt; strings = new ArrayList&amp;lt;String&amp;gt;();
+    for (int i = 0; i &amp;lt;= 50; i++) {
+        strings.add("Item " + i);
+    }
+    mCustomDropDown = (DropDown) findViewById(R.id.cdp1);
+    mCustomDropDown.setItemList(strings);
+
+    mCustomSelectionView = (CustomSelectionView) findViewById(R.id.csv1);
+    mCustomSelectionView.setItemList(strings);
 </code></pre>
+
+}
+</code></pre></li>
+
+<li><p><strong>Access selected item from drop-down or left-right navigator control</strong> using the <code>getSelectedItem()</code> method as below: </p>
+
+<pre class="prettyprint"><code>
+public void onSubmitClick(View view){
+        Toast.makeText(this,"Selected Item on Drop down is = " + mCustomDropDown.getSelectedItem() 
+                    "\n Selected Item on Left Right Navigator is = " + mCustomSelectionView.getSelectedItem(),Toast.LENGTH_SHORT).show();
+}
+</code></pre></li>
+</ol>
+
+<hr>
 
 <h3 id="embeddedtools" class="anchor"><a class="heading-anchor" href="#embeddedtools"><span></span></a>Embedded Tools</h3>
 
-<p>The EC30 implements embedded tools to simplify changes to display size and font scaling. Accessed through the "Power-off" menu when developer options are enabled on the device, the tools are designed to simplify changes to the UX for testing and can be easily disabled before device deployment. </p>
+<p>The EC30 implements embedded tools to simplify changes to display size and font scaling during development. Accessed through the "Power-off" menu when developer options are enabled on the device, the tools are designed to simplify changes to the UX for testing and can be easily disabled before device deployment. </p>
 
 <p><img alt="image" style="height:250px" src="embedded_apps.png">
 <em>Click image to enlarge.</em></p>
@@ -609,7 +673,7 @@ public boolean onTouch(View v, MotionEvent event) {
 
 <h2 id="powermanagement" class="anchor"><a class="heading-anchor" href="#powermanagement"><span></span></a>Power Management</h2>
 
-<p>The EC30's 1200 mAh Li-Ion PowerPrecision+ battery is rated to provide a full 10 hours of continuous operation. However, battery performance varies greatly depending on device settings, especially those of the display panel and backlight. <strong>To maximize operation of EC30 devices while on battery power, Zebra recommends the following power-management best practices</strong>.</p>
+<p>The EC30's 1200 mAh Li-Ion PowerPrecision+ battery is rated to provide a full 10 hours of continuous operation. However, battery performance varies greatly depending on device settings, especially those of the display panel and backlight. <strong>To maximize operation of EC30 devices while on battery power, Zebra recommends the following power-management best practices</strong>:</p>
 
 <h5 id="toprolongbatterylife" class="anchor"><a class="heading-anchor" href="#toprolongbatterylife"><span></span></a>To Prolong Battery Life:</h5>
 
@@ -638,18 +702,79 @@ public boolean onTouch(View v, MotionEvent event) {
 <h2 id="alsosee" class="anchor"><a class="heading-anchor" href="#alsosee"><span></span></a>Also See</h2>
 
 <ul>
-<li><a href="https://material.io/">Google Material Design</a> | Google app design tool</li>
+<li><strong><a href="https://material.io/">Google Material Design</a> | Google app design tool</strong></li>
 
-<li><strong><a href="https://developer.android.com/guide/practices/screens_support">Screen compatibility overview</a> | Google development community</strong> <code>Recommended</code></li>
+<li><strong><a href="https://developer.android.com/guide/practices/screens_support">Screen compatibility overview</a> | Google development community</strong></li>
 
-<li><strong><a href="https://developer.android.com/training/multiscreen/screensizes">Support different screen sizes</a> | Google development community</strong> <code>Recommended</code> </li>
+<li><strong><a href="https://developer.android.com/training/multiscreen/screensizes">Support different screen sizes</a> | Google development community</strong> </li>
 
 <li><a href="https://developer.android.com/training/multiscreen/screendensities">Support different pixel densities</a> | Google development community</li>
 
 <li><a href="https://developer.android.com/topic/performance/power/">Optimize for battery life</a> | Google development community</li>
 
 <li><a href="https://developer.zebra.com/community/home/blog/2018/10/26/keeping-your-application-running-when-the-device-wants-to-sleep">Keeping an app running when it wants to sleep</a> | Zebra engineering</li>
-</ul><p></p>
+</ul>
+
+<!-- 7/28/19- removed from "Set and lock desired screen orientation" section, per eng. 
+1. Have the app's `activity` class implement the listeners below for Touch and EditorAction:
+
+        :::Java
+        public class MainActivity extends AppCompatActivity implements View.OnClickListener, View.OnTouchListener,TextView.OnEditorActionListener { 
+
+        ……………..
+        …………………….
+        ……………………………
+        }
+
+2. Override `onClick()`, `onTouch()` and `onEditorAction()` methods, set the three listeners (referenced above) for all text fields in the app UI, and also set a hint for them:
+
+        :::Java
+        @Override
+        public void onClick(View v) {
+
+        switch (v.getId()) {
+        case R.id.buttonSubmit:
+
+        // Unlock screen after tapping submit button:
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR);
+        break;
+
+        default:
+        // If in portrait mode, put device into landscape mode and lock rotation. 
+        // If already in landscape mode, just lock rotation:
+
+        if (getResources().getConfiguration().orientation  != Configuration.ORIENTATION_LANDSCAPE){
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        } 
+
+        else {
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
+        }
+
+        break;
+        }
+        }
+
+        @Override
+        public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+            if(actionId != EditorInfo.IME_ACTION_DONE) {
+                return false;
+            }
+            //Unlock the screen rotation:
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR);
+            return false;
+        }
+
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            Log.d(MainActivity.class.getName(),"onTouch()");
+            //On touch requesting the focus for the view.
+            if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                v.requestFocus();
+            }
+            return false;
+        }
+ --><p></p>
                                         
 
 
