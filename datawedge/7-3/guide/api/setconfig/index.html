@@ -2,6 +2,9 @@
 <!DOCTYPE html>
 <html lang="en"><head>
     <meta charset="utf-8">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="-1">
+    <meta http-equiv="CACHE-CONTROL" content="NO-CACHE">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Online Documentation for Zebra Technologies developer tools and utiltiescomp including EMDK for Android, EMDK for Xamarin, StageNow, Enterprise Browser.">
     <meta name="author" content="Zebra Technologies">
@@ -277,6 +280,8 @@ This API implements [nested bundles](../overview/#nestedbundles), which contain 
 <li><strong>DataWedge 7.2 -</strong> Added new DotCode decoder support.</li>
 
 <li><strong>DataWedge 7.3 -</strong> Added new Decoder Signature support, new Grid Matrix decoder support and new keystroke output parameters.</li>
+
+<li><strong>DataWedge 7.3.22 -</strong> Added new RFID Input feature.</li>
 </ul>
 
 <h3 id="functionprototype" class="anchor"><a class="heading-anchor" href="#functionprototype"><span></span></a>Function Prototype</h3>
@@ -347,6 +352,8 @@ i.putExtra("com.symbol.datawedge.api.SET_CONFIG", &lt;mainbundle&gt;);
 
 <li><strong>MSR</strong> (Magnetic Stripe Reader) input</li>
 
+<li><strong>RFID</strong> (Radio-frequency Identification) input</li>
+
 <li><strong>SIMULSCAN</strong> input</li>
 
 <li><strong>VOICE</strong> input</li>
@@ -402,6 +409,46 @@ _A visual representation of nested SET_CONFIG bundles. [See example code](#examp
 <br>
 If set to “true”, the parameter <code>scanner_selection_by_identifier</code> is ignored and the configuration is saved as a Global Scanner Configuration. If there is any previous configuration for any individual scanners, they will be replaced with the new global configuration. <br>
 If set to "false", the configuration will be saved for the individual selected scanner only. In the event the scanner selection is set to “Auto”, the current default scanner configuration is updated.</li></ul></li>
+
+<li><p><strong>RFID -</strong> takes values as indicated below:</p>
+
+<ul>
+<li><code>rfid_input_enabled</code> [string] - true/false</li>
+
+<li><code>rfid_beeper_enable</code> [string] - true/false</li>
+
+<li><code>rfid_led_enable</code> [string] - true/false</li>
+
+<li><code>rfid_antenna_transmit_power</code> [string] - 5 to 30</li>
+
+<li><code>rfid_memory_bank</code> [string]:
+<ul>
+<li>0 - None (default)</li>
+<li>1 - User</li>
+<li>2 - Reserved</li>
+<li>3 - TID (tag identification)</li>
+<li>4 - EPC (electronic product code)</li>
+</ul></li>
+
+<li><code>rfid_session</code> [string] - configures the session to read. This is one of the singulation controls in RFID:
+<ul>
+<li>0 - Session 0</li>
+<li>1 - Session 1 (default)</li>
+<li>2 - Session 2</li>
+<li>3 - Session 3</li>
+</ul></li>
+
+<li><code>rfid_filter_duplicate_tags</code> [string] - true/false</li>
+
+<li><code>rfid_hardware_trigger_enabled</code> [string] - true/false</li>
+
+<li><code>rfid_tag_read_duration</code> [string] - 10 to 60000 (in ms)</li>
+
+<li><code>rfid_trigger_mode</code> [string]:
+<ul>
+<li>0 - Immediate (default)</li>
+<li>1 - Continuous</li>
+</ul></li></ul></li>
 
 <li><p><strong>SERIAL -</strong> takes values as indicated below: 
 <br></p>
@@ -740,7 +787,7 @@ If set to "false", the configuration will be saved for the individual selected s
 
 <h3 id="resultcodes" class="anchor"><a class="heading-anchor" href="#resultcodes"><span></span></a>Result Codes</h3>
 
-<p>DataWedge returns the following error codes if the app includes the intent extras <code>RECEIVE_RESULT</code> and <code>COMMAND_IDENTIFIER</code> to enable the app to get results using the DataWedge result intent mechanism. See <a href="#example">Example</a>, below. </p>
+<p>DataWedge returns the following error codes if the app includes the intent extras <code>SEND_RESULT</code> and <code>COMMAND_IDENTIFIER</code> to enable the app to get results using the DataWedge result intent mechanism. See <a href="#example">Example</a>, below. </p>
 
 <ul>
 <li><strong>PLUGIN_NOT_SUPPORTED -</strong> An attempt was made to configure a plug-in that is not supported by DataWedge intent APIs</li>
@@ -1351,6 +1398,11 @@ Other Scanner Input Parameters:</p>
    <tr>
     <td>multi_barcode_count</td>
     <td>Integer from 2–10</td>
+  </tr>
+
+  <tr>
+    <td>instant_reporting_enable</td>
+    <td>true<br>false</td>
   </tr>
 
   <tr>
@@ -2083,6 +2135,66 @@ See <strong>UDI Data Output</strong> in <a href="../../output/ip#udidataoutput">
     i.putExtra("com.symbol.datawedge.api.SET_CONFIG", bMain);
 
     this.sendBroadcast(i);
+</code></pre>
+
+<h3 id="setrfidinputconfiguration" class="anchor"><a class="heading-anchor" href="#setrfidinputconfiguration"><span></span></a>Set RFID input configuration</h3>
+
+<pre class="prettyprint"><code>private void&nbsp;createProfile() {&nbsp;
+&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Create bundle for profile configuration&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Bundle&nbsp;setConfigBundle&nbsp;= new&nbsp;Bundle();&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;setConfigBundle.putString("PROFILE_NAME","SampleConfigApi");&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;setConfigBundle.putString("PROFILE_ENABLED", "true");&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;setConfigBundle.putString("CONFIG_MODE","CREATE_IF_NOT_EXIST");&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;setConfigBundle.putString("RESET_CONFIG", "false");&nbsp;
+&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Associate profile with this app&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Bundle&nbsp;appConfig&nbsp;= new&nbsp;Bundle();&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;appConfig.putString("PACKAGE_NAME",&nbsp;getPackageName());&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;appConfig.putStringArray("ACTIVITY_LIST", new&nbsp;String[]{"*"});&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;setConfigBundle.putParcelableArray("APP_LIST", new Bundle[]{appConfig});&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;setConfigBundle.remove("PLUGIN_CONFIG");&nbsp;
+&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Set RFID configuration&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Bundle&nbsp;rfidConfigParamList&nbsp; =&nbsp;new Bundle();&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rfidConfigParamList.putString("rfid_input_enabled", "true");&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rfidConfigParamList.putString("rfid_beeper_enable", "true");&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rfidConfigParamList.putString("rfid_led_enable", "true");&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rfidConfigParamList.putString("rfid_antenna_transmit_power", "30");&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rfidConfigParamList.putString("rfid_memory_bank", "2");&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rfidConfigParamList.putString("rfid_session", "1");&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rfidConfigParamList.putString("rfid_trigger_mode", "1");&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rfidConfigParamList.putString("rfid_filter_duplicate_tags", "true");&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rfidConfigParamList.putString("rfid_hardware_trigger_enabled", "true");&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rfidConfigParamList.putString("rfid_tag_read_duration", "250");&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Bundle&nbsp;rfidConfigBundle&nbsp;= new&nbsp;Bundle();&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rfidConfigBundle.putString("PLUGIN_NAME", "RFID");&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rfidConfigBundle.putString("RESET_CONFIG", "true");&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rfidConfigBundle.putBundle("PARAM_LIST",&nbsp;rfidConfigParamList);&nbsp;
+&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Configure intent output for captured data to be sent to this app&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Bundle&nbsp;intentConfig&nbsp;= new&nbsp;Bundle();&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;intentConfig.putString("PLUGIN_NAME", "INTENT");&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;intentConfig.putString("RESET_CONFIG", "true");&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Bundle&nbsp;intentProps&nbsp;= new&nbsp;Bundle();&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;intentProps.putString("intent_output_enabled", "true");&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;intentProps.putString("intent_action", "com.zebra.rfid.rwdemo.RWDEMO");&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;intentProps.putString("intent_category", "android.intent.category.DEFAULT");&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;intentProps.putString("intent_delivery", "0");&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;intentConfig.putBundle("PARAM_LIST",&nbsp;intentProps);&nbsp;
+&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Add configurations into a collection&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ArrayList&lt;Parcelable&gt;&nbsp;configBundles&nbsp;= new&nbsp;ArrayList&lt;&gt;();&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;configBundles.add(rfidConfigBundle);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;configBundles.add(intentConfig);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;setConfigBundle.putParcelableArrayList("PLUGIN_CONFIG",&nbsp;configBundles);&nbsp;
+&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Broadcast the intent&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Intent&nbsp;intent&nbsp; =&nbsp;new Intent();&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;intent.setAction("com.symbol.datawedge.api.ACTION");&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;intent.putExtra("com.symbol.datawedge.api.SET_CONFIG",&nbsp;setConfigBundle);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sendBroadcast(intent);
+}&nbsp;
 </code></pre>
 
 <h3 id="setserialinputconfiguration" class="anchor"><a class="heading-anchor" href="#setserialinputconfiguration"><span></span></a>Set serial input configuration</h3>
