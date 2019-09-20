@@ -229,62 +229,91 @@
 <p>Enterprise Keyboard APIs allow the following functions: </p>
 
 <ul>
-<li><strong>GET</strong> returns a list of: 
+<li><strong>ENABLE</strong> (true/false) enables or disables the keyboard </li>
+
+<li><strong>GET</strong> can return lists of: 
 
 
 <ul>
-<li>available keyboard layouts</li>
+<li>Available keyboard layouts</li>
 
-<li>the current keyboard layout group and current layout name</li></ul>
+<li>Current keyboard layout group and current layout name</li></ul>
 </li>
 
 <li><strong>SET</strong> switches to the specified keyboard layout</li>
 
-<li><strong>SHOW</strong> </li>
+<li><strong>SHOW</strong> displays the specified layout on the device</li>
 
-<li><strong>ENABLE</strong> (true/false) enables or disables the keyboard </li>
-
-<li><strong>RESET</strong> Resets EKB layouts and enables the keyboard (if disabled)</li>
+<li><strong>RESET</strong> Resets EKB layouts and enables Enterprise Keyboard (if disabled)</li>
 </ul>
+
+<hr>
+
+<h3 id="usingekbapis" class="anchor"><a class="heading-anchor" href="#usingekbapis"><span></span></a>Using EKB APIs</h3>
+
+<p>The following example describes a company with business requirements that call for an application with four GUI screens: </p>
+
+<ul>
+<li><code>FunctionKeyActivity</code></li>
+
+<li><code>DisableActivity</code></li>
+
+<li><code>MultiInputActivity</code></li>
+
+<li><code>ResetActivity</code> </li>
+</ul>
+
+<p><code>FunctionKeyActivity</code> is the launcher activity of the application, and is the first activity in the following sequence of the activities:</p>
+
+<p><code>FunctionKeyActivity</code> -&gt; <code>DisableActivity</code> -&gt; <code>MultiInputActivity</code> -&gt; <code>ResetActivity</code></p>
+
+<p>Each activity involves the following keyboard requirements:</p>
+
+<p>When <code>FunctionKeyActivity</code> comes to the foreground, the app should <code>GET</code> the following information:</p>
+
+<ul>
+<li><p>Available layouts in the device</p></li>
+
+<li><p>Current layout group name</p></li>
+
+<li><p>Current layout name</p></li>
+
+<li><p><code>FunctionKeyActivity</code> should then set a function-key keyboard layout to show immediately when the app it comes in the foreground.</p></li>
+
+<li><p><code>DisableActivity</code> does not use a keyboard, so keyboard should be disabled when this activity comes to the foreground. If the device user taps on an input area, a keyboard should not appear.</p></li>
+
+<li><p><code>MultiInputActivity</code> has two input areas. When the device user taps on the first input area, a qwerty keyboard layout appears. When the user taps on the second input area, the numeric keyboard layout appears.</p></li>
+
+<li><p><code>ResetActivity</code> uses a regular keyboard, so keyboard should be reset.</p></li>
+</ul>
+
+<blockquote>
+  <p><strong>Note</strong>: Zebra provides a sample Android app that implements the functions described above.</p>
+</blockquote>
 
 <hr>
 
 <h3 id="importantpleaseread" class="anchor"><a class="heading-anchor" href="#importantpleaseread"><span></span></a><code>IMPORTANT - PLEASE READ</code></h3>
 
 <ul>
-<li><strong><u>Only one keyboard or custom key Layout can be displayed on the device screen at a time</u></strong>. When a custom key Layout is displayed, all other keyboards are hidden, including the standard Enterprise Keyboard alpha-numeric Layout. </li>
+<li><strong><u>Only one keyboard or custom key layout can be displayed on the device screen at a time</u></strong>. When a custom key layout is displayed, all other keyboards are hidden, including the standard Enterprise Keyboard alpha-numeric layout. </li>
 
 <li><strong>Layouts made with EKD must be called by an app using intents</strong> to be displayed (see <a href="#intentapis">Intent APIs section</a>).</li>
 
-<li><strong>Apps on the device can access <u>only a single EKD project file</u></strong>, but multiple Layouts can be saved in that single project file and called independently through intents.  </li>
+<li><strong>Apps on the device can access <u>only a single EKD project file</u></strong>, but multiple layouts can be saved in that single project file and called independently through intents.  </li>
 
 <li>EKD projects are saved and deployed as encrypted files that can be decrypted on the device only by <strong>DataWedge, Enterprise Browser and Enterprise Keyboard</strong> and applications running on a Zebra Android device. </li>
 
-<li>Layout files can be imported into Enterprise Keyboard Designer and modified or supplemented with additional keys and/or Layouts. </li>
+<li>Layout files can be imported into Enterprise Keyboard Designer and modified or supplemented with additional keys and/or layouts. </li>
 
 <li><strong>Zebra recommends resetting to the default input device when quitting an app that uses EKB</strong>. </li>
 
 <li>In this guide, the terms “button” and “key” are used interchangeably. </li>
+
+<li><strong>If an app contains logic to show the keyboard automatically</strong> when an activity comes to the foreground (i.e. the activity has a declared flag of <code>android:windowSoftInputMode</code>=<code>stateVisible</code> in its <code>AndroidManifest.xml</code> file), <strong>that app cannot hide the keyboard using the SHOW API</strong>.</li>
+
+<li>Apps running in full screen mode display custom keyboard layouts with an extra margin from the bottom of the device screen.</li>
 </ul>
-
-<hr>
-
-<h3 id="customkeyboarddefinitionfile" class="anchor"><a class="heading-anchor" href="#customkeyboarddefinitionfile"><span></span></a>Custom Keyboard Definition File</h3>
-
-<p>Custom keyboard layouts are created according to the business need by using , a desktop tool for Windows. The data for one or more layouts is stored in a custom keyboard definition file, an encrypted file generated by the Enterprise Keyboard Designer. This file contains information about layouts, key-value assignments, etc., for each keyboard layout. This single file also can contain multiple layout groups, each of which defines a layout.</p>
-
-<p><strong>To push a keyboard definition file</strong>:</p>
-
-<ol>
-<li>Locate the custom keyboard definition file (i.e. “EKBCustomLayouts.encrypted”) that contains the desired layouts.</li>
-
-<li>In the device Settings panel, set Enterprise Keyboard as a default IME.</li>
-
-<li>Push definition file to the following folder on the device:<br>
-<code>/enterprise/device/settings/ekb/config/</code></li>
-</ol>
-
-<p><strong>Custom keyboard layouts are available to the app (via intents) immediately upon deployment of the</strong> <code>EKBCustomLayouts.encrypted</code> <strong>file</strong>. </p>
 
 <hr>
 
@@ -346,137 +375,6 @@ public void onReceive(Context context, Intent intent) {
 
 <h2 id="samplecode" class="anchor"><a class="heading-anchor" href="#samplecode"><span></span></a>Sample Code</h2>
 
-<h3 id="getavailablekeyboardlayouts" class="anchor"><a class="heading-anchor" href="#getavailablekeyboardlayouts"><span></span></a>Get available keyboard layouts</h3>
-
-<p>Returns a list of custom enterprise keyboard layouts currently available in the device.</p>
-
-<h5 id="sendtheintenttogetavailablekeyboardlayouts" class="anchor"><a class="heading-anchor" href="#sendtheintenttogetavailablekeyboardlayouts"><span></span></a>Send the intent to get available keyboard layouts:</h5>
-
-<pre class="prettyprint"><code>
-    Intent intent = new Intent();
-intent.setAction("com.symbol.ekb.api.ACTION_GET");
-    intent.setPackage("com.symbol.mxmf.csp.enterprisekeyboard");
-intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
-String[] propertiesToRetrieve = {"AVAILABLE_LAYOUTS"};
-intent.putExtra("PROPERTIES_TO_GET", propertiesToRetrieve);
-
-// Intent sent back with status (via explicit broadcast)
-
-Intent responseIntent = new Intent(this, MyBroadcastReceiver.class);
-PendingIntent piResponse = PendingIntent.getBroadcast(getApplicationContext(), requestCode, responseIntent, flags);
-intent.putExtra("CALLBACK_RESPONSE", piResponse);
-sendBroadcast(intent);
-</code></pre>
-
-<h5 id="receivetheresult" class="anchor"><a class="heading-anchor" href="#receivetheresult"><span></span></a>Receive the result:</h5>
-
-<pre class="prettyprint"><code>
-    @Override
-public void onReceive(Context context, Intent intent) {
-    Toast.makeText(context, "onReceived", Toast.LENGTH_SHORT).show();
-    Bundle mBundle = intent.getExtras();
-    String result = mBundle.getString("RESULT_CODE");
-    String msg = mBundle.getString("RESULT_MESSAGE");
-
-    if(mBundle.get("AVAILABLE_LAYOUTS") != null) {
-        Object[] respObj = (Object[]) mBundle.getParcelableArray("AVAILABLE_LAYOUTS");
-        for(int i = 0; i &lt; respObj.length; i++) {
-            Bundle temp = (Bundle) respObj[i];
-            String layoutGroupName = temp.getString("LAYOUT_GROUP");
-            Object[] layoutNamesBundle = (Object[]) temp.get("LAYOUTS");
-            for(int j = 0; j &lt;layoutNamesBundle.length; j++) {
-                Bundle tempBundle = (Bundle) layoutNamesBundle[j];
-                String layoutName = tempBundle.getString("LAYOUT_NAME");
-            }
-        }
-    }
-}
-</code></pre>
-
-<hr>
-
-<h3 id="getcurrentlayout" class="anchor"><a class="heading-anchor" href="#getcurrentlayout"><span></span></a>Get current layout</h3>
-
-<p>This gets the current keyboard layout group and the current keyboard layout name. Returns the currently selected keyboard layout group and current keyboard layout name as set by Enterprise Keyboard.</p>
-
-<h5 id="getcurrentkeyboardlayoutgroupandlayoutname" class="anchor"><a class="heading-anchor" href="#getcurrentkeyboardlayoutgroupandlayoutname"><span></span></a>Get current keyboard layout group and layout name:</h5>
-
-<pre class="prettyprint"><code>
-    Intent intent = new Intent();
-intent.setAction("com.symbol.ekb.api.ACTION_GET");
-    intent.setPackage("com.symbol.mxmf.csp.enterprisekeyboard");
-intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
-String[] propertiesToRetrieve = {"CURRENT_LAYOUT_GROUP”,"CURRENT_LAYOUT_NAME"};
-intent.putExtra("PROPERTIES_TO_GET", propertiesToRetrieve);
-
-//  Intent which will be sent back with status (via explicit broadcast)
-
-Intent responseIntent = new Intent(this, MyBroadcastReceiver.class);
-PendingIntent piResponse = PendingIntent.getBroadcast(getApplicationContext(), requestCode, responseIntent, flags);
-intent.putExtra("CALLBACK_RESPONSE", piResponse);
-sendBroadcast(intent);
-</code></pre>
-
-<h5 id="receivetheresult-1" class="anchor"><a class="heading-anchor" href="#receivetheresult-1"><span></span></a>Receive the result:</h5>
-
-<pre class="prettyprint"><code>
-    @Override
-public void onReceive(Context context, Intent intent) {
-    Toast.makeText(context, "onReceived", Toast.LENGTH_SHORT).show();
-    Bundle mBundle = intent.getExtras();
-    String result = mBundle.getString("RESULT_CODE");
-    String msg = mBundle.getString("RESULT_MESSAGE");
-    if(mBundle.get("CURRENT_LAYOUT_GROUP") != null) {
-        String currLayoutGroup = (String) mBundle.get("CURRENT_LAYOUT_GROUP");
-    }
-    if(mBundle.get("CURRENT_LAYOUT_NAME") != null) {
-        String currLayoutName = (String) mBundle.get("CURRENT_LAYOUT_NAME");
-    }
-}
-</code></pre>
-
-<h3 id="setkeyboardlayout" class="anchor"><a class="heading-anchor" href="#setkeyboardlayout"><span></span></a>Set keyboard layout</h3>
-
-<p>Sets the custom layout in Enterprise Keyboard. While sending the intent to set the keyboard layout, developer must add <code>CURRENT_LAYOUT_GROUP</code> and <code>CURRENT_LAYOUT_NAME</code> params as extras.</p>
-
-<p>Once keyboard layout is set in Enterprise Keyboard, requested application receives a response intent with <code>RESULT_CODE</code> and <code>RESULT_MESSAGE</code> extras.</p>
-
-<h5 id="setkeyboardlayout-1" class="anchor"><a class="heading-anchor" href="#setkeyboardlayout-1"><span></span></a>Set keyboard layout:</h5>
-
-<pre class="prettyprint"><code>
-    Intent intent = new Intent();
-intent.setAction("com.symbol.ekb.api.ACTION_UPDATE");
-    intent.setPackage("com.symbol.mxmf.csp.enterprisekeyboard");
-intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
-String layoutGroupName = layoutGroup.getText().toString();
-String layout = layoutName.getText().toString();
-intent.putExtra("CURRENT_LAYOUT_GROUP", layoutGroupName);
-intent.putExtra("CURRENT_LAYOUT_NAME", layout);
-
-// Intent which will be sent back with status (via explicit broadcast)
-
-Intent responseIntent = new Intent(this, MyBroadcastReceiver.class);
-PendingIntent piResponse = PendingIntent.getBroadcast(getApplicationContext(), requestCode, responseIntent, flags);
-intent.putExtra("CALLBACK_RESPONSE", piResponse);
-sendBroadcast(intent);
-</code></pre>
-
-<h5 id="receivetheresult-2" class="anchor"><a class="heading-anchor" href="#receivetheresult-2"><span></span></a>Receive the result:</h5>
-
-<pre class="prettyprint"><code>
-    @Override
-public void onReceive(Context context, Intent intent) {
-    Toast.makeText(context, "onReceived", Toast.LENGTH_SHORT).show();
-    Bundle mBundle = intent.getExtras();
-    String result = mBundle.getString("RESULT_CODE");
-    String msg = mBundle.getString("RESULT_MESSAGE");    
-    }
-
-}
-</code></pre>
-
-<hr>
-
 <h3 id="enable" class="anchor"><a class="heading-anchor" href="#enable"><span></span></a>ENABLE</h3>
 
 <p>Used to enable or disable the keyboard. </p>
@@ -511,7 +409,7 @@ intent.putExtra("CALLBACK_RESPONSE", piResponse);
 sendBroadcast(intent);
 </code></pre>
 
-<h5 id="receivetheresult-3" class="anchor"><a class="heading-anchor" href="#receivetheresult-3"><span></span></a>Receive the result:</h5>
+<h5 id="receivetheresult" class="anchor"><a class="heading-anchor" href="#receivetheresult"><span></span></a>Receive the result:</h5>
 
 <pre class="prettyprint"><code>::java
     @Override
@@ -522,6 +420,182 @@ public void onReceive(Context context, Intent intent) {
     String msg = mBundle.getString("RESULT_MESSAGE");    
 }
 </code></pre>
+
+<hr>
+
+<h3 id="getavailablelayouts" class="anchor"><a class="heading-anchor" href="#getavailablelayouts"><span></span></a>GET (available layouts)</h3>
+
+<p>Returns a list of custom enterprise keyboard layouts currently available in the device.</p>
+
+<h5 id="getavailablekeyboardlayouts" class="anchor"><a class="heading-anchor" href="#getavailablekeyboardlayouts"><span></span></a>Get available keyboard layouts:</h5>
+
+<pre class="prettyprint"><code>
+    Intent intent = new Intent();
+intent.setAction("com.symbol.ekb.api.ACTION_GET");
+    intent.setPackage("com.symbol.mxmf.csp.enterprisekeyboard");
+intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
+String[] propertiesToRetrieve = {"AVAILABLE_LAYOUTS"};
+intent.putExtra("PROPERTIES_TO_GET", propertiesToRetrieve);
+
+// Intent sent back with status (via explicit broadcast)
+
+Intent responseIntent = new Intent(this, MyBroadcastReceiver.class);
+PendingIntent piResponse = PendingIntent.getBroadcast(getApplicationContext(), requestCode, responseIntent, flags);
+intent.putExtra("CALLBACK_RESPONSE", piResponse);
+sendBroadcast(intent);
+</code></pre>
+
+<h5 id="receivetheresult-1" class="anchor"><a class="heading-anchor" href="#receivetheresult-1"><span></span></a>Receive the result:</h5>
+
+<pre class="prettyprint"><code>
+    @Override
+public void onReceive(Context context, Intent intent) {
+    Toast.makeText(context, "onReceived", Toast.LENGTH_SHORT).show();
+    Bundle mBundle = intent.getExtras();
+    String result = mBundle.getString("RESULT_CODE");
+    String msg = mBundle.getString("RESULT_MESSAGE");
+
+    if(mBundle.get("AVAILABLE_LAYOUTS") != null) {
+        Object[] respObj = (Object[]) mBundle.getParcelableArray("AVAILABLE_LAYOUTS");
+        for(int i = 0; i &lt; respObj.length; i++) {
+            Bundle temp = (Bundle) respObj[i];
+            String layoutGroupName = temp.getString("LAYOUT_GROUP");
+            Object[] layoutNamesBundle = (Object[]) temp.get("LAYOUTS");
+            for(int j = 0; j &lt;layoutNamesBundle.length; j++) {
+                Bundle tempBundle = (Bundle) layoutNamesBundle[j];
+                String layoutName = tempBundle.getString("LAYOUT_NAME");
+            }
+        }
+    }
+}
+</code></pre>
+
+<hr>
+
+<h3 id="getcurrentlayout" class="anchor"><a class="heading-anchor" href="#getcurrentlayout"><span></span></a>GET (current layout)</h3>
+
+<p>This gets the current keyboard layout group and the current keyboard layout name. Returns the currently selected keyboard layout group and current keyboard layout name as set by Enterprise Keyboard.</p>
+
+<h5 id="getcurrentkeyboardlayoutgroupandlayoutname" class="anchor"><a class="heading-anchor" href="#getcurrentkeyboardlayoutgroupandlayoutname"><span></span></a>Get current keyboard layout group and layout name:</h5>
+
+<pre class="prettyprint"><code>
+    Intent intent = new Intent();
+intent.setAction("com.symbol.ekb.api.ACTION_GET");
+    intent.setPackage("com.symbol.mxmf.csp.enterprisekeyboard");
+intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
+String[] propertiesToRetrieve = {"CURRENT_LAYOUT_GROUP”,"CURRENT_LAYOUT_NAME"};
+intent.putExtra("PROPERTIES_TO_GET", propertiesToRetrieve);
+
+//  Intent which will be sent back with status (via explicit broadcast)
+
+Intent responseIntent = new Intent(this, MyBroadcastReceiver.class);
+PendingIntent piResponse = PendingIntent.getBroadcast(getApplicationContext(), requestCode, responseIntent, flags);
+intent.putExtra("CALLBACK_RESPONSE", piResponse);
+sendBroadcast(intent);
+</code></pre>
+
+<h5 id="receivetheresult-2" class="anchor"><a class="heading-anchor" href="#receivetheresult-2"><span></span></a>Receive the result:</h5>
+
+<pre class="prettyprint"><code>
+    @Override
+public void onReceive(Context context, Intent intent) {
+    Toast.makeText(context, "onReceived", Toast.LENGTH_SHORT).show();
+    Bundle mBundle = intent.getExtras();
+    String result = mBundle.getString("RESULT_CODE");
+    String msg = mBundle.getString("RESULT_MESSAGE");
+    if(mBundle.get("CURRENT_LAYOUT_GROUP") != null) {
+        String currLayoutGroup = (String) mBundle.get("CURRENT_LAYOUT_GROUP");
+    }
+    if(mBundle.get("CURRENT_LAYOUT_NAME") != null) {
+        String currLayoutName = (String) mBundle.get("CURRENT_LAYOUT_NAME");
+    }
+}
+</code></pre>
+
+<h3 id="setkeyboardlayout" class="anchor"><a class="heading-anchor" href="#setkeyboardlayout"><span></span></a>SET (keyboard layout)</h3>
+
+<p>Sets the custom layout in Enterprise Keyboard. While sending the intent to set the keyboard layout, developer must add <code>CURRENT_LAYOUT_GROUP</code> and <code>CURRENT_LAYOUT_NAME</code> params as extras.</p>
+
+<p>Once keyboard layout is set in Enterprise Keyboard, requested application receives a response intent with <code>RESULT_CODE</code> and <code>RESULT_MESSAGE</code> extras.</p>
+
+<h5 id="setkeyboardlayout-1" class="anchor"><a class="heading-anchor" href="#setkeyboardlayout-1"><span></span></a>Set keyboard layout:</h5>
+
+<pre class="prettyprint"><code>
+    Intent intent = new Intent();
+intent.setAction("com.symbol.ekb.api.ACTION_UPDATE");
+    intent.setPackage("com.symbol.mxmf.csp.enterprisekeyboard");
+intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
+String layoutGroupName = layoutGroup.getText().toString();
+String layout = layoutName.getText().toString();
+intent.putExtra("CURRENT_LAYOUT_GROUP", layoutGroupName);
+intent.putExtra("CURRENT_LAYOUT_NAME", layout);
+
+// Intent which will be sent back with status (via explicit broadcast)
+
+Intent responseIntent = new Intent(this, MyBroadcastReceiver.class);
+PendingIntent piResponse = PendingIntent.getBroadcast(getApplicationContext(), requestCode, responseIntent, flags);
+intent.putExtra("CALLBACK_RESPONSE", piResponse);
+sendBroadcast(intent);
+</code></pre>
+
+<h5 id="receivetheresult-3" class="anchor"><a class="heading-anchor" href="#receivetheresult-3"><span></span></a>Receive the result:</h5>
+
+<pre class="prettyprint"><code>
+    @Override
+public void onReceive(Context context, Intent intent) {
+    Toast.makeText(context, "onReceived", Toast.LENGTH_SHORT).show();
+    Bundle mBundle = intent.getExtras();
+    String result = mBundle.getString("RESULT_CODE");
+    String msg = mBundle.getString("RESULT_MESSAGE");    
+    }
+
+}
+</code></pre>
+
+<hr>
+
+<h3 id="show" class="anchor"><a class="heading-anchor" href="#show"><span></span></a>SHOW</h3>
+
+<p>Used to display the specified keyboard layout. </p>
+
+<blockquote>
+  <p><strong>NOTE</strong>: If an app contains logic to show the keyboard automatically when an activity comes to the foreground (i.e. the activity has a declared flag of <code>android:windowSoftInputMode</code>=<code>stateVisible</code> in its <code>AndroidManifest.xml</code> file), <strong>that app cannot hide the keyboard using the SHOW API</strong>.</p>
+</blockquote>
+
+<p><strong>Parameter values</strong>:</p>
+
+<p><code>INFO TO COME FROM ENGINEERING</code></p>
+
+<!-- 
+##### Show keyboard:
+    :::java
+            Intent intent = new Intent();
+        intent.setAction("com.symbol.ekb.api.ACTION_UPDATE");
+            intent.setPackage("com.symbol.mxmf.csp.enterprisekeyboard");
+        intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
+
+    // needToEnable is a Boolean object; it can be true or false:
+
+        intent.putExtra("ENABLE", needToEnable);    
+
+    //  Intent sent back with status (via explicit broadcast)
+
+    Intent responseIntent = new Intent(this, MyBroadcastReceiver.class);
+    PendingIntent piResponse = PendingIntent.getBroadcast(getApplicationContext(), requestCode, responseIntent, flags);
+    intent.putExtra("CALLBACK_RESPONSE", piResponse);
+    sendBroadcast(intent);
+
+
+##### Receive the result:
+    ::java
+        @Override
+    public void onReceive(Context context, Intent intent) {
+        Toast.makeText(context, "onReceived", Toast.LENGTH_SHORT).show();
+        Bundle mBundle = intent.getExtras();
+        String result = mBundle.getString("RESULT_CODE");
+        String msg = mBundle.getString("RESULT_MESSAGE");    
+    }
+ -->
 
 <hr>
 
@@ -567,47 +641,6 @@ public void onReceive(Context context, Intent intent) {
     String msg = mBundle.getString("RESULT_MESSAGE");    
 }
 </code></pre>
-
-<hr>
-
-<h2 id="limitations" class="anchor"><a class="heading-anchor" href="#limitations"><span></span></a>Limitations</h2>
-
-<p>If the application contains logic to show the keyboard automatically when an activity comes to the foreground (i.e. activity has a declared flag "android:windowSoftInputMode="stateVisible" in its AndroidManifest.xml file), the app cannot hide the keyboard using the SHOW API.</p>
-
-<p>If the app is running in full screen mode, the custom keyboard layout displays with an extra margin from the bottom of the device.</p>
-
-<p>A layout group can contain more than one layout; Enterprise Keyboard currently supports only one layout group.</p>
-
-<p>App Design Using EKB Intent APIs
-The following example describes a company with business requirements that call for an application with four GUI screens: </p>
-
-<p><code>FunctionKeyActivity</code>
-<code>DisableActivity</code>
-<code>MultiInputActivity</code>
-<code>ResetActivity</code> </p>
-
-<p><code>FunctionKeyActivity</code> is the launcher activity of the application, and is the first activity in the following sequence of the activities:</p>
-
-<p><code>FunctionKeyActivity</code> -&gt; <code>DisableActivity</code> -&gt; <code>MultiInputActivity</code> -&gt; <code>ResetActivity</code></p>
-
-<p>Each activity involves the following keyboard requirements:</p>
-
-<p>When <code>FunctionKeyActivity</code> comes to the foreground, the app should <code>GET</code> the following information:
-Available layouts in the device
-Current layout group name
-Current layout name</p>
-
-<p><code>FunctionKeyActivity</code> should then set a function-key keyboard layout to show immediately when the app it comes in the foreground.</p>
-
-<p><code>DisableActivity</code> does not use a keyboard, so keyboard should be disabled when this activity comes to the foreground. If the device user taps on an input area, a keyboard should not appear.</p>
-
-<p><code>MultiInputActivity</code> has two input areas. When the device user taps on the first input area, a qwerty keyboard layout appears. When the user taps on the second input area, the numeric keyboard layout appears.</p>
-
-<p><code>ResetActivity</code> uses a regular keyboard, so keyboard should be reset.</p>
-
-<blockquote>
-  <p><strong>Note</strong>: Zebra provides a sample Android app that implements the functions described above.</p>
-</blockquote>
 
 <hr><p></p>
                                         
