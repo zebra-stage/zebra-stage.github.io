@@ -302,7 +302,7 @@
 <ul>
 <li>the width of the custom key layout is greater than or equal to 50 percent of device screen width.</li>
 
-<li>the custom key layout is NOT positioned on top of the app's title bar or "Action" bar. </li></ul>
+<li>the custom key layout is NOT positioned on top of the app's title bar or toolbar (formerly known as the "Action" bar. </li></ul>
 </li>
 
 <li><strong>In some cases, window resizing results in a blank portion of the screen</strong>. To avoid this, try changing the background color of the key layout. </li>
@@ -317,45 +317,33 @@
 
 <hr>
 
-<h3 id="usingekbapis" class="anchor"><a class="heading-anchor" href="#usingekbapis"><span></span></a>Using EKB APIs</h3>
+<!-- 11/13/19- removed per eng. b/c it applies to "EKB test app"
 
-<p>The following example describes a company with business requirements that call for an application with four main activities and corresponding GUI screens: </p>
+### Using EKB APIs
+The following example describes a company with business requirements that call for an application with four main activities and corresponding GUI screens: 
 
-<ul>
-<li><code>FunctionKeyActivity</code></li>
+* `FunctionKeyActivity`
+* `DisableActivity`
+* `MultiInputActivity`
+* `ResetActivity` 
 
-<li><code>DisableActivity</code></li>
+`FunctionKeyActivity` is the launcher activity of the application, and is the first activity in the following sequence of the activities:
 
-<li><code>MultiInputActivity</code></li>
+`FunctionKeyActivity` -> `DisableActivity` -> `MultiInputActivity` -> `ResetActivity`
 
-<li><code>ResetActivity</code> </li>
-</ul>
+Each activity involves the following keyboard requirements:
 
-<p><code>FunctionKeyActivity</code> is the launcher activity of the application, and is the first activity in the following sequence of the activities:</p>
+When `FunctionKeyActivity` comes to the foreground, the app should `GET` the following information:
+* Available layouts in the device
+* Current layout group name
+* Current layout name
 
-<p><code>FunctionKeyActivity</code> -&gt; <code>DisableActivity</code> -&gt; <code>MultiInputActivity</code> -&gt; <code>ResetActivity</code></p>
+* `FunctionKeyActivity` should then set a function-key layout to show immediately when the app it comes in the foreground.
+* `DisableActivity` does not use a keyboard, so keyboard should be disabled when this activity comes to the foreground. If the device user taps on an input area, a keyboard should not appear.
+* `MultiInputActivity` has two input areas. When the device user taps on the first input area, a qwerty keyboard layout appears. When the user taps on the second input area, the numeric key layout appears.
+* `ResetActivity` uses a regular keyboard, so keyboard should be reset.
 
-<p>Each activity involves the following keyboard requirements:</p>
-
-<p>When <code>FunctionKeyActivity</code> comes to the foreground, the app should <code>GET</code> the following information:</p>
-
-<ul>
-<li><p>Available layouts in the device</p></li>
-
-<li><p>Current layout group name</p></li>
-
-<li><p>Current layout name</p></li>
-
-<li><p><code>FunctionKeyActivity</code> should then set a function-key layout to show immediately when the app it comes in the foreground.</p></li>
-
-<li><p><code>DisableActivity</code> does not use a keyboard, so keyboard should be disabled when this activity comes to the foreground. If the device user taps on an input area, a keyboard should not appear.</p></li>
-
-<li><p><code>MultiInputActivity</code> has two input areas. When the device user taps on the first input area, a qwerty keyboard layout appears. When the user taps on the second input area, the numeric key layout appears.</p></li>
-
-<li><p><code>ResetActivity</code> uses a regular keyboard, so keyboard should be reset.</p></li>
-</ul>
-
-<!-- 10/30/19- removed until the app location is known 
+10/30/19- removed until the app location is known 
 > **Note**: Zebra provides a sample Android app that implements the functions described above.
  -->
 
@@ -440,7 +428,7 @@ public void onReceive(Context context, Intent intent) {
 
 <h3 id="usecase1" class="anchor"><a class="heading-anchor" href="#usecase1"><span></span></a>Use Case 1</h3>
 
-<p>This case describes an Android app with two text input fields. Substitute sample names whown below with those in the deployed <a href="../deploy">layout definition file</a>. </p>
+<p>This case describes an Android app with two text input fields. Substitute sample names shown below with those in the deployed <a href="../deploy">layout definition file</a>. </p>
 
 <ul>
 <li><code>editText1</code> input field uses the standard Enterprise Keyboard fixed layout, which includes numeric, alpha-numeric, scan and symbol keyboards manually switchable by the user as needed.  </li>
@@ -694,9 +682,7 @@ public void onReceive(Context context, Intent intent) {
 
 <p><strong>Used to show or hide the specified key layout</strong>. </p>
 
-<blockquote>
-  <p><strong>NOTE: An app can NOT hide the keyboard using the SHOW API</strong> if the app contains logic to show the keyboard automatically when an activity comes to the foreground (i.e. the activity has a declared flag of <code>android:windowSoftInputMode</code>=<code>stateVisible</code> in its <code>AndroidManifest.xml</code> file).</p>
-</blockquote>
+<p><strong><code>IMPORTANT:</code> An app CANNOT hide the keyboard using the SHOW API if the app contains logic to show the keyboard automatically when an activity comes to the foreground</strong> (i.e. the activity has a declared flag of <code>android:windowSoftInputMode</code>=<code>stateVisible</code> in its <code>AndroidManifest.xml</code> file).</p>
 
 <p><strong>Parameter values</strong>:</p>
 
@@ -705,8 +691,6 @@ public void onReceive(Context context, Intent intent) {
 
 <li><p><strong>FALSE</strong>: Keyboard is not shown when activity is launched; shown only when the device user taps on an input field.</p></li>
 </ul>
-
-<p>Once key layout is set in Enterprise Keyboard, requested application receives a response intent containing  <code>RESULT_CODE</code> and <code>RESULT_MESSAGE</code> extras.</p>
 
 <p>Once key layout is shown/hidden, requested application receives a response intent with RESULT_CODE and RESULT_MESSAGE.</p>
 
@@ -846,7 +830,7 @@ intent.putExtra("RESET_LAYOUT", needToReset);
 Intent responseIntent = new Intent(this, MyBroadcastReceiver.class);
 PendingIntent piResponse = PendingIntent.getBroadcast(getApplicationContext(), requestCode, responseIntent, flags);
 intent.putExtra("CALLBACK_RESPONSE", piResponse);
-sendBroadcast(intent);0
+sendBroadcast(intent);
 </code></pre>
 
 <h5 id="receivetheresult-5" class="anchor"><a class="heading-anchor" href="#receivetheresult-5"><span></span></a>Receive the result:</h5>
