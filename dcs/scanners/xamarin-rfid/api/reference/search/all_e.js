@@ -1,0 +1,22 @@
+var searchData=
+[
+  ['radioerrorevent',['RadioErrorEvent',['../d7/dde/classZebraRfidSdk_1_1RadioErrorEvent.html',1,'ZebraRfidSdk']]],
+  ['radioeventhandler',['RadioEventHandler',['../d7/d3b/classZebraRfidSdk_1_1Reader.html#a966234d787b9792cb3dfbcad98f0deab',1,'ZebraRfidSdk::Reader']]],
+  ['radiotemprature',['RadioTemprature',['../d2/d71/classZebraRfidSdk_1_1TemperatureEvent.html#ac1840739880c1754664e506f15d4833e',1,'ZebraRfidSdk::TemperatureEvent']]],
+  ['reader',['Reader',['../d7/d3b/classZebraRfidSdk_1_1Reader.html',1,'ZebraRfidSdk']]],
+  ['readerappearedeventhandler',['ReaderAppearedEventHandler',['../d2/d76/classZebraRfidSdk_1_1Readers.html#aa32072ee617a5b72ec7c28bd3ebfb187',1,'ZebraRfidSdk::Readers']]],
+  ['readercapabilities',['ReaderCapabilities',['../dd/d72/classZebraRfidSdk_1_1ReaderCapabilities.html',1,'ZebraRfidSdk.ReaderCapabilities'],['../d7/d3b/classZebraRfidSdk_1_1Reader.html#a267875314de1a3e791677f46a51707fd',1,'ZebraRfidSdk.Reader.ReaderCapabilities()']]],
+  ['readerconnectedeventhandler',['ReaderConnectedEventHandler',['../d2/d76/classZebraRfidSdk_1_1Readers.html#a5d8ff61aa3101c5d839140848fb41134',1,'ZebraRfidSdk::Readers']]],
+  ['readerdisappearedeventhandler',['ReaderDisappearedEventHandler',['../d2/d76/classZebraRfidSdk_1_1Readers.html#a23c351034723c54e5806ece08dcf27ae',1,'ZebraRfidSdk::Readers']]],
+  ['readerdisconnectedeventhandler',['ReaderDisconnectedEventHandler',['../d2/d76/classZebraRfidSdk_1_1Readers.html#a631578585ac45cdd18a564aceb550690',1,'ZebraRfidSdk::Readers']]],
+  ['readermanager',['ReaderManager',['../dd/d07/classZebraRfidSdk_1_1RfidSdk.html#a4621aa73193f55eca609ac6f72991461',1,'ZebraRfidSdk::RfidSdk']]],
+  ['readernotifydataeventhandler',['ReaderNotifyDataEventHandler',['../d2/d76/classZebraRfidSdk_1_1Readers.html#a7d59a83218c768ed5ccbb1fa92cd38ff',1,'ZebraRfidSdk::Readers']]],
+  ['readers',['Readers',['../d2/d76/classZebraRfidSdk_1_1Readers.html',1,'ZebraRfidSdk']]],
+  ['regioncode',['RegionCode',['../d1/db2/classZebraRfidSdk_1_1RegulatoryConfig.html#a02d5022872dfdc175ee006c5ba021911',1,'ZebraRfidSdk::RegulatoryConfig']]],
+  ['regioninformation',['RegionInformation',['../d4/d21/classZebraRfidSdk_1_1RegionInformation.html',1,'ZebraRfidSdk']]],
+  ['regulatoryconfig',['RegulatoryConfig',['../d1/db2/classZebraRfidSdk_1_1RegulatoryConfig.html',1,'ZebraRfidSdk.RegulatoryConfig'],['../d6/d4e/classZebraRfidSdk_1_1Configuration.html#a37ace26999dc74f3ec7d5dc644010563',1,'ZebraRfidSdk.Configuration.RegulatoryConfig()']]],
+  ['repeatmonitoring',['RepeatMonitoring',['../d8/d68/classZebraRfidSdk_1_1StartTriggerConfiguration.html#a7c665395db4db7ca4d6ff94aaa9ed04c',1,'ZebraRfidSdk::StartTriggerConfiguration']]],
+  ['rfidaccessoperationcode',['RFIDAccessOperationCode',['../da/d37/classZebraRfidSdk_1_1RFIDAccessOperationCode.html',1,'ZebraRfidSdk']]],
+  ['rfidsdk',['RfidSdk',['../dd/d07/classZebraRfidSdk_1_1RfidSdk.html',1,'ZebraRfidSdk']]],
+  ['rssi',['Rssi',['../df/d7a/classZebraRfidSdk_1_1TagReportConfiguration.html#abde9efffcc0dca2f3d8ccc52293ec644',1,'ZebraRfidSdk::TagReportConfiguration']]]
+];
