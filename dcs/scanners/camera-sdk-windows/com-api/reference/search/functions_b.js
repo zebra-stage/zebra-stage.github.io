@@ -1,0 +1,19 @@
+var searchData=
+[
+  ['setbacklight',['SetBacklight',['../class_c_camera.html#a985c0ec7ff5b5cc1c262b60d5461d413',1,'CCamera::SetBacklight()'],['../interface_i_camera.html#abca98016e6683ebabc85763cfb0ce6a8',1,'ICamera::SetBacklight()']]],
+  ['setbrightness',['SetBrightness',['../class_c_camera.html#a9bef00a4359e838b3a205994e1f50234',1,'CCamera::SetBrightness()'],['../interface_i_camera.html#aeedd37316241eb5934b0915c1f1b8153',1,'ICamera::SetBrightness()']]],
+  ['setcontrast',['SetContrast',['../class_c_camera.html#afcd1a57deeb3c1d9bce2d737745761aa',1,'CCamera::SetContrast()'],['../interface_i_camera.html#aacf599a3b3fe20906fe0c7efc6da9ce8',1,'ICamera::SetContrast()']]],
+  ['setdefaults',['SetDefaults',['../interface_i_camera.html#a7dcb3eef1cda9d17715a6ee08409c513',1,'ICamera']]],
+  ['setexposure',['SetExposure',['../class_c_camera.html#a2798aa0c7a84f04412425e6ac095e794',1,'CCamera::SetExposure()'],['../interface_i_camera.html#ab04cbcd62a053cc8771f49cbeaa722a9',1,'ICamera::SetExposure()']]],
+  ['setframetype',['SetFrameType',['../interface_i_camera.html#a7a787323b44cf77eedb176b9ecfd9c6e',1,'ICamera']]],
+  ['setgain',['SetGain',['../class_c_camera.html#a759f0512296aa8f9f29ebf747cdfa3f2',1,'CCamera::SetGain()'],['../interface_i_camera.html#a711d1d5dff8d8771d9f55cb328ee883e',1,'ICamera::SetGain()']]],
+  ['setgamma',['SetGamma',['../class_c_camera.html#ab69a60b825377177068c3c8c80750e3b',1,'CCamera::SetGamma()'],['../interface_i_camera.html#a717282d600126996a950b2ab06ea2ff5',1,'ICamera::SetGamma()']]],
+  ['setilluminationmode',['SetIlluminationMode',['../interface_i_camera.html#a8d7f4be1a750e70dfda30e28dab9b955',1,'ICamera']]],
+  ['setimagetype',['SetImageType',['../class_c_camera.html#af837922eb089c7af0dc1a81f2a4dd799',1,'CCamera::SetImageType()'],['../interface_i_camera.html#a69b51db6d725fa8484fbbbff2c895de9',1,'ICamera::SetImageType()']]],
+  ['setpowerusermode',['SetPowerUserMode',['../interface_i_camera.html#a2cf475d2a89a9993be8641048df850ce',1,'ICamera']]],
+  ['setsaturation',['SetSaturation',['../class_c_camera.html#af22179ae9612573589f0721816ec9bf1',1,'CCamera::SetSaturation()'],['../interface_i_camera.html#a4b45296a617388221e1bc1315c0e987f',1,'ICamera::SetSaturation()']]],
+  ['setsharpness',['SetSharpness',['../class_c_camera.html#a6bd5ef983db24a9eb9d9ffc7054ed3f6',1,'CCamera::SetSharpness()'],['../interface_i_camera.html#a1aa67657fadeaac424ab1976194a8f8c',1,'ICamera::SetSharpness()']]],
+  ['setvideomode',['SetVideoMode',['../interface_i_camera.html#a868d6fe8000510a554a9c74e510af9fc',1,'ICamera']]],
+  ['setwhitebalance',['SetWhiteBalance',['../class_c_camera.html#ae3d1666c2c25cc2c7876fa16049c9cd8',1,'CCamera::SetWhiteBalance()'],['../interface_i_camera.html#a23c01212862c4f128a0c0acc5023f098',1,'ICamera::SetWhiteBalance()']]],
+  ['snapshotimageeventhandler',['SnapShotImageEventHandler',['../class_snap_shot_image_event_handler.html#aae5aa262152c35414f0820593538fe1c',1,'SnapShotImageEventHandler']]]
+];
