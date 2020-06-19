@@ -8,7 +8,7 @@
         <meta name="google-site-verification" content="i4B78BrWnNy8ShJwe5feRW3jO3HE6gfYlYqYbxfl8yY">
         <meta name="msvalidate.01" content="6B651B00161BCE79B8950AC09D5C4C75">
         <meta title="Bioptic Color Camera SDK for Windows">
-        <title>Bioptic Color Camera SDK for Linux - Getting Started - Zebra Technologies</title>
+        <title>Bioptic Color Camera SDK for Linux - Bounding Box Detection - Zebra Technologies</title>
         <!-- core CSS -->
         <link href="/css/bootstrap.min.css" rel="stylesheet">
         <link href="/css/font-awesome.min.css" rel="stylesheet">
@@ -85,7 +85,7 @@
                             <div class="col-sm-3 hidden-sm hidden-xs" id="sidebar">
                                 <nav id="toc" data-toggle="toc" data-spy="affix" style="height: 75%; max-width: 225px; overflow-y: auto; ">
                                     <ul class="nav">
-                                        <li><strong>Deployment Bioptic Color Camera SDK for Linux</strong></li>
+                                        <li><strong>Bounding Box Detection</strong></li>
                                     </ul>
                                 </nav>                    
                                 <script type="text/javascript">
@@ -112,8 +112,8 @@
                                     <div class="col-sm-12">
                                         <section id="cta" class="wow fadeIn">
                                             <div class="">
-                                                <h1 id="bcc-linux-deployment" class="anchor">
-                                                    <a class="heading-anchor" href="#bcc-linux-deployment"><span></span></a>Deployment Bioptic Color Camera SDK for Linux
+                                                <h1 id="bcc-linux-bounding-box" class="anchor">
+                                                    <a class="heading-anchor" href="#bcc-linux-bounding-box"><span></span></a>Bounding Box Implementation
                                                 </h1>
                                             </div>
                                         </section>                    
@@ -125,111 +125,134 @@
                                             <!-- Start of guide -->
                                             <div class="service-box wow fadeInRight">
                                                 <div class="">
-                                                    <h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
-                                                    <p>This document provides deployment information that allow MP7 color camera enabled application development for Linux.</p>
+                                                    <div style="display: block; margin: 0 auto; text-align: center;">
+                                                        <img src="../../images/camera-sdk-linux/006-bcc-linux-bounding-box.png" style="display: block; margin: 0 auto;"><strong>Figure 1</strong> Bounding Box Detection
+                                                    </div>
+
+                                                    <p>In the GUI, a ‘CheckBox’ is provided for the user to enable/disable the bounding box feature. Once enabled, every time an object is held in front of the camera, a box will be drawn around it in the UI. In the Sample App, the first video frame is considered as the, ‘background’ that is used for comparison with all the other consecutive frames. Bounding box is detected based on the difference observed during the video frame comparison. User may choose to set the background manually by clicking on the ‘Set Background’ button as well. Once the ‘Set Background’ button is pressed, the particular video frame at that point will be considered for comparison purpose.</p>
+
+                                                    <p>Below is a brief description of the inner functionality of the Bounding Box implementation.</p>
+
+                                                    <p>The file ‘camera_bounding_box_factory.h’ should be included in the .cpp file in which the bounding box functionality is implemented.</p> 
+
+                                                    <p>First, a pointer of the ‘CameraBoundingBoxDetectorInterface’ is defined.</p>
                                                     
-                                                    <hr>
+                                                    <!-- code segment -->
+<pre class="prettyprint">
+<code>
+CameraBoundingBoxDetectorInterface* frameProc;
+</code>
+</pre>
 
-                                                    <h2 id="bcc-linux-environment-setup" class="anchor"><a class="heading-anchor" href="#bcc-linux-environment-setup"><span></span></a>Setting up the Environment</h2>
-
-                                                    <p>To install zebra camera SDK, Ubuntu 18.04 64bit or CentOS 7 64bit version is required. Before installing the packages, any existing zebra-camera-sdk package installation needs to be removed with the following code line, for Debian.</p>
+                                                    <p>Next, a vector is defined to hold information relevant to the Bounding Box.</p> 
 
                                                     <!-- code segment -->
 <pre class="prettyprint">
 <code>
-sudo dpkg -r zebra-camera-sdk 
+vector&lt;BoundingBoxPoint> bounding_rect;
 </code>
 </pre>
 
-                                                    <p><strong>dpkg -l | grep zebra-camera-sdk</strong> command can be used  to check for any previous installations of zebra-camera-sdk</p>
-
-                                                    <ul>
-                                                        <li>
-                                                            <p>Install <strong>libgtk</strong> library</p>
-                                                            <!-- code segment -->
-<pre class="prettyprint">
-<code>
-sudo apt-get install libwxgtk3.0-0v5
-</code>
-</pre>
-                                                        </li>
-                                                        <li>
-                                                            <p>Install <strong>OpenCV</strong></p>
-                                                            <p>Instructions can be found at: <a href="https://docs.opencv.org/master/d7/d9f/tutorial_linux_install.html" target="_blank">https://docs.opencv.org/master/d7/d9f/tutorial_linux_install.html</a> It is imperative to install OpenCV 4.1.0 version for successful Application operation.</p>
-                                                        </li>
-                                                        <li>
-                                                            <p>Install <strong>Zero</strong> library.</p>
-                                                            <!-- code segment -->
-<pre class="prettyprint">
-<code>
-sudo apt-get install libzmq5
-</code>
-</pre>
-                                                        </li>
-                                                        <li>Use <strong>sudo ldconfig</strong> command to update the library database.</li>
-                                                    </ul>
-                                                    
-                                                    <hr>
-
-                                                    <h2 id="bcc-linux-install" class="anchor"><a class="heading-anchor" href="#bcc-linux-install"><span></span></a>Installing the Packages</h2>
-                                                    
-                                                    <ul>
-                                                        <li>
-                                                            <p>Navigate to the folder containing camera SDK Debian packages.</p>
-                                                            <p>‘zebra-camera-sdk.x.x.x-xx.deb’ (E.g.: ‘zebra-camera-sdk.1.0.0-13.deb’)</p>
-                                                        </li>
-                                                        <li>Use <strong>sudo dpkg -i zebra-camera-sdk.1.0.0-13.deb</strong> command to install the Debian packages.</li>
-                                                        <li>Once the installation is completed, perform a <strong>sudo ldconfig</strong>.</li>
-                                                        <li>Use <strong>ps -e | grep camera-service</strong> to check the running status of the camera-service.</li>
-                                                        <li>
-                                                            <p>If the camera-service is not listed with the process id, the following command can be used to start the service.</p>
-                                                            <!-- code segment -->
-<pre class="prettyprint">
-<code>
-systemctl start camera-service
-</code>
-</pre>
-                                                        </li>
-                                                    </ul>
-
-                                                    <p><strong>Note:</strong> camera-service start up can be delayed up to 1 minute depending on system performance. Please wait until the start command is returned to the next line.</p>
-
-                                                    <hr>
-
-                                                    <h2 id="bcc-linux-running" class="anchor"><a class="heading-anchor" href="#bcc-linux-running"><span></span></a>Running Sample Application</h2>
-
-                                                    <ul>
-                                                        <li>
-                                                            <p>Navigate to ‘samples’ directory.</p>
-                                                            <!-- code segment -->
-<pre class="prettyprint">
-<code>
-cd /usr/share/zebra-camera/samples
-</code>
-</pre>
-                                                        </li>
-                                                        <li>
-                                                            <p>Super user permission will be required to run the sample application.</p>
-                                                            <!-- code segment -->
-<pre class="prettyprint">
-<code>
-sudo ./multi_client_zebra_camera_demo
-</code>
-</pre>
-                                                        </li>
-                                                    </ul>
-
-                                                    <hr>
-
-                                                    <h2 id="bcc-linux-uninstall" class="anchor"><a class="heading-anchor" href="#bcc-linux-uninstall"><span></span></a>Uninstalling the Package</h2>
+                                                    <p>‘bounding_rect’ is used to contain information of the left bottom coordinates, width and the height of the bounding box. With the following code lines, initialization of the ‘frameProc’ takes place.</p>
 
                                                     <!-- code segment -->
 <pre class="prettyprint">
 <code>
-sudo dpkg -r zebra-camera-sdk
+frameProc = CameraImageProcessingFactory::CreateBoundingBoxDetector(BackgroundFilterType::kStatic);
 </code>
 </pre>
 
+                                                    <p>As the ‘BackgroundFilterType’, user may use ‘kStatic’ , ‘kDynamic’, ‘kDynamicGaussian’. But for continuous detection of bounding box, filter type ‘kStatic’ should be used.Initially it is required to capture a snapshot from the camera without any objects in the fore front. This image is considered as the Background frame that gets compared with every frame that comes next to check if a movement has occurred. If a movement is detected, the object that caused the movement is identified and a rectangle is drawn surrounding it. The method ‘SetBackgroundFrame’ should be called to set the Background for comparison. Before passing parameters to ‘SetBackgroundFrame’, the image that is displayed in the GUI needs to be converted to either a BMP or a JPG image. The conversion can be achieved by the following code lines.</p>
+
+                                                    <!-- code segment -->
+<pre class="prettyprint">
+<code>
+std::vector&lt;uint8_t> data = Encode(zebra::image::FileConverter::RGB_TO_BMP, image);  
+</code>
+</pre>
+
+                                                    <p>‘&data[0]’ and ‘data.size()’ are the converted image data and the converted image size respectively.’0’ or ‘1’ should be given if the image type is BMP or JPG respectively. Then the converted image data is provided to the ‘SetBackgroundFrame’ method.</p> 
+
+                                                    <!-- code segment -->
+<pre class="prettyprint">
+<code>
+frameProc->SetBackgroundFrame(&data[0], data.size(),image_width_, image_height_,0);
+</code>
+</pre>
+
+                                                    <p>Full description of the method is provided below.</p>
+                                                    <ul>
+                                                        <li>Sets the background frame (call with first frame / frame to reset background)</li>
+                                                        <li>background_frame_buffer : background frame buffer</li>
+                                                        <li>length : length of background frame buffer</li>
+                                                        <li>image_width: width of background frame</li>
+                                                        <li>image_height: height of background frame</li>
+                                                        <li>image_type:  type of background frame (reserved : 0:BMP,1:JPEG)</li>
+                                                    </ul>
+
+                                                    <!-- code segment -->
+<pre class="prettyprint">
+<code>
+virtual void SetBackgroundFrame(BYTE* background_frame_buffer, int length, int image_width, int image_height , int image_type) = 0;
+</code>
+</pre>
+
+                                                    <p>After setting the Background, ‘DetectBoundingBox’ method needs to be called. ‘DetectBoundingBox’ method accepts image file type as its first argument. Hence it is required to do an image conversion before passing parameters to the method.</p>
+
+                                                    <!-- code segment -->
+<pre class="prettyprint">
+<code>
+std::vector&lt;uint8_t> data = Encode(zebra::image::FileConverter::RGB_TO_BMP, image); 
+</code>
+</pre>
+
+                                                    <p>An RGB image is displayed when the Sample App is run. In order to call the ‘DetectBoundingBox’ method, the said image needs to be converted to BMP or JPG.</p>
+
+                                                    <!-- code segment -->
+<pre class="prettyprint">
+<code>
+bool rect_found = frameProc->DetectBoundingBox(&data[0], data.size(), image_width_,image_height_,0,bounding_rect);
+</code>
+</pre>
+
+                                                    <p>Full method definition is explained below.</p>
+
+                                                    <ul>
+                                                        <li>Detects the foreground object bounding box in the specified frame</li>
+                                                        <li>
+                                                            <ul>
+                                                                <li>input_frame_buffer : input image buffer</li>
+                                                                <li>length : length of input frame buffer</li>
+                                                                <li>image_width: width of input image</li> 
+                                                                <li>image_height: height of input image</li>
+                                                                <li>image_type:  type of input image (reserved : 0:BMP,1:JPEG)</li>
+                                                                <li>bounding_rect : output bounding box location point array</li>
+                                                                <li>return value : returns true if bounding box found</li>
+                                                            </ul>
+                                                        </li>
+                                                    </ul>
+
+                                                    <!-- code segment -->
+<pre class="prettyprint">
+<code>
+virtual bool DetectBoundingBox(BYTE* input_frame_buffer, int length, int image_width, int image_height,int image_type, vector<BoundingBoxPoint> &bounding_rect) = 0;
+</code>
+</pre>
+
+                                                    <p>When the above method returns ‘True’, ‘bounding_rect’ vector gets filled with values needed to draw the rectangle on the GUI to represent the bounding box.</p>
+
+                                                    <!-- code segment -->
+<pre class="prettyprint">
+<code>
+float x_pos = (float)bounding_rect[0].x;
+float y_pos = (float)bounding_rect[0].y;
+
+float rect_width = (float)bounding_rect[3].x - (float)bounding_rect[0].x ;
+float rect_height= (float)bounding_rect[3].y - (float)bounding_rect[0].y;
+</code>
+</pre>
+
+                                                    <p>Information such as x, y coordinate of the left bottom of the rectangle, width and the height of the rectangle is provided by the vector ‘bounding_rect’.  This in turn can be used to draw a rectangle using wxWidgets.</p>
                                                 </div>
                                             </div>
                                         </div>
