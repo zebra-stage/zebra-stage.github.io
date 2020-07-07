@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['updatefirmwareeventid',['UpdateFirmwareEventID',['../d1/d0f/CsUserDefs_8h.html#a661b766333359b7544dab53d8e871ea0',1,'CsUserDefs.h']]]
+  ['tiff_5ffile_5fsection',['TIFF_FILE_SECTION',['../d1/d0f/CsUserDefs_8h.html#a3154c405c975616503bac23f51b78fc0a3e2bb9f6fe83094a3915be8b0295721e',1,'CsUserDefs.h']]]
 ];

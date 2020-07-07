@@ -18,7 +18,6 @@ var searchData=
   ['cmd_5fdevice_5fupdate_5ffirmware',['CMD_DEVICE_UPDATE_FIRMWARE',['../d1/d0f/CsUserDefs_8h.html#a34aacde1efe94ac5734af88b84dce645afd0bb48cafa4f6a11cf285ff2e414481',1,'CsUserDefs.h']]],
   ['cmd_5fdevice_5fupdate_5ffirmware_5ffrom_5fplugin',['CMD_DEVICE_UPDATE_FIRMWARE_FROM_PLUGIN',['../d1/d0f/CsUserDefs_8h.html#a34aacde1efe94ac5734af88b84dce645a5637439f528607019160d6ac81993dbb',1,'CsUserDefs.h']]],
   ['cmd_5fget_5fdevice_5ftopology',['CMD_GET_DEVICE_TOPOLOGY',['../d1/d0f/CsUserDefs_8h.html#a34aacde1efe94ac5734af88b84dce645afd56facef7c3c0eaacd27ceba0dcbd2a',1,'CsUserDefs.h']]],
-  ['cmd_5fget_5fversion',['CMD_GET_VERSION',['../d1/d0f/CsUserDefs_8h.html#a34aacde1efe94ac5734af88b84dce645a8e37d2b3656870bba0300d3473a8868f',1,'CsUserDefs.h']]],
   ['cmd_5freboot_5fscanner',['CMD_REBOOT_SCANNER',['../d1/d0f/CsUserDefs_8h.html#a34aacde1efe94ac5734af88b84dce645a9b6912849b63e1c941491e32e9197b2e',1,'CsUserDefs.h']]],
   ['cmd_5frefresh_5ftopology',['CMD_REFRESH_TOPOLOGY',['../d1/d0f/CsUserDefs_8h.html#a34aacde1efe94ac5734af88b84dce645a64396168ce85d06c7f340a3648f0631c',1,'CsUserDefs.h']]],
   ['cmd_5fregister_5ffor_5fevents',['CMD_REGISTER_FOR_EVENTS',['../d1/d0f/CsUserDefs_8h.html#a34aacde1efe94ac5734af88b84dce645a8da0e9b9e737ac52b67d90fb8d7630dd',1,'CsUserDefs.h']]],

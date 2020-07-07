@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['close',['Close',['../d3/d6b/Cslibcorescanner__xml-release_8h.html#a7c65088ed7c51a0b3d57e53b5705a520',1,'Cslibcorescanner_xml-release.h']]],
+  ['close',['Close',['../d6/d06/Cslibcorescanner__xml_8h.html#a7c65088ed7c51a0b3d57e53b5705a520',1,'Cslibcorescanner_xml.h']]],
   ['cmd_5fclaim_5fdevice',['CMD_CLAIM_DEVICE',['../d1/d0f/CsUserDefs_8h.html#a34aacde1efe94ac5734af88b84dce645ae36f92d709cb78fd7a80d43555d1adbc',1,'CsUserDefs.h']]],
   ['cmd_5fdevice_5fabort_5fupdate_5ffirmware',['CMD_DEVICE_ABORT_UPDATE_FIRMWARE',['../d1/d0f/CsUserDefs_8h.html#a34aacde1efe94ac5734af88b84dce645a371991044007f282d2ddd3a4c6ae542f',1,'CsUserDefs.h']]],
   ['cmd_5fdevice_5faim_5foff',['CMD_DEVICE_AIM_OFF',['../d1/d0f/CsUserDefs_8h.html#a34aacde1efe94ac5734af88b84dce645a7503a3ad084932240a8d59a5de75fb74',1,'CsUserDefs.h']]],
@@ -19,7 +19,6 @@ var searchData=
   ['cmd_5fdevice_5fupdate_5ffirmware',['CMD_DEVICE_UPDATE_FIRMWARE',['../d1/d0f/CsUserDefs_8h.html#a34aacde1efe94ac5734af88b84dce645afd0bb48cafa4f6a11cf285ff2e414481',1,'CsUserDefs.h']]],
   ['cmd_5fdevice_5fupdate_5ffirmware_5ffrom_5fplugin',['CMD_DEVICE_UPDATE_FIRMWARE_FROM_PLUGIN',['../d1/d0f/CsUserDefs_8h.html#a34aacde1efe94ac5734af88b84dce645a5637439f528607019160d6ac81993dbb',1,'CsUserDefs.h']]],
   ['cmd_5fget_5fdevice_5ftopology',['CMD_GET_DEVICE_TOPOLOGY',['../d1/d0f/CsUserDefs_8h.html#a34aacde1efe94ac5734af88b84dce645afd56facef7c3c0eaacd27ceba0dcbd2a',1,'CsUserDefs.h']]],
-  ['cmd_5fget_5fversion',['CMD_GET_VERSION',['../d1/d0f/CsUserDefs_8h.html#a34aacde1efe94ac5734af88b84dce645a8e37d2b3656870bba0300d3473a8868f',1,'CsUserDefs.h']]],
   ['cmd_5freboot_5fscanner',['CMD_REBOOT_SCANNER',['../d1/d0f/CsUserDefs_8h.html#a34aacde1efe94ac5734af88b84dce645a9b6912849b63e1c941491e32e9197b2e',1,'CsUserDefs.h']]],
   ['cmd_5frefresh_5ftopology',['CMD_REFRESH_TOPOLOGY',['../d1/d0f/CsUserDefs_8h.html#a34aacde1efe94ac5734af88b84dce645a64396168ce85d06c7f340a3648f0631c',1,'CsUserDefs.h']]],
   ['cmd_5fregister_5ffor_5fevents',['CMD_REGISTER_FOR_EVENTS',['../d1/d0f/CsUserDefs_8h.html#a34aacde1efe94ac5734af88b84dce645a8da0e9b9e737ac52b67d90fb8d7630dd',1,'CsUserDefs.h']]],
@@ -34,6 +33,6 @@ var searchData=
   ['cmdopcode',['CmdOpcode',['../d1/d0f/CsUserDefs_8h.html#a34aacde1efe94ac5734af88b84dce645',1,'CsUserDefs.h']]],
   ['csbarcodetypes_2eh',['CsBarcodeTypes.h',['../db/db0/CsBarcodeTypes_8h.html',1,'']]],
   ['csieventlistenerxml_2eh',['CsIEventListenerXml.h',['../d7/dd8/CsIEventListenerXml_8h.html',1,'']]],
-  ['cslibcorescanner_5fxml_2drelease_2eh',['Cslibcorescanner_xml-release.h',['../d3/d6b/Cslibcorescanner__xml-release_8h.html',1,'']]],
+  ['cslibcorescanner_5fxml_2eh',['Cslibcorescanner_xml.h',['../d6/d06/Cslibcorescanner__xml_8h.html',1,'']]],
   ['csuserdefs_2eh',['CsUserDefs.h',['../d1/d0f/CsUserDefs_8h.html',1,'']]]
 ];

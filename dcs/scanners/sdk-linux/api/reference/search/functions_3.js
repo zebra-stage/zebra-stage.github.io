@@ -8,5 +8,5 @@ var searchData=
   ['onscannernotification',['OnScannerNotification',['../d5/d2f/classIEventListenerXml.html#a682841231eb64da68533c55034b8f519',1,'IEventListenerXml']]],
   ['onscanrmdevent',['OnScanRMDEvent',['../d5/d2f/classIEventListenerXml.html#adc04e2aa6ec7f137b1905c79aedde8f9',1,'IEventListenerXml']]],
   ['onvideoevent',['OnVideoEvent',['../d5/d2f/classIEventListenerXml.html#a3f62ad855c7c11169f2db921de546420',1,'IEventListenerXml']]],
-  ['open',['Open',['../d3/d6b/Cslibcorescanner__xml-release_8h.html#a1a16ea210b8409b100b1e1e03730b4bc',1,'Cslibcorescanner_xml-release.h']]]
+  ['open',['Open',['../d6/d06/Cslibcorescanner__xml_8h.html#a1a16ea210b8409b100b1e1e03730b4bc',1,'Cslibcorescanner_xml.h']]]
 ];
