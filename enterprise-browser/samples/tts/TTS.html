@@ -1,0 +1,261 @@
+
+
+        
+<!DOCTYPE html>
+<html><head><script type="text/javascript" src="elements.js"></script>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width">
+	<!-- <script type="text/javascript" charset="utf-8" src="./elements.js"></script> -->
+	<meta http-equiv="QuitButton" content="Visibility:Visible">
+
+    <title>EB Speech synthesiser</title>
+  </head>
+
+  <body>
+  <br>
+  <br>
+    <h2 align="center" id="eb-w3speech-synthesiser" class="anchor"><a class="heading-anchor" href="#eb-w3speech-synthesiser"><span></span></a>EB W3Speech synthesiser</h2>
+
+    <p>Enter some text in the input box below and press ENTER or the "play" button to hear it.<br> Adjust rate, pitch and volume using the sliders; change voices using the drop-down menu.</p>
+    
+    <form>
+    <input type="text" class="txt" placeholder="">
+    <div>
+      <label for="rate">Rate</label><input type="range" min="0.5" max="10" value="1" step="1" id="rate">
+      <div class="rate-value">1</div>
+      <div class="clearfix"></div>
+    </div>
+    <div>
+      <label for="pitch">Pitch</label><input type="range" min="0" max="10" value="1" step="1" id="pitch">
+      <div class="pitch-value">1</div>
+      <div class="clearfix"></div>
+    </div>
+	 <div>
+      <label for="volume">Volume</label><input type="range" min="0" max="1" value="0.3" step="0.1" id="volume">
+      <div class="volume-value">0.3</div>
+      <div class="clearfix"></div>
+    </div>
+    <select>
+
+    </select>
+	<div>
+      <label id="label2" style="margin-top:10px">TTS Staus :</label><label style="margin-top:10px" id="status">
+      <div class="clearfix"></div>
+    </label></div>
+	
+    <div class="controls">
+      <button id="play" type="submit" onclick="playMedia()">Play</button>
+	  <button id="pause" type="submit" onclick="pauseMedia()">Pause</button>
+	  <button id="resume" type="submit" onclick="resumeMedia()">Resume</button>
+	  <button id="cancel" type="submit" onclick="cancelMedia()">Cancel</button>
+    </div>
+    </form>
+	<script type="text/javascript">
+	var synth = window.speechSynthesis;
+	
+var inputForm = document.querySelector('form');
+var inputTxt = document.querySelector('.txt');
+var voiceSelect = document.querySelector('select');
+
+var pitch = document.querySelector('#pitch');
+var volumeNew = document.querySelector('#volume');
+var volumeValue = document.querySelector('.volume-value');
+var pitchValue = document.querySelector('.pitch-value');
+var rate = document.querySelector('#rate');
+var rateValue = document.querySelector('.rate-value');
+
+inputTxt.value ="Hello zebra, how are you doing ?";
+
+var voices = [];
+
+function populateVoiceList() {
+  voices = synth.getVoices();
+  var selectedIndex = voiceSelect.selectedIndex < 0 ? 0 : voiceSelect.selectedIndex;
+  voiceSelect.innerHTML = '';
+  for(i = 0; i < voices.length ; i++) {
+    var option = document.createElement('option');
+    option.textContent = voices[i].name + ' (' + voices[i].lang + ')';
+    
+    if(voices[i].default) {
+      option.textContent += ' -- DEFAULT';
+    }
+
+    option.setAttribute('data-lang', voices[i].lang);
+    option.setAttribute('data-name', voices[i].name);
+    voiceSelect.appendChild(option);
+  }
+  voiceSelect.selectedIndex = selectedIndex;
+}
+
+populateVoiceList();
+if (speechSynthesis.onvoiceschanged !== undefined) {
+  speechSynthesis.onvoiceschanged = populateVoiceList;
+}
+
+function speak(){
+    if (synth.speaking) {
+        return;
+    }
+    if (inputTxt.value !== '') {
+    var utterThis = new SpeechSynthesisUtterance();
+	utterThis.text=inputTxt.value
+    utterThis.onend = function (event) {
+        console.log('SpeechSynthesisUtterance.onend');
+    }
+    utterThis.onerror = function (event) {
+        console.error('SpeechSynthesisUtterance.onerror');
+    }
+   var selectedOption = voiceSelect.selectedOptions[0].getAttribute('data-name');
+    for(i = 0; i < voices.length ; i++) {
+      if(voices[i].name === selectedOption) {
+        utterThis.lang = voices[i].lang;
+      }
+    }
+    utterThis.pitch = pitch.value;
+    utterThis.rate = rate.value;
+	utterThis.volume = volumeNew.value;
+	utterThis.onend = callNew;
+	utterThis.onstart = function(event) {document.getElementById('status').innerHTML = 'TTS has started';}
+	utterThis.onerror = function(event) { document.getElementById('status').innerHTML = 'Error occured, please restart application'; }
+	
+	utterThis.onpause = function() {  document.getElementById('status').innerHTML = 'TTS paused';}
+	utterThis.onresume = function() {document.getElementById('status').innerHTML = 'TTS resumed';}
+    synth.speak(utterThis);
+  }
+}
+
+function callNew(event) {  
+document.getElementById('status').innerHTML = 'Finished in ' + event.elapsedTime + 's.';
+}
+
+inputForm.onsubmit = function(event) {
+  event.preventDefault();
+
+  inputTxt.blur();
+}
+
+function playMedia(){
+  speak();
+}
+
+function pauseMedia(){
+  synth.pause();
+}
+
+function resumeMedia(){
+  synth.resume();
+}
+
+function cancelMedia(){
+  synth.cancel();
+}
+
+pitch.onchange = function() {
+  pitchValue.textContent = pitch.value;
+}
+
+volumeNew.onchange = function() {
+  volumeValue.textContent = volumeNew.value;
+}
+
+rate.onchange = function() {
+  rateValue.textContent = rate.value;
+}
+
+voiceSelect.onchange = function(){
+ // speak();
+}</script>
+	
+<style>
+body, html {
+  margin: 0;
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  height: 90%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+h1, p {
+  font-family: sans-serif;
+  text-align: center;
+  padding: 20px;
+}
+
+.txt, select, form > div {
+  display: block;
+  margin: 0 auto;
+  font-family: sans-serif;
+  font-size: 16px;
+  padding: 5px;
+}
+
+.txt {
+  width: 80%;
+}
+
+select {
+  width: 83%;
+}
+
+form > div {
+  width: 81%;
+}
+
+.txt, form > div {
+  margin-bottom: 10px;
+  overflow: auto;
+}
+
+.clearfix {
+  clear: both;
+}
+
+label {
+  float: left;
+  width: 10%;
+  line-height: 1.5;
+}
+
+#label2 {
+  float: left;
+  width: 40%;
+  line-height: 1.5;
+}
+
+#status {
+  width: 60%;
+  line-height: 1.5;
+}
+
+.rate-value, .pitch-value, .volume-value {
+  float: right;
+  width: 13%;
+  line-height: 1.5;
+}
+
+#rate, #pitch, #volume {
+  float: right;
+  width: 65%;
+}
+
+.controls {
+  text-align: center;
+  margin-top: 10px;
+}
+
+.controls button {
+  padding: 10px;
+}
+</style>
+  
+
+
+
+</body></html>
