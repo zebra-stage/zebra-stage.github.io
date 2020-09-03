@@ -20,6 +20,7 @@
         <link href="/css/responsive.css" rel="stylesheet">
         <link href="/css/prettify.css" rel="stylesheet">
         <link href="/css/bootstrap-treenav.min.css" rel="stylesheet">
+        <link href="../../dcs_styles.css" rel="stylesheet">
         <!--[if lt IE 9]>
         <script src="js/html5shiv.js"></script>
         <script src="js/respond.min.js"></script>
@@ -57,9 +58,9 @@
                             <li>
                                 <a href="/dcs/scanners/logging-agent/about">About</a>
                             </li>
-                            <li>
+                            <!--<li>
                                 <a href="/dcs/scanners/logging-agent/setup">Setup</a>
-                            </li>
+                            </li>-->
                         </ul>
                     </div>
                 </div><!--/.container-->
@@ -115,6 +116,25 @@
                                                 <div class="">
                                                     <h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
                                                     <p>The Zebra Logging Agent is a utility that will log scanner related events to a command prompt window and/or text file. The events that can be logged through the Logging Agent are defined in the file "Logging-Agent-Confg.xml" and their properties can be changed depending on need. The Logging Agent can be used to log the status of currently connected scanners, query scanner attributes at specified time intervals and record events such as the attach/detach of scanners, barcode scan data and firmware update progress. The Logging Agent accesses scanner devices through the Zebra CoreScanner Service for Windows or Linux which must first be installed and running.</p>
+
+                                                    <p>Logging Agent bundled with Windows and Linux SDKs. </p>
+
+                                                    <ol>
+                                                        <li>The Logging Agent allows a 3rd party management console, like Microsoft’s SCCM, to track scanner information including the scanner’s health by parsing a Logging Agent generated log file.</li>
+                                                        <li>The Logging Agent will output a log file, one file per scanner/host.</li>
+                                                        <li>
+                                                            <p>The Logging Agent is configurable and can document one or all of the following information:</p>
+                                                            <ol type="a">
+                                                                <li>Asset information</li>
+                                                                <li>Statistics for example battery charge level or UPCs scanned</li>
+                                                                <li>Firmware failures and or firmware success</li>
+                                                                <li>Parameter value(s) changed. Achieved by tracking parameter 616 (config file name changed to "Modified")</li>
+                                                                <li>Scanned barcode data (all scanned items)</li>
+                                                                <li>Scan avoidance for MP7000</li>
+                                                            </ol>
+                                                        </li>
+                                                        <li>The logging agent can have its output stored locally on its host PC or output to a network shared folder.</li>
+                                                    </ol>
                                                     
                                                     <hr>
 
@@ -138,13 +158,235 @@
                                                     <p>Logging Agent for Linux support the following Linux distributions.</p>
 
                                                     <ul>
-                                                        <li>Windows 7 32bit</li>
-                                                        <li>Windows 7 64bit</li>
-                                                        <li>Windows 8.1 32bit</li>
-                                                        <li>Windows 8.1 64bit</li>
-                                                        <li>Windows 10 32bit</li>
-                                                        <li>Windows 10 64bit</li>
+                                                        <li>Ubuntu 16.04 32bit</li>
+                                                        <li>Ubuntu 16.04 64bit</li>
+                                                        <li>Ubuntu 18.04 64bit</li>
+                                                        <li>Debian 9.5 64bit</li>
+                                                        <li>CentOS 8.1 64bit</li>
                                                     </ul>
+
+                                                    <hr>
+
+                                                    <h2 id="logging-agent-configuration" class="anchor"><a class="heading-anchor" href="#logging-agent-configuration"><span></span></a>How to Configure Logging Agent</h2>
+                                                
+                                                    <p>"Logging-Agent-Confg.xml" file is used by the Logging Agent to configure the logging formats and what to log.</p>
+
+                                                    <h3 id="config-xml-file" class="anchor">XML File</h3>
+
+<pre class="prettyprint">
+<code>
+&lt;config>
+    &lt;settings>
+        &lt;spd_log>
+            &lt;!--There could be multiple sinks with different settings defined here. -->
+            &lt;sinks>
+                &lt;!-- rotating_file_sink_mt: When the max file size is reached, close the file, rename it, and create a new file. Both the max file size and the max number of files are configurable in the constructor.-->
+                &lt;sink type="rotating_file_sink_mt" name="rotating_file_sink_mt">
+                    &lt;!-- Name of the Log file. %h - Host name , %H - Host ID (Physical address of the first MAC), %u - User name without domain (Ex. AAA) and %U - User name with domain (Ex. AAA@zebra.com. Domain in @ format)-->
+                    &lt;property key="log_file_name" value="LogAgent-%h.log" />
+                    &lt;!-- This is where the log files will be saved. The path should be valid in order for Logging Agent to create the logs. Logging Agent will not create directories. -->
+                    &lt;!--This value can be a network location as well. Eg: value="\\10.225.123.31\Temp\logging-agent-logs"-->
+                    &lt;property key="log_file_path" value="logs" />
+                    &lt;!-- Max file size in Kilo Bytes (considering 1KB = 1024B). Minimum size is 5KB and if any value less is defined, will be defaulted to the minimum value. -->
+                    &lt;property key="max_file_size" value="5120" />
+                    &lt;!-- Max file count. The minimum is 1 and anything less or invalid value will be defaulted to 1. -->
+                    &lt;property key="max_file_count" value="5" />
+                    &lt;!-- Pattern of the single log entry. Please refer https://github.com/gabime/spdlog/wiki/3.-Custom-formatting for more information. -->
+                    &lt;property key="log_pattern" value="[%Y-%m-%d %H:%M:%S] %v" />
+                    &lt;!-- Log level to be recorded.  2 = INFO, 3 = WARNING, 4 = ERROR, 5 = CRITICAL 6 = LOG_OFF, 0,1 = TRACE,DEBUG (Works only with debug build) -->
+                    &lt;property key="log_level" value="2" />
+                &lt;/sink>
+                &lt;sink type="stdout_color_sink_mt" name="stdout_color_sink_mt">
+                    &lt;!-- Pattern of the single log entry. Please refer https://github.com/gabime/spdlog/wiki/3.-Custom-formatting for more information. -->
+                    &lt;property key="log_pattern" value="[%Y-%m-%d %H:%M:%S] %v" />
+                    &lt;!-- Log level to be recorded.  2 = INFO, 3 = WARNING, 4 = ERROR, 5 = CRITICAL 6 = LOG_OFF, 0,1 = TRACE,DEBUG (Works only with debug build) -->
+                    &lt;property key="log_level" value="2" />
+                &lt;/sink>
+            &lt;/sinks>
+        &lt;/spd_log>
+        &lt;!--There could be multiple log elements here. Eg: statistics, health, device-check -->
+        &lt;log-elements>
+            &lt;!-- Configure how the statistics are logged -->
+            &lt;get-statistics enabled="true">
+                &lt;group model=".*" serial=".*" schedule="0/20 * * * * *">
+                    &lt;!-- Max value for a period is ~ 596,523‬ hrs  -->
+                    &lt;!-- These scanner attributes will be retrieved from the scanner and their values will be logged. This could have multiple attributes defined here -->
+                    &lt;scanner-attribute-ids>15109,15839,15011&lt;/scanner-attribute-ids>
+                &lt;/group>
+            &lt;/get-statistics>
+            &lt;check-health enabled="true">
+                &lt;group model=".*" serial=".*" schedule="0/30 * * * * *">
+                    &lt;!-- Max value for a period is ~ 596,523‬ hrs  -->
+                    &lt;scanner-attribute-ids>15015&lt;/scanner-attribute-ids>
+                &lt;/group>
+            &lt;/check-health>
+            &lt;on-agent-start-up enabled="true">
+                &lt;!-- check-model="true" check-serial="true" check-config-name="true"> -->
+                &lt;group model=".*" serial=".*">
+                    &lt;scanner-attribute-ids>534,533&lt;/scanner-attribute-ids>
+                &lt;/group>
+            &lt;/on-agent-start-up>
+            &lt;on-system-shutdown enabled="true" />
+            &lt;!-- Used to enable/disable log entries on device attach-->
+            &lt;on-attach enabled="true">
+                &lt;!-- check-model="true" check-serial="true" check-config-name="true"> -->
+                &lt;group model=".*" serial=".*">
+                    &lt;scanner-attribute-ids>534,533&lt;/scanner-attribute-ids>
+                &lt;/group>
+            &lt;/on-attach>
+            &lt;!-- Used to enable/disable log entries on device detach -->
+            &lt;on-detach enabled="true" />
+            &lt;!-- Used to enable/disable log entries on barcode events -->
+            &lt;on-barcode enabled="true" />
+            &lt;!-- Used to enable/disable log entries on firmware download events -->
+            &lt;on-firmware-download-start enabled="true" />
+            &lt;on-firmware-download-progress enabled="true" />
+            &lt;on-firmware-download-end enabled="true" />
+            &lt;on-firmware-download-error enabled="true" />
+        &lt;/log-elements>
+    &lt;/settings>
+&lt;/config>      
+</code>
+</pre>
+
+                                                    <h3 id="tag-descriptions" class="anchor">Tag Description</h3>
+                                                    <p><em><strong>Table 1</strong> XML Tags Description</p></em>
+                                                    <table class="hovertable" id="#table1">
+                                                        <tr>
+                                                            <th>XML Tag</th>
+                                                            <th>Description</th>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>spd_log</td>
+                                                            <td>
+                                                                <p>Contains spd log configurations.</p>
+                                                                <p>This can be used to customize the log pattern, log file name, log file path, maximum log files count and maximum log file size.</p>
+                                                                <p>Log file path can be given a network location to save log files.</p>
+                                                                <ul>
+                                                                    <li>Eg: &lt;property key="log_file_path" value="\\10.225.123.31\Temp\logging-agent-logs" /></li>
+                                                                </ul>
+                                                                <p>Log file name can be customized to have system information when combined with the following options,</p>
+                                                                <ul>
+                                                                    <li>%h - Host name</li>
+                                                                    <li>%H - Host ID (Physical address of the first MAC)</li>
+                                                                    <li>%u - User name without domain (Ex. AAA)</li>
+                                                                    <li>%U - User name with domain (Ex. AAA@zebra.com. Domain in @ format)</li>
+                                                                </ul>
+                                                                <p>Eg: <property key="log_file_name" value="LogAgent-%h-%u.log" />. The log file will be named as LogAgent-hostname-username.log. The host name and the username will differ based on the user.</p>
+                                                                <p>More sinks can be defined as per the need.</p>
+                                                                <p>Refer spd log documentation for more information on this area. <a href="https://github.com/gabime/spdlog" target="blank">https://github.com/gabime/spdlog</a></p>
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>log-elements</td>
+                                                            <td>
+                                                                <p>This describe the elements to log. The supported sub tags are,</p>
+                                                                <ul>
+                                                                    <li><strong>get-statistics</strong> – options for statistics logging</li>
+                                                                    <li><strong>check-health</strong> – options for health logging</li>
+                                                                    <li><strong>on-agent-start-up</strong> – options for logging logging agent start up</li>
+                                                                    <li><strong>on-system-shutdown</strong>– options for logging system shutdown events</li>
+                                                                    <li><strong>on-attach</strong> – options</strong> for logging on a device attach</li>
+                                                                    <li><strong>on-detach</strong> - options for logging on a device detach</li>
+                                                                    <li><strong>on-barcode</strong> - options for logging on a barcode read</li>
+                                                                    <li><strong>on-firmware-download-start</strong> - enable/disable firmware download start event logging</li>
+                                                                    <li><strong>on-firmware-download-progress</strong> - enable/disable firmware download in progress events logging</li>
+                                                                    <li><strong>on-firmware-download-end</strong> - enable/disable firmware download end event logging</li>
+                                                                    <li><strong>on-firmware-download-error</strong> – enable/disable firmware download error logging</li>
+                                                                </ul>
+                                                                <p>All these log elements can either be enabled or disabled using the attribute “enabled” in the tag.</p>
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>get-statistics</td>
+                                                            <td>This contains options for statistics logging. The supported sub-tags are group tags.</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>check-health</td>
+                                                            <td>This contains options for health logging. The supported sub-tags are group tags.</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>on-agent-start</td>
+                                                            <td>Occurs when the application is restarted.</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>on-agent-shutdown</td>
+                                                            <td>logs when the logging agent is shutdown or when a system reboot is requested</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>on-attach</td>
+                                                            <td>Occurs when a device is attached to the system. </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>on-detach</td>
+                                                            <td>Occurs when a device is detached from the system.</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>on-barcode</td>
+                                                            <td>Occurs on a barcode read.</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>on-firmware-download-start</td>
+                                                            <td>Occurs on a firmware download start event.</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>on-firmware-download-progress</td>
+                                                            <td>Occurs when a firmware download is in progress.</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>on-firmware-download-end</td>
+                                                            <td>Occurs on a successful firmware download end event.</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>on-firmware-download-error</td>
+                                                            <td>Occurs on a firmware download error event.</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>group</td>
+                                                            <td>
+                                                                <p>The group tag is used to define a filter for scanners and to set up interval of occurrence. The supported attributes are,</p>
+                                                                <ul>
+                                                                    <li>Model – specify the model. Wild cards are supported (Eg: model = "DS*")</li>
+                                                                    <li>Serial – specify the serial number. Wild cards are supported (Eg: serial = "14075010502573")</li>
+                                                                    <li>Schedule – specify the time interval in cron job format. For more information refer link <a href="https://www.freeformatter.com/cron-expression-generator-quartz.html" target="blank">https://www.freeformatter.com/cron-expression-generator-quartz.html</a> (Eg: schedule = “0 0 0/8 * * *” – Log every 8 hours)</li>
+                                                                </ul>
+                                                                <p>A group may contain additional scanner-attribute-ids tag to include additional data in the log file.</p>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+
+                                                    <hr>
+
+                                                    <h2 id="run-logging-agent" class="anchor"><a class="heading-anchor" href="#run-logging-agent"><span></span></a>Run the Logging Agent</h2>
+
+                                                    <h3 id="run-background" class="anchor">Run as a background process (on Windows).</h3>
+
+                                                    <ol>
+                                                        <li>Double-click "logging-agent.exe" or</li>
+                                                        <li>Run on the command prompt without any parameters. Eg: Path\to\the\executable>logging-agent.exe)</li>
+                                                    </ol>
+
+                                                    <h3 id="run-application" class="anchor">Run as an application via the command prompt (on Windows).</h3>
+
+                                                    <ol>
+                                                        <li>
+                                                            <p>Run on the command prompt as,</p>
+                                                            <ol>
+                                                                <li>Path\to\the\executable > logging-agent.exe --show, OR</li>
+                                                                <li>Path\to\the\executable > logging-agent.exe -s</li>
+                                                            </ol>
+                                                        </li>
+                                                        <li>Please note that double-dash in first case, and single-dash in the second case.</li>
+                                                        <li>To display the help test run the executable with "--help" or "-h"</li>
+                                                    </ol>
+
+                                                    <hr>
+
+                                                    <h2 id="logging-agent-log-files" class="anchor"><a class="heading-anchor" href="#logging-agent-log-files"><span></span></a>Log Files</h2>
+
+                                                    <p>The log files created by the logging agent will be written to the path specified in the configuration xml in as a text file. If the application is run with the user command prompt displayed, the logs will be printed to the command prompt as well.</p>
+
+                                                    <p>If needed more sinks can be defined in the configuration xml file, to write logs to more locations.</p>
 
                                                     <hr>
 
