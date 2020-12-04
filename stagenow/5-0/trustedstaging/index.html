@@ -264,7 +264,9 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p><strong>StageNow 4.0 (and higher) supports Trusted Staging</strong>, which can protect devices with MX 9.2 and higher from unauthorized staging. Trusted devices are created from a security certificate. Once a certificate is used to create a trusted device, the device can be staged only from barcodes created using the same security certificate.</p>
+<p><strong>StageNow 4.0 (and later) supports Trusted Staging</strong>, which can protect devices with MX 9.2 and later from unauthorized staging. Trusted devices are created from a security certificate. Once a certificate is used to create a trusted device, the device can be staged only from barcodes created using the same security certificate.</p>
+
+<p>This guide describes the process of importing an existing certificate into StageNow for use in Trusted Staging, and explains <a href="#createatrustedcertificate">how to create a certificate</a> if needed. </p>
 
 <blockquote>
   <p><strong><code>IMPORTANT:</code></strong> Access to Trusted Staging and Trusted Devices is possible only by Windows users with administrative privileges.</p>
@@ -273,27 +275,29 @@
 <h4 id="requirements" class="anchor"><a class="heading-anchor" href="#requirements"><span></span></a>Requirements:</h4>
 
 <ul>
-<li>StageNow 4.0 (or higher) installed</li>
+<li><strong>Computer running Windows</strong> </li>
 
-<li>Zebra device(s) with MX 9.2 or higher</li>
+<li><strong>StageNow 4.0</strong> (or later) installed</li>
 
-<li>Self-signed security "Trusted Certificate" (<code>.pfx</code> file of 1024 bytes or less)</li>
+<li><strong>Zebra device(s)</strong> with MX 9.2 or later</li>
+
+<li><strong>Self-signed security "Trusted Certificate"</strong> (<code>.pfx</code> file of exactly 1024 bytes)</li>
+
+<li>OpenSSL installed (<strong>if creating a Trusted Certificate*</strong>)</li>
 </ul>
 
 <h4 id="processsnapshot" class="anchor"><a class="heading-anchor" href="#processsnapshot"><span></span></a>Process Snapshot:</h4>
 
 <ol>
-<li>Create a Trusted Certificate <code>.pfx</code> file (1024 bytes or less)</li>
+<li>Import a Trusted Certificate* (<code>.pfx</code> file) into StageNow</li>
 
-<li>Import the Trusted Certificate into StageNow</li>
-
-<li>Deploy the Trusted Certificate to device(s) to make them Trusted Device(s)<br> 
-<code>NOTES:</code><br>
-•&nbsp;This activates Trusted Staging on target device(s)<br>
-•&nbsp;Such device(s) no longer accept standard ("untrusted") Profiles</li>
+<li>Deploy the Trusted Certificate to device(s) to create Trusted Device(s)<br> 
+<code>NOTE:</code> Such device(s) no longer accept standard ("untrusted") Profiles<br></li>
 
 <li>Create Trusted Profile(s) for use on Trusted Device(s)</li>
 </ol>
+
+<p>*If no Trusted Certificate exists, start with instructions for <strong><a href="#createatrustedcertificate">creating a Trusted Certificate</a></strong> at the end of this guide. </p>
 
 <hr>
 
@@ -315,7 +319,7 @@
 <img alt="image" style="height:350px" src="SN4_12.png">
 <em>Click image to enlarge; ESC to exit</em>.<br>
 <br>
-<code>CAUTION:</code> <strong>Certificate files must NOT be greater than 1024 bytes in size</strong>. </li>
+<code>CAUTION:</code> <strong>Certificate files <u>must be exactly 1024 bytes</u> in size</strong>. </li>
 
 <li><strong>Navigate to the</strong> <code>.pfx</code> <strong>file being imported</strong>:
 <img alt="image" style="height:350px" src="SN4_03.png">
@@ -491,7 +495,103 @@
 
 <p><strong>The device is now removed from Trusted Mode and can be staged using ordinary staging Profiles</strong>. </p>
 
-<hr><p></p>
+<hr>
+
+<h2 id="createatrustedcertificate" class="anchor"><a class="heading-anchor" href="#createatrustedcertificate"><span></span></a>Create a Trusted Certificate</h2>
+
+<p>This section describes how to generate a trusted certificate (<code>.pfx</code> file) for <a href="#createatrusteddevice">importing into StageNow</a> to facilitate Trusted Staging. This processes uses <a href="https://www.openssl.org/docs/faq.html">OpenSSL</a> and its command-line interface (CLI) to create a private key and certificate signing request (CSR) for submission to a certificate authority (CA) for signing. </p>
+
+<h4 id="requirements-1" class="anchor"><a class="heading-anchor" href="#requirements-1"><span></span></a>Requirements:</h4>
+
+<ul>
+<li><strong>Computer running Windows</strong> </li>
+
+<li><strong><a href="https://www.openssl.org/source/">OpenSSL</a> installed</strong> </li>
+</ul>
+
+<p><strong>A familiarity with command-line tools is helpful for this section</strong>. Learn more about <a href="https://www.sslshopper.com/article-most-common-openssl-commands.html">OpenSSL CLI commands</a>.</p>
+
+<hr>
+
+<blockquote>
+  <p><strong>Before beginning, <a href="https://www.openssl.org/source/">download OpenSSL</a></strong> and install it.</p>
+</blockquote>
+
+<h3 id="igenerateaprivatekeyandcsr" class="anchor"><a class="heading-anchor" href="#igenerateaprivatekeyandcsr"><span></span></a>I. Generate a private key and CSR</h3>
+
+<p><strong>NOTE</strong>: This section describes how to create and use a private key to generate a certificate signing request (CSR). <strong>To prepare a CSR from an <em><u>existing</u></em> private key</strong>, <u>skip to Step 4</u>. </p>
+
+<p><strong>1. Open a command-prompt window</strong> (<code>cmd.exe</code>) and navigate to the folder containing OpenSSL. </p>
+
+<p><strong>2. Generate a private key</strong> with the desired file name (i.e. <code>myPrivate.key</code>) using the following command:</p>
+
+<pre class="prettyprint"><code>    
+    genrsa -des3 -out myPrivate.key 1024 
+</code></pre>
+
+<ul>
+<li>This RSA key can be protected with 1024-bit (shown) or 2048-bit Triple DES encryption.</li>
+
+<li>After Step 2, a pass-phrase prompt appears. </li>
+</ul>
+
+<p><strong>3. Create and enter a pass phrase</strong> and <u>record it for later reference</u>.<br></p>
+
+<ul>
+<li>A file called <code>myPrivate.key</code> is created in the current directory. </li>
+</ul>
+
+<p><strong>4. Generate a CSR file</strong> from the <code>.key</code> file created in the previous step using the following command: </p>
+
+<pre class="prettyprint"><code>    
+    req –new –key myPrivate.key -sha256 –out myPrivate.csr
+</code></pre>
+
+<ul>
+<li>Several prompts appear for entering <u>optional</u> X.509 attributes of the certificate.<br> </li>
+</ul>
+
+<p><strong>5. Enter optional information based on the environment</strong> or leave blank by hitting the ENTER key after each prompt.<br></p>
+
+<ul>
+<li>A file called <code>myPrivate.csr</code> is created in the current directory. </li>
+</ul>
+
+<p><strong>The certificate signing request</strong> <code>myPrivate.csr</code> <strong>can be submitted</strong> to a certificate authority. When the signed file is returned from the CA, <strong><a href="#iiiconvertcrttopem">proceed to Section III</a></strong>. </p>
+
+<hr>
+
+<h3 id="iigenerateaselfsignedcertificate" class="anchor"><a class="heading-anchor" href="#iigenerateaselfsignedcertificate"><span></span></a>II. Generate a self-signed certificate</h3>
+
+<p><strong>Perform steps in this section ONLY if a self-signed certificate is desired. If using a certificate already signed by a certificate authority, <u>proceed to Section III</u></strong>. </p>
+
+<p>Such certificates can be used for testing and other internal purposes, or as an interim solution while waiting for signing from a certificate authority. Self-signed certificates cause display of "signing certificate authority is unknown and not trusted" or a similar message on browsers. Use the following steps to create a self-signed certificate using OpenSSL.</p>
+
+<p><strong>6. Generate a temporary (one-year) certificate</strong> using the following command: </p>
+
+<pre class="prettyprint"><code>    
+    x509 -req -days 365 -in server.csr -signkey myPrivate.key -sha256 -out mySigned.crt
+</code></pre>
+
+<p><strong>7. When prompted, enter the pass phrase for</strong> <code>myPrivate.key</code> created in the Step 3, above.</p>
+
+<p><strong>The</strong> <code>mySigned.crt</code> <strong>file is generated in the current folder</strong>. Go to Section III to complete the process.</p>
+
+<hr>
+
+<h3 id="iiiconvertcrttopem" class="anchor"><a class="heading-anchor" href="#iiiconvertcrttopem"><span></span></a>III. Convert CRT to PEM</h3>
+
+<p>The final steps use the <code>.key</code> and <code>.crt</code> files to generate a <code>.pfx</code> certificate to import into StageNow. </p>
+
+<p><strong>8. At the command prompt, enter the following command</strong>:</p>
+
+<pre class="prettyprint"><code>
+pkcs12 -export -out trustedCert.pfx -inkey myPrivate.key -in mySigned.crt
+</code></pre>
+
+<p><strong>The certificate</strong> <code>trustedCert.pfx</code> <strong>is ready to be imported</strong> into StageNow for use with Trusted Staging. </p>
+
+<p><a href="#">back to top</a></p><p></p>
                                         
 
 
