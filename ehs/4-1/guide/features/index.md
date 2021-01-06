@@ -15,6 +15,86 @@ This guide covers advanced EHS features such as Kiosk Mode and EHS Logging. It a
 
 -----
 
+## Screen Blanking
+
+EHS 4.1 (and later) supports screen blanking, which can automatically place a black or transparent overlay atop the device screen when the GPS system detects movement, disabling touch input. Screen blanking is intended as a safety measure when EHS is used in vehicle applications. 
+
+### Requirements
+* **Supported only on GMS devices** with the Google Play service
+* **GPS must be enabled** and functional on the device
+* **"Display over other apps" must be enabled for EHS on device** (see image below)
+
+<img alt="" style="height:280px" src="ehs41_screen_blanking_panel_00.png"/>
+_Click image to enlarge; ESC to exit_. 
+<br>
+
+### Notes
+* **All touch input is blocked** when overlay is displayed.
+* **Vehicle speed calculation is based on Google GPS** location API output.   
+* **Incoming phone calls cannot be accepted** when blanking is active.
+* **The transparent overlay allows display of Maps** or other apps but no user interaction.
+* **Blanking becomes inactive when**: 
+ * **Vehicle speed drops and remains below the configured speed threshold** for 10 seconds.
+ * **GPS data is lost for a period of five (5) minutes**. The service checks for a GPS signal every five (5) minutes; blanking is restored automatically when GPS service resumes.  
+* **The screen blanking feature takes about 15 seconds to initialize** following a device reboot. 
+
+-----
+
+### Enable Screen Blanking
+Screen blanking is enabled by a device administrator using the EHS Preferences panel on the device or through a setting in the `enterprisehomescreen.xml` config file. For more information about this file, see the [Working with the Config File](../settings/#workingwiththeconfigfile) section of the Advanced Settings guide. 
+
+<img alt="" style="height:350px" src="ehs41_screen_blanking_panel_01b.png"/>
+_Click image to enlarge; ESC to exit_. 
+<br>
+
+#### Example
+		:::xml
+		<screen_blanking>
+			<blanking_enabled>1</blanking_enabled>
+		</screen blanking>
+
+**Possible values**:
+* **0 - Disabled (default; no overlay shown; touch input enabled)**
+* 1 - Enabled (touch input disabled according to configured speed threshold)
+
+### Speed Threshold
+Used to set the vehicle speed (in miles per hour) at which screen blanking is enabled and touch input is disabled **(default = 10 MPH)**. **The minimum value is 5 MPH**. If a value of less than 5 is entered, the default value of 10 is used.  
+
+<img alt="" style="height:350px" src="ehs41_screen_blanking_panel_02.png"/>
+_Click image to enlarge; ESC to exit_. 
+<br>
+
+#### Example
+	:::xml
+	<screen_blanking>     
+		<speed_threshold>10</speed_threshold>
+	</screen blanking>
+
+**Possible values**:
+* 5 &ndash; ∞ - **(default = 10 MPH)**
+
+### Blanking Mode
+
+Used to select the screen blanking mode; both of which disable touch input. Option 1 overlays the screen with black; no data is visible. Option 2 places a transparent covering over the current app, allowing data (such as Google Maps) to be visible. 
+
+**NOTE: Mode changes take effect after the user visits the EHS Home Screen**.
+
+<img alt="" style="height:350px" src="ehs41_screen_blanking_panel_03.png"/>
+_Click image to enlarge; ESC to exit_. 
+<br>
+
+#### Example
+	:::xml
+	<screen_blanking>      
+		<blanking_mode>1</blanking_mode>
+	</screen blanking>
+
+Possible values:
+* **1 - (default; black screen)**
+* 2 (transparent screen)
+
+-----
+
 ## Multi-user Mode
 
 EHS 3.1 and later supports Multi-user Mode on devices running Android 8.x Oreo and later. The feature works through the concept of User Profiles, which allow for Primary, Secondary and Guest users, each with different sets of apps, capabilities and access privileges. In EHS, Multi-user Mode behaves as indicated below. 

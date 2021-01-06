@@ -5,7 +5,7 @@ product: Zebra EHS
 productversion: '4.1'
 ---
 
-#### [What's New in EHS 4.0](#newinehs40)
+#### [What's New in EHS 4.1](#newinehs41)
 
 ## Overview
 Zebra Enterprise Home Screen is a free Android app from Zebra Technologies that provides a simple way for administrators to control access to apps and settings on a Zebra device without the need to write custom code. Using a simple touch interface, EHS easily limits usage to one or more specified applications, prevents changes to device settings and locks down the file system. It can be configured in seconds, and settings can be deployed via MDM. EHS settings are stored in a simple XML file that's easy to read and edit by hand, if necessary. 
@@ -42,21 +42,11 @@ Ready to get started? [Download Enterprise Home Screen](https://www.zebra.com/us
 
 ## New in EHS 4.1
 
-OLD OLD OLD
-
-* **Now supports Zebra devices running Android 10** as well as Android 9.x Pie and 8.x Oreo. 
-* **To enhance device and network security, EHS by default now hides potentially sensitive wireless device info** in User Mode.<br>Optionally, an administrator can **[display wireless settings](../settings/#wirelessinformation)**, if desired.
-* **[Recently Launched Apps](../settings/#recentappsaccess) can now be shown or hidden** from the User as desired by an administrator. 
+* **New [Screen Blanking feature](../features/#screenblanking)** disables touch input when the device is in motion, adding a measure of safety when EHS is used in vehicle applications. 
 
 ### Supported Devices
 
-**EHS 4.0 adds support for the following devices running Android 10**:
-
-* **MC33x**
-* **PS20**
-* **TC21**
-* **TC26**
-* **TC52**
+**EHS 4.1 adds support for no new devices**. 
 
 #### [See all supported devices](https://www.zebra.com/us/en/support-downloads/software/utilities/enterprise-home-screen.html) <i class="fa fa-external-link" aria-hidden="true"></i>
 
