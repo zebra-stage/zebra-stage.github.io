@@ -732,6 +732,212 @@ if (intent.hasExtra(RESULT_ACTION_EXTRA_GET_CONFIG)) {
 }
 </code></pre>
 
+<h3 id="getsupportedparameters" class="anchor"><a class="heading-anchor" href="#getsupportedparameters"><span></span></a>Get supported parameters</h3>
+
+<p>Retrieves the supported parameters of the device from the specified profile. Parameters are retrieved based on the plugin specified, in this example, barcode plugin. The parameter result returns "true" if supported by the device, otherwise "false" is returned.</p>
+
+<pre class="prettyprint"><code>public void getScannerConfig()
+{
+    Bundle bMain = new Bundle();
+    bMain.putString("PROFILE_NAME", "Profile0 (default)");
+    Bundle bConfig = new Bundle();
+    ArrayList&lt;String&gt; pluginName = new ArrayList&lt;&gt;();
+    pluginName.add("BARCODE");
+
+    bConfig.putStringArrayList("PLUGIN_NAME", pluginName);
+    bMain.putBundle("PLUGIN_CONFIG", bConfig);
+    Intent i = new Intent();
+    i.setPackage("com.symbol.datawedge");
+    i.setAction("com.symbol.datawedge.api.ACTION");
+    i.putExtra("com.symbol.datawedge.api.GET_CONFIG", bMain);
+    this.sendBroadcast(i);
+}
+
+private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        String action = intent.getAction();
+        String strFinalResult = "";
+
+        if (action.equals("com.symbol.datawedge.api.RESULT_ACTION")) {
+            if (intent.hasExtra("com.symbol.datawedge.api.RESULT_GET_CONFIG")) {
+
+                Bundle resultGetConfig = intent.getBundleExtra("com.symbol.datawedge.api.RESULT_GET_CONFIG");
+                Set&lt;String&gt; keys = resultGetConfig.keySet();
+                String profileName = resultGetConfig.getString("PROFILE_NAME");
+                for (String key : keys) {
+                    if (key.equalsIgnoreCase("PLUGIN_CONFIG")) {
+                        ArrayList&lt;Bundle&gt; bundleArrayList = resultGetConfig.getParcelableArrayList("PLUGIN_CONFIG");
+                        for (Bundle configBundle : bundleArrayList) {
+                            if(configBundle.getString("PLUGIN_NAME") != null) {
+                                strFinalResult += "\nPlugin " + configBundle.getString("PLUGIN_NAME") + " Settings\n";
+                            }
+                            for (String configBundleKey : configBundle.keySet()) {
+                                if (configBundleKey.equalsIgnoreCase("PARAM_LIST")) {
+                                    Bundle paramBundle1 = configBundle.getBundle("PARAM_LIST");
+                                    if (paramBundle1 != null) {
+                                        for (String paramKey : paramBundle1.keySet()) {
+                                            strFinalResult += "\n\t" + paramKey + ": " + paramBundle1.get(paramKey);
+                                        }
+                                    }
+                                }
+                            }
+                            strFinalResult += "\n";
+
+                        }
+                    }
+                }
+                final String status = "Get config info received\n" + strFinalResult;
+                Log.d("TAG", "#IntentApp#\n\n" + status);
+            }
+        }
+    }
+};
+</code></pre>
+
+<p>Sample output from code:</p>
+
+<pre class="prettyprint"><code>Get config info received
+
+Plugin BARCODE Settings
+
+    decoder_code128_enable_ean128: true
+    decoder_code39_full_ascii: false
+    decoder_i2of5_check_digit: 0
+    decoder_i2of5_security_level: 1
+    decoder_code128_check_isbt_table: false
+    linear_security_level: 1
+    upcean_retry_count: 10
+    upcean_bookland_format: 0
+    ocr_check_digit_multiplier: 121212121212
+    decoder_msi_check_digit: 0
+    decoder_grid_matrix_mirror: 0
+    decoder_msi_reduced_quiet_zone: false
+    decoder_msi_check_digit_scheme: 0
+    decoder_d2of5_redundancy: true
+    beam_timer: 5000
+    code128_enable_marginless_decode: false
+    trigger_wakeup_scan: false
+    instant_reporting_enable: false
+    decoder_code128_redundancy: false
+    decoder_dotcode_mirror: 2
+    decoder_signature: false
+    databar_to_upc_ean: false
+    decoder_grid_matrix: false
+    decoder_codabar_notis_editing: false
+    decoder_australian_postal: false
+    decoder_upca_preamble: 1
+    scanner_selection: auto
+    upcean_ean_zero_extend: false
+    ocr_lines: 1
+    decoder_code93_length1: 0
+    decoder_code93_length2: 55
+    decoder_msi_length1: 4
+    decoder_msi_length2: 55
+    decoder_uspostnet: false
+    doc_capture_template: None
+    enable_udi_iccbba: true
+    decoder_code128_enable_plain: true
+    multi_barcode_count: 5
+    inverse_ocr: 0
+    decoder_code11_verify_check_digit: 1
+    ocr_b_variant: 0
+    ocr_quiet_zone: 50
+    decoder_code128_isbt128_concat_mode: 0
+    decoder_ean8: true
+    decoder_upca: true
+    auto_switch_to_default_on_event: 0
+    report_decoded_barcodes: false
+    decoder_matrix_2of5_verify_check_digit: true
+    inverse_1d_mode: 0
+    decoder_signature_bpp: 2
+    decoder_codabar_length1: 6
+    decoder_codabar_length2: 55
+    aim_mode: on
+    aim_type: 0
+    decoder_i20f5_enable_febraban: false
+    decoder_code93_redundancy: false
+    decoder_hanxin_inverse: 0
+    decoder_signature_width: 400
+    decoder_aztec: true
+    decoder_d2of5: false
+    decoder_ean13: true
+    decoder_i2of5: false
+    decoder_ocr_a: false
+    decoder_ocr_b: false
+    decoder_tlc39: false
+    decoder_upce0: true
+    decoder_upce1: false
+    decoder_upca_report_check_digit: true
+    auto_charset_failure_option: UTF-8
+    picklist: 0
+    enable_udi_hibcc: true
+    SCANNER_STATUS: CONNECTED
+    decoder_trioptic39: false
+    decoder_uspostnet_report_check_digit: false
+    decoder_upce0_convert_to_upca: false
+    decoder_dutch_postal_3S: false
+    decoder_mailmark: true
+    decoder_gs1_datamatrix: false
+    decoder_code39_security_level: 1
+    decoder_code11_length1: 4
+    decoder_code11_length2: 55
+    decoder_i2of5_length1: 6
+    decoder_i2of5_length2: 55
+    decoder_usplanet: false
+    decoder_code11_report_check_digit: false
+    volume_slider_type: 3
+    decoder_gs1_lim_security_level: 2
+    decoder_uk_postal: false
+    upcean_security_level: 1
+    code39_enable_marginless_decode: false
+    ocr_subset: !"#$%()*+,-./0123456789&lt;&gt;ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz\^|
+    barcode_trigger_mode: 1
+    decoder_uk_postal_report_check_digit: false
+    decoder_codabar_redundancy: true
+    1d_marginless_decode_effort_level: 1
+    decoder_dutch_postal: false
+    decoder_i2of5_redundancy: true
+    decoder_matrix_2of5_report_check_digit: true
+    low_power_timeout: 250
+    aim_timer: 500
+    lcd_mode: 0
+    code128_ignore_fnc4: false
+    decoder_composite_c: false
+    decoder_code128_length1: 0
+    decoder_code128_length2: 55
+    decode_screen_time: 1000
+    decoder_maxicode: true
+    good_decode_led_timer: 75
+    poor_quality_bcdecode_effort_level: 0
+    decoder_grid_matrix_inverse: 0
+    decoder_gs1_qrcode: false
+    upcean_supplemental2: true
+    upcean_supplemental5: true
+    decode_haptic_feedback: false
+    ocr_check_digit_modulus: 1
+    upcean_bookland: false
+    different_barcode_timeout: 500
+    ocr_orientation: 0
+    decoder_codabar_clsi_editing: false
+    decoder_code39_verify_check_digit: false
+    decoder_matrix_2of5_redundancy: false
+    decoder_us4state_fics: false
+    decode_audio_feedback_uri: content://media/internal/audio/media/186
+    decoder_matrix_2of5_length1: 10
+    decoder_matrix_2of5_length2: 0
+    decoder_gs1_databar: true
+    decoder_chinese_2of5: false
+    decoder_matrix_2of5: false
+    same_barcode_timeout: 500
+    decoder_us_currency: false
+    illumination_mode: torch
+    decoder_code39_convert_to_code32: false
+    decoder_codabar: true
+    decoder_code128: true
+    decoder_finnish_pos
+</code></pre>
+
 <h3 id="getintercharactersettings" class="anchor"><a class="heading-anchor" href="#getintercharactersettings"><span></span></a>Get inter-character settings</h3>
 
 <pre class="prettyprint"><code>private Integer ctrlCharacterDelayValue;
