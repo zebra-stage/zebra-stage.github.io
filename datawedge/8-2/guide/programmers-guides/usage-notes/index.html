@@ -10,8 +10,8 @@
     <meta name="author" content="Zebra Technologies">
     <meta name="google-site-verification" content="i4B78BrWnNy8ShJwe5feRW3jO3HE6gfYlYqYbxfl8yY">
     <meta name="msvalidate.01" content="6B651B00161BCE79B8950AC09D5C4C75">
-    <meta title="Set Ignore Disabled Profiles">
-    <title>Set Ignore Disabled Profiles - Zebra Technologies TechDocs</title>
+    <meta title="Usage Notes and Behavior">
+    <title>Usage Notes and Behavior - Zebra Technologies TechDocs</title>
     <!-- core CSS -->
     <link href="/css/bootstrap.min.css" rel="stylesheet">
     <link href="/css/font-awesome.min.css" rel="stylesheet">
@@ -139,7 +139,7 @@
                     <nav id="toc" data-toggle="toc" data-spy="affix" style="height: 75%; max-width: 225px; overflow-y: auto; ">
                         
                         <ul class="nav">
-                            <li><strong>Set Ignore Disabled Profiles</strong></li>
+                            <li><strong>Usage Notes and Behavior</strong></li>
                         </ul>
                     </nav>
                     <div class="modal fade" id="modal-smartdocs" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true" data-backdrop="true">
@@ -225,7 +225,7 @@
                         <div class="col-sm-12">
                             <section id="cta" class="wow fadeIn">
                                 <div class="">
-                                    <h1 id="set-ignore-disabled-profiles" class="anchor"><a class="heading-anchor" href="#set-ignore-disabled-profiles"><span></span></a>Set Ignore Disabled Profiles</h1>
+                                    <h1 id="usage-notes-and-behavior" class="anchor"><a class="heading-anchor" href="#usage-notes-and-behavior"><span></span></a>Usage Notes and Behavior</h1>
                                     <p>
                                             DataWedge
                                             8.2
@@ -241,130 +241,55 @@
                                 <div class="service-box wow fadeInRight">
                                     <div class="">
 
-                                        <p></p><h2 id="set_ignore_disabled_profiles" class="anchor"><a class="heading-anchor" href="#set_ignore_disabled_profiles"><span></span></a>SET_IGNORE_DISABLED_PROFILES</h2>
+                                        <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>Introduced in DataWedge 6.8. </p>
-
-<p>Prevents DataWedge from switching to a Profile that is disabled; including Profile0. Applies to Profile switches initiated manually through the DataWedge settings panel and programmatically using the <a href="../switchtoprofile">SWITCH_TO_PROFILE API</a>. </p>
-
-<p>The settings controlled by this API can help address timing issues that sometimes arise in Android devices when intents are used to switch Profiles. </p>
-
-<!-- 
-For example, if an application sends a "SWITCH_TO_PROFILE" intent early in an app's activity life cycle but DataWedge detects the activity change later and cause another Profile switch which could load a different Profile to what application already switched. 
-
-Enabling this setting and disabling the Profile which would load when the application comes to foreground in regular Profile switch, would help to avoid such situations. Alternative solutions to alleviate such timing issues are one of the following: 1. Check if the activity is in the foreground prior to switching Profiles, 2. Register for notifications to determine whether the appropriate Profile switch took place.
-
-
-This API prevents that switch and continues to use the current Profile.
--->
-
-<h3 id="functionprototype" class="anchor"><a class="heading-anchor" href="#functionprototype"><span></span></a>Function Prototype</h3>
-
-<pre class="prettyprint"><code>Intent i = new Intent();
-i.setAction("com.symbol.datawedge.api.ACTION");
-i.putExtra("com.symbol.datawedge.api.SET_IGNORE_DISABLED_PROFILES", "true");
-</code></pre>
-
-<h3 id="parameters" class="anchor"><a class="heading-anchor" href="#parameters"><span></span></a>Parameters</h3>
-
-<p><strong>ACTION</strong> [String]: "com.symbol.datawedge.api.ACTION"</p>
-
-<p><strong>EXTRA_DATA</strong> [String]: "com.symbol.datawedge.api.SET_IGNORE_DISABLED_PROFILES"</p>
-
-<p><strong>POSSIBLE VALUES</strong>: [String]: ["true" , "false" ]</p>
-
-<h3 id="returnvalues" class="anchor"><a class="heading-anchor" href="#returnvalues"><span></span></a>Return Values</h3>
-
-<p>Returns a String of the name of the active DataWedge Profile</p>
-
-<p><strong>EXTRA NAME</strong>: "com.symbol.datawedge.api.SET_IGNORE_DISABLED_PROFILES" </p>
-
-<p><strong>EXTRA TYPE</strong> [String]: [ ]</p>
-
-<p>Error and debug messages are logged to the Android logging system, which can be viewed and filtered by the logcat command. Use logcat from an ADB shell to view the log messages:</p>
-
-<pre class="prettyprint"><code>
-$ adb logcat -s DWAPI
-</code></pre>
-
-<p>Error messages are logged for invalid actions and parameters.</p>
-
-<h2 id="examplecode" class="anchor"><a class="heading-anchor" href="#examplecode"><span></span></a>Example Code</h2>
-
-<pre class="prettyprint"><code>//Sample code for sending the intent to SET the setting
-    Intent i = new Intent();
-    i.setAction("com.symbol.datawedge.api.ACTION");
-    i.putExtra("com.symbol.datawedge.api.SET_IGNORE_DISABLED_PROFILES","true");
-
-// request and identify the result code
-    i.putExtra("SEND_RESULT","true");
-    i.putExtra("COMMAND_IDENTIFIER","123456789");//user specified unique id
-
-    this.sendBroadcast(i);
-
-// Register/unregister broadcast receiver and filter results
-
-    void registerReceivers() {
-            IntentFilter filter = new IntentFilter();
-            filter.addAction("com.symbol.datawedge.api.RESULT_ACTION");
-            filter.addCategory("android.intent.category.DEFAULT");
-            registerReceiver(mybroadcastReceiver, filter);
-    }
-
-    void unRegisterReceivers(){
-            unregisterReceiver(mybroadcastReceiver);
-    }
-        //receiving the results
-            BroadcastReceiver mybroadcastReceiver = new BroadcastReceiver() {
-                @Override
-                public void onReceive(Context context, Intent intent) {
-                    String command = intent.getStringExtra("COMMAND");
-                    String commandIdentifier = intent.getStringExtra("COMMAND_IDENTIFIER");
-                    String result = intent.getStringExtra("RESULT");
-
-        Bundle bundle;
-        String resultInfo = "";
-        if(intent.hasExtra("RESULT_INFO")){
-            bundle = intent.getBundleExtra("RESULT_INFO");
-            Set&lt;String&gt; keys = bundle.keySet();
-            for (String key: keys) {
-                Object object = bundle.get(key);
-                if(object instanceof String){
-                    resultInfo += key + ": "+object+ "\n";
-                }
-                else if(object instanceof String[]){
-                    String[] codes = (String[])object;
-                    for(String code : codes){
-                        resultInfo += key + ": "+code+ "\n";
-                    }
-                }
-            }
-        }
-
-        String text = "Command: "+command+"\n" +
-            "Result: " +result+"\n" +
-            "Result Info: " +resultInfo + "\n" +
-            "CID:"+commandIdentifier;
-
-           Log.d(TAG,text);
-
-    }
-};
-</code></pre>
+<p>This section discusses use of DataWedge and its behavior in particular circumstances.</p>
 
 <hr>
 
-<p><strong>SEE ALSO</strong>:</p>
+<h2 id="usagenotes" class="anchor"><a class="heading-anchor" href="#usagenotes"><span></span></a>Usage Notes</h2>
 
-<p><a href="https://www.zebra.com/us/en/support-downloads.html">Zebra Support Central</a> | Integrator Guides, Product Manuals, Software Downloads and Support</p>
+<ol>
+<li><strong>When the device is suspended, it takes a few milliseconds to release all the resources.</strong> DataWedge releases the resources once it receives the Screen Off notification. Until this notification is received, DataWedge continues to function (e.g. scanning) for a short period of time despite the device being suspended. </li>
 
-<p><a href="https://developer.zebra.com/welcome">LaunchPad</a> | Zebra Developer Community</p>
+<li><strong>Selecting DataWedge as a keyboard or IME (Input Method Editor) from the Virtual Keyboard settings on the device does not display any graphical keyboard.</strong> DataWedge keyboard is only for internal use of DataWedge. DataWedge should not be selected as the default IME, otherwise unexpected behavior can occur.</li>
 
-<p><a href="https://developer.android.com/reference/android/content/Intent.html">Intent</a> | Android Developers</p>
+<li><strong>After a device reboot, DataWedge starts after receiving the LOCKED_BOOT_COMPLETED intent.</strong> Calling DataWedge intent APIs before the LOCKED_BOOT_COMPLETED intent may cause unexpected behavior as DataWedge is still not started yet. Calling DataWedge intent APIs soon after receiving the LOCKED_BOOT_COMPLETED intent may also cause unexpected behavior as DataWedge may still be in the initialization process. It is recommended to wait for a few seconds after receiving the LOCKED_BOOT_COMPLETED intent before calling any DataWedge intent APIs. </li>
 
-<p><a href="http://developer.android.com/guide/components/intents-filters.html">Intents and Intent Filters</a> | Android Developers</p>
+<li><strong>Delay in scanning after a device reboot</strong>. DataWedge requires a brief period of time to initialize after device reboot due to waiting for a response to be received from the initialization of the scanning subsystem, causing scanning to be inactive from DataWedge during this time frame.</li>
 
-<p><a href="http://www.vogella.com/tutorials/AndroidIntent/article.html">Android Intents</a> | Tutorial</p><p></p>
+<li><strong>When Data Capture Plus icon is displayed by DataWedge on top of another application,</strong> Android displays a silent notification in the notification area. Users can hide the Data Capture Plus icon by tapping on this notification and disabling the “Allow display over other apps” option. If a user decides to disable this option, even though Data Capture Plus is enabled in DataWedge, it does not display on the screen.</li>
+
+<li><strong>On Android 10 devices, although the DataWedge icon is visible, DataWedge is not supported with Android work profile.</strong></li>
+</ol>
+
+<hr>
+
+<h2 id="multiusersupport" class="anchor"><a class="heading-anchor" href="#multiusersupport"><span></span></a>Multi-User Support</h2>
+
+<p>DataWedge supports the use of multiple Android user accounts on a single device, enabling separate user profiles to maintain data privacy. </p>
+
+<p>Features and functionality:</p>
+
+<ul>
+<li><strong>If DataWedge is enabled, its functionality applies only for the active user</strong> - Each user has a separate DataWedge process running. DataWedge usage and functionality only applies for the active user.</li>
+
+<li><strong>Any DataWedge profile change takes into effect globally across all users</strong> - A DataWedge configuration or profile change by a user (through DataWedge UI or profile import) applies to all users regardless of which user is logged in when the change is made. For example, if User A makes a change to a profile, User B sees the change in the same profile. The configuration file is stored in a location (by default /enterprise/device/settings/datawedge/config/datawedge.db) where the DataWedge process across all users utilize the same configuration file.</li>
+
+<li><strong>Camera scanning functions only for the primary (admin) user</strong> - Camera scanning is not available for secondary (non-primary) users. </li>
+
+<li><strong>Bluetooth scanner disconnects when switching between primary user and other users</strong> - This applies to profiles which have a Bluetooth scanner enabled. If the primary user is active, when switching to a different user with an active profile that also enables a Bluetooth scanner, the Bluetooth scanner disconnects and does not automatically re-connect to the device. The non-primary user needs to press the reset button on the Zebra Bluetooth scanner to reconnect, even if it shows that the Bluetooth scanner is connected to the device. </li>
+
+<li><strong>No external SD card access</strong> - If multiple Android user accounts exist, users cannot access the external SD card. This prevents the ability to export or import the Datawedge configuration database files from the SD card. </li>
+
+<li><strong>Limited folder access</strong> - Each user profile has its own folder structure that is not accessible from a different user. Therefore, a user cannot access the exported DataWedge configuration database of another user, preventing the ability to import/export configurations across users.</li>
+
+<li><strong>"DataWedge not ready" message after switching users following device reboot</strong> - When switching from a primary user to a secondary user for the first time after reboot, after attempting to open DataWedge or DWDemo the message "DataWedge not ready" may display. There could be a delay since DataWedge does not start until the BOOT_COMPLETED intent is received. </li>
+
+<li><strong>Multiple scanners</strong> - Use of <a href="../input/barcode/#scannerselection">multiple scanners</a> with multiple Android user accounts may result to unexpected behavior.</li>
+</ul>
+
+<hr><p></p>
                                         
 
 
