@@ -492,4 +492,29 @@ function bindTreeEvents(li) {
         // recalcSidebar();
     });
 
+
+//Get the Back-to-top button
+var html='<button id="back-to-top-btn" title="Go to top">Back to Top</button>';
+
+$("body").append(html);
+
+var buttonToTop = document.getElementById("back-to-top-btn");
+
+// When the user scrolls down from the top of the document, show the button
+window.onscroll = function() {scrollFunction()};
+
+function scrollFunction() {
+  if (document.body.scrollTop > 450 || document.documentElement.scrollTop > 450) {
+    buttonToTop.style.display = "block";
+  } else {
+    buttonToTop.style.display = "none";
+  }
+}
+
+// When the user clicks on the button, scroll to the top of the document
+$("#back-to-top-btn").click(function(){
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+    });
+
 }
