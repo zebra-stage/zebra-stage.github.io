@@ -1,6 +1,6 @@
 # System Overview
 
-[System Overview](../assets/images/SystemOverview.png "System Overview")
+![System Overview](../assets/images/SystemOverview.png "System Overview")
 
 ## Interfaces
 
@@ -8,15 +8,15 @@ The Cloud Connect for RFID feature provides the three interfaces as listed below
 
 ### Management Interface
 
-Used to perform management actions on the reader (for example, firmware upgrade, getting reader configuration, and setting reader configuration).
+The Management Interface provides both a command/response interface and an asyncrhonous event interface. The command response interface can be used to perform management actions on the reader (for example, firmware upgrade, getting reader configuration, and setting reader configuration). The asyncrhonous event interface can be used to monitor health events from the reader.
 
 ### Control Interface
 
-Used to perform control actions on the reader (for example, configuring the radio mode, starting/stopping the tag reads).
+The Control Interface is a command/response interface. It is used to perform control actions on the reader (for example, configuring the radio mode, starting/stopping the tag reads).
 
 ### Data Interface
 
-Used to consume the RFID tag data from the reader.
+The Data Interface provides a asynchronous interface event interface. It  is used to consume the RFID tag data from the reader.
 
 These interfaces can be configured independently to allow for access via cloud or  locally within the private
 network. Description of configuring the interfaces can be found [here](CloudConnectConfiguration.md).
@@ -28,7 +28,9 @@ The reader contains a number of software components that enable Cloud Connect fo
 ### Reader Gateway/Cloud Agent
 
 The Reader Gateway/Cloud Agent is the component responsible for connecting to the outside world.
+
 The Management and Control requests are received by the Reader Gateway/Cloud Agent and passed along to be handled by the appropiate component.
+
 The Reader Gateway/Cloud Agent also collects the tag data from the Radio Control and pushes them out on the Data interface.
 
 ### Reader Manager
@@ -44,5 +46,3 @@ interface.
 ### Reader Webserver
 
 The Reader Webserver presents a web console to control the reader. When Cloud Connect Management and Control Interfaces are configured for Local REST mode, the Reader Webserver handles the REST requests before passing the requests to the Reader Gateway/Cloud Agent.
-
-
