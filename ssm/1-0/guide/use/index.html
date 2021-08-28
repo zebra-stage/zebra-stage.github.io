@@ -217,24 +217,89 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
+<p><strong>Secure Storage Manager (SSM)</strong> securely stores data provided by an originating app and delivers data only to an authenticated instance of a specified target app. After acquiring data, the target app gains ownership of the data. SSM ensures that data is delivered to the target app only after the authenticity of the app accessing the data is verified with its package name and signature. </p>
+
+<p>Data items are structured as name/value pairs, and each pair is uniquely identified by the originating app name and data-item name when made available to a target app. Ownership of the data, including the ability to change or delete, starts with the originating app and transitions to the target app once the data is delivered.  </p>
+
+<p>An originating app must instruct SSM to store data either in a persistent or non-persistent manner. Persistent data stored under SSM remains available after an Enterprise Reset is performed; a Factory Reset erases all device data. </p>
+
+<p>To encrypt data from the originating app prior to storing the data in SSM, use the Data Encryption Tool. See SSM-Encryption.docx.</p>
+
+<hr>
+
+<h2 id="configureanapptousessm" class="anchor"><a class="heading-anchor" href="#configureanapptousessm"><span></span></a>Configure an app to use SSM</h2>
+
 <p>To configure an app to use Secure Storage Manager (SSM), insert the appropriate line(s) in the client app’s manifest file: </p>
 
-<h3 id="insertupdatedeletedata" class="anchor"><a class="heading-anchor" href="#insertupdatedeletedata"><span></span></a>Insert / Update / Delete Data</h3>
+<p><strong>Insert / update / delete data:</strong></p>
 
-<pre class="prettyprint"><code>    &lt;uses-permission android:name="com.zebra.securestoragemanager.securecontentprovider.PERMISSION.WRITE"/&gt;
+<pre class="prettyprint"><code>&lt;uses-permission android:name="com.zebra.securestoragemanager.securecontentprovider.PERMISSION.WRITE"/&gt;
 </code></pre>
 
-<h3 id="querydata" class="anchor"><a class="heading-anchor" href="#querydata"><span></span></a>Query Data</h3>
+<p><strong>Query data:</strong></p>
 
-<pre class="prettyprint"><code>    &lt;uses-permission android:name="com.zebra.securestoragemanager.securecontentprovider.PERMISSION.READ"/&gt;
+<pre class="prettyprint"><code>&lt;uses-permission android:name="com.zebra.securestoragemanager.securecontentprovider.PERMISSION.READ"/&gt;
 </code></pre>
 
-<h3 id="retrievedata" class="anchor"><a class="heading-anchor" href="#retrievedata"><span></span></a>Retrieve Data</h3>
+<p><strong>Query provider for apps targeting API Level 30 and above:</strong></p>
 
-<p>Set the content URI to SSM Content Provider:</p>
-
-<pre class="prettyprint"><code>    "content://com.zebra.securestoragemanager.securecontentprovider/data"
+<pre class="prettyprint"><code>&lt;queries&gt;
+&lt;provider android:authorities="com.zebra.securestoragemanager.securecontentprovider"/&gt;
 </code></pre>
+
+<p><strong>Retrieve data using SSM</strong> by declaring the content URI of the SSM Content Provider:</p>
+
+<pre class="prettyprint"><code>private String AUTHORITY = "content://com.zebra.securestoragemanager.securecontentprovider/data";
+</code></pre>
+
+<p>See <a href="../api/#samplecode">Sample Code</a> for complete context.</p>
+
+<hr>
+
+<h2 id="encrypteddatafromclientapps" class="anchor"><a class="heading-anchor" href="#encrypteddatafromclientapps"><span></span></a>Encrypted data from client apps</h2>
+
+<p>If SSM receives encrypted data from an originating app (e.g. with the use of Data Encryption Tool), it decrypts the incoming data and saves it in SSM-encrypted format in the SSM database. The procedure to encrypt data to be stored in SSM is provided below. When the data is retrieved, SSM removes the SSM encryption and delivers the data according to the data output form required by the target app. </p>
+
+<p><strong>To encrypt data, use AES Secret Key:</strong></p>
+
+<ol>
+<li><p>Create an AES secret key:</p>
+
+<pre class="prettyprint"><code>private SecretKey getRandomKey(String algorithmType) 
+{
+
+<pre><code>SecureRandom rand = new SecureRandom();
+KeyGenerator generator;
+try {
+    generator = KeyGenerator.getInstance(algorithmType);
+    generator.init(128, rand);
+    mSecretKey = generator.generateKey();
+    Log.d(TAG, "mSecretKey = "+ mSecretKey);
+    return mSecretKey;
+} catch (NoSuchAlgorithmException e) {
+    e.printStackTrace();
+}
+return null;
+</code></pre>
+
+}
+</code></pre></li>
+
+<li><p>Encrypt data using the secret key created in Step 1.</p></li>
+
+<li><p>Encrypt the secret key using SSM public key (Base64 String):</p>
+
+<pre class="prettyprint"><code>MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwE1qxpfNZVGq3wfPp3AqSeSpCPi3NUC1cCBuh5nkPvC3TfYHiozsy3gBYyUoYWIoAYlgypehqLIQfdHTrLpsVbS1BW6mnv76WvYwmaGrGfHzi50ETA8bFDwkrboG3jcHnvDJPH904BdU5eMrsq1o+BDmTmF/OAm1rJPohb8mukWh+o6OW6iNhO28IDRb26pKuTu6sckHn8I1I51bl44qaxq55A4wVR4mHEZL0EK/q2hY0Iqcak2dA8w8N0nJrWzbIbp5FeT/WyGO2pure7UxKEZfE5pkewPfcHSGp+0sbdCMaw6KrDpC5jusry4PjFw92sS/Huywv6/pv7WVPmwIDAQAB
+</code></pre></li>
+
+<li><p>Insert the encrypted secret key and data into the SSM database. Specify the data input and output form to detect the encrypted data:</p>
+
+<pre class="prettyprint"><code>values.put("data_input_form”, "2"); // plaintext=1, encrypted=2 
+values.put("data_output_form", "1"); // plaintext=1, encrypted=2
+values.put("data_input_encrypted_key","Encrypted Secret Key");
+values.put("data_value", inputData);
+</code></pre></li>
+</ol>
 
 <hr>
 
