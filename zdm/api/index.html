@@ -220,11 +220,396 @@
                                 <div class="service-box wow fadeInRight">
                                     <div class="">
 
-                                        <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
+                                        <p></p><blockquote>
+  <p>NOTE: This information was adapted from the <a href="../oeminfo/consume">OEMInfo 'Consume' Guide</a> and <strong>must be validated for use here by engineering</strong>. </p>
+</blockquote>
 
-<p>Zebra is implementing the Android Content Provider model, a Google-sanctioned framework for data sharing, as the mechanism for data persistence and data sharing among apps installed on Zebra devices. This model consists of a set of publicly available APIs through which apps can publish data for consumption programmatically by other apps or by the originating app itself. </p>
+<p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>Learn more about the <a href="https://developer.android.com/guide/topics/providers/content-provider-basics">Android Content Provider</a> framework. </p><p></p>
+<p>Zebra is implementing the Android Content Provider (ACP) model, a Google-sanctioned framework for data sharing, as the mechanism for data persistence and data sharing among apps installed on Zebra devices. This model consists of a set of publicly available APIs through which apps can publish data for consumption programmatically by other apps or by the originating app itself. </p>
+
+<p><strong>ACP defines Data Consumers as apps seeking to retrieve information from apps sharing data–called Data Providers–on the device on which they are running</strong>. Examples of Zebra publisher apps include StageNow and OEMconfig, as well as Power Manager and other built-in configuration service provider (CSP) modules, which interface directly with Zebra's device-API layer. </p>
+
+<p><img alt="image" style="height:350px" src="contentprovider_basics.png">
+<b><font size="1" color="LightGrey">Source: https://developer.android.com/guide/topics/providers/content-provider-basics.html</font></b><br>
+<em>Click image to enlarge; ESC to exit</em>. 
+<br></p>
+
+<p>Information for consumption is made available through <strong><a href="../publish">Data Provider apps</a></strong>. Both app types–Consumers and Providers–use the <a href="../faq/#whatdoeszdpistandfor">Zebra Data Provider Interfaces (ZDPIs)</a> to consume data and/or to publish data for consumption. </p>
+
+<hr>
+
+<h2 id="consumingdata" class="anchor"><a class="heading-anchor" href="#consumingdata"><span></span></a>Consuming Data</h2>
+
+<p><strong>The process of retrieving data is the same as that of querying an <a href="https://developer.android.com/guide/topics/providers/content-providers">Android content provider</a></strong>. Android employs content URIs to identify certain data available from a provider. </p>
+
+<p><strong>However, before an app can retrieve data, it must first receive permission</strong> to do so. This step must be performed only once for each app, but is required before the app can attempt any read operation. </p>
+
+<h4 id="toacquirereadpermission" class="anchor"><a class="heading-anchor" href="#toacquirereadpermission"><span></span></a>To acquire read permission:</h4>
+
+<p><strong>Add the following statement to the app's</strong> <code>AndroidManifest.xml</code> file:</p>
+
+<pre class="prettyprint"><code>    &lt;uses-permission android:name=”com.zebra.provider.READ”&gt;
+</code></pre>
+
+<h3 id="contenturis" class="anchor"><a class="heading-anchor" href="#contenturis"><span></span></a>Content URIs</h3>
+
+<p>Each content URI includes the authority of the content provider represented as a symbolic name along with the package name of a Content Provider or path to a table containing its content. When calling a client method to access a content provider or table, the content URI is passed as an argument.</p>
+
+<p><strong>URIs are broken into four (4) parts</strong> as<code>&lt;scheme:&gt;//&lt;Authority&gt;/&lt;Provider name&gt;/&lt;API&gt;</code></p>
+
+<p><strong>For example, the URI</strong> <code>content://oem_info/oem.zebra.secure/build_serial</code> <strong>can be broken down as follows</strong>: </p>
+
+<ul>
+<li><code>content:</code> is the <strong>scheme</strong>, which tells Android that the URI points to a content provider.  </li>
+
+<li><code>oem_info</code> is the <strong>authority name</strong> of the content provider.</li>
+
+<li><code>oem.zebra.secure</code> is the <strong>content provider name</strong> unique within a given authority. Usually a package name.</li>
+
+<li><code>build_serial</code> is the <strong>API name</strong> unique within a given package name.</li>
+</ul>
+
+<hr>
+
+<h3 id="authorizationmechanism" class="anchor"><a class="heading-anchor" href="#authorizationmechanism"><span></span></a>Authorization Mechanism</h3>
+
+<p>The ZDPI uses Zebra <a href="/mx/accessmgr">Access Manager</a> to grant or deny apps authorization to access data published by the framework. The Zebra-owned system components and application types listed below are authorized by default. </p>
+
+<h4 id="preauthorizedapps" class="anchor"><a class="heading-anchor" href="#preauthorizedapps"><span></span></a>Pre-Authorized Apps</h4>
+
+<ul>
+<li>Zebra built-in system apps (e.g. OEMConfig, StageNow, MX components (CSPs))</li>
+
+<li>Apps signed with the Zebra Common Key</li>
+
+<li>Dual-key apps if one of the keys is the Zebra Common Key</li>
+
+<li>Plug-in CSPs (installed after shipment from factory and authorized by key generated by Zebra certificate authority)</li>
+</ul>
+
+<h4 id="authorizationrequired" class="anchor"><a class="heading-anchor" href="#authorizationrequired"><span></span></a>Authorization Required</h4>
+
+<ul>
+<li>Customer-developed apps and services</li>
+
+<li>Third-party apps</li>
+
+<li>Any app NOT developed by Zebra</li>
+</ul>
+
+<p>When provisioning one or more of the app types listed above, authorization to access the ZDPI can be granted using StageNow and Access Manager, OEMconfig and the Service Access Configuration, or a company's own Enterprise Mobile Management system. </p>
+
+<p><img alt="image" style="height:350px" src="stagenow_access_mgr.png">
+<em>Click image to enlarge; ESC to exit</em>. 
+<br></p>
+
+<h4 id="tograntaccessusingaccessmanagerandstagenow" class="anchor"><a class="heading-anchor" href="#tograntaccessusingaccessmanagerandstagenow"><span></span></a>To grant access using Access Manager and StageNow:</h4>
+
+<p>Configure the following actions based on the individual requirements. </p>
+
+<ol>
+<li><strong>Service Access Action</strong>: “Allow Caller to Call Service”</li>
+
+<li><strong>Service Identifier</strong>: ZDPI URI to access (see <a href="../consume">Data Consumption guide</a>)</li>
+
+<li><strong>Caller Package Name</strong>: Package Name of the third-party app</li>
+
+<li><strong>Caller Signature</strong>: App certificate of the third-party app</li>
+</ol>
+
+<h4 id="alsosee" class="anchor"><a class="heading-anchor" href="#alsosee"><span></span></a>Also See</h4>
+
+<p><strong><a href="https://developer.zebra.com/blog/generating-package-signature-use-mx">How to generate a caller signature</a></strong> | Zebra engineering article on the "package signature" </p>
+
+<hr>
+
+<h2 id="samplecode" class="anchor"><a class="heading-anchor" href="#samplecode"><span></span></a>Sample Code</h2>
+
+<p>Modify the code samples below to suit individual needs. </p>
+
+<h3 id="acquirebluetoothmac" class="anchor"><a class="heading-anchor" href="#acquirebluetoothmac"><span></span></a>Acquire Bluetooth MAC</h3>
+
+<blockquote>
+  <p><code>IMPORTANT:</code> The Bluetooth radio must be enabled on the device to retrieve the Bluetooth MAC address using OEMinfo.</p>
+</blockquote>
+
+<ol>
+<li><p><strong>Get the AUTHORITY, PROVIDER and API</strong> using the following command:<br></p>
+
+<pre class="prettyprint"><code>String BT_MAC = "content://oem_info/oem.zebra.secure/bt_mac";
+</code></pre></li>
+
+<li><p><strong>Get the data</strong> (in this case the device's Bluetooth MAC address) by parsing the string using Android cursor query methods implemented in the following Java code:<br></p>
+
+<pre class="prettyprint"><code>
+// Prepare the URI
+public void getData() {
+    final Uri myUri = Uri.parse(BT_MAC);
+    new UpdateAsync().execute(myUri.toString());
+}
+
+// Always query for data in Async task or background thread
+class UpdateAsync extends AsyncTask&lt;String,Void,Cursor&gt; {
+    private String myUri;
+
+@Override
+protected Cursor doInBackground(String... args) {
+    myUri = args[0];
+
+<pre><code>// Query the content provider
+ContentResolver cr = getContentResolver();
+Cursor cursor = cr.query(Uri.parse(myUri),
+                null, null, null, null);
+
+// Read the cursor
+cursor.moveToFirst();
+String bluetoothMAC = cursor.getString(0);
+Log.i(TAG, "The Bluetooth MAC is : ” + bluetoothMAC);            
+return cursor;
+}
+</code></pre>
+
+}
+</code></pre></li>
+</ol>
+
+<p><strong>Skip to the <a href="#callbacks">Callback section</a></strong> to see sample code for setting an app to be notified of changes to OEMinfo data. This Zebra-recommended practice can be helpful for monitoring non-static URIs.</p>
+
+<hr>
+
+<h3 id="acquireserialnumber" class="anchor"><a class="heading-anchor" href="#acquireserialnumber"><span></span></a>Acquire Serial Number</h3>
+
+<ol>
+<li><p><strong>Get the AUTHORITY, PROVIDER and API</strong> using the following command:<br></p>
+
+<pre class="prettyprint"><code>String SERIAL_URI = "content://oem_info/oem.zebra.secure/build_serial";
+</code></pre></li>
+
+<li><p><strong>Get the data</strong> (in this case the device serial number) by parsing the string using Android cursor query methods implemented in the following Java code:<br></p>
+
+<pre class="prettyprint"><code>
+// Prepare the URI
+public void getData() {
+    final Uri myUri = Uri.parse(SERIAL_URI);
+    new UpdateAsync().execute(myUri.toString());
+}
+
+// Always query for data in Async task or background thread
+class UpdateAsync extends AsyncTask&lt;String,Void,Cursor&gt; {
+    private String myUri;
+
+@Override
+protected Cursor doInBackground(String... args) {
+    myUri = args[0];
+
+<pre><code>// Query the content provider
+ContentResolver cr = getContentResolver();
+Cursor cursor = cr.query(Uri.parse(myUri),
+                null, null, null, null);
+
+// Read the cursor
+cursor.moveToFirst();
+String serialNumber = cursor.getString(0);
+Log.i(TAG, "Device Serial Number is : ” + serialNumber);            
+return cursor;
+}
+</code></pre>
+
+}
+</code></pre></li>
+</ol>
+
+<p><strong>Skip to the <a href="#callbacks">Callback section</a></strong> to see sample code for setting an app to be notified of changes to OEMinfo data. This Zebra-recommended practice can be helpful for monitoring non-static URIs.</p>
+
+<hr>
+
+<h3 id="acquireimei" class="anchor"><a class="heading-anchor" href="#acquireimei"><span></span></a>Acquire IMEI</h3>
+
+<ol>
+<li><p><strong>Get the AUTHORITY, PROVIDER and API</strong> using the following command:<br></p>
+
+<pre class="prettyprint"><code>String IMEI_URI = “content://oem_info/wan/imei”;
+</code></pre></li>
+
+<li><p><strong>Get the data</strong> (in this case the device IMEI number) by parsing the string using Android cursor query methods implemented in the following Java code:<br></p>
+
+<pre class="prettyprint"><code>
+// Prepare the URI
+public void getData() {
+    final Uri myUri = Uri.parse(IMEI_URI);
+    new UpdateAsync().execute(myUri.toString());
+}
+
+// Always query for data in Async task or background thread
+class UpdateAsync extends AsyncTask&lt;String,Void,Cursor&gt; {
+    private String myUri;
+
+@Override
+protected Cursor doInBackground(String... args) {
+    myUri = args[0];
+
+<pre><code>// Query the content provider
+ContentResolver cr = getContentResolver();
+Cursor cursor = cr.query(Uri.parse(myUri),
+            null, null, null, null);
+
+// Read the cursor
+cursor.moveToFirst();
+String imeiNumber = cursor.getString(0);
+Log.i(TAG, "Device IMEI is : ” + imeiNumber);            
+return cursor;
+}
+</code></pre>
+
+}
+</code></pre></li>
+</ol>
+
+<hr>
+
+<h3 id="acquireosupdateinfo" class="anchor"><a class="heading-anchor" href="#acquireosupdateinfo"><span></span></a>Acquire OS update info</h3>
+
+<ol>
+<li><p><strong>Get the AUTHORITY, PROVIDER and API</strong> using the following Java code:<br></p>
+
+<pre class="prettyprint"><code>
+// OS UPDATE URI
+String OSU_URI = “content://oem_info/oem.zebra.osupdate”;
+
+// APIs
+String OSU_STATUS = “status”; 
+// Returns SUCCESS, IN_PROGRESS, FAIL, WAITING_FOR_REBOOT, etc.
+
+String OSU_DETAIL = “detail”;
+// Text representation of the status contains detailed reason
+
+String OSU_TS = “ts”;
+// Returns an Epoch time stamp indicating when the intent is received
+</code></pre></li>
+
+<li><p><strong>Get the data</strong> (in this case the device OS update info) by parsing the string using Android cursor query methods implemented in the following Java code:<br></p>
+
+<pre class="prettyprint"><code>        
+        // Prepare the URI
+        public void getData() {
+            final Uri myUri = Uri.parse(OSU_URI);
+            new UpdateAsync().execute(myUri.toString());
+        }
+
+<pre><code>    // Always query for data in Async task or background thread
+        class UpdateAsync extends AsyncTask&amp;lt;String,Void,Cursor&amp;gt; {
+        private String myUri;
+
+    @Override
+    protected Cursor doInBackground(String... args) {
+        myUri = args[0];
+
+        // Query the content provider
+        ContentResolver cr = getContentResolver();
+        Cursor cursor = cr.query(Uri.parse(myUri),
+                        null, null, null, null);
+
+        // Read the cursor
+        While (cursor.moveToNext()) {
+        String status = cursor.getString(
+        cursor.getColumnIndex(OSU_STATUS));
+
+        String detail = cursor.getString(
+        cursor.getColumnIndex(OSU_DETAIL));
+
+        String time = cursor.getString(
+        cursor.getColumnIndex(OSU_TS));
+
+        Log.i(TAG, "STATUS : " + status + “, DETAIL : ” + detail
+            + “, TIME : ” + time);
+
+    }
+    return cursor;
+}
+</code></pre>
+
+}
+</code></pre></li>
+</ol>
+
+<hr>
+
+<h3 id="callbacks" class="anchor"><a class="heading-anchor" href="#callbacks"><span></span></a>Callbacks</h3>
+
+<p><strong>Use the following Java code to register an app to be notified when URI data changes</strong>. Apps also can receive callbacks for changes to the content using the standard Android content observer methods, but <strong>Zebra recommends always registering callbacks for semi-static URI values</strong>.</p>
+
+<pre class="prettyprint"><code>    // Prepare the URI
+    Uri myUri = Uri.Parse(MY_URI_STRING);
+
+    // Register with content observer
+    ContentResolver cr = getContentResolver();
+    cr.registerContentObserver(myUri, true, 
+        new ContentObserver(new Handler(getMainLooper())) {
+
+        @Override
+        public void onChange(boolean selfChange, Uri uri) {
+            super.onChange(selfChange, uri);
+
+            // Content has changed
+            Log.d(TAG, "content has changed, uri = " + uri);
+
+            // Reading the data is like above example
+            getData();
+        }
+    });
+</code></pre>
+
+<hr>
+
+<h3 id="limitations" class="anchor"><a class="heading-anchor" href="#limitations"><span></span></a>Limitations</h3>
+
+<p><strong>Data acquired through the OEMinfo content provider is subject to the rules and limitations listed below</strong>. </p>
+
+<ul>
+<li>With the exception of OS Update events, <strong>OEMinfo does NOT read system properties that can change at runtime</strong>.</li>
+
+<li><strong>OEMinfo reads system properties only after being signaled by the</strong> <code>BOOT_COMPLETE</code> event.
+
+
+<ul>
+<li>After receiving <code>BOOT_COMPLETE</code>, OEMinfo queries selected system properties and refreshes the content provider. This generally takes a few seconds, but <strong>a delay of about one minute is typical before results of an OS Update are published to the ZDPI</strong>.</li>
+
+<li>If an app queries OEMinfo too soon after reboot, <strong>some URIs might return "stale" data</strong>, posing a potential issue for non-static values. </li></ul>
+</li>
+
+<li><strong>OEMinfo requires extra time populate the content provider database</strong> when device data is wiped after an Enterprise Reset, Factory Reset or other erasure event.
+
+
+<ul>
+<li><strong>Zebra recommends registering apps with a content observer on the URI to receive a callback whenever new data is available</strong> to avoid issues relating to stale or missing data due to re-population delays.</li></ul>
+</li>
+
+<li><strong>OEMinfo is “System UID” and platform-signed</strong>, and is therefore <strong>subject to platform permissions and SELinux restrictions</strong> across Android versions and devices.
+
+
+<ul>
+<li>The same set of <strong>system properties might not be readable on all devices</strong>.</li>
+
+<li>System properties might become restricted, removed or added after an OS update.</li></ul>
+</li>
+</ul>
+
+<hr>
+
+<h2 id="alsosee-1" class="anchor"><a class="heading-anchor" href="#alsosee-1"><span></span></a>Also See</h2>
+
+<h4 id="androiddeveloperdocs" class="anchor"><a class="heading-anchor" href="#androiddeveloperdocs"><span></span></a>Android Developer Docs</h4>
+
+<ul>
+<li><strong><a href="https://developer.android.com/guide/topics/providers/content-providers">Android Content Provider Basics</a></strong> | An Introduction</li>
+
+<li><strong><a href="https://developer.android.com/guide/topics/providers/content-provider-creating">Creating a content provider</a></strong> | Why and how to share an app's data</li>
+
+<li><strong><a href="https://developer.android.com/reference/android/database/Cursor">Android Cursor docs</a></strong> | How to interface with a result data set</li>
+
+<li><strong><a href="https://developer.android.com/reference/android/database/ContentObserver.html">Content Observer</a></strong> | Get a callback when data changes</li>
+</ul><p></p>
                                         
 
 
