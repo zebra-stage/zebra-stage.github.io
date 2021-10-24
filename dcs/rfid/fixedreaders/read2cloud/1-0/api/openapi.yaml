@@ -1,18 +1,20 @@
 openapi: 3.0.2
 info:
   version: 1.0.0
-  title: Cloud Connection Configuration
+  title: CloudConnect Reader REST API
   contact:
     url: 'http://zebra.com/support'
   x-logo:
     url: ./Zebra_Logo_K.png
-  description: |
-    # Your description here
+  description:
+    $ref: ./components/schemas/README.md
 paths:
   /cloud/version:
     parameters: []
     get:
+      operationId: get_version
       summary: Retrieves reader component version information
+      description: 'Retrieves reader component version information including Boot Loader, OS, Reader Application, and Radio Firmware versions'
       responses:
         '200':
           description: OK
@@ -20,22 +22,20 @@ paths:
             application/json:
               schema:
                 $ref: ./components/schemas/readerversion.v1.yaml
-        '400':
-          description: Bad Request
+        '422':
+          description: Unprocessable Entity
           content:
             application/json:
               schema:
                 $ref: ./components/schemas/error.v1.yaml
         '500':
-          description: Internal Device Error
+          description: Internal Server Error
           content:
             application/json:
               schema:
                 $ref: ./components/schemas/error.v1.yaml
-      operationId: get_version
-      description: 'Retrieves reader component version information including Boot Loader, OS, Reader Application, and Radio Firmware versions'
       tags:
-        - Management
+        - Information
   /cloud/network:
     parameters: []
     get:
@@ -47,8 +47,8 @@ paths:
             application/json:
               schema:
                 $ref: ./components/schemas/readernetwork.v1.yaml
-        '400':
-          description: Bad Request
+        '422':
+          description: Unprocessable Entity
           content:
             application/json:
               schema:
@@ -62,29 +62,38 @@ paths:
       operationId: get_network
       description: 'Retrieves reader network information including IP address, subnet mask, gateway and DNS'
       tags:
-        - Management
+        - Reader Configuration
     put:
       summary: Updates reader network configuration
       operationId: set_network
       responses:
         '200':
           description: OK
+        '422':
+          description: Unprocessable Entity
           content:
-            text/html:
+            application/json:
               schema:
-                description: Command Successful
-                type: string
-                default: Command Successful
-                example: Command Successful
+                $ref: ./components/schemas/error.v1.yaml
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: ./components/schemas/error.v1.yaml
       description: Updates the reader network configuration settings
       requestBody:
         content:
           application/json:
             schema:
-              $ref: ./components/schemas/networkconfig.v1.yaml
+              $ref: ./components/schemas/readerNetworkSet.yaml
+          application/xml:
+            schema:
+              type: object
+              properties: {}
         description: ''
       tags:
-        - Management
+        - Reader Configuration
   /cloud/status:
     parameters: []
     get:
@@ -98,14 +107,8 @@ paths:
                 oneOf:
                   - $ref: ./components/schemas/readerstats.v1.yaml
                   - $ref: ./components/schemas/readerupgradestatus.v1.yaml
-        '202':
-          description: Accepted
-          content:
-            application/json:
-              schema:
-                $ref: ./components/schemas/readerupgradestatus.v1.yaml
-        '400':
-          description: Bad Request
+        '422':
+          description: Unprocessable Entity
           content:
             application/json:
               schema:
@@ -119,29 +122,16 @@ paths:
       operationId: get_status
       description: Retrieves reader operational statistics for read points
       tags:
-        - Management
+        - Information
   /cloud/reboot:
     parameters: []
     put:
       summary: Restarts reader
       responses:
-        '202':
-          description: Accepted
-          headers:
-            Location:
-              description: A URL that will provide a status of the restart
-              schema:
-                type: string
-                example: 'https://mock-api.zebra.com/v2/rfid-read-to-cloud/status'
-          content:
-            text/html:
-              schema:
-                type: string
-                default: Reboot Pending
-                description: Restart Pending
-                example: Reboot Pending
-        '400':
-          description: Bad Request
+        '200':
+          description: OK
+        '422':
+          description: Unprocessable Entity
           content:
             application/json:
               schema:
@@ -155,37 +145,18 @@ paths:
       operationId: reboot
       description: Restarts the reader with the device ID provided
       tags:
-        - Management
+        - Reader Actions
   /cloud/gpo:
     put:
       summary: Updates GPO port state
       operationId: set_gpo
       description: Updates the GPO state on the specified port of the reader
-      parameters:
-        - in: query
-          name: port
-          description: The GPO port ID
-          required: true
-          schema:
-            type: integer
-        - in: query
-          name: state
-          description: The GPO state signal to send
-          required: true
-          schema:
-            type: boolean
+      parameters: []
       responses:
         '200':
           description: OK
-          content:
-            text/html:
-              schema:
-                description: Command Successful
-                type: string
-                default: Command Successful
-                example: Command Successful
-        '400':
-          description: Bad Request
+        '422':
+          description: Unprocessable Entity
           content:
             application/json:
               schema:
@@ -197,76 +168,17 @@ paths:
               schema:
                 $ref: ./components/schemas/error.v1.yaml
       tags:
-        - Management
+        - Reader Actions
     parameters: []
   /cloud/app-led:
-    put:
-      summary: Updates application LED state
-      operationId: set_appled
-      description: Updates the application LED state on the reader to the state specified
-      parameters:
-        - in: query
-          name: color
-          description: 'The color of the LED (red, amber, green)'
-          required: true
-          schema:
-            type: string
-            enum:
-              - red
-              - amber
-              - green
-        - in: query
-          name: seconds
-          description: The duration in seconds for the LED state to be in effect
-          required: true
-          schema:
-            type: integer
-        - in: query
-          name: flash
-          description: A value indicating whether to flash the LED
-          required: false
-          schema:
-            type: boolean
-      responses:
-        '200':
-          description: OK
-          content:
-            text/html:
-              schema:
-                description: Command Successful
-                type: string
-                default: Command Successful
-                example: Command Successful
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: ./components/schemas/error.v1.yaml
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: ./components/schemas/error.v1.yaml
-      tags:
-        - Management
-    parameters: []
     get:
       summary: Retrieves application LED state
       operationId: get_appled
       responses:
         '200':
           description: OK
-          content:
-            text/html:
-              schema:
-                type: string
-                enum:
-                  - DEFAULT
-                  - NON_DEFAULT
-        '400':
-          description: Bad Request
+        '422':
+          description: Unprocessable Entity
           content:
             application/json:
               schema:
@@ -279,7 +191,35 @@ paths:
                 $ref: ./components/schemas/error.v1.yaml
       description: Retrieves a value indicating the current state of the application LED
       tags:
-        - Management
+        - Reader Actions
+    put:
+      summary: Updates application LED state
+      operationId: set_appled
+      description: Updates the application LED state on the reader to the state specified
+      parameters: []
+      responses:
+        '200':
+          description: OK
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: ./components/schemas/error.v1.yaml
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: ./components/schemas/error.v1.yaml
+      tags:
+        - Reader Actions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: ./components/schemas/appled.v1.yaml
+    parameters: []
   /cloud/region:
     parameters: []
     get:
@@ -291,8 +231,8 @@ paths:
             application/json:
               schema:
                 $ref: ./components/schemas/regionconfig.v1.yaml
-        '400':
-          description: Bad Request
+        '422':
+          description: Unprocessable Entity
           content:
             application/json:
               schema:
@@ -306,7 +246,7 @@ paths:
       operationId: get_region
       description: Retrieves reader region (country) information
       tags:
-        - Management
+        - Reader Configuration
   /cloud/start:
     parameters: []
     put:
@@ -314,15 +254,8 @@ paths:
       responses:
         '200':
           description: OK
-          content:
-            text/html:
-              schema:
-                description: Command Successful
-                type: string
-                default: Command Successful
-                example: Command Successful
-        '400':
-          description: Bad Request
+        '422':
+          description: Unprocessable Entity
           content:
             application/json:
               schema:
@@ -336,7 +269,7 @@ paths:
       operationId: start
       description: Starts the reader reading tags
       tags:
-        - Control
+        - RFID Actions
   /cloud/stop:
     parameters: []
     put:
@@ -344,15 +277,8 @@ paths:
       responses:
         '200':
           description: OK
-          content:
-            text/html:
-              schema:
-                description: Command Successful
-                type: string
-                default: Command Successful
-                example: Command Successful
-        '400':
-          description: Bad Request
+        '422':
+          description: Unprocessable Entity
           content:
             application/json:
               schema:
@@ -366,7 +292,7 @@ paths:
       operationId: stop
       description: Stops the reader reading tags
       tags:
-        - Control
+        - RFID Actions
   /cloud/mode:
     get:
       summary: Retrieves operating mode
@@ -376,9 +302,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./components/schemas/modes/operatingMode.v1.yaml
-        '400':
-          description: Bad Request
+                $ref: ./components/schemas/operatingMode.v1.yaml
+        '422':
+          description: Unprocessable Entity
           content:
             application/json:
               schema:
@@ -392,21 +318,14 @@ paths:
       operationId: get_mode
       description: Retrieves current operating mode
       tags:
-        - Control
+        - RFID Configuration
     put:
-      summary: Updates identification mode
+      summary: Updates operating mode
       responses:
         '200':
           description: OK
-          content:
-            text/html:
-              schema:
-                description: Command Successful
-                type: string
-                default: Command Successful
-                example: Command Successful
-        '400':
-          description: Bad Request
+        '422':
+          description: Unprocessable Entity
           content:
             application/json:
               schema:
@@ -422,11 +341,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: ./components/schemas/modes/operatingMode.v1.yaml
-        description: The new identification mode
-      description: "Changes the reader's operating mode"
+              $ref: ./components/schemas/operatingMode.v1.yaml
+        description: The new operation mode
+      description: Changes the reader's operating mode
       tags:
-        - Control
+        - RFID Configuration
     parameters: []
   /cloud/os:
     parameters: []
@@ -435,7 +354,7 @@ paths:
       operationId: set_os
       description: Update the OS software on the device
       tags:
-        - Management
+        - Reader Actions
       requestBody:
         content:
           application/json:
@@ -444,22 +363,56 @@ paths:
       responses:
         '200':
           description: OK
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: ./components/schemas/error.v1.yaml
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: ./components/schemas/error.v1.yaml
   /cloud/config:
     parameters: []
+    get:
+      summary: Retrieves reader configuration
+      operationId: get_config
+      description: Retrieves reader configuration
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  xml:
+                    type: string
+                    description: The current reader configuration XML string
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: ./components/schemas/error.v1.yaml
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: ./components/schemas/error.v1.yaml
+      tags:
+        - Reader Configuration
     put:
       summary: Updates reader configuration
       responses:
         '200':
           description: OK
-          content:
-            text/html:
-              schema:
-                description: Command Successful
-                type: string
-                default: Command Successful
-                example: Command Successful
-        '400':
-          description: Bad Request
+        '422':
+          description: Unprocessable Entity
           content:
             application/json:
               schema:
@@ -483,24 +436,7 @@ paths:
         description: The new reader configuration XML file
       description: Updates the reader configuration
       tags:
-        - Management
-    get:
-      summary: Retrieves reader configuration
-      operationId: get_config
-      description: Retrieves reader configuration
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  xml:
-                    type: string
-                    description: The current reader configuration XML string
-      tags:
-        - Management
+        - Reader Configuration
   /cloud/logs:
     get:
       summary: Log Configuration
@@ -512,8 +448,8 @@ paths:
               schema:
                 $ref: ./components/schemas/logLevel.v1.json
           headers: {}
-        '400':
-          description: Bad Request
+        '422':
+          description: Unprocessable Entity
           content:
             application/json:
               schema:
@@ -527,21 +463,14 @@ paths:
       operationId: get_logs
       description: Retrieves reader log configuration
       tags:
-        - Management
+        - Reader Configuration
     put:
       summary: Configures the logs
       responses:
         '200':
           description: OK
-          content:
-            text/html:
-              schema:
-                description: Command Successful
-                type: string
-                default: Command Successful
-                example: Command Successful
-        '400':
-          description: Bad Request
+        '422':
+          description: Unprocessable Entity
           content:
             application/json:
               schema:
@@ -561,7 +490,7 @@ paths:
         description: The log level to configure
       description: Changes logging level
       tags:
-        - Management
+        - Reader Configuration
     parameters: []
   '/cloud/logs/{logType}':
     parameters:
@@ -583,8 +512,8 @@ paths:
             application/gzip:
               schema:
                 description: Reader Logs Retrieved
-        '400':
-          description: Bad Request
+        '422':
+          description: Unprocessable Entity
           content:
             application/json:
               schema:
@@ -597,7 +526,7 @@ paths:
                 $ref: ./components/schemas/error.v1.yaml
       operationId: get_logs_syslog
       tags:
-        - Management
+        - Reader Actions
       description: Retrieves a reader log
     delete:
       summary: Purge Log
@@ -605,8 +534,8 @@ paths:
       responses:
         '200':
           description: OK
-        '400':
-          description: Bad Request
+        '422':
+          description: Unprocessable Entity
           content:
             application/json:
               schema:
@@ -619,23 +548,26 @@ paths:
                 $ref: ./components/schemas/error.v1.yaml
       description: Purges a particular log
       tags:
-        - Management
+        - Reader Configuration
 tags:
   - name: operating_mode
     x-displayName: Configuration for the Operating Modes
     description: |
       <SchemaDefinition schemaRef="#/components/schemas/operatingModes" />
 x-tagGroups:
-  - name: Management
+  - name: Reader Management APIs
     tags:
-      - Management
-  - name: Control
-    tags: 
-      - Control
-  - name: Models
+      - Information
+      - Reader Configuration
+      - Reader Actions
+  - name: RFID Control APIs
+    tags:
+      - RFID Configuration
+      - RFID Actions
+  - name: Schemas
     tags:
       - operating_mode
 components:
   schemas:
     operatingModes:
-      $ref: ./components/schemas/modes/operatingMode.v1.yaml
+      $ref: ./components/schemas/operatingMode.v1.yaml
