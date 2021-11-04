@@ -179,77 +179,118 @@
 
 <pre class="prettyprint">
 <code>
+&lt;!-- Filename: Logging-Agent-Config.xml -->
+&lt;!-- Refer to https://techdocs.zebra.com/dcs/scanners/logging-agent/about/ for Logging Agent info -->
 &lt;config>
     &lt;settings>
         &lt;spd_log>
-            &lt;!--There could be multiple sinks with different settings defined here. -->
+            &lt;!-- Sinks section - define output target(s) of Logging Agent -->
+            &lt;!-- Multiple sink types are supported. Refer to https://github.com/gabime/spdlog/wiki/4.-Sinks -->
             &lt;sinks>
-                &lt;!-- rotating_file_sink_mt: When the max file size is reached, close the file, rename it, and create a new file. Both the max file size and the max number of files are configurable in the constructor.-->
+                &lt;!-- rotating_file_sink_mt: When the max file size is reached, close the file, rename it and create a new file. Both max file size and max number of files are configurable. -->
                 &lt;sink type="rotating_file_sink_mt" name="rotating_file_sink_mt">
-                    &lt;!-- Name of the Log file. %h - Host name , %H - Host ID (Physical address of the first MAC), %u - User name without domain (Ex. AAA) and %U - User name with domain (Ex. AAA@zebra.com. Domain in @ format)-->
+                    &lt;!-- Name of the Log file. %h - Host name , %H - Host ID (Physical address of the first MAC), %u - User name without domain (Ex. AAA), %U - User name with domain (Ex. AAA@zebra.com. Domain in @ format) and %Q-&lt;VariableName>% - VariableName is any system/user environmental variable -->
                     &lt;property key="log_file_name" value="LogAgent-%h.log" />
-                    &lt;!-- This is where the log files will be saved. The path should be valid in order for Logging Agent to create the logs. Logging Agent will not create directories. -->
-                    &lt;!--This value can be a network location as well. Eg: value="\\10.225.123.31\Temp\logging-agent-logs"-->
+                    &lt;!-- Path where the log files will be saved. The path must be accessible for the Logging Agent to create the logs. -->
+                    &lt;!-- log_file_path can be a network location as well. Eg for Windows systems: value="\\10.100.100.10\Temp\logging-agent-logs" . For Linux systems, first mount the shared folder to current system. Then give the path of that location on the current system -->
                     &lt;property key="log_file_path" value="logs" />
                     &lt;!-- Max file size in Kilo Bytes (considering 1KB = 1024B). Minimum size is 5KB and if any value less is defined, will be defaulted to the minimum value. -->
                     &lt;property key="max_file_size" value="5120" />
                     &lt;!-- Max file count. The minimum is 1 and anything less or invalid value will be defaulted to 1. -->
                     &lt;property key="max_file_count" value="5" />
-                    &lt;!-- Pattern of the single log entry. Please refer https://github.com/gabime/spdlog/wiki/3.-Custom-formatting for more information. -->
-                    &lt;property key="log_pattern" value="[%Y-%m-%d %H:%M:%S] %v" />
+                    &lt;!-- Pattern of a single log entry. Please refer to https://github.com/gabime/spdlog/wiki/3.-Custom-formatting for more information. -->
+                    &lt;!-- To add host info into a log entry. %J - Host name , %K - Host ID (Physical address of the first MAC), %U - User name without domain, %V - User name with domain. and %Q-&lt;VariableName>% - VariableName is any system/user environmental variable -->
+                    &lt;property key="log_pattern" value="[%Y-%m-%d %H:%M:%S] [%J] %v" />
                     &lt;!-- Log level to be recorded.  2 = INFO, 3 = WARNING, 4 = ERROR, 5 = CRITICAL 6 = LOG_OFF, 0,1 = TRACE,DEBUG (Works only with debug build) -->
                     &lt;property key="log_level" value="2" />
                 &lt;/sink>
+                &lt;!-- Sink defined to produce screen output with -s command line switch -->
                 &lt;sink type="stdout_color_sink_mt" name="stdout_color_sink_mt">
-                    &lt;!-- Pattern of the single log entry. Please refer https://github.com/gabime/spdlog/wiki/3.-Custom-formatting for more information. -->
                     &lt;property key="log_pattern" value="[%Y-%m-%d %H:%M:%S] %v" />
-                    &lt;!-- Log level to be recorded.  2 = INFO, 3 = WARNING, 4 = ERROR, 5 = CRITICAL 6 = LOG_OFF, 0,1 = TRACE,DEBUG (Works only with debug build) -->
                     &lt;property key="log_level" value="2" />
                 &lt;/sink>
+                &lt;!-- http_sink_mt: Sink will log everything to a defined http/https end point -->
+                &lt;?ignore
+                &lt;sink type="http_sink_mt" name="http_sink_mt">
+                    &lt;!-- URL of the server instance -->
+                    &lt;property key="url" value="server_url" />
+                    &lt;!-- HTTP headers for the request. Use semicolon(;) to separate multiple headers. Eg : header1;header2 -->
+                    &lt;property key="request_header" value="request_headers" />
+                    &lt;!-- Set the value to "true" to enable the batch mode. You can set the logging time interval and/or number of log entries(batch size) per batch -->
+                    &lt;property key="batch_mode" value="false" />
+                    &lt;!-- Number of logs per batch -->
+                    &lt;property key="batch_size" value="0" />
+                    &lt;!-- Time interval in seconds. Eg: 20.0 -->
+                    &lt;property key="logging_interval" value="0.0" />
+                    &lt;!-- Add strings that contain in logs to be send as soon as they happen. Use comma(,) to separate multiple entries. Eg : "EVENT:DEVICE ATTACHED,EVENT:DEVICE DETACHED" -->
+                    &lt;property key="real_time_log_filter" value="" />
+                    &lt;property key="log_pattern" value='{"event":{"time": "%Y-%m-%d %H:%M:%S", "level": "%^%l%$", "hostname": "%J", "message": "%v"}}' />
+                    &lt;property key="log_level" value="2" />
+                &lt;/sink>
+                ?>
+                &lt;!-- win_eventlog_sink_mt: Sink will log everything to Windows Event Viewer -->
+                &lt;!-- Run windows-event-log.bat file with administrator rights once before enabling this sink -->
+                &lt;?ignore
+                &lt;sink type="win_eventlog_sink_mt" name="win_eventlog_sink_mt">
+                    &lt;property key="log_pattern" value="[%Y-%m-%d %H:%M:%S] %v" />
+                    &lt;property key="log_level" value="2" />
+                &lt;/sink>
+                ?>
             &lt;/sinks>
         &lt;/spd_log>
-        &lt;!--There could be multiple log elements here. Eg: statistics, health, device-check -->
+        &lt;!-- Log Elements section - enable/disable and configure data content to be logged -->
+        &lt;!-- Multiple log-elements for sinks may be defined below. Eg: get-statistics, check-health, on-agent-startup, etc -->
         &lt;log-elements>
-            &lt;!-- Configure how the statistics are logged -->
+            &lt;!-- Configure get-statistics entries - intended for collection of scanner data -->
             &lt;get-statistics enabled="true">
-                &lt;group model=".*" serial=".*" schedule="0/20 * * * * *">
-                    &lt;!-- Max value for a period is ~ 596,523‬ hrs  -->
-                    &lt;!-- These scanner attributes will be retrieved from the scanner and their values will be logged. This could have multiple attributes defined here -->
-                    &lt;scanner-attribute-ids>15109,15839,15011&lt;/scanner-attribute-ids>
+                &lt;!-- Regular expression wildcards for model and serial may be defined -->
+                &lt;!-- Refer to https://www.freeformatter.com/cron-expression-generator-quartz.html for the schedule pattern -->
+                &lt;!-- The schedule on the following line gets statistics daily at 2am -->
+                &lt;group model=".*" serial=".*" schedule="0 2 0 * * *">
+                    &lt;!-- Scanner-attribute-ids will be queried from the scanner and their values will be logged. Multiple attributes separated by commas may be listed -->
+                    &lt;scanner-attribute-ids>15015&lt;/scanner-attribute-ids>
                 &lt;/group>
             &lt;/get-statistics>
+            &lt;!-- Configure check-health entries - intended to periodically confirm scanner availability -->
+            &lt;!-- The schedule below checks health every 30 minutes --> 
             &lt;check-health enabled="true">
-                &lt;group model=".*" serial=".*" schedule="0/30 * * * * *">
-                    &lt;!-- Max value for a period is ~ 596,523‬ hrs  -->
+                &lt;group model=".*" serial=".*" schedule="0 0/30 * * * *">
                     &lt;scanner-attribute-ids>15015&lt;/scanner-attribute-ids>
                 &lt;/group>
             &lt;/check-health>
+            &lt;!-- Configure an on-agent-startup entry -->
             &lt;on-agent-start-up enabled="true">
-                &lt;!-- check-model="true" check-serial="true" check-config-name="true"> -->
                 &lt;group model=".*" serial=".*">
-                    &lt;scanner-attribute-ids>534,533&lt;/scanner-attribute-ids>
+                    &lt;scanner-attribute-ids>15015&lt;/scanner-attribute-ids>
                 &lt;/group>
             &lt;/on-agent-start-up>
+            &lt;!-- Enable/disable on-system-shutdown entry -->
             &lt;on-system-shutdown enabled="true" />
-            &lt;!-- Used to enable/disable log entries on device attach-->
+            &lt;!-- Configure entries for scanner device attach -->
             &lt;on-attach enabled="true">
-                &lt;!-- check-model="true" check-serial="true" check-config-name="true"> -->
                 &lt;group model=".*" serial=".*">
                     &lt;scanner-attribute-ids>534,533&lt;/scanner-attribute-ids>
                 &lt;/group>
             &lt;/on-attach>
-            &lt;!-- Used to enable/disable log entries on device detach -->
+            &lt;!-- Enable/disable entry for scanner device detach -->
             &lt;on-detach enabled="true" />
             &lt;!-- Used to enable/disable log entries on barcode events -->
-            &lt;on-barcode enabled="true" />
+            &lt;!-- Non printable characters in the barcode will be replaced by "_"(ASCII 0x5F) -->
+            &lt;on-barcode enabled="false" />
             &lt;!-- Used to enable/disable log entries on firmware download events -->
-            &lt;on-firmware-download-start enabled="true" />
-            &lt;on-firmware-download-progress enabled="true" />
-            &lt;on-firmware-download-end enabled="true" />
+            &lt;on-firmware-download-start enabled="false" />
+            &lt;on-firmware-download-progress enabled="false" />
+            &lt;on-firmware-download-end enabled="false" />
             &lt;on-firmware-download-error enabled="true" />
+            &lt;!-- on-config-name-change is used to enable/disable log entries when a config name change occurs. This will be logged using the same schedule as check-health -->
+            &lt;!-- The timeout value specifies the time to wait before logging a config change -->
+            &lt;!-- The max timeout value is 60000 milliseconds (60 seconds). -->
+            &lt;on-config-name-change enabled="true" timeout="5000" />
+            &lt;!-- on-non-decode-event is used to enable/disable log entries if MP7xxx is enabled for non decode events -->
+            &lt;on-non-decode-event enabled="false"/>
         &lt;/log-elements>
     &lt;/settings>
-&lt;/config>      
+&lt;/config>    
 </code>
 </pre>
 
@@ -276,8 +317,20 @@
                                                                     <li>%H - Host ID (Physical address of the first MAC)</li>
                                                                     <li>%u - User name without domain (Ex. AAA)</li>
                                                                     <li>%U - User name with domain (Ex. AAA@zebra.com. Domain in @ format)</li>
+                                                                    <li>%Q-&lt;VariableName>% - VariableName is any system/user environment variable </li>
                                                                 </ul>
                                                                 <p>Eg: <property key="log_file_name" value="LogAgent-%h-%u.log" />. The log file will be named as LogAgent-hostname-username.log. The host name and the username will differ based on the user.</p>
+
+                                                                <p>The log pattern can be customized and support custom flags.
+                                                                    <ul>
+                                                                        <li>%J - Host name.</li>
+                                                                        <li>%K - Host ID (Physical address of the first MAC).</li>
+                                                                        <li>%U - Username without domain.</li>
+                                                                        <li>%V - Username with domain.</li>
+                                                                        <li>%Q-&lt;VariableName>% - VariableName is any system/user environment variable and any changes to these variables will reflect in the log patterns even during the runtime of Logging Agent.</li>
+                                                                    </ul>
+                                                                </p>
+
                                                                 <p>More sinks can be defined as per the need.</p>
                                                                 <p>Refer spd log documentation for more information on this area. <a href="https://github.com/gabime/spdlog" target="blank">https://github.com/gabime/spdlog</a></p>
                                                             </td>
@@ -359,6 +412,38 @@
                                                             </td>
                                                         </tr>
                                                     </table>
+
+                                                    <h3 id="configure-http-sink" class="anchor"><a class="heading-anchor" href="#configure-http-sink"><span></span></a>Configure the http sink</h3>
+
+                                                    <p>To enable the http sink on logging agent, enable the sink in the configuration file. By default, the http sink is disabled (commented out) and needs to be enabled. To enable, remove the “&lt;?ignore” and the “?>” lines around the http_sink_mt section in the config file. Then add the relevant server url and the http headers in the appropriate sections. Multiple headers have to be separated by semicolons(“;”).</p>
+
+                                                    <p>Example http headers for Splunk servers:</p>
+
+                                                    <p><strong>"Authorization: Splunk xxxxxxxxx-xxxx-xxxx-xxxxx-xxxxxxxxxxxx;X-Splunk-Request-Channel: xxxxxxx-xxxx-xxxxx-xxxxx-xxxxxxxxxxxxx"</strong></p>
+
+                                                    <p>Example http headers for Savanna servers:</p>
+
+                                                    <p><strong>"apikey: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx;Content-Type: application/json"</strong></p>
+
+                                                    <p>The log pattern needs to be configured to represent a JSON data object and it’s configurable to the client requirement. The default log pattern is configured for Splunk servers. The log pattern for Savanna servers is not configurable and needs to follow either of the below formats.</p>
+
+                                                    <p>Predefined log pattern 1:</p>
+
+                                                    <p><strong>'{"time": "%Y-%m-%d %H:%M:%S", "level": "%^%l%$", "hostname": "%J", "message": "%v"}'</strong></p>
+
+                                                    <p>Predefined log pattern 2:</p>
+
+                                                    <p><strong>'{"time": "%Y-%m-%d %H:%M:%S", "level": "%^%l%$", "hostname": "%J", "message": "%v", "user-data" : "User Data"}'</strong></p>
+
+                                                    <p>Apart from real time logging, http_sink supports batch logging. This means the http_sink can be configured to send data in bulks instead of real time.This helps to control network congestion. This mode is disabled by default has to be enabled.Then a user can specify the number of log entries per batch or/and logging time interval. Beside these two, this mode allows to send logs in real time upon the criticality.</p>
+
+                                                    <p>A user can includes sub-strings of the logs that have to be sent in real time in the real_time_log_filter property. Multiple entries have to be separated by commas(,).</p>
+
+                                                    <p><strong>Eg: “EVENT:DEVICE ATTACHED,EVENT:DEVICE DETACHED”</strong></p>
+
+                                                    <h3 id="configure-windows-event-sink" class="anchor"><a class="heading-anchor" href="#configure-windows-event-sink"><span></span></a>Configure the  Windows Event log sink (Windows)</h3>
+
+                                                    <p>By default this sink is also disabled. To enable this, remove the “&lt;?ignore” and the “?>”  lines around the win_eventlog_sink_mt in the config file. Then run the windows-event-log.bat file that in the same folder with other executables.</p>
 
                                                     <hr>
 
