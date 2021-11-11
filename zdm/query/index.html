@@ -236,9 +236,9 @@
 
 </p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p><strong>Zebra Device Manager is a service running on all Zebra devices with Android 11 (and later) that's designed to take the place of Zebra Mobility Extensions</strong>, commonly known as MX. ZDM performs most of the same functions as MX, while offering the additional features and capabilities listed below. </p>
+<p><strong>Zebra Device Manager is a service running on all Zebra devices with Android 11 (and later) that's designed to take the place of Zebra Mobility Extensions</strong>, commonly known as MX. ZDM performs most of the same functions as MX, while offering the additional features and capabilities listed below. For the purposes of this document, the terms <strong>MX, Zebra Device Manager, and ZDM are synonymous</strong>, and on devices running Android 11 (and later) can be considered interchangeable.</p>
 
-<h4 id="zdmaddstheabilityto" class="anchor"><a class="heading-anchor" href="#zdmaddstheabilityto"><span></span></a>ZDM adds the ability to:</h4>
+<h4 id="zdmaddstomxtheabilityto" class="anchor"><a class="heading-anchor" href="#zdmaddstomxtheabilityto"><span></span></a>ZDM adds to MX the ability to:</h4>
 
 <ul>
 <li><strong>Control the Device Policy Manager and access all DPM features</strong> and capabilities (if ZDM is set as the Device Owner)</li>
@@ -259,29 +259,25 @@
 
 <li><strong>Secure barcode processing</strong> for device configuration</li>
 
-<li><strong>Calls to all APIs</strong>, including those of the Android system, Zebra apps, and DPC and privileged device APIs </li>
-
 <li><strong>Managed Configuration processing</strong> for Zebra app administration</li>
+
+<li><strong>Communications with all APIs</strong>, including those of the Android system, Zebra apps, and DPC and privileged-device APIs </li>
 </ul>
 
 <p><strong>ZDM implements a content provider interface, allowing apps to perform simple queries for information about sharing of files and data among apps on the device</strong>. The content provider URIs used to query ZDM are treated as query identifiers, which ZDM redirects to <code>ZDMQueryInterface</code> implemented classes. One such class is <code>ZDMProviderConstants.java</code>, a contract class that provides column names and other URI details required to query ZDM. Query results are returned in the <code>COLUMN_QUERY_RESULT</code> column of the result URI (<code>&lt;&lt; is this correct?</code>). </p>
 
-<p><strong>Apps calling for access to another app's interface(s) must be explicitly granted permission by the initiating app; ZDM manages those permissions</strong>. When an app attempts to use an interface that the implementing app has chosen to protect using a <a href="../faq/whataredelegationscopes">Delegation Scope</a>, the implementing app must query ZDM to determine whether the calling app has been granted (by the administrator) a Delegation Scope that grants access to that interface. When a given function supported by ZDM or a Zebra app is controlled by a Delegation Scope, it allows only <strong><em>direct</em></strong> use of that function by a genuine instance of an app that has been explicitly granted that Delegation Scope.</p>
+<p><strong>Apps calling for access to another app's interface(s) must be explicitly granted permission by the initiating app, and ZDM manages those permissions</strong>. When an app attempts to use an interface that the implementing app has chosen to protect using a <a href="../faq/whataredelegationscopes">Delegation Scope</a>, the implementing app must query ZDM to determine whether the calling app has been granted (by the administrator) a Delegation Scope that grants access to that interface. When a given function supported by ZDM or a Zebra app is controlled by a Delegation Scope, it allows only <strong><em>direct</em></strong> use of that function by a genuine instance of an app that has been explicitly granted that Delegation Scope.</p>
 
 <p><strong>When a genuine instance of an app is allowed <em>direct</em> use of a function controlled by a Delegation Scope, that app <em>might</em> choose to allow <em>indirect</em> use of that function by another application through a defined interface such as AIDL or a JavaScript callback</strong>. In such cases, the app that's allowed to use the function becomes responsible for ensuring that any use of that by another app is appropriately controlled.</p>
-
-<blockquote>
-  <p><strong>NOTE</strong>: The terms "<strong>Zebra Device Manager</strong>," "<strong>ZDM</strong>" and "<strong>MX</strong>" should be considered interchangeable for devices running Android 11 and later.   </p>
-</blockquote>
 
 <hr>
 
 <h2 id="communicatingwithzdm" class="anchor"><a class="heading-anchor" href="#communicatingwithzdm"><span></span></a>Communicating with ZDM</h2>
 
-<p>To communicate with ZDM, the calling app must do the following: </p>
+<h5 id="tocommunicatewithzdmthecallingappmustdothefollowing" class="anchor"><a class="heading-anchor" href="#tocommunicatewithzdmthecallingappmustdothefollowing"><span></span></a>To communicate with ZDM, the calling app must do the following:</h5>
 
 <ol>
-<li><p><strong>Bind the calling app with the ZDM service</strong>: </p>
+<li><p><strong>Bind with the ZDM service</strong>: </p>
 
 <pre class="prettyprint"><code>
 private static final String ZDM_PACKAGE "com.zebra.devicemanager"; 
@@ -307,7 +303,7 @@ private ServiceConnection ZDMServiceConnection = new ServiceConnection() {
 } 
 </code></pre></li>
 
-<li><p><strong>Send message(s) from the calling app to ZDM</strong> for processing: </p>
+<li><p><strong>Send message(s) to ZDM</strong> for processing: </p>
 
 <pre class="prettyprint"><code>
 Message msg = Message.obtain(); 
@@ -320,7 +316,7 @@ msg.setData(bundle);
 mService.send(msg); 
 </code></pre></li>
 
-<li><p><strong>Implement</strong> <code>IncomingHandler</code> <strong>to receive the response</strong> from ZDM: </p>
+<li><p><strong>Implement an</strong> <code>IncomingHandler</code> to receive ZDM responses: </p>
 
 <pre class="prettyprint"><code>
 public static final int TASK_COMPLETED = 5; 
@@ -340,7 +336,7 @@ private class IncomingHandler extends Handler {
 } 
 </code></pre></li>
 
-<li><p><strong>Prepare calling app for responses coming in JsonString format</strong>, as below:  </p>
+<li><p><strong>Prepare for responses coming in JsonString format</strong>, as below:  </p>
 
 <pre class="prettyprint"><code>
 { 
@@ -372,7 +368,7 @@ for (int i = 0 ; i&lt;jsonArray.length();i++){
 
 <hr>
 
-<h3 id="callerapps" class="anchor"><a class="heading-anchor" href="#callerapps"><span></span></a>Caller Apps</h3>
+<h3 id="manifestofcallingapps" class="anchor"><a class="heading-anchor" href="#manifestofcallingapps"><span></span></a>Manifest of Calling Apps</h3>
 
 <p>Apps that call for access to protected interfaces of other apps must contain the following lines in their <code>manifest.xml</code> file:  </p>
 
@@ -382,7 +378,7 @@ for (int i = 0 ; i&lt;jsonArray.length();i++){
 &lt;uses-permission android:name="com.zebra.devicemanager.provider.WRITE_PERMISSION"/&gt;
 </code></pre>
 
-<p>For Android 11 or later, the tag below also is required to specify the package name of the Content Provider (<code>is the content provider the same as the "initiating app"?</code>):</p>
+<p>For Android 11 or later, the tag below also is required to specify the package name of the Content Provider (<code>content provider or "initiating app"?</code>):</p>
 
 <pre class="prettyprint"><code>
 &lt;queries&gt;
@@ -394,7 +390,7 @@ for (int i = 0 ; i&lt;jsonArray.length();i++){
 
 <p>Use one or more of the URIs in the table below to work with tokens. </p>
 
-<table class="faceliftCenter" style="width:100%" border="1" padding="5px">
+<table class="facelift" style="width:100%" border="1" padding="5px">
 <tbody>
   <tr bgcolor="#dce8ef">
     <th>Action</th>
@@ -597,12 +593,12 @@ if (cursor != null &amp;&amp; cursor.count &gt; 0) {
 
 <h3 id="querysystemsettinguistatus" class="anchor"><a class="heading-anchor" href="#querysystemsettinguistatus"><span></span></a>Query System Setting UI status</h3>
 
-<p>Queries the current access to the Android Settings panel UI for the device user.</p>
+<p>Determines access to the Android Settings panel UI for the current device user.</p>
 
 <h4 id="resultcodes-4" class="anchor"><a class="heading-anchor" href="#resultcodes-4"><span></span></a>Result Codes</h4>
 
 <ul>
-<li><strong>0</strong> - user has access to full Android Settings panel </li>
+<li><strong>0</strong> - user has full access to the Android Settings panel </li>
 
 <li>1 - user has reduced access (<code>DEFINE 'REDUCED' ACCESS</code>) to the Android Settings panel </li>
 </ul>
