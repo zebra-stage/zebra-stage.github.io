@@ -251,39 +251,91 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>This guide explains how to capture data from physical objects and convert it to digital data for MDNA Optical Character Recognition (OCR) retrieve data, in either image or string format, within an app for the solutions in <a href="../../input/workflow">Workflow Input</a> using Intent Output. The guide will take ID Document scanning solution as an example, but the same techniques can be applied to read data for all other solutions under Workflow Input.</p>
+<p>This guide demonstrates how to use Zebra's Mobility DNA (MDNA) Optical Character Recognition (OCR) to convert images of printed text into digitized format for data entry in the following applications:</p>
+
+<ul>
+<li>License Plate</li>
+
+<li>Identification Document</li>
+
+<li>Vehicle Identification Number (VIN)</li>
+
+<li>Tire Identification Number (TIN)</li>
+
+<li>Meter Reading</li>
+</ul>
+
+<p>Data captured from an Identification Document is used as an example - the similar procedure can be applied to read data from any other application listed.</p>
+
+<p>See <a href="../../input/workflow/#mdnaocr">MDNA OCR</a> for requirements of each OCR application.</p>
+
+<!-- MDNA OCR is part of [Workflow Input](../../input/workflow) within DataWedge's Intent Output.  -->
 
 <hr>
 
 <h2 id="requirements" class="anchor"><a class="heading-anchor" href="#requirements"><span></span></a>Requirements</h2>
 
 <ul>
-<li>DataWedge version 11.2 or higher.</li>
+<li>DataWedge version 11.2 or higher (<a href="../../about/#whichversionisinstalled">find the version</a>)</li>
 
-<li>Scanning framework 32.0.3.6 or higher</li>
+<li>Scanning framework 32.0.3.6 or higher (<a href="../../about/#whichversionisinstalled">find the version</a>)</li>
 
-<li>Valid license(s) installed for the OCR feature(s) to be used.</li>
+<li>MDNA OCR license(s) installed for each OCR application</li>
 </ul>
 
 <hr>
 
-<h2 id="retrievedata" class="anchor"><a class="heading-anchor" href="#retrievedata"><span></span></a>Retrieve Data</h2>
+<h2 id="retrieveocrdata" class="anchor"><a class="heading-anchor" href="#retrieveocrdata"><span></span></a>Retrieve OCR Data</h2>
 
-<p>In summary, the steps to use Document Capture are:</p>
+<p>In summary, the steps to use MDNA OCR to capture data are:</p>
 
 <ol>
-<li><strong>Configure application to receive scan results</strong>.</li>
+<li><strong>Create a DataWedge profile and associate it to the application.</strong></li>
 
-<li><strong>Extract data from Intent</strong>.</li>
+<li><strong>Configure the application to receive scan results.</strong></li>
 
-<li><strong>Extract Image Data</strong> and associate it to the application receiving the data.</li>
+<li><strong>Extract String data from the intent.</strong></li>
+
+<li><strong>Extract Image data from the intent.</strong></li>
 </ol>
 
 <p>These steps are explained in detail in the following subsections.</p>
 
-<h3 id="1configureapplicationtoreceivescanresults" class="anchor"><a class="heading-anchor" href="#1configureapplicationtoreceivescanresults"><span></span></a>1. Configure application to receive scan results</h3>
+<h3 id="1createadatawedgeprofileandassociateittotheapplication" class="anchor"><a class="heading-anchor" href="#1createadatawedgeprofileandassociateittotheapplication"><span></span></a>1. Create a DataWedge profile and associate it to the application</h3>
 
-<p>Create an Android application (e.g. IDScanningApp). Register a broadcast receiver to receive scan results:</p>
+<p><a href="../../createprofile/#createanewprofile">Create a profile</a> in DataWedge and associate the profile to the app with the following settings:</p>
+
+<ul>
+<li><p>Enable <strong>Workflow Input</strong></p></li>
+
+<li><p>Under <strong>MDNA OCR,</strong> enable the desired OCR feature(s): License Plate, Identification Document, Vehicle Identification Number (VIN), Tire Identification Number (TIN), Meter Reading. <br><strong>Identification Document</strong> is enabled for this example. </p>
+
+<p><img style="height:350px" src="mdna-ocr.png"></p>
+
+<p><em>Enable Workflow Input and Identification Document</em></p></li>
+
+<li><p>If keystroke data is not intended to be used, disable <strong>Keystroke Output.</strong></p>
+
+<p><img style="height:350px" src="keystroke-output.png"></p>
+
+<p><em>Keystroke Output disabled</em></p></li>
+
+<li><p>Enable <strong>Intent Output</strong> and perform the following:</p>
+
+<ul>
+<li><p>Specify the <strong>Intent Action</strong> and <strong>Intent Category</strong> used to register the broadcast receiver in the app from step 1. In this example:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• <b>Intent Action:</b> com.zebra.id_scanning.ACTION<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• <b>Intent Category:</b> Intent.CATEGORY_DEFAULT<br></p></li>
+
+<li><p>Select the <strong>Intent Delivery</strong> mechanism. In this example, select <strong>Broadcast Intent.</strong>
+<img style="height:350px" src="intent-output.png"></p>
+
+<p><em>Intent Output configurations</em></p></li></ul></li>
+</ul>
+
+<h3 id="2configuretheapplicationtoreceivescanresults" class="anchor"><a class="heading-anchor" href="#2configuretheapplicationtoreceivescanresults"><span></span></a>2. Configure the application to receive scan results</h3>
+
+<p>Create an Android application (e.g. IDScanningApp). Register a broadcast receiver to receive scan results from broadcast intents:</p>
 
 <pre class="prettyprint"><code>    @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -304,18 +356,9 @@
     };
 </code></pre>
 
-<p>Create a profile in DataWedge and associate your application to the profile. Configure the profile as follows:
-    a. Enable Workflow Input
-    b. Select an OCR feature (e.g. ID Scanning, Meter reading, Vehicle Identification Number scanning, etc) 
-    c. Disable Keystroke Output if you do not intend to use keystroke data
-    e. Enable Intent Output
-    f. Specify the Intent Action and Category used to register the broadcast receiver
-    g. Select the Intent delivery mechanism (e.g. Broadcast Intent, startActivity, etc.)</p>
+<h3 id="3extractstringdatafromtheintent" class="anchor"><a class="heading-anchor" href="#3extractstringdatafromtheintent"><span></span></a>3. Extract String data from the intent</h3>
 
-<h3 id="2extractdatafromtheintent" class="anchor"><a class="heading-anchor" href="#2extractdatafromtheintent"><span></span></a>2. Extract data from the Intent</h3>
-
-<p>The scan result intent has a String extra called <code>com.symbol.datawedge.data</code>.
-The String data of the <code>com.symbol.datawedge.data</code> field will be in JSON Array format. Example data is shown below:</p>
+<p>To extract String data from the intent, the scan result intent contains a String extra called <code>com.symbol.datawedge.data</code>. The String data from the <code>com.symbol.datawedge.data</code> field is in JSON Array format. Example data is shown below:</p>
 
 <pre class="prettyprint"><code>[
     {
@@ -361,7 +404,7 @@ The String data of the <code>com.symbol.datawedge.data</code> field will be in J
 ]
 </code></pre>
 
-<p>Parse the data of <code>com.symbol.datawedge.data</code> field into an JSONArray object. Each element of the JSONArray will be a JSONObject.</p>
+<p>Parse the data from the <code>com.symbol.datawedge.data</code> field into an JSONArray object. Each element of the JSONArray is a JSONObject.</p>
 
 <pre class="prettyprint"><code>BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
     @Override
@@ -379,24 +422,22 @@ The String data of the <code>com.symbol.datawedge.data</code> field will be in J
 };
 </code></pre>
 
-<p>Iterate the elements of the JSONArray object to extract the data for each field.</p>
+<p>Iterate through the elements of the JSONArray object to extract the data for each field:</p>
 
-<p>If JSONObject has a mapping for the name “string_data”, it means this JSONObject has String data. Use the value mapped by the name “label” to identify the type of the string data.</p>
+<ul>
+<li>If the JSONObject has a mapping for the name “string_data”, it means this JSONObject contains String data. Use the value mapped by the name “label” to identify the type of the string data.</li>
 
-<p>If JSONObject DOES NOT have a mapping for the name “string_data”, it means this JSONObject contains Image data. Proceed with the next step to extract the image data.</p>
+<li>If the JSONObject does not have a mapping for the name “string_data”, it means this JSONObject contains Image data. Proceed with the next step to extract the image data.</li>
+</ul>
 
-<h3 id="3extractimagedata" class="anchor"><a class="heading-anchor" href="#3extractimagedata"><span></span></a>3. Extract Image Data</h3>
+<h3 id="4extractimagedatafromtheintent" class="anchor"><a class="heading-anchor" href="#4extractimagedatafromtheintent"><span></span></a>4. Extract Image Data from the intent</h3>
 
-<p>Make sure the following permission is added in the application manifest file to access the DataWedge Content Provider.</p>
+<p>Make sure the following permission is added in the application manifest file to access the DataWedge <a href="../../programmers-guides/content-provider/">Content Provider</a>:</p>
 
 <pre class="prettyprint"><code>&lt;uses-permission android:name="com.symbol.datawedge.permission.contentprovider" /&gt;
 </code></pre>
 
-<p>Use the value mapped by the name “uri” to get the URI to access the DataWedge Content Provider.</p>
-
-<p>Use a ContentResolver to pass the above URI and retrieve a Cursor object.</p>
-
-<p>The Cursor object will have two columns:</p>
+<p>Use the value from the “uri” field to get the URI to access the DataWedge Content Provider. Then use a ContentResolver to pass the URI and retrieve a Cursor object. The Cursor object contains two columns:</p>
 
 <table class="facelift" align="center" style="width:80%" border="1" padding="5px">
   <tbody><tr bgcolor="#dce8ef">
@@ -415,8 +456,7 @@ The String data of the <code>com.symbol.datawedge.data</code> field will be in J
   </tr>
 </tbody></table>
 
-<p>Read the “raw_data” and save it in a ByteArrayOutputStream object. If “next_data_uri” is not empty, read the “raw_data” field of the URI provided in “next_data_uri” column.
-Read and store the value in “raw_data” Column into ByteArrayOutputStream object, until “next_data_uri” becomes empty. This can be done using a while loop. As shown below.</p>
+<p>Read the <code>raw_data</code> and save it in a <code>ByteArrayOutputStream</code> object. If <code>next_data_uri</code> is not empty, read the <code>raw_data</code> from the URI provided in the <code>next_data_uri</code> column. Continue to read the <code>raw_data</code> field and store the value into the ByteArrayOutputStream object, until the <code>next_data_uri</code> is empty. This can be done using a while loop:</p>
 
 <pre class="prettyprint"><code>String uri = jsonObject.getString("uri");
 Cursor cursor = getContentResolver().query(Uri.parse(uri),null,null,null);
@@ -446,8 +486,7 @@ if(cursor != null)
 }
 </code></pre>
 
-<p>Once you have the image data ready, read the values mapped by “width”, “height”, “stride”, “orientation” and “imageformat” to construct the Bitmap object.
-Use the getBitmap() method of ImageProcessing class provided below to get the Bitmap object.</p>
+<p>When all values are stored for the image data, read the values mapped by “width”, “height”, “stride”, “orientation” and “imageformat” to construct the Bitmap object. Use <code>getBitmap()</code> method from the <code>ImageProcessing</code> class (provided below) to get the Bitmap object:</p>
 
 <pre class="prettyprint"><code>int width = 0;
 int height = 0;
@@ -464,7 +503,7 @@ imageFormat = jsonObject.getString("imageformat");
 Bitmap bitmap = ImageProcessing.getInstance().getBitmap(baos.toByteArray(),imageFormat, orientation,stride,width, height);
 </code></pre>
 
-<p>Class ImageProcessing</p>
+<p><code>Class ImageProcessing</code>:</p>
 
 <pre class="prettyprint"><code>/*
 * Copyright (C) 2018-2021 Zebra Technologies Corp
@@ -483,76 +522,75 @@ import java.io.ByteArrayOutputStream;
 
 public class ImageProcessing{
 
-private final String IMG_FORMAT_YUV = "YUV";
-private final String IMG_FORMAT_Y8 = "Y8";
+    private final String IMG_FORMAT_YUV = "YUV";
+    private final String IMG_FORMAT_Y8 = "Y8";
 
-private static ImageProcessing instance = null;
+    private static ImageProcessing instance = null;
 
-public static ImageProcessing getInstance() {
+    public static ImageProcessing getInstance() {
 
-    if (instance == null) {
-        instance = new ImageProcessing();
+        if (instance == null) {
+            instance = new ImageProcessing();
+        }
+        return instance;
     }
-    return instance;
-}
 
-private ImageProcessing() {
-    //Private Constructor
-}
+    private ImageProcessing() {
+        //Private Constructor
+    }
 
-public Bitmap getBitmap(byte[] data, String imageFormat, int orientation, int stride, int width, int height)
-{
-    if(imageFormat.equalsIgnoreCase(IMG_FORMAT_YUV))
+    public Bitmap getBitmap(byte[] data, String imageFormat, int orientation, int stride, int width, int height)
     {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        YuvImage yuvImage = new YuvImage(data, ImageFormat.NV21, width, height, new int[]{stride, stride});
-        yuvImage.compressToJpeg(new Rect(0, 0, stride, height), 100, out);
-        yuvImage.getYuvData();
-        byte[] imageBytes = out.toByteArray();
+        if(imageFormat.equalsIgnoreCase(IMG_FORMAT_YUV))
+        {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            YuvImage yuvImage = new YuvImage(data, ImageFormat.NV21, width, height, new int[]{stride, stride});
+            yuvImage.compressToJpeg(new Rect(0, 0, stride, height), 100, out);
+            yuvImage.getYuvData();
+            byte[] imageBytes = out.toByteArray();
+            if(orientation != 0)
+            {
+                Matrix matrix = new Matrix();
+                matrix.postRotate(orientation);
+                Bitmap bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+                return Bitmap.createBitmap(bitmap, 0 , 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+            }
+            else
+            {
+                return BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+            }
+        }
+        else if(imageFormat.equalsIgnoreCase(IMG_FORMAT_Y8))
+        {
+            return convertYtoJPG_CPU(data, orientation, stride, height);
+        }
+
+        return null;
+    }
+
+
+    private Bitmap convertYtoJPG_CPU(byte[] data, int orientation, int stride, int height)
+    {
+        int mLength = data.length;
+        int [] pixels = new int[mLength];
+        for(int i = 0; i &lt; mLength; i++)
+        {
+            int p = data[i] &amp; 0xFF;
+            pixels[i] = 0xff000000 | p &lt;&lt; 16 | p &lt;&lt; 8 | p;
+        }
         if(orientation != 0)
         {
             Matrix matrix = new Matrix();
             matrix.postRotate(orientation);
-            Bitmap bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+            Bitmap bitmap = Bitmap.createBitmap(pixels, stride, height, Bitmap.Config.ARGB_8888);
             return Bitmap.createBitmap(bitmap, 0 , 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
         }
         else
         {
-            return BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+            return Bitmap.createBitmap(pixels, stride, height, Bitmap.Config.ARGB_8888);
         }
     }
-    else if(imageFormat.equalsIgnoreCase(IMG_FORMAT_Y8))
-    {
-        return convertYtoJPG_CPU(data, orientation, stride, height);
-    }
-
-    return null;
-}
-
-
-private Bitmap convertYtoJPG_CPU(byte[] data, int orientation, int stride, int height)
-{
-    int mLength = data.length;
-    int [] pixels = new int[mLength];
-    for(int i = 0; i &lt; mLength; i++)
-    {
-        int p = data[i] &amp; 0xFF;
-        pixels[i] = 0xff000000 | p &lt;&lt; 16 | p &lt;&lt; 8 | p;
-    }
-    if(orientation != 0)
-    {
-        Matrix matrix = new Matrix();
-        matrix.postRotate(orientation);
-        Bitmap bitmap = Bitmap.createBitmap(pixels, stride, height, Bitmap.Config.ARGB_8888);
-        return Bitmap.createBitmap(bitmap, 0 , 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
-    }
-    else
-    {
-        return Bitmap.createBitmap(pixels, stride, height, Bitmap.Config.ARGB_8888);
-    }
-}
-
-}
+}  
 </code></pre>
 
 <p><br></p>
@@ -562,12 +600,11 @@ private Bitmap convertYtoJPG_CPU(byte[] data, int orientation, int stride, int h
 <p>Related Guides:</p>
 
 <ul>
-<li><a href="../../input/barcode/#nextgensimulscanconfiguration">NextGen SimulScan</a></li>
+<li><a href="../../input/workflow">Workflow Input</a></li>
 
-<li><a href="../../programmers-guides/content-provider/">Use Content Provider</a></li>
+<li><a href="../../input/workflow/#mdnaocr">MDNA OCR</a></li>
 
-<li><a href="/mx/datawedgemgr">DataWedgeMgr CSP</a>
-<!-- * [Template Builder](../../templatebuilder) --></li>
+<li><a href="../../programmers-guides/content-provider/">Content Provider Programmer's Guide</a></li>
 </ul><p></p>
                                         
 
