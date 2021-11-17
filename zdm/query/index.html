@@ -236,159 +236,17 @@
 
 </p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p><strong>Zebra Device Manager is a service running on all Zebra devices with Android 11 (and later) that's designed to take the place of Zebra Mobility Extensions</strong>, commonly known as MX. ZDM performs most of the same functions as MX, while offering the additional features and capabilities listed below. For the purposes of this document, the terms <strong>MX, Zebra Device Manager, and ZDM are synonymous</strong>, and on devices running Android 11 (and later) can be considered interchangeable.</p>
+<p><strong>ZDM implements a content provider interface, allowing apps to perform simple queries for information about sharing of files and data among apps on the device</strong>. The content provider URIs used to query ZDM are treated as query identifiers, which ZDM redirects to <code>ZDMQueryInterface</code> implemented classes. The <code>ZDMProviderConstants.java</code> object provides column names and other URI details required to query ZDM. Query results are returned in the <code>COLUMN_QUERY_RESULT</code> column of the result URI. </p>
 
-<h4 id="zdmaddstomxtheabilityto" class="anchor"><a class="heading-anchor" href="#zdmaddstomxtheabilityto"><span></span></a>ZDM adds to MX the ability to:</h4>
-
-<ul>
-<li><strong>Control the Device Policy Manager and access all DPM features</strong> and capabilities (if ZDM is set as the Device Owner)</li>
-
-<li><strong>Work programmatically with apps and other services on the device</strong> through a publicly specified content provider interface</li>
-
-<li><strong>Store API access permissions (i.e. "whitelists") and issue tokens for inter-app file and data sharing</strong>  </li>
-
-<li><strong>Work independently of the underlying OS image</strong>; ZDM can be "side-loaded" and upgraded without the need to update the entire device OS image</li>
-
-<li><strong>Be administered through Google Play</strong><br>(It's also available on the <a href="https://www.zebra.com/us/en/support-downloads/software/software-for-mobile-computer.html">Zebra Support Portal</a>) <code>LINK TO COME WHEN AVAVILABLE</code> </li>
-</ul>
-
-<h4 id="zdmalsoperforms" class="anchor"><a class="heading-anchor" href="#zdmalsoperforms"><span></span></a>ZDM also performs:</h4>
-
-<ul>
-<li><strong>Configuration of Zebra devices</strong> running Android 11 and later </li>
-
-<li><strong>Secure barcode processing</strong> for device configuration</li>
-
-<li><strong>Managed Configuration processing</strong> for Zebra app administration</li>
-
-<li><strong>Communications with all APIs</strong>, including those of the Android system, Zebra apps, and DPC and privileged-device APIs </li>
-</ul>
-
-<p><strong>ZDM implements a content provider interface, allowing apps to perform simple queries for information about sharing of files and data among apps on the device</strong>. The content provider URIs used to query ZDM are treated as query identifiers, which ZDM redirects to <code>ZDMQueryInterface</code> implemented classes. One such class is <code>ZDMProviderConstants.java</code>, a contract class that provides column names and other URI details required to query ZDM. Query results are returned in the <code>COLUMN_QUERY_RESULT</code> column of the result URI (<code>&lt;&lt; is this correct?</code>). </p>
-
-<p><strong>Apps calling for access to another app's interface(s) must be explicitly granted permission by the initiating app, and ZDM manages those permissions</strong>. When an app attempts to use an interface that the implementing app has chosen to protect using a <a href="../faq/whataredelegationscopes">Delegation Scope</a>, the implementing app must query ZDM to determine whether the calling app has been granted (by the administrator) a Delegation Scope that grants access to that interface. When a given function supported by ZDM or a Zebra app is controlled by a Delegation Scope, it allows only <strong><em>direct</em></strong> use of that function by a genuine instance of an app that has been explicitly granted that Delegation Scope.</p>
+<p><strong>Apps calling for access to another app's interface(s) must be explicitly granted permission by the implementing app, and ZDM manages those permissions</strong>. When an app attempts to use an interface that the implementing app has chosen to protect using a <a href="../faq/whataredelegationscopes">Delegation Scope</a>, the implementing app must query ZDM to determine whether the calling app has been granted (by the administrator) a Delegation Scope that grants access to that interface. When a given function supported by ZDM or a Zebra app is controlled by a Delegation Scope, it allows only <strong><em>direct</em></strong> use of that function by a genuine instance of an app that has been explicitly granted that Delegation Scope.</p>
 
 <p><strong>When a genuine instance of an app is allowed <em>direct</em> use of a function controlled by a Delegation Scope, that app <em>might</em> choose to allow <em>indirect</em> use of that function by another application through a defined interface such as AIDL or a JavaScript callback</strong>. In such cases, the app that's allowed to use the function becomes responsible for ensuring that any use of that by another app is appropriately controlled.</p>
 
 <hr>
 
-<h2 id="communicatingwithzdm" class="anchor"><a class="heading-anchor" href="#communicatingwithzdm"><span></span></a>Communicating with ZDM</h2>
+<h3 id="zebraappqueries" class="anchor"><a class="heading-anchor" href="#zebraappqueries"><span></span></a>Zebra-app Queries</h3>
 
-<h5 id="tocommunicatewithzdmthecallingappmustdothefollowing" class="anchor"><a class="heading-anchor" href="#tocommunicatewithzdmthecallingappmustdothefollowing"><span></span></a>To communicate with ZDM, the calling app must do the following:</h5>
-
-<ol>
-<li><p><strong>Bind with the ZDM service</strong>: </p>
-
-<pre class="prettyprint"><code>
-private static final String ZDM_PACKAGE "com.zebra.devicemanager"; 
-private static final String ZDM_SERVICE_CLASS = "com.zebra.devicemanager.ZebraDeviceMgr"; 
-
-Intent bindZDMServiceIntent = new Intent(); 
-bindZDMServiceIntent.setComponent(new     ComponentName(ZDM_PACKAGE,ZDM_SERVICE_CLASS)); 
-try {  bindService(bindZDMServiceIntent,ZDMServiceConnection,Context.BIND_AUTO_CREATE); 
-}catch (SecurityException e){ 
-
-} 
-
-Messenger mService; 
-
-private ServiceConnection ZDMServiceConnection = new ServiceConnection() { 
-  @Override 
-  public void onServiceConnected(ComponentName name, IBinder service) { 
-            mService = new Messenger(service); 
-
-<pre><code>     } 
-</code></pre>
-
-} 
-</code></pre></li>
-
-<li><p><strong>Send message(s) to ZDM</strong> for processing: </p>
-
-<pre class="prettyprint"><code>
-Message msg = Message.obtain(); 
-
-IncomingHandler incomingHandler = new IncomingHandler(); 
-msg.replyTo = new Messenger(incomingHandler); 
-Bundle bundle = new Bundle(); 
-bundle.putString("data",”JS function/js file path in device”); 
-msg.setData(bundle); 
-mService.send(msg); 
-</code></pre></li>
-
-<li><p><strong>Implement an</strong> <code>IncomingHandler</code> to receive ZDM responses: </p>
-
-<pre class="prettyprint"><code>
-public static final int TASK_COMPLETED = 5; 
-public static final int TASK_FAILED = 6; 
-
-private class IncomingHandler extends Handler { 
-    @Override 
-    public void handleMessage(Message msg) { 
-
-<pre><code>    String response =   msg.getData().getString(Constant.RESPONSE); 
-</code></pre>
-
-//Parse the json to get all the details 
-
-//Response json format mentioned below in the docs     
-        } 
-} 
-</code></pre></li>
-
-<li><p><strong>Prepare for responses coming in JsonString format</strong>, as below:  </p>
-
-<pre class="prettyprint"><code>
-{ 
-
-  "status": "completed or IN_PROGRESS", 
-
-  "msg": "task completed or task in progress", 
-
-  "result": "[{\"command\":\"js callback name\",\"message\":\"detail about execution\",\"status\":\"SUCCESS or ERROR or EXCEPTION or IN_PROGRESS\"}]" 
-
-} 
-</code></pre></li>
-
-<li><p><strong>Parse responses</strong>:</p>
-
-<pre class="prettyprint"><code>
-JSONObject resObj = new JSONObject(response.trim()); 
-String status = resObj.getString(STATUS); 
-String message = resObj.getString(MSG); 
-String result = resObj.getString(RESULT); 
-JSONArray jsonArray = new JSONArray(result); 
-
-for (int i = 0 ; i&lt;jsonArray.length();i++){ 
-    JSONObject obj = jsonArray.getJSONObject(i); 
-    Log.i(TAG,"callback result = "+obj.toString()); 
-} 
-</code></pre></li>
-</ol>
-
-<hr>
-
-<h3 id="manifestofcallingapps" class="anchor"><a class="heading-anchor" href="#manifestofcallingapps"><span></span></a>Manifest of Calling Apps</h3>
-
-<p>Apps that call for access to protected interfaces of other apps must contain the following lines in their <code>manifest.xml</code> file:  </p>
-
-<pre class="prettyprint"><code>
-&lt;uses-permission android:name="com.zebra.devicemanager.provider.READ_PERMISSION"/&gt;
-
-&lt;uses-permission android:name="com.zebra.devicemanager.provider.WRITE_PERMISSION"/&gt;
-</code></pre>
-
-<p>For Android 11 or later, the tag below also is required to specify the package name of the Content Provider (<code>content provider or "initiating app"?</code>):</p>
-
-<pre class="prettyprint"><code>
-&lt;queries&gt;
-       &lt;package android:name="com.zebra.devicemanager" /&gt;
-&lt;/queries&gt;
-</code></pre>
-
-<h3 id="useoftokens" class="anchor"><a class="heading-anchor" href="#useoftokens"><span></span></a>Use of Tokens</h3>
-
-<p>Use one or more of the URIs in the table below to work with tokens. </p>
+<p>Use one or more of the URIs in the table below to query Zebra applications on the device. </p>
 
 <table class="facelift" style="width:100%" border="1" padding="5px">
 <tbody>
@@ -398,12 +256,12 @@ for (int i = 0 ; i&lt;jsonArray.length();i++){
   </tr>
 
 <tr>
-  <td></td>
+  <td>Confirm that token is valid for Delegation Scope</td>
   <td><code>public static final String AUTHORITY = "com.zebra.devicemanager.zdmcontentprovider";</code></td>
 </tr>
 
 <tr>
-  <td>Gain authorization to access to an app's (published) interfaces</td>
+  <td>Get the authorization URI showing an app's (published) interfaces</td>
   <td><code>public static final Uri AUTHORITY_URI = Uri.parse("content://" + AUTHORITY);</code></td>
 </tr>
 
@@ -433,27 +291,27 @@ for (int i = 0 ; i&lt;jsonArray.length();i++){
 </tr>
 
 <tr>
-  <td><code>NEED DEFINITION</code></td>
+  <td>Get signature</td>
   <td><code>public static final String COLUMN_SIGNATURE = "signature";</code></td>
 </tr>
 
 <tr>
-  <td><code>NEED DEFINITION</code></td>
+  <td>Get package name</td>
   <td><code>public static final String COLUMN_PACKAGE_NAME = "package_name";</code></td>
 </tr>
 
 <tr>
-  <td><code>NEED DEFINITION</code></td>
+  <td>Get query result</td>
   <td><code>public static final String COLUMN_QUERY_RESULT = "query_result";</code></td>
 </tr>
 
 <tr>
-  <td><code>NEED DEFINITION</code></td>
-  <td><code>public static final String COLUMN_DELEGATION_SCOPE = "delegation_Scope";</code></td>
+  <td>Get Delegation Scope</td>
+  <td><code>public static final String COLUMN_DELEGATION_SCOPE = "delegation_scope";</code></td>
 </tr>
 
 <tr>
-  <td><code>NEED DEFINITION</code></td>
+  <td>Get access token</td>
   <td><code>public static final String COLUMN_TOKEN = "token";</code></td>
 </tr>
 
@@ -461,20 +319,42 @@ for (int i = 0 ; i&lt;jsonArray.length();i++){
 
 <hr>
 
+<p>Add a link to Android developer community <a href="https://developer.android.com/guide/topics/providers/content-provider-basics#Query">Constructing the Query</a></p>
+
+<h3 id="manifestofcallingapps" class="anchor"><a class="heading-anchor" href="#manifestofcallingapps"><span></span></a>Manifest of Calling Apps</h3>
+
+<p>Apps that call for access to protected interfaces of other apps must contain the following lines in their <code>manifest.xml</code> file:  </p>
+
+<pre class="prettyprint"><code>
+&lt;uses-permission android:name="com.zebra.devicemanager.provider.READ_PERMISSION"/&gt;
+
+&lt;uses-permission android:name="com.zebra.devicemanager.provider.WRITE_PERMISSION"/&gt;
+</code></pre>
+
+<p>For Android 11 or later, the tag below also is required to specify the package name of the Content Provider (aka "implementing app"):</p>
+
+<pre class="prettyprint"><code>
+&lt;queries&gt;
+       &lt;package android:name="com.zebra.devicemanager" /&gt;
+&lt;/queries&gt;
+</code></pre>
+
+<hr>
+
 <h2 id="samplecode" class="anchor"><a class="heading-anchor" href="#samplecode"><span></span></a>Sample Code</h2>
 
-<p>The following code snippets illustrate how to use the URIs programmatically to achieve the desired result.</p>
+<p>The following code snippets illustrate how to use the URIs programmatically to achieve a desired result.</p>
 
 <h3 id="delegationquery" class="anchor"><a class="heading-anchor" href="#delegationquery"><span></span></a>Delegation Query</h3>
 
-<p><strong>This query determines whether the app has been granted the specified Delegation Scope</strong>. Use this code to verify that the calling app is bound to a service. The service must share the caller details, such as caller package name and signature, and the delegation scope defined by it. </p>
+<p><strong>This query determines whether the app has been granted the specified Delegation Scope</strong>. Use this code to verify that the calling app is bound to a service. The service must share the caller details, such as caller package name and signature, and the Delegation Scope defined by it. </p>
 
 <h4 id="resultcodes" class="anchor"><a class="heading-anchor" href="#resultcodes"><span></span></a>Result Codes</h4>
 
 <ul>
 <li><strong>TRUE</strong> - The given caller is assigned the given Delegation Scope; the specified app is permitted to call the service**</li>
 
-<li>FALSE -  Caller is <strong>NOT</strong> assigned the Delegation Scope specified in the query</li>
+<li><strong>FALSE</strong> -  Caller is <strong>NOT</strong> assigned the Delegation Scope specified in the query</li>
 </ul>
 
 <h4 id="example" class="anchor"><a class="heading-anchor" href="#example"><span></span></a>Example</h4>
@@ -501,9 +381,9 @@ if (cursor != null &amp;&amp; cursor.count &gt; 0) {
 <ul>
 <li><strong>TRUE</strong> - the received token is valid for the given Delegation Scope</li>
 
-<li>FALSE  - the received token is <strong>NOT</strong> valid for the given Delegation Scope</li>
+<li><strong>FALSE</strong>  - the received token is <strong>NOT</strong> valid for the given Delegation Scope</li>
 
-<li>TokenExpiredException - The token is expired</li>
+<li><strong>TokenExpiredException</strong> - The token is expired</li>
 </ul>
 
 <h4 id="example-1" class="anchor"><a class="heading-anchor" href="#example-1"><span></span></a>Example</h4>
@@ -517,11 +397,8 @@ if (cursor != null &amp;&amp; cursor.count &gt; 0) {
 }
 </code></pre>
 
-<blockquote>
-  <p><code>PLEASE EXPLAIN NOTE BELOW</code></p>
-</blockquote>
-
-<p>An application who wants to query ZDM eg: receiver of the intent could CHOOSE to pass that package name and signature to the ZDM query, along with the mandatory token and delegation scope.  But it should only do that if it wants that verification done. </p>
+<p><strong>OPTIONAL</strong>:
+If verification of access is desired, the package name and signature can be included in the ZDM query along with the token and Delegation Scope, as below:  </p>
 
 <pre class="prettyprint"><code>
 val cursor: Cursor = appContext.contentResolver.query(VERIFY_TOKEN_URI, null, COLUMN_TOKEN + "=? AND " + COLUMN_DELIGATION_SCOPE + "=?" + COLUMN_PACKAGE_NAME + "=?" + COLUMN_SIGNATURE + "=?", arrayOf("34uuuuuojsnushnjd232434snmnsdms23434", "delegation-zebra-datawedge-intent-api", "com.example.app1", "dyghfjbcdh8=wjsmndhsjenfbaueyruefut"), null)!!
@@ -539,19 +416,14 @@ if (cursor != null &amp;&amp; cursor.count &gt; 0) {
 
 <h3 id="acquiretoken" class="anchor"><a class="heading-anchor" href="#acquiretoken"><span></span></a>Acquire Token</h3>
 
-<p>An application that requires a token to call the other app can obtain it via the ZDM Content Provider.
-The caller app must send the Delegation Scope name as defined by the target (<code>initiating?</code>) app as part of the column value. </p>
-
-<p>If the caller app is granted the same Delegation Scope (<code>TRUE</code>?), ZDM generates and returns a token valid for 24 hours.</p>
-
-<p>throws SecurityException if caller is not delegated to get the token.</p>
+<p>An application that requires a token to call interfaces of another app can obtain it using the ZDM Content Provider. The caller app must send the Delegation Scope name as defined by the implementing app as part of the column value. If the caller app is granted the same Delegation Scope, ZDM generates and returns a token valid for 24 hours. Otherwise, a SecurityException is generated.</p>
 
 <h4 id="resultcodes-2" class="anchor"><a class="heading-anchor" href="#resultcodes-2"><span></span></a>Result Codes</h4>
 
 <ul>
 <li><strong>TRUE</strong> - caller app granted Delegation Scope and token valid for 24 hours</li>
 
-<li>SecurityException - the caller is not authorized to receive the token</li>
+<li><strong>SecurityException</strong> - caller is not authorized to receive the token</li>
 </ul>
 
 <h4 id="example-2" class="anchor"><a class="heading-anchor" href="#example-2"><span></span></a>Example</h4>
@@ -576,7 +448,7 @@ if (cursor != null &amp;&amp; cursor.count &gt; 0) {
 <ul>
 <li><strong>TRUE</strong> - app is authorized to request a token</li>
 
-<li>FALSE - app is NOT authorized to request a token; token requests will be denied</li>
+<li><strong>FALSE</strong> - app is NOT authorized to request a token; token requests will be denied</li>
 </ul>
 
 <h4 id="example-3" class="anchor"><a class="heading-anchor" href="#example-3"><span></span></a>Example</h4>
@@ -600,7 +472,9 @@ if (cursor != null &amp;&amp; cursor.count &gt; 0) {
 <ul>
 <li><strong>0</strong> - user has full access to the Android Settings panel </li>
 
-<li>1 - user has reduced access (<code>DEFINE 'REDUCED' ACCESS</code>) to the Android Settings panel </li>
+<li><strong>1</strong> - user has access only to Display, Volume and About features of the Android Settings panel </li>
+
+<li><strong>2</strong> – no access to Android Settings panel</li>
 </ul>
 
 <h4 id="example-4" class="anchor"><a class="heading-anchor" href="#example-4"><span></span></a>Example</h4>
@@ -614,18 +488,31 @@ if (cursor != null &amp;&amp; cursor.count &gt; 0) {
 }
 </code></pre>
 
-<hr>
-
 <p><em>The content in this guide was developed from info on the <a href="https://confluence.zebra.com/display/TUT/Zebra+device+manager+design#Zebradevicemanagerdesign-StepstocommunicatewithZDM">"Zebra device manager design" Confluence page</a></em></p>
 
-<!-- ## Also See
+<hr>
 
-* **For more information about ZWC setup, features and usage**, please refer to the following guides:
-* **[Workstation Connect Administrator's Guide (pdf)](https://www.zebra.com/apps/dlmanager?dlp=-227178c9720c025483893483886ea540bd07dd0f9873752cf891686eb4950400add13410300d57bba85f97bf163f9fdfea3ed8bf485bd7a171c5a8061d1bce3aeaf983a14fd41a058107df057c3e5b0746caaf49c506ab4&c=us&l=en)** | Setting up users, installing/removing apps and shortcuts, configuring access to apps and USB-based storage
-* **[Workstation Connect Installation Guide (pdf)](https://www.zebra.com/apps/dlmanager?dlp=-227178c9720c025483893483886ea540bd07dd0f9873752cf891686eb4950400add13410300d57bba85f97bf163f9fdfea3ed8bf485bd7a171c5a8061d1bce3aeaf983a14fd41a046c19712f82903d932d112803839fae3&c=us&l=en)** | Installing the ZWC solution manually, or using Zebra StageNow or an EMM system
-* **[Workstation Connect User Guide (pdf)](https://www.zebra.com/apps/dlmanager?dlp=-227178c9720c025483893483886ea540bd07dd0f9873752cf891686eb4950400add13410300d57bba85f97bf163f9fdfea3ed8bf485bd7a171c5a8061d1bce3aeaf983a14fd41a0ce93cb5cf4286df532d112803839fae3&c=us&l=en)** | Desktop Mode set-up and usage
+<h2 id="alsosee" class="anchor"><a class="heading-anchor" href="#alsosee"><span></span></a>Also See</h2>
 
- --><p></p>
+<h4 id="androiddeveloperdocs" class="anchor"><a class="heading-anchor" href="#androiddeveloperdocs"><span></span></a>Android Developer Docs</h4>
+
+<ul>
+<li><strong><a href="https://developer.android.com/guide/topics/providers/content-provider-basics">Android Content Provider Basics</a></strong> | Introduction to ACP concepts</li>
+
+<li><strong><a href="https://developer.android.com/guide/topics/providers/content-provider-creating">Creating a content provider</a></strong> | Why and how to share an app's data</li>
+
+<li><strong><a href="https://developer.android.com/reference/android/database/Cursor">Android Cursor docs</a></strong> | How to interface with a result data set</li>
+
+<li><strong><a href="https://developer.android.com/reference/android/database/ContentObserver.html">Content Observer</a></strong> | Get a callback when data changes</li>
+</ul>
+
+<h4 id="articlesbyzebraengineers" class="anchor"><a class="heading-anchor" href="#articlesbyzebraengineers"><span></span></a>Articles by Zebra Engineers</h4>
+
+<ul>
+<li><strong><a href="https://developer.zebra.com/blog/access-serial-number-and-imei-mobile-computers-running-android-10">How to display serial and IMEI numbers on device</a></strong> | Sample app, instructions, source code</li>
+
+<li><strong><a href="https://github.com/ZebraDevs/OEMIdentifiers-Java-Sample">Save OEM identifiers to a file on the device</a></strong> | Sample app, source code</li>
+</ul><p></p>
                                         
 
 
