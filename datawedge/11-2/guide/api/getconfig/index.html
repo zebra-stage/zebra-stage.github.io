@@ -926,6 +926,115 @@ Plugin BARCODE Settings
     decoder_finnish_pos
 </code></pre>
 
+<h3 id="getbarcodehighlightingparameters" class="anchor"><a class="heading-anchor" href="#getbarcodehighlightingparameters"><span></span></a>Get barcode highlighting parameters</h3>
+
+<p>Retrieves the barcode highlighting parameters from the Barcode Highlighting rules specified from the profile. Returns a list of supported parameters with their current values.</p>
+
+<pre class="prettyprint"><code>BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        String strFinalResult = "";
+        if (intent.hasExtra("com.symbol.datawedge.api.RESULT_GET_CONFIG")) {
+            Bundle resultGetConfig = intent.getBundleExtra("com.symbol.datawedge.api.RESULT_GET_CONFIG");
+            Set&lt;String&gt; keys = resultGetConfig.keySet();
+            String profileName = resultGetConfig.getString("PROFILE_NAME");
+
+            for (String key : keys){
+                if (key.equalsIgnoreCase("PLUGIN_CONFIG")){
+                    ArrayList&lt;Bundle&gt; bundleArrayList = resultGetConfig.getParcelableArrayList("PLUGIN_CONFIG");
+                    for (Bundle configBundle : bundleArrayList){
+                        String pluginName = configBundle.getString("PLUGIN_NAME");
+                        if(pluginName != null &amp;&amp; pluginName.equalsIgnoreCase("BARCODE")){
+                            Bundle b  = configBundle.getBundle("PARAM_LIST");
+                            strFinalResult += "\n Profile name: "+ profileName;
+                            for (String bkey:b.keySet()) {
+                                if(bkey.equalsIgnoreCase("barcode_highlighting_rules")){
+                                    strFinalResult +="\n" + bkey + ": " + processRulesBundle(b.getParcelableArrayList(bkey));
+                                }else {
+                                    strFinalResult += "\n" + bkey + ": " + b.get(bkey) + "";
+                                }
+                            }
+                        }
+                    }
+
+                    Log.d("TAG", "#IntentApp#\n\nGet config info received\n" + strFinalResult);
+                }
+            }
+        }
+    }
+};
+
+
+private String processRulesBundle(ArrayList&lt;Bundle&gt; rulesBundleList){
+    String result = "";
+    if(rulesBundleList!= null &amp;&amp; !rulesBundleList.isEmpty()) {
+        for (Bundle rule : rulesBundleList) {
+            String paramID = rule.getString("rule_param_id");
+            ArrayList&lt;Bundle&gt; ruleParamList = rule.getParcelableArrayList("rule_list");
+            if (ruleParamList != null &amp;&amp; !ruleParamList.isEmpty()) {
+                result += "\n\t" + "rule_param_id" + ": " + paramID + "";
+                result += "\n\t" + "rules_list" + ": " + processRuleParamBundle(ruleParamList);
+            }
+        }
+    }
+    return result;
+}
+
+private String processRuleParamBundle(ArrayList&lt;Bundle&gt; ruleParamList){
+    String result = "";
+    for(Bundle ruleParam: ruleParamList){
+        String ruleName = ruleParam.getString("rule_name");
+        result += "\n\t\t" + "rule_name" + ": " + ruleName +"";
+        Bundle criteriaBundle = ruleParam.getBundle("criteria");
+        ArrayList&lt;Bundle&gt; actionBundleList = ruleParam.getParcelableArrayList("actions");
+        if(criteriaBundle!= null){
+            result+= "\n\t\t" + "criteria" + ": " +processCriteriaBundle(criteriaBundle);
+        }
+
+        if(actionBundleList!= null){
+            result+= "\n\t\t" + "actions" + ": " +processActionBundle(actionBundleList);
+        }
+    }
+    return result;
+}
+
+private String processActionBundle(ArrayList&lt;Bundle&gt; actionBundleList){
+    String result = "";
+    for(Bundle actionBundle: actionBundleList){
+        String actionKey = actionBundle.getString("action_key");
+        String actionValue = actionBundle.getString("action_value");
+        result+= "\n\t\t\t" + "action_key" + ": " + actionKey +" , action_value"+": "+actionValue;
+    }
+    return result;
+}
+
+private String processCriteriaBundle(Bundle criteriaBundle){
+    String result = "";
+    for (String key : criteriaBundle.keySet()){
+        Object object = criteriaBundle.get(key);
+        if(object instanceof ArrayList){
+            result+= "\n\t\t\t" + "criteria_key" + ": " + key +" , criteria_value"+": ";
+            ArrayList&lt;Bundle&gt; bundleArrayList = criteriaBundle.getParcelableArrayList(key);
+            for (Bundle bundle: bundleArrayList){
+                String criteriaKey = bundle.getString("criteria_key");
+                String criteriaValue = bundle.getString("criteria_value");
+                result+= "\n\t\t\t\t" + "criteria_key" + ": " + criteriaKey +" , criteria_value"+": " +criteriaValue;
+            }
+        }else if(object instanceof String[]){
+            String[] valueArray = criteriaBundle.getStringArray(key);
+            if(valueArray!= null){
+                String value = Arrays.toString(valueArray);
+                //result+= value;
+                result+= "\n\t\t\t" + "criteria_key" + ": " + key +" , criteria_value"+": " +value ;
+            }
+
+        }
+    }
+    return result;
+
+}
+</code></pre>
+
 <h3 id="getintercharactersettings" class="anchor"><a class="heading-anchor" href="#getintercharactersettings"><span></span></a>Get inter-character settings</h3>
 
 <pre class="prettyprint"><code>private Integer ctrlCharacterDelayValue;
