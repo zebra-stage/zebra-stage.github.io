@@ -298,9 +298,15 @@
 <h5 id="tocommunicatewithzdmthecallingappmustdothefollowing" class="anchor"><a class="heading-anchor" href="#tocommunicatewithzdmthecallingappmustdothefollowing"><span></span></a>To communicate with ZDM, the calling app must do the following:</h5>
 
 <ol>
-<li><p>Obtain access to ZDM for app through an administrator. </p></li>
+<li><p><strong>Obtain access to ZDM</strong> through an administrator for the app(s) that need to use it. </p></li>
 
-<li><p><strong>Bind with the ZDM service</strong>: </p>
+<li><p><strong>Add the following line to the</strong> <code>manifest.xml</code> file of the app(s): </p>
+
+<pre class="prettyprint"><code>
+&lt;uses-permission android:name=”com.symbol.zdm.ACCESS_DEVICE_MANAGER_SERVICE”&gt;
+</code></pre></li>
+
+<li><p><strong>Bind app(s) with the ZDM service</strong>: </p>
 
 <pre class="prettyprint"><code>
 private static final String ZDM_PACKAGE "com.zebra.devicemanager"; 
@@ -359,7 +365,7 @@ private class IncomingHandler extends Handler {
 } 
 </code></pre></li>
 
-<li><p><strong>Prepare for responses coming in JsonString format</strong>, as below:  </p>
+<li><p><strong>Be aware that responses come in JsonString format</strong>, as below:  </p>
 
 <pre class="prettyprint"><code>
 { 
@@ -388,6 +394,105 @@ for (int i = 0 ; i&lt;jsonArray.length();i++){
 } 
 </code></pre></li>
 </ol>
+
+<hr>
+
+<h3 id="feedbackchannel" class="anchor"><a class="heading-anchor" href="#feedbackchannel"><span></span></a>Feedback Channel</h3>
+
+<p>In accordance with <a href="https://developer.android.com/reference/androidx/enterprise/feedback/package-summary">Google's published practices</a>, ZDM supports a feedback channel. Feedback responses are sent as a broadcast for registered authorized apps.  </p>
+
+<h4 id="registerthefeedbackchannel" class="anchor"><a class="heading-anchor" href="#registerthefeedbackchannel"><span></span></a>Register the feedback channel</h4>
+
+<p>To configure an app to receive broadcast feedback responses, register for the following action name in the app's <code>manifest.xml</code> file:</p>
+
+<pre class="prettyprint"><code>  
+  FEEDBACK_ACTION_NAME = "com.zebra.feedback.action.APP_STATES"; 
+</code></pre>
+
+<h4 id="example" class="anchor"><a class="heading-anchor" href="#example"><span></span></a>Example</h4>
+
+<pre class="prettyprint"><code>    &lt;receiver android:name="FeedbackReceiver" 
+    android:exported="true" 
+    android:enabled="true"&gt; 
+
+      &lt;intent-filter&gt; 
+          &lt;action android:name="com.zebra.feedback.action.APP_STATES" /&gt; 
+      &lt;/intent-filter&gt; 
+    &lt;/receiver&gt; 
+</code></pre>
+
+<hr>
+
+<h3 id="retrievefeedback" class="anchor"><a class="heading-anchor" href="#retrievefeedback"><span></span></a>Retrieve Feedback</h3>
+
+<p>Feedback broadcast details are received as an intent. Some of the most common are shown in the table below. </p>
+
+<table class="facelift" style="width:100%" border="1" padding="5px">
+<tbody>
+  <tr bgcolor="#dce8ef">
+    <th>Description</th>
+    <th>Code</th>
+  </tr>
+
+<tr>
+  <td>Name of bundle (stored as a parcelable) containing feedback details</td>
+  <td><code>static final String APP_STATES = "app_states";</code></td>
+</tr>
+
+<tr>
+  <td>Name of keyed app state key for a given bundle</td>
+  <td><code>static final String APP_STATE_KEY = "app_state_key";</code></td>
+</tr>
+
+<tr>
+  <td>Name of severity of the app state</td>
+  <td><code>static final String APP_STATE_SEVERITY = "app_state_severity";</code></td>
+</tr>
+
+<tr>
+  <td>Name of optional app state message for a given bundle</td>
+  <td><code>static final String APP_STATE_MESSAGE = "app_state_message";</code></td>
+</tr>
+
+<tr>
+  <td>Package name that submitted the app state</td>
+  <td><code>static final String APP_STATE_PKG = "app_state_pkg";</code></td>
+</tr>
+
+<tr>
+  <td>Time stamp of app state</td>
+  <td><code>static final String APP_STATE_TIME_STAMP = "app_state_time_stamp";</code></td>
+</tr>
+
+<tr>
+  <td>Name of optional app state data for a given bundle</td>
+  <td><code>static final String APP_STATE_DATA = "app_state_data";</code></td>
+</tr>
+
+</tbody></table> 
+
+<p><br></p>
+
+<h4 id="example-1" class="anchor"><a class="heading-anchor" href="#example-1"><span></span></a>Example</h4>
+
+<pre class="prettyprint"><code>public class FeedbackReceiver extends BroadcastReceiver { 
+    @Override 
+    public void onReceive(Context context, final Intent intent) { 
+
+                ArrayList&lt;Bundle&gt; bundles = intent.getParcelableArrayListExtra(APP_STATES); 
+                if(bundles != null) { 
+                    for (Bundle feedbackDetails : bundles) { 
+                        String key = feedbackDetails.getString(APP_STATE_KEY); 
+                        int severity = feedbackDetails.getInt(APP_STATE_SEVERITY); 
+                        String message = feedbackDetails.getString(APP_STATE_MESSAGE); 
+                        String pkgName = feedbackDetails.getString(APP_STATE_PKG); 
+                        String data = feedbackDetails.getString(APP_STATE_DATA); 
+                        Long timestamp = feedbackDetails.getLong(APP_STATE_TIME_STAMP); 
+                    } 
+                } 
+    } 
+} 
+</code></pre>
 
 <hr>
 
