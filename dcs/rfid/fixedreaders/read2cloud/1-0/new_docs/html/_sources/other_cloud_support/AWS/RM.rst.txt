@@ -1,0 +1,150 @@
+===================================
+Configure device using RM Interface
+===================================
+
+This page guides user to configure reader using ``Reader Management`` Interface.
+
+.. note::
+    This guide uses `Postman Tool <https://www.postman.com/>`_ for sending API calls to reader.
+
+
+.. _AWS ENDPOINT:
+
+Import Certificates and Generate Endpoint Configuration
+=======================================================
+
+1.	Import AWS device certificates downloaded into reader.
+    
+    * **Method-1**: Using SCP.
+    
+        * Copy ``<id>-certificate.pem.crt``, ``<id>-private.pem.key`` and ``AmazonRootCA1.pem`` created in :ref:`AWS Setup` into reader. (copy to desired folder inside ``/apps/``).
+	
+    * **Method-2**: Using reader certificate webpage. (to be defined…)
+
+        * Create ``PFX`` file from certificate generated in :ref:`AWS Setup`.
+        * Import Certificates into reader using certificate page.
+
+    * **Method-3**: pass certificates contents along with ``Endpoint Config``.
+
+2.	Create AWS Endpoint JSON object (when used ``Method-1`` or ``Method-2`` for importing certificates).
+    
+    Edit Example AWS endpoint JOSN object shown below.
+
+    .. literalinclude:: files/aws_template.json
+       :language: JSON
+
+    1. Replace ``{deviceEndpoint}`` string with ``Endpoint URL`` copied in :ref:`AWS Setup`.
+    2. Replace ``{certificatePath}`` string with path of  ``public certificate`` downloaded.
+
+        * If certificates are imported using **Method-1**: Replace with ``"/apps/<id>-crtificate.pem.crt"``
+        * If certificates are imported using **Method-2**: Replace with ``"/readerConfig/keystore/<id>-certificate.pem.crt"``
+
+    3. Replace ``{PrivateKeyPath}`` string with path of ``private key`` downloaded.
+        
+        * If certificates are imported using **Method-1**: Replace with ``"/apps/<id>-private.pem.key"``.
+        * If certificates are imported using **Method-2**: Replace with ``"/readerConfig/keystore/<id>-private.pem.key"``.
+
+    4. Replace ``{CACertificatePath}`` string with path of ``root CA`` downloaded.
+
+        * If certificates are imported using **Method-1**: Replace with ``/apps/AmazonRootCA1.pem"``.
+        * If certificates are imported using **Method-2**: Replace with ``"/readerConfig/keystore/AmazonRootCA1.pem"``.
+
+
+3.	Create AWS Endpoint JSON object without local certificates (when used ``Method-3`` for importing certificates).
+    
+    Edit Example AWS endpoint JOSN object shown below.
+
+    .. literalinclude:: files/aws_endpoint_content.json
+       :language: JSON
+
+    1. Replace ``{deviceEndpoint}`` with ``Endpoint URL`` copied from :ref:`AWS Setup`.
+    2. Replace ``{certificateContent}`` with content of ``<id>-certificate.pem.crt``.
+    3. Replace ``{privateKeyContent}`` with content of ``<id>-private.pem.key``.
+    4. Replace ``{CACertificateContent}`` with content of ``AmazonRootCA1.pem``.
+    
+    In certificate content replace newline ``\\n`` character with ``\\r\\n`` characters as shown below for proper JSON object.
+        
+    .. image:: images/AWS_5.png
+
+.. note::
+
+    ``tagEvents``
+        
+        Reader uses this topic to send tag read events.
+    
+    ``managementEvents``
+
+        Reader uses this topic to send asynchronous events like heartbeats, GPI, userapp, errors and warnings.
+        
+    ``command``
+        
+        Reader will subscribe to this topic and listening for commands from cloud.
+    
+    ``response`` 
+
+        Reader uses this topic to send responses to commands.
+
+
+Import Configuration into Reader
+================================
+
+1. Download and import postman collections `Cloud Connect Enhanced UI.postman_collection.json <https://zebra-my.sharepoint.com/:u:/p/rbachina/EbubPEpPi0xOntmEuUA2qisBRE1AtFQZdEvXls-NQ7cCAQ?e=AFdNy0>`_ and `Cloud Connect - RM-commands.postman_collection.json <https://zebra-my.sharepoint.com/:u:/p/rbachina/EcLM0v6DLxRBnZRPe6qzPIoBPUkDD5unJuDJbzF22xUy8g?e=RjbfHc>`_
+
+2. Create an environment variables ``protocol`` (http/https) and ``reader-ip`` (10.17.231.7).
+
+3. Execute ``Login`` API.
+
+    .. note::
+        change ``username`` and ``password`` field in the body with readers username and password configured.
+    
+    .. image:: images/AWS_6.png
+
+4. Goto ``ADD endpoint (AWS) API`` and replace the JSON object between ``<motorm:data> </motorm:data>`` with the AWS Endpoint JSON object created in :ref:`AWS ENDPOINT`.
+
+    .. image:: images/AWS_7.png
+
+    * The response ``200 OK`` indicate the endpoint got added successfully.
+    * Status other than ``200`` indicate error and response contain the failure reason and check ``reader syslog`` to get more info on error.
+
+5. Create Endpoint Mapping for AWS.
+
+    * Goto ``UPDATE endpoint mapping API`` and edit control, data, event, and management endpoints to the name used in Azure endpoint JSON object.
+
+    .. note::
+        Reader is configured to AWS endpoint for all the planes.
+    
+    .. image:: images/AWS_8.png
+
+    * The response ``200 OK`` indicate the endpoint got added successfully.
+    * Status other than ``200`` indicate error and response contain the failure reason and check reader syslog to get more info on error.
+
+
+
+Connect to Cloud
+================
+
+1. Goto ``isEnrolledToCloud`` and check if reader is enrolled for IoT connect or not.
+
+.. image:: images/AWS_9.png
+
+2. If device is not enrolled currently, Send ``EnrollToCloud API``.
+
+.. image:: images/AWS_10.png
+
+3. If device is already enrolled, Send ``disconnectFromCloud API`` and ``connectToCloud API``.
+
+.. image:: images/AWS_11.png
+    :scale: 100%
+
+.. image:: images/AWS_12.png
+    :scale: 100%
+
+
+
+Verify Cloud Connection
+=======================
+
+1. Check Cloud Connection Status using ``isConnectedToCloud API``.
+
+.. image:: images/AWS_13.png
+    :scale: 100%
