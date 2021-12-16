@@ -284,12 +284,27 @@ Video providing step-by-step instructions on how to develop an app to capture da
 
 <li>Android 11 or higher</li>
 
-<li>For Mobility DNA OCR, Mobility DNA OCR license(s) installed for each OCR feature in use</li>
+<li>Built-in camera on mobile computer</li>
+
+<li><a href="/licensing/about/">Mobility DNA OCR License</a> - individual license required for each OCR feature: 
+
+
+<ul>
+<li>Mobility DNA License Plate OCR</li>
+
+<li>Mobility DNA Universal ID OCR </li>
+
+<li>Mobility DNA Vehicle Identification Number OCR</li>
+
+<li>Mobility DNA Tire Identification Number OCR</li>
+
+<li>Mobility DNA Meter Reading OCR</li></ul>
+</li>
 </ul>
 
 <hr>
 
-<h2 id="capturedata" class="anchor"><a class="heading-anchor" href="#capturedata"><span></span></a>Capture Data</h2>
+<h2 id="stepstocapturedata" class="anchor"><a class="heading-anchor" href="#stepstocapturedata"><span></span></a>Steps to Capture Data</h2>
 
 <p>In summary, the steps to capture data using Workflow Input are:</p>
 
@@ -359,7 +374,7 @@ Video providing step-by-step instructions on how to develop an app to capture da
 
 <h3 id="3extractstringdatafromtheintent" class="anchor"><a class="heading-anchor" href="#3extractstringdatafromtheintent"><span></span></a>3. Extract string data from the intent</h3>
 
-<p>To extract String data from the intent, the scan result intent contains a String extra called <code>com.symbol.datawedge.data</code>. The String data from the <code>com.symbol.datawedge.data</code> field is in JSON Array format. Example data is shown below:</p>
+<p>To extract String data from the intent, the scan result intent contains a String extra called <code>com.symbol.datawedge.data</code>, in which the data is in JSON array format. Example data for an identification document:</p>
 
 <pre class="prettyprint"><code>[
     {
@@ -426,7 +441,7 @@ Video providing step-by-step instructions on how to develop an app to capture da
 <p>Iterate through the elements of the JSONArray object to extract the data for each field:</p>
 
 <ul>
-<li>If the JSONObject has a mapping for the name “string_data”, it means this JSONObject contains String data. Use the value mapped by the name “label” to identify the type of the string data.</li>
+<li>If the JSONObject has a mapping for the name “string_data”, it means this JSONObject contains String data. Use the value mapped by the name “label” to identify the type of string data based on the OCR feature. See <a href="#ocrresultoutput">OCR Result Output</a> for reference on the field names supported to extract the result data.</li>
 
 <li>If the JSONObject does not have a mapping for the name “string_data”, it means this JSONObject contains Image data. Proceed with the next step to extract the image data.</li>
 </ul>
@@ -487,7 +502,56 @@ if(cursor != null)
 }
 </code></pre>
 
-<p>When all values are stored for the image data, read the values mapped by “width”, “height”, “stride”, “orientation” and “imageformat” to construct the Bitmap object. Use <code>getBitmap()</code> method from the <code>ImageProcessing</code> class (provided below) to get the Bitmap object:</p>
+<p>When all values are stored for the image data, read the values mapped by the field names supported by image output (e.g. “width”, “height”, etc.) shown in the table below to construct the Bitmap object. </p>
+
+<p><strong>Image Output:</strong></p>
+
+<table class="facelift" style="width:85%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th style="width:15%">Field Name</th>
+    <th style="width:10%">Type</th>
+    <th style="width:60%">Description</th>
+  </tr>
+  <tr>
+    <td>label</td>
+    <td>string</td>
+    <td>Image label name that specifies the type of sample: “License Plate”, “Identification Document”, “VIN”, "TIN", “Meter”</td>
+  </tr>
+  <tr>
+    <td>width</td>
+    <td>int</td>
+    <td>Width of the image </td>
+  </tr>
+  <tr>
+    <td>height</td>
+    <td>int</td>
+    <td>Height of the image </td>
+  </tr>
+  <tr>
+    <td>size</td>
+    <td>int</td>
+    <td>Size of the image buffer</td>
+  </tr>
+  <tr>
+    <td>stride</td>
+    <td>int</td>
+    <td>Width of a single row of pixels (rounded up) of an image </td>
+  </tr>
+  <tr>
+    <td>imageformat</td>
+    <td>string</td>
+    <td>Supported formats: Y8, YUV<br>Note: YUV format must be interpreted as NV12 format.</td>
+  </tr>
+  <tr>
+    <td>orientation</td>
+    <td>int</td>
+    <td>Orientation of the camera sensor</td>
+  </tr>
+</tbody></table>
+
+<p><br></p>
+
+<p>Use <code>getBitmap()</code> method from the <code>ImageProcessing</code> class (provided below) to get the Bitmap object:</p>
 
 <pre class="prettyprint"><code>int width = 0;
 int height = 0;
@@ -595,6 +659,479 @@ public class ImageProcessing{
 </code></pre>
 
 <p><br></p>
+
+<hr>
+
+<h2 id="ocrresultoutput" class="anchor"><a class="heading-anchor" href="#ocrresultoutput"><span></span></a>OCR Result Output</h2>
+
+<p>The scan result intent contains a String extra called <code>com.symbol.datawedge.data</code> from which the data can be extracted. This section lists the Field Names available for each OCR feature. See <a href="#3extractstringdatafromtheintent">Extract string data from the intent</a> for instructions on usage.</p>
+
+<h3 id="ocrresult" class="anchor"><a class="heading-anchor" href="#ocrresult"><span></span></a>OCR Result</h3>
+
+<table class="facelift" style="width:80%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th style="width:15%">Field Name</th>
+    <th style="width:65%">Description</th>
+  </tr>
+  <tr>
+    <td>Result</td>
+    <td>Text data read from the OCR-based feature: license plate, vehicle identification number, tire identification number, or meter. Exception: See  <a href="#identificationdocument">Identification Document</a>.</td>
+  </tr>
+  <tr>
+    <td>String Length</td>
+    <td>Length of the data</td>
+  </tr>
+</tbody></table>
+
+<p><br></p>
+
+<h4 id="identificationdocument" class="anchor"><a class="heading-anchor" href="#identificationdocument"><span></span></a>Identification Document</h4>
+
+<p>The following data fields can be read from driver licenses, ID cards and/or insurance cards. Some field names are different for documents based on different geographical regions.</p>
+
+<p>Legend:</p>
+
+<ul>
+<li><font color="blue">O</font> - Optional</li>
+
+<li><font color="red">M </font> - Mandatory</li>
+</ul>
+
+<table class="facelift" style="width:80%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th style="width:5%">No.</th>
+    <th style="width:30%; text-align:center">Field Name</th>
+    <th style="width:15%; text-align:center">Driver License</th>
+    <th style="width:15%; text-align:center">ID Card</th>
+    <th style="width:15%; text-align:center">Insurance Card</th>
+  </tr>
+  <tr>
+    <td style="text-align:center">1</td>
+    <td style="text-align:">additionalInformation</td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">2</td>
+    <td style="text-align:">additionalInformation1</td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">3</td>
+    <td style="text-align:">address</td>
+    <td style="text-align:center"><font color="red">M</font></td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">4</td>
+    <td style="text-align:">age</td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">5</td>
+    <td style="text-align:">audit</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">6</td>
+    <td style="text-align:">authority</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center"><font color="red">M</font></td>
+  </tr>
+  <tr>
+    <td style="text-align:center">7</td>
+    <td style="text-align:">cardAccessNumber</td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">8</td>
+    <td style="text-align:">cardNumber</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">9</td>
+    <td style="text-align:">categories</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">10</td>
+    <td style="text-align:">citizenship</td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">11</td>
+    <td style="text-align:">cityNumber</td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">12</td>
+    <td style="text-align:">class</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">13</td>
+    <td style="text-align:">conditions</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">14</td>
+    <td style="text-align:">dateOfBirth</td>
+    <td style="text-align:center"><font color="red">M</font></td>
+    <td style="text-align:center"><font color="red">M</font></td>
+    <td style="text-align:center"><font color="red">M</font></td>
+  </tr>
+  <tr>
+    <td style="text-align:center">15</td>
+    <td style="text-align:">dateOfExpiry</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center"><font color="red">M</font></td>
+  </tr>
+  <tr>
+    <td style="text-align:center">16</td>
+    <td style="text-align:">dateOfIssue</td>
+    <td style="text-align:center"><font color="red">M</font></td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">17</td>
+    <td style="text-align:">dateOfRegistration</td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">18</td>
+    <td style="text-align:">divisionNumber</td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">19</td>
+    <td style="text-align:">documentDiscriminator</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">20</td>
+    <td style="text-align:">documentNumber</td>
+    <td style="text-align:center"><font color="red">M</font></td>
+    <td style="text-align:center"><font color="red">M</font></td>
+    <td style="text-align:center"><font color="red">M</font></td>
+  </tr>
+  <tr>
+    <td style="text-align:center">21</td>
+    <td style="text-align:">duplicate</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">22</td>
+    <td style="text-align:">endorsements</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">23</td>
+    <td style="text-align:">eyes</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">24</td>
+    <td style="text-align:">familyName</td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">25</td>
+    <td style="text-align:">fathersName</td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">26</td>
+    <td style="text-align:">firstIssued</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">27</td>
+    <td style="text-align:">firstName</td>
+    <td style="text-align:center"><font color="red">M</font></td>
+    <td style="text-align:center"><font color="red">M</font></td>
+    <td style="text-align:center"><font color="red">M</font></td>
+  </tr>
+  <tr>
+    <td style="text-align:center">28</td>
+    <td style="text-align:">folio</td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">29</td>
+    <td style="text-align:">fullName</td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">30</td>
+    <td style="text-align:">hair</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">31</td>
+    <td style="text-align:">height</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">32</td>
+    <td style="text-align:">lastName</td>
+    <td style="text-align:center"><font color="red">M</font></td>
+    <td style="text-align:center"><font color="red">M</font></td>
+    <td style="text-align:center"><font color="red">M</font></td>
+  </tr>
+  <tr>
+    <td style="text-align:center">33</td>
+    <td style="text-align:">licenceNumber</td>
+    <td style="text-align:center"><font color="red">M</font></td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">34</td>
+    <td style="text-align:">licenseClass</td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">35</td>
+    <td style="text-align:">licenseNumber</td>
+    <td style="text-align:center"><font color="red">M</font></td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">36</td>
+    <td style="text-align:">licenseType</td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">37</td>
+    <td style="text-align:">municipalityNumber</td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">38</td>
+    <td style="text-align:">name</td>
+    <td style="text-align:center"><font color="red">M</font></td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">39</td>
+    <td style="text-align:">nationalId</td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">40</td>
+    <td style="text-align:">nationality</td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center"><font color="red">M</font></td>
+  </tr>
+  <tr>
+    <td style="text-align:center">41</td>
+    <td style="text-align:">office</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">42</td>
+    <td style="text-align:">parentsGivenName</td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">43</td>
+    <td style="text-align:">parish</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">44</td>
+    <td style="text-align:">personalNumber</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center"><font color="red">M</font></td>
+  </tr>
+  <tr>
+    <td style="text-align:center">45</td>
+    <td style="text-align:">placeAndDateOfBirth</td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">46</td>
+    <td style="text-align:">placeOfBirth</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">47</td>
+    <td style="text-align:">previousType</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">48</td>
+    <td style="text-align:">restrictions</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">49</td>
+    <td style="text-align:">revoked</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">50</td>
+    <td style="text-align:">sex</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">51</td>
+    <td style="text-align:">stateNumber</td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">52</td>
+    <td style="text-align:">supportNumber</td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">53</td>
+    <td style="text-align:">type</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">54</td>
+    <td style="text-align:">version</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">55</td>
+    <td style="text-align:">verticalNumber</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">56</td>
+    <td style="text-align:">voterId</td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+  <tr>
+    <td style="text-align:center">57</td>
+    <td style="text-align:">weight</td>
+    <td style="text-align:center"><font color="blue">O</font></td>
+    <td style="text-align:center">N/A</td>
+    <td style="text-align:center">N/A</td>
+  </tr>
+
+</tbody></table>
+
+<p><br></p>
+
+<!-- 
+
+**OCR Result:**
+
+
+<table class="facelift" style="width:50%" border="1" padding="5px">
+  <tr bgcolor="#dce8ef">
+    <th style="width:15%">Field Name</th>
+    <th style="width:35%">Description</th>
+  </tr>
+  <tr>
+    <td>Result</td>
+    <td>Text data read from the Vehicle Identification Number</td>
+  </tr>
+  <tr>
+    <td>String Length</td>
+    <td>Length of the text data</td>
+  </tr>
+</table>
+
+
+<br />
+-->
 
 <hr>
 
