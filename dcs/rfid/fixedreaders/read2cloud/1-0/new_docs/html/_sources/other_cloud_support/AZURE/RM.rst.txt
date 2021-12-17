@@ -1,0 +1,166 @@
+===================================
+Configure device using RM Interface
+===================================
+
+This page guides user to configure reader using ``Reader Management`` Interface.
+
+.. important::
+    This guide uses `Postman Tool <https://www.postman.com/>`_ for sending API calls to reader.
+
+
+.. _AZURE ENDPOINT:
+
+Import Certificates and Generate Endpoint Configuration
+=======================================================
+
+1.	Import Azure device certificates into reader.
+
+    * **Method-1**: Using SCP.
+    
+        * Copy ``mydevkitkey.pem``, ``mydevkitcertificate.pem `` and ``ca.pem`` created in :ref:`AZURE Setup` into reader. (copy to desired folder inside ``/apps/``).
+
+        .. image:: images/AZURE4.png
+	
+    * **Method-2**: Using reader certificate webpage. (to be defined…)
+
+        * Create ``PFX`` file from certificate generated in :ref:`AWS Setup`.
+        
+        * Import Certificates into reader using certificate page.
+
+    * **Method-3**: pass certificates contents along with ``Endpoint Config``.
+
+2.	Create AZURE Endpoint JSON object (when used ``Method-1`` or ``Method-2`` for importing certificates).
+    
+    Edit Example AZURE endpoint JSON object shown below.
+
+    .. literalinclude:: files/azure_template.json
+       :language: JSON
+
+    * Replace ``{IoTHubName}`` string with IoT Hub name created.
+    
+    * Replace ``{IoTDeviceID}`` string with IoT device name created.
+    
+    * Replace ``{certificatePath}`` string with path of *mydevkitcertificate.pem* inside reader.
+    
+        * If certificates are imported using **Method-1**: Replace the string with ``/apps/ mydevkitcertificate.pem``.
+    
+        * If certificates are imported using **Method-2**: Replace the string with ``/readerConfig/keystore/mydevkitcertificate.pem``.
+    
+    * Replace ``{PrivateKeyPath}`` string with path of *mydevkitkey.pem* inside reader.
+    
+        * If certificates are imported using **Method-1**: Replace the string with ``/apps/ mydevkitkey.pem``.
+    
+        * If certificates are imported using **Method-2**: Replace the string with ``/readerConfig/keystore/mydevkitkey.pem``.
+    
+    * Replace ``{CAPath}`` string with path of *ca.pem* inside reader.
+    
+        * If certificates are imported using **Method-1**: Replace the string with ``/apps/ca.pem``
+    
+        * If certificates are imported using **Method-2**: Replace the string with ``/readerConfig/keystore/ca.pem``
+
+3.	Create AZURE Endpoint JSON object without local certificates (when used ``Method-3`` for importing certificates).
+
+    Edit Example AZURE endpoint JSON object shown below.
+
+    .. literalinclude:: files/azure_template_content.json
+       :language: JSON
+
+    * Replace ``{IoTHubName}`` string with IoT Hub name created.
+    
+    * Replace ``{IoTDeviceID}`` string with IoT device name created.
+
+    * Replace ``{certificateContent}`` with content of ``mydevkitcertificate.pem``.
+    
+    * Replace ``{privateKeyContent}`` with content of ``mydevkitkey.pem``.
+    
+    * Replace ``{CACertificateContent}`` with content of ``ca.pem``.
+    
+    In certificate content replace newline ``\\n`` character with ``\\r\\n`` characters as shown below for proper JSON object.
+        
+    .. image:: images/AZURE5.png
+
+.. note::
+
+    ``tagEvents``
+        - Reader uses this topic to send tag read events.
+    
+    ``managementEvents``
+        - Reader uses this topic to send asynchronous events like heartbeats, GPI, userapp, errors and warnings.
+        
+    ``command``
+        - Reader will subscribe to this topic and listening for commands from cloud.
+    
+    ``response`` 
+        - Reader uses this topic to send responses to commands.
+
+.. important::
+
+        For ``control``, ``tagEvents``, ``managementEvents``, and ``management`` topics, current configuration used default Azure IoT hub topics. These can be changed.
+
+
+Import Configuration into Reader
+================================
+
+1. Download and import postman collections `Cloud Connect Enhanced UI.postman_collection.json <https://zebra-my.sharepoint.com/:u:/p/rbachina/EbubPEpPi0xOntmEuUA2qisBRE1AtFQZdEvXls-NQ7cCAQ?e=AFdNy0>`_ and `Cloud Connect - RM-commands.postman_collection.json <https://zebra-my.sharepoint.com/:u:/p/rbachina/EcLM0v6DLxRBnZRPe6qzPIoBPUkDD5unJuDJbzF22xUy8g?e=RjbfHc>`_
+
+2. Create an environment variables ``protocol`` (http/https) and ``reader-ip`` (10.17.231.7).
+
+3. Execute ``Login`` API.
+
+    .. important::
+        change ``username`` and ``password`` field in the body with readers username and password configured.
+    
+    .. image:: images/AZURE6.png
+
+4. Goto ``ADD endpoint (AZURE) API`` and replace the JSON object between ``<motorm:data> </motorm:data>`` with the AWS Endpoint JSON object created in :ref:`AWS ENDPOINT`.
+
+    .. image:: images/AZURE7.png
+
+    * The response ``200 OK`` indicate the endpoint got added successfully.
+    
+    * Status other than ``200`` indicate error and response contain the failure reason and check ``reader syslog`` to get more info on error.
+
+5. Create Endpoint Mapping for AZURE.
+
+    * Goto ``UPDATE endpoint mapping API`` and edit control, data, event, and management endpoints to the name used in AZURE endpoint JSON object.
+
+    .. important::
+        Reader is configured to AZURE endpoint for all the interfaces.
+    
+    .. image:: images/AZURE8.png
+
+    * The response ``200 OK`` indicate the endpoint got added successfully.
+    
+    * Status other than ``200`` indicate error and response contain the failure reason and check reader syslog to get more info on error.
+
+
+
+Connect to Cloud
+================
+
+1. Goto ``isEnrolledToCloud`` and check if reader is enrolled for IoT connect or not.
+
+.. image:: images/AZURE9.png
+
+2. If device is not enrolled currently, Send ``EnrollToCloud API``.
+
+.. image:: images/AZURE10.png
+
+3. If device is already enrolled, Send ``disconnectFromCloud API`` and ``connectToCloud API``.
+
+disconnectFromCloud API:
+
+.. image:: images/AZURE11.png
+
+connectToCloud API:
+
+.. image:: images/AZURE12.png
+
+
+
+Verify Cloud Connection
+=======================
+
+1. Check Cloud Connection Status using ``isConnectedToCloud API``.
+
+.. image:: images/AZURE13.png
