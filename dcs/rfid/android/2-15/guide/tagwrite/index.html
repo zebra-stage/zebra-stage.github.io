@@ -190,7 +190,7 @@
 
                                                 <p>Following are the general steps for performing write operation successfully </p>
                                                 <ol>
-                                                    <li>Disable DPO in case of <strong>RFD8500</strong> </li>
+                                                    <li>Disable DPO in case of <strong>RFD8500</strong> (step not required in case of fixed readers)</li>
                                                     <li>Set Power equal or greater than 220dbm </li>
                                                     <li>Use Session S0</li>
                                                     <li>Isolate the TAG while performing write operation</li>
@@ -271,7 +271,46 @@ private void setAccessOperationConfiguration() {
     }
 }
 </code></pre>
+<p>In case of fixed readers</p>
+                                                <ol>
+                                                    <li>Set Antenna power to 240dbm</li>
+                                                </ol>
 
+                                                <pre class="prettyprint"><code>
+// configuration
+private void setAntennaPower(int power) {
+    Log.d(TAG, "setAntennaPower " + power);
+    try {
+        // set antenna configurations
+        Antennas.AntennaRfConfig config = reader.Config.Antennas.getAntennaRfConfig(1);
+        config.setTransmitPowerIndex(power);
+        config.setrfModeTableIndex(0);
+        config.setTari(0);
+        reader.Config.Antennas.setAntennaRfConfig(1, config);
+    } catch (InvalidUsageException e) {
+        e.printStackTrace();
+    } catch (OperationFailureException e) {
+        e.printStackTrace();
+    }
+}
+
+private void setSingulation(SESSION session, INVENTORY_STATE state) {
+    Log.d(TAG, "setSingulation " + session);
+    try {
+        // Set the singulation control
+        Antennas.SingulationControl s1_singulationControl = reader.Config.Antennas.getSingulationControl(1);
+        s1_singulationControl.setSession(session);
+        s1_singulationControl.Action.setInventoryState(state);
+        s1_singulationControl.Action.setSLFlag(SL_FLAG.SL_ALL);
+        reader.Config.Antennas.setSingulationControl(1, s1_singulationControl);
+    } catch (InvalidUsageException e) {
+        e.printStackTrace();
+    } catch (OperationFailureException e) {
+        e.printStackTrace();
+    }
+}
+
+</code></pre>
                                                 <h2 id="code2" class="anchor"><a class="heading-anchor" href="#code2"><span></span></a>Perform Write</h2>
 
                                                 <p>Following shows usage of write operation with SDK applying prefilter and number of retries internally and thus simplified application</p>
@@ -295,6 +334,7 @@ private void writeTag(String sourceEPC, String Password, MEMORY_BANK memory_bank
         // set retries in case of partial write happens
         writeAccessParams.setWriteRetries(3);
         // data length in words
+       <strong> //Incase of fixed readers not required to divide it by 4 </strong>
         writeAccessParams.setWriteDataLength(writeData.length() / 4);
         // 5th parameter bPrefilter flag is true which means API will apply pre filter internally
         // 6th parameter should be true in case of changing EPC ID it self i.e. source and target both is EPC

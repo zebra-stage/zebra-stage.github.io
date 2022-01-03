@@ -8,8 +8,8 @@
     <meta name="author" content="Zebra Technologies">
     <meta name="google-site-verification" content="i4B78BrWnNy8ShJwe5feRW3jO3HE6gfYlYqYbxfl8yY">
     <meta name="msvalidate.01" content="6B651B00161BCE79B8950AC09D5C4C75">
-    <meta title="Write Access Tutorial">
-    <title>Write Access Tutorial - Zebra Technologies Techdocs</title>
+    <meta title="GPIO Tutorial">
+    <title>GPIO Tutorial - Zebra Technologies Techdocs</title>
     <!-- core CSS -->
     <link href="/css/bootstrap.min.css" rel="stylesheet">
     <link href="/css/font-awesome.min.css" rel="stylesheet">
@@ -130,7 +130,7 @@
                             <nav id="toc" data-toggle="toc" data-spy="affix" style="height: 75%; max-width: 225px; overflow-y: auto; ">
 
                                 <ul class="nav">
-                                    <li><strong>Write Access Tutorial</strong></li>
+                                    <li><strong>GPIO Tutorial</strong></li>
                                 </ul>
                             </nav>
 
@@ -165,7 +165,7 @@
                                 <div class="col-sm-12">
                                     <section id="cta" class="wow fadeIn">
                                         <div class="">
-                                            <h1 id="access-tutorial" class="anchor"><a class="heading-anchor" href="#access-tutorial"><span></span></a>Write Access Operations Tutorial</h1>
+                                            <h1 id="GPIO tutorial" class="anchor"><a class="heading-anchor" href="#GPIO tutorial"><span></span></a>GPIO Configurations Tutorial</h1>
                                             <p>
                                                 RFID SDK for Android
                                                 2.0.1.15
@@ -184,7 +184,7 @@
                                                 <p></p>
                                                 <h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-                                                <p>This Tutorial provides a walk-through of the steps to perform Write Access operation using <a href="../../apis">RFID API3</a></p>
+                                                <p>This Tutorial provides a walk-through of the steps to perform GPIO configuration using <a href="../../apis">RFID API3</a></p>
 
 
                                                 <h3 id="createtheproject" class="anchor"><a class="heading-anchor" href="#createtheproject"><span></span></a>Create The Project</h3>
@@ -194,79 +194,70 @@
                                                 </ul>
 
                                                 <h3 id="tutorial1" class="anchor"><a class="heading-anchor" href="#tutorial1"><span></span></a>Details</h3>
-                                                <p>Tag Access operations are performed on a specific tag or applied on tags that match a specific Access-Filter. If no Access-Filter is specified, the Access Operation is performed on all tags in the field of view of chosen antennas.
-                                                    This section covers the Simple Tag Access operation on a specific tag which is in the field of view of any of the antennas of the connected RFID reader.<p>
+                                                <p>The set of functions are available for controlling the GPIO ports of the Reader. The number of GPIs and GPOs supported by the reader can be queried from the reader capabilities. In general sensors will be connected to input ports and indicator or lights will be connected to output ports.
+                                                </p>
 
-                                                        <h2 id="code1" class="anchor"><a class="heading-anchor" href="#code1"><span></span></a>Setting it up</h2>
-                                                        <p>The application can call method reader.Actions.TagAccess.writeWait or
-                                                            reader.Actions.TagAccess.blockWriteWait to write data to a specific memory bank. The response is returned as a Tagdata from where number of words can be retrieved. </p>
+                                                <h2 id="code1" class="anchor"><a class="heading-anchor" href="#code1"><span></span></a>Setting it up</h2>
+                                                <p>Declarations and API calls to setup configuration </p>
+                                                <ul>
+                                                    <li>GPI (General Purpose Input) Port</li>
+                                                    <p>The function <strong>getPortState</strong> gets the current GPI port state of the reader. The specified port can be accessed by passing the index.
 
-                                                        <h2 id="code2" class="anchor"><a class="heading-anchor" href="#code2"><span></span></a>Performing Write operation</h2>
+The function <strong>isPortEnabled</strong> can be used to get the current configuration and state of the specified port number. The specified port can be accessed by passing the index.
 
-                                                        <p>The application can call method reader.Actions.TagAccess.writeWait or
-                                                            reader.Actions.TagAccess.blockWriteWait to write data to a specific memory bank. The response is returned as a Tagdata from where number of words can be retrieved.</p>
+The function <strong>enablePort</strong> enables the specified port number. It is possible to register for GPI Port state change notification. Before registering, the interested port must be enabled
+                                                    </p>
+                                                </ul>
+                                                <pre class="prettyprint"><code>
+// Get numer of GPI ports supported by Reader              
 
-                                                        <pre class="prettyprint"><code>
-// Write user memory bank data
-TagData tagData = null;
-String tagId = "1234ABCD00000000000025B1";
-TagAccess tagAccess = new TagAccess();
-TagAccess.WriteAccessParams writeAccessParams = tagAccess.new WriteAccessParams();
-String writeData = "11223344"; //write data in string
-writeAccessParams.setAccessPassword(0);
-writeAccessParams.setMemoryBank(MEMORY_BANK.MEMORY_BANK_USER);
-writeAccessParams.setOffset(0); // start writing from word offset 0
-writeAccessParams.setWriteData(writeData);
-// data length in words
-writeAccessParams.setWriteDataLength(writeData.length() / 4);
-// antenna Info is null – performs on all antenna
-reader.Actions.TagAccess.writeWait(tagId, writeAccessParams, null, tagData);
+int numGPIPorts = reader.ReaderCapabilities.getNumGPIPorts();
+
+// Enable GPI port 1              
+
+reader.Config.GPI.enablePort(1, true);
+
+// To Query the GPI Port 1
+
+boolean portEnabled = reader.Config.GPI.isPortEnabled(1);
+
+// To get the GPI Port State
+
+GPI_PORT_STATE gpiPortState = reader.Config.GPI.getPortState(1);
 </code></pre>
-<strong>Write Operation for Fixed Readers</strong>
-<pre class="prettyprint"><code>
-// Write user memory bank data
-TagData tagData = null;
-String tagId = "1234ABCD00000000000025B1";
-TagAccess tagAccess = new TagAccess();
-TagAccess.WriteAccessParams writeAccessParams = tagAccess.new WriteAccessParams();
-String writeData = "11223344"; //write data in string
-writeAccessParams.setAccessPassword(0);
-writeAccessParams.setMemoryBank(MEMORY_BANK.MEMORY_BANK_USER);
-writeAccessParams.setOffset(0); // start writing from word offset 0
-writeAccessParams.setWriteData(writeData);
-writeAccessParams.setWriteDataLength(writeData.length;
-// antenna Info is null – performs on all antenna
-reader.Actions.TagAccess.writeWait(tagId, writeAccessParams, null, tagData);
-</code></pre>
+<ul>
+                                                    <li>GPO (General Purpose Output) Port</li>
+                                                    <p>The function <strong>getPortState</strong> gets the current ouput port state of the reader. The specified port can be accessed by passing the index.
+                                                    </p>
+                                                </ul>
+                                                <pre class="prettyprint"><code>
+// Get numer of GPO ports supported by Reader              
 
-                                                        <h2 id="code2" class="anchor"><a class="heading-anchor" href="#code2"><span></span></a>Block Write</h2>
+int numGPOPorts = reader.ReaderCapabilities.getNumGPOPorts();
 
-                                                        <p>Following shows usage of block write, note that same write access parameters are passed as used above
-                                                            So it becomes easy to switch between two APIs </p>
+// Set GPO port 1              
 
-                                                        <pre class="prettyprint"><code>
-reader.Actions.TagAccess.blockWriteWait(tagId, writeAccessParams, null, tagData); 
+reader.Config.GPO.setPortState(1, GPO_PORT_STATE.TRUE);
+
+// To get the port state
+
+GPO_PORT_STATE gpoPortState = reader.Config.GPO.getPortState(1);
 </code></pre>
 
-                                                        <h2 id="code2" class="anchor"><a class="heading-anchor" href="#code2"><span></span></a>Grab the results</h2>
 
-                                                        <p><code>writeWait</code> returns result in parameter passed as <code>TagData</code> </p>
+                                                <h2 id="code2" class="anchor"><a class="heading-anchor" href="#code2"><span></span></a>Closer look</h2>
+                                                <ul>
+                                                    <li>Get the port state using <code>reader.Config.GPI.getPortState(1)</code></li>
+                                                    <li><code>reader.Config.GPO.getPortState(1)</code></li>
+                                                </ul>
 
-                                                        <pre class="prettyprint"><code>
-Log.d(TAG, " Number of words written " + tagData.getNumberOfWords());
-</code></pre>
+                                                <h2 id="code2" class="anchor"><a class="heading-anchor" href="#code2"><span></span></a>What's Next</h2>
+                                                <ul>
+                                                    <li>Change <code>setPortState</code> values to change state of GPO ports</li>
+                                    
+                                                </ul>
 
-                                                        <h2 id="code2" class="anchor"><a class="heading-anchor" href="#code2"><span></span></a>Closer look</h2>
-                                                        <ul>
-                                                            <li><code>tagData.getNumberOfWords()</code> provides number of words written. This can be useful in case of partial writes </li>
-                                                            <li><code>tagData.getOpStatus()</code> returns success or error code as <code>ACCESS_OPERATION_STATUS</code></li>
-                                                            <li><code>tagData.getOpCode()</code> provides type of access operation performed </li>
-                                                        </ul>
-                                                        <h2 id="code2" class="anchor"><a class="heading-anchor" href="#code2"><span></span></a>What's Next</h2>
-                                                        <ul>
-                                                            <li>Change the <code>setCount</code> and <code>setOffset</code> as per requirement</li>
-                                                            <li>Use access password <code>setAccessPassword</code> to perform operation on protected memorybank</li>
-                                                        </ul>
+
 
                                             </div>
                                         </div>
