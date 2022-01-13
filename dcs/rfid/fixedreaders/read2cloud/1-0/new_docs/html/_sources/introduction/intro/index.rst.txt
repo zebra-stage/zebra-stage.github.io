@@ -2,18 +2,119 @@
 What is IoT Connector?
 ======================
 
-``Zebra IoT Connector`` provides cloud-based management, control, RFID tag data and Management Events collection for Zebra's fixed RFID reader portfolio (``FX7500``, ``FX9600``, and ``ATR7000``). 
+``Zebra IoT Connector`` is a standard built-in feature inside RFID readers (``FX9600``, ``FX7500``, and ``ATR7000``) that makes reader deployment easy. It provides easy-to-use interface to manage, control readers as well as to extract tag data and events from readers. The interface is built on web-friendly protocols such as MQTT, REST and JSON-formatted data structures that can be leveraged by any web applications running on the cloud or on-premise.
 
-The ``Zebra IoT Connector`` feature enables connectivity to a cloud platform to provide IoT capabilities to the reader. Once connected, the readers can be managed and controlled using a REST API interface; while tag data can be pushed to an asynchronous consumer of choice.
+Readers can push tag data and events to the cloud via MQTT. To push data to a local webserver, reader can also stream using HTTP Post. Applications can manage and control readers using either MQTT or REST interface.
 
-Once connected to the cloud, the readers can be managed and controlled using a REST API interface via the cloud. The reader tag data is also pushed
-to the cloud to be consumed by the cloud service.
+===============
+System Overview
+===============
 
-The ``Zebra IoT Connector`` feature provides the three interfaces as listed below.
-    * **Management interface**: Used to perform management actions on the reader (for example, firmware upgrade, getting reader configuration, and setting reader configuration).
-    * **Control interface**: Used to perform control actions on the reader (for example, configuring the radio mode, starting/stopping the tag reads).
-    * **Tag Data Event interface**: Used to consume the RFID tag data from the reader.
-    * **Management Event interface**: Used to consume the Asynchronous management events from the reader.
+.. image:: images/system_overview.png
+    :alt: system overview
+
+Interfaces
+==========
+
+The ``Zebra IoT Connector`` feature provides four different interfaces as below, each can be configured to use a different endpoint of choice.
+
+    * Management
+    * Health
+    * Control
+    * Data
+
+Management Interface
+--------------------
+
+This interface is used to perform management actions on reader (e.g firmware update, getting and setting reader configuration). 
+
+This interface can be configured to use either MQTT (for cloud deployments) or REST APIs (for on-premise deployments).
+    
+    * When configured to use a MQTT endpoint, command and response topics must be specified to perform management functions. Refer :ref:`raw_mqtt_payloads` on how to perform these operations over MQTT.
+    * When using Local REST for management, please refer :ref:`local_rest_apis`.
+
+Health Interface
+----------------
+
+This interface is used to monitor health events from the reader (e.g Heartbeats (reader temperature, CPU, RAM, etc.), GPIO events, Errors and Warnings (CPU, RAM, Flash utilizations)).
+
+This interface can be configured to use either MQTT (for cloud deployments) or HTTP Post (for on-premise deployments). 
+
+    * When configured for an MQTT endpoint, the management events topic must be used to consume the health events from the reader. Refer :ref:`management_events_formats` schema to get health events over MQTT or HTTP Post.
+
+The health events can be configured at the time of deployment via configuration file or at run time using the Management Interface (e.g heartbeat fields and interval, errors and warnings limits and reporting interval, etc).
+
+    * When Management Interface is configured to use a MQTT endpoint ``get_config`` and ``set_config`` commands are used for retriving and updating health events configuring. Refer :ref:`raw_mqtt_payloads` on how to perform these operations over MQTT.
+    * When Management Interface is configured for Local REST ``GET/PUT config`` APIs are used for retriving and updating health events configuring, please refer :ref:`local_rest_apis`.
+
+Control Interface
+-----------------
+
+This Interface is used to perform control actions on the reader (for example, configuring the radio mode, starting/stopping the tag reads).
+
+This interface can be configured to use either MQTT (for cloud deployments) or REST APIs (for on-premise deployments).
+
+    * When configured to use a MQTT endpoint, command and response topics must be specified to perform control functions. Refer :ref:`raw_mqtt_payloads` on how to perform these operations over MQTT.
+    * When using Local REST for control, please refer :ref:`local_rest_apis`.
+
+Data Interface
+--------------
+
+This interface is used to consume RFID tag events from the reader.
+
+This interface can be configured to use either MQTT (for cloud deployments) or HTTP Post (for on-premise deployments).
+
+    * When configured for an MQTT endpoint, the tag events topic must be used to consume the RFID tag data from the reader.
+
+The Management Interface can be used to configure the tag identification mode at run time. Refer :ref:`Operation Modes` for supported configuration options.
+
+    * When Management Interface is configured to use a MQTT endpoint ``get_mode`` and ``set_mode`` commands are used for retriving and updating tag identification mode settings. Refer :ref:`raw_mqtt_payloads` on how to perform these operations over MQTT.
+    * When Management Interface is configured for Local REST ``GET/PUT mode`` APIs are used for retriving and updating tag identification mode settings, please refer :ref:`local_rest_apis`.
+
+The data interface additionally supports following features.
+
+    * Retention
+    * Batching
+
+Retention
++++++++++
+
+Enables reader to buffer the tag events and stream data back to server in case of network issues or server failures. By default retention will be enabled and reader can retain most recent 150000 tag events and can stream data back to server at 500TPS.
+
+Batching
+++++++++
+
+Enables reader to group multiple tag events into single event based on the configuration. Batching reduces network usage as well as reader CPU usage.
+
+The Retention and Batching features can be configured at the time of deployment via configuration file or at run time using the Management Interface.
+
+    * When Management Interface is configured to use a MQTT endpoint ``get_config`` and ``set_config`` commands are used for retriving and updating retention and batching configuring. Refer :ref:`raw_mqtt_payloads` on how to perform these operations over MQTT.
+    * When Management Interface is configured for Local REST ``GET/PUT config`` APIs are used for retriving and updating retention and batching configuring, please refer :ref:`local_rest_apis`.
 
 .. important::
-    These interfaces can be configured independently to allow for access via cloud or locally within the private network. Depending on how the ``Zebra IoT Connector`` interfaces are configured, there are three possible deployment modes as described in the chapter :ref:`Deployment Modes`.
+    Depending on how the ``Zebra IoT Connector`` interfaces are configured, there are three possible deployment modes as described in the chapter :ref:`Deployment Modes`.
+
+Reader Components
+=================
+
+The reader contains a number of software components that enable Cloud Connect for RFID.
+
+Reader Gateway or Cloud Agent
+-----------------------------
+
+The Reader Gateway/Cloud Agent is the component responsible for connecting to the outside world. The Management and Control requests are received by the Reader Gateway/Cloud Agent and passed along to be handled by the appropiate component. The Reader Gateway/Cloud Agent also collects the tag data from the Radio Control and pushes them out on the Data interface.
+
+Radio Control
+-------------
+
+The Radio Control component configures, controls, and maintains a connection to the RFID radio. Radio control receives the tag read events from the radio and sends them to the Reader Gateway/Cloud Agent which in turn passes it onto the Data interface.
+
+Reader Manager
+--------------
+
+The Reader Manager is the component responsible for performing all reader configuration and management operations.
+
+Reader Webserver
+----------------
+
+The Reader Webserver presents a web console to control the reader. When Cloud Connect Management and Control Interfaces are configured for Local REST mode, the Reader Webserver handles the REST requests before passing the requests to the Reader Gateway/Cloud Agent.
