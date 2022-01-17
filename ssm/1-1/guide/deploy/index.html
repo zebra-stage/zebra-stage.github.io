@@ -226,15 +226,19 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>Zebra recommends to deploy and persist files (across an enterprise reset) using Zebra’s <a href="/stagenow">StageNow</a> tool. File deployment and persistence is secure and provides a standard method to overcome <a href="https://developer.android.com/about/versions/11/privacy/storage">scoped storage</a> restrictions enforced in Android 11 and higher. </p>
+<p>There are 2 methods to deploy shared files securely:</p>
 
-<p>Use <a href="/stagenow/latest/csp/file/">StageNow FileMgr</a> to deploy files. Applications can then retrieve the files via FileProvider and <a href="../api">Content Provider</a> interfaces exposed via Secure Storage Manager (SSM).</p>
+<ul>
+<li><strong>StageNow -</strong> To deploy and persist shared files across an enterprise reset, use Zebra’s <a href="/stagenow">StageNow</a> tool. This is a standard method to overcome <a href="https://developer.android.com/about/versions/11/privacy/storage">scoped storage</a> restrictions enforced in Android 11 and higher. </li>
+
+<li><strong>App file sharing -</strong> For apps that need to share files (sharing app), they can programmatically store the shared file in SSM to be accessed by the intended target app. </li>
+</ul>
 
 <hr>
 
-<h2 id="createstagenowprofile" class="anchor"><a class="heading-anchor" href="#createstagenowprofile"><span></span></a>Create StageNow Profile</h2>
+<h2 id="stagenow" class="anchor"><a class="heading-anchor" href="#stagenow"><span></span></a>StageNow</h2>
 
-<p>Administrators use StageNow FileMgr to create a Staging Profile to deploy a configuration file to a specific target application. EMMs can use the <a href="/oemconfig/latest/mc/">OEMConfig FileMgr (Zebra Managed Configuration)</a> to deploy files to a target application. FileMgr has an additional option to determine whether a file needs to be persistent.</p>
+<p>Administrators use <a href="/stagenow/latest/csp/file/">StageNow FileMgr</a> to create a Staging Profile that deploys a file, such as a configuration file, to be used by a specific target application. The target application can retrieve the file via FileProvider and <a href="../api">Content Provider</a> interfaces exposed via Secure Storage Manager (SSM). To deploy the file to a target application via an EMM, use <a href="/oemconfig/latest/mc/">OEMConfig FileMgr (Zebra Managed Configuration)</a>. FileMgr contains an option to determine whether a file needs to be persistent.</p>
 
 <p>To create a StageNow profile for file deployment:</p>
 
@@ -259,23 +263,24 @@
 <ul>
 <li><strong>File Action:</strong> Deploy file for an application </li>
 
-<li><strong>Target Application File Definition:</strong> [Enter the package name of the target application followed by <code>/</code> and the full path of the file<br>
-For example, to deploy a configuration file "MC93SD.encrypted" and have it persist after an enterprise reset for package “com.ztestapp.clientapplication” with the file located in the ‘config’ folder, enter: <br>
-<code>com.ztestapp.clientapplication/config/MC93SD.encrypted</code></li>
+<li><strong>Target Application File Definition:</strong> [Enter the package name of the target application followed by <code>/</code> and the full path of the file]<br>
+For example, to deploy a configuration file "MC93SD.encrypted" and have it persist after an enterprise reset for package “com.ztestapp.clientapplication” with the file located in the ‘config’ folder, enter: <code>com.ztestapp.clientapplication/config/MC93SD.encrypted</code></li>
 
-<li><strong>Target Application Signature:</strong>  [Optional, but recommended - Enter the signature of the target application for security purposes. The signature must be in Base64 String format, which can be obtained by using <a href="/emdk-for-android/latest/samples/sigtools/">SigTools.jar</a>. If this field is empty, it introduces the risk of compromising the security of the deployed file.]</li>
+<li><strong>Target Application Signature:</strong>  [Optional, but recommended - Enter the signature of the target application for security purposes]<br> 
+The signature must be in Base64 String format, which can be obtained by using <a href="/emdk-for-android/latest/samples/sigtools/">SigTools.jar</a>. If this field is empty, it introduces the risk of compromising the security of the deployed file.</li>
 
 <li><strong>Persist The File:</strong> [Select whether or not to persist the file]</li>
 
 <li><strong>Source Access Method:</strong> [Select whether the source file is located on a remote server or local in the device]</li>
 
-<li><strong>Source file URI:</strong> [Enter the source file path, either from a remote server or from the local device storage.]</li></ul>
+<li><strong>Source file URI:</strong> [Enter the source file path, either from a remote server or from the local device storage]</li></ul>
 </li>
 </ol>
 
-<p>After file deployment, listen to the broadcast intent to retrieve the response and determine whether the deployment was successful. Deployed files can be retrieved via a query as follows: </p>
+<p>After file deployment, the target app must listen to the broadcast intent to retrieve the response and determine whether the deployment was successful. Deployed files can be retrieved via a query as follows: </p>
 
-<pre class="prettyprint"><code>public void onClickQuery(View view) {        
+<pre class="prettyprint"><code>public void onClickQuery(View view) {   
+
     Uri cpUriQuery = Uri.parse(AUTHORITY_FILE +"/com.ztestapp.clientapplication");
     boolean persist = true;
     String selection = "target_path = '/com.ztestapp.clientapplication' AND " + "data_persist_required = '" + persist + "';
@@ -319,7 +324,7 @@ For example, to deploy a configuration file "MC93SD.encrypted" and have it persi
 }
 </code></pre>
 
-<p>After a successful file deployment, SSM notifies the target application by broadcasting an explicit intent. The application must implement a broadcast receiver to retrieve this intent and process the intent extras to retrieve the file information, including the file URI. The file URI provides access to the file. The application will have read and write permission to the file. </p>
+<p>After a successful file deployment, SSM notifies the target application by broadcasting an explicit intent. The target app must implement a broadcast receiver to retrieve this intent and process the intent extras to retrieve the file information, including the file URI. The file URI provides access to the shared file, which the target app will have read and write permission. </p>
 
 <p>Intent extras:</p>
 
@@ -364,7 +369,7 @@ For example, to deploy a configuration file "MC93SD.encrypted" and have it persi
 
 <p><br></p>
 
-<p><strong>Implement a broadcast receiver in the app to get intent extras, as follows:</strong></p>
+<h4 id="implementabroadcastreceiverinthetargetapptogetintentextras" class="anchor"><a class="heading-anchor" href="#implementabroadcastreceiverinthetargetapptogetintentextras"><span></span></a>Implement a broadcast receiver in the target app to get intent extras:</h4>
 
 <p>App manifest:</p>
 
@@ -398,11 +403,11 @@ For example, to deploy a configuration file "MC93SD.encrypted" and have it persi
 }
 </code></pre>
 
-<h2 id="filesharing" class="anchor"><a class="heading-anchor" href="#filesharing"><span></span></a>File Sharing</h2>
+<h2 id="appfilesharing" class="anchor"><a class="heading-anchor" href="#appfilesharing"><span></span></a>App File Sharing</h2>
 
-<p>For apps that require files to be shared (such as a config file), an option is to deploy the file to be shared to SSM. It is required provide the target package name. The signature of the target package is optional. If a signature is not used, it poses a potential risk for file security to be compromised. For files that are being shared, it must be specified whether or not the files should persist. The shared file can be accessed by the target app based on signature verification from SSM.</p>
+<p>For apps that need to share files (sharing app), this sharing app can store the shared file in SSM to be accessed by the target app. It is required to provide the target app package name and whether or not the shared file should persist. Although the signature of the target package is optional, if a signature is not used it poses a potential risk for file security to be compromised. The shared file can be accessed by the target app based on signature verification from SSM.</p>
 
-<p>Zebra recommends to implement Android File Provider in the sharing app and provide read permission to the file URI being shared, so that SSM can read the shared file and store the shared file for the target package.</p>
+<p>Zebra recommends to implement Android File Provider in the sharing app and provide read permission to the file URI being shared, so that SSM can read the shared file and store the shared file for the target app.</p>
 
 <p>This sample code demonstrates how the sharing app can store the shared file in SSM and provide the target app package name and signature to SSM:</p>
 
@@ -443,7 +448,7 @@ values.put(COLUMN_DATA_PERSIST_REQUIRED, content.dataPersistRequired)
 val createdRow = context.contentResolver.insert(uri, values) 
 </code></pre>
 
-<p>The target app can query the shared file and get the file URI, secure_is_dir value (determines whether it is a directory or file) and CRC (file checksum). The response is received in a cursor. Based on this data, the app can read the file contents. In other words, the URI returned in the cursor can be read by the target app to read the shared file content:</p>
+<p>The target app can query the shared file and get the file URI, secure_is_dir value (determines whether it is a directory or file) and CRC (file checksum). The response is received in an Android cursor. The URI returned in the cursor can be read by the target app to read the shared file content:</p>
 
 <pre class="prettyprint"><code>val AUTHORITY = "content://com.zebra.securestoragemanager.securecontentprovider/file/*" 
 String selection = COLUMN_TARGET_APP_PACKAGE + " = '" + context.getPackageName() + "'" + "AND " +
@@ -452,37 +457,31 @@ COLUMN_DATA_PERSIST_REQUIRED + " = '" + "true" + "'";
 val cpUriQuery = Uri.parse("$AUTHORITY")Cursor cursor = context.contentResolver.query(cpUriQuery, null, selection, null, null)
 </code></pre>
 
-<h4 id="forappstoconsumedatawithinthedeployedfile" class="anchor"><a class="heading-anchor" href="#forappstoconsumedatawithinthedeployedfile"><span></span></a>For apps to consume data within the deployed file:</h4>
+<h4 id="fortargetappstoconsumedatawithinthedeployedfile" class="anchor"><a class="heading-anchor" href="#fortargetappstoconsumedatawithinthedeployedfile"><span></span></a>For target apps to consume data within the deployed file:</h4>
 
-<p>Prerequisite: developers need to add permissions to read/write to SSM and allow SSM authority (for Android data/file access):</p>
+<p>In the target app, developers need to add permissions to read/write to SSM. This is done through the Android manifest to allow the target app to update, delete, and/or query the deployed files:</p>
 
-<ul>
-<li><p><strong>Manifest permissions -</strong> Manifest permissions need to be changed in your app if there is a need to update, delete, and/or query the deployed files.
-Below permission are required in the manifest for any operation:</p>
+<pre class="prettyprint"><code>&lt;uses-permission android:name="com.zebra.securestoragemanager.securecontentprovider.PERMISSION.WRITE"/&gt;
+&lt;uses-permission android:name="com.zebra.securestoragemanager.securecontentprovider.PERMISSION.READ"/&gt;
+</code></pre>
 
-<p><uses-permission android:name="com.zebra.securestoragemanager.securecontentprovider.PERMISSION.WRITE">
-<uses-permission android:name="com.zebra.securestoragemanager.securecontentprovider.PERMISSION.READ"></uses-permission></uses-permission></p></li>
-</ul>
-
-<p>Allow authority:</p>
+<p>Additionaly, the target app must allow SSM authority for Android data/file access by adding the following variable:</p>
 
 <pre class="prettyprint"><code>private String AUTHORITY_FILE = "content://com.zebra.securestoragemanager.securecontentprovider/files";
 </code></pre>
 
-<h4 id="todeleteadeployedconfigfile" class="anchor"><a class="heading-anchor" href="#todeleteadeployedconfigfile"><span></span></a>To delete a deployed config file:</h4>
+<h4 id="todeleteadeployedsharedfile" class="anchor"><a class="heading-anchor" href="#todeleteadeployedsharedfile"><span></span></a>To delete a deployed shared file:</h4>
 
-<p>Deployed files can be deleted after use or once the file is no longer required. This can be achieved by using the standard Android delete() API for data - Authority and whereClause are required. Provide the file path in whereClause as target_path of deployed file.</p>
-
-<p>Sample code [com.ztestapp.clientapplication is used here as a sample target package name]:</p>
+<p>Deployed shared files can be deleted after use or when the file is no longer needed. This can be achieved by using the standard delete() API from the Android ContentResolver class. SSM authority (see the previous section) and "whereClause" are required. Provide the file path in "whereClause" as target_path of the deployed file. The following sample code uses com.ztestapp.clientapplication as a sample target app package name:</p>
 
 <pre class="prettyprint"><code>Uri cpUriFileUpdate = Uri.parse(AUTHORITY_FILE +"/com.ztestapp.clientapplication");
 String whereClause = "target_path = '/com.ztestapp.clientapplication' AND data_persist_required = 'false'";
 getContentResolver().delete(cpUriFileUpdate, whereClause , null);
 </code></pre>
 
-<h4 id="updateadeployedfile" class="anchor"><a class="heading-anchor" href="#updateadeployedfile"><span></span></a>Update a deployed file</h4>
+<h4 id="updateadeployedsharedfile" class="anchor"><a class="heading-anchor" href="#updateadeployedsharedfile"><span></span></a>Update a deployed shared file</h4>
 
-<p>To update a deployed file use the standard update() API from Android for the content values can be passed with file uri as per data_value (to pass data into the file, replacing the entire content of the file). </p>
+<p>To update a deployed shared file use the standard update() API from Android for the content values can be passed with file uri as per data_value (to pass data into the file, replacing the entire content of the file). </p>
 
 <p>Note: </p>
 
