@@ -248,58 +248,135 @@
                                 <div class="service-box fadeInRight">
                                     <div class="">
 
-                                        <p></p><h2 id="underconstruction" class="anchor"><a class="heading-anchor" href="#underconstruction"><span></span></a><code>UNdeR ConsTRuCtioN</code></h2>
-
-<h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
-
-<!-- 
+                                        <p><!-- 
 <img alt="" style="height:219px" src="sap1.png"/>
  -->
 
-<p>As a part of playstore compliance, Enterprise Browser now targets Android API level 30, which enforces the Android’s scope storage restrictions on Android 11. Android’s Scoped Storage on A11 sets several restrictions on applications.</p>
+</p><blockquote>
+  <p><i class="fa fa-exclamation-triangle" aria-hidden="true" style="color:#FFA500;"></i> <strong>The storage restrictions referenced in this guide apply only to apps running on devices with Android 11</strong> (or later). However, apps that are modified for these restrictions are compatible with older Android versions, so <strong>Zebra recommends adopting changes for compliance with scoped storage restrictions in mixed environments and to "future-proof" apps</strong> for compatibility with Android 11 and beyond.</p>
+</blockquote>
 
-<p>Mass deployments to sdcard is no more supported. </p>
+<p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>In the older Enterprise Browser versions, Admins had a choice to copy the Enterprise Browser configuration files to the SD Card root directory or to enterprisebrowser installation directory. With the new Enterprise Browser, the config file must be deployed to the Enterprise partition &lt;/enterprise/device/enterprisebrowser/TechDocs&gt;.  </p>
+<p>Introduced with Android 10 (API level 29), scoped storage was originally intended to provide more user control over stored files and reduce the clutter that often occurs on external device storage over time. It limits apps that target API 29 (and later) to an app-specific device folder and to media types they create. In practical terms, scoped storage could limit or prevent an app from accessing device folders formerly available, including <code>/sdcard</code> paths on Zebra devices. </p>
 
-<p>Enterprise Browser application using camera database, File, printer APIs etc., to read/write from sdcard is no longer supported. </p>
+<p>Enhancements delivered with Android 11 (API level 30) enforce greater protections on app and user data stored externally. <strong>Enterprise Browser 3.3 (and later) targets Android API level 30</strong> (or later), and EB apps are subject to the following restrictions <strong>on devices running Android 11</strong>: </p>
 
-<p>Note: Though Scoped Storage restriction affects only A11 (and above) devices, Zebra recommends the following solutions for A10 and A11 when EB3.3 is mixed deployed on both A10 and A11. </p>
+<ul>
+<li><strong>External storage is no longer accessible</strong>, including SD Card</li>
+
+<li><code>Config.xml</code> <strong>files must be deployed to</strong>:<br>
+<code>/enterprise/device/enterprisebrowser</code></li>
+
+<li><strong>All other config files must also be saved to</strong>: <br>
+<code>/enterprise/device/enterprisebrowser</code> </li>
+
+<li><strong>All references in existing</strong> <code>Config.xml</code> <strong>files to restricted storage locations must be modified</strong> to reflect the path above.</li>
+
+<li><strong><u>Additional changes are required</u> if a</strong> <code>Config.xml</code> <strong>file</strong> contains references to an SD Card in the config files for one or more of EB's optional features: 
+
+
+<ul>
+<li><a href="../keycapture/">Keycode mapping</a></li>
+
+<li><a href="../ShortcutCreator/">Shortcuts</a></li>
+
+<li><a href="../dominjectionandroid">DOM injection</a></li>
+
+<li><a href="../tabbar/">Native tabbar</a></li>
+
+<li><a href="../sapandroid/#customcssfile">Custom CSS</a> </li>
+
+<li><a href="../customize/">ButtonBar</a></li>
+
+<li><a href="../pageactions/">Page-based Actions</a> </li></ul>
+</li>
+
+<li>EB JavaScript apps are no longer permitted to read from or write to any path that begins with <code>/sdcard</code>. If necessary, apps must be modified to access <code>/enterprise/device/enterprisebrowser</code>. This includes (but is not limited to) the following <a href="../../api">APIs</a>: 
+
+
+<ul>
+<li>AudioCapture</li>
+
+<li>Barcode</li>
+
+<li>Camera</li>
+
+<li>Database</li>
+
+<li>File</li>
+
+<li>FileTransfer</li>
+
+<li>MediaPlayer</li>
+
+<li>Network</li>
+
+<li>Printer</li>
+
+<li>PrinterZebra</li>
+
+<li>Signature</li></ul>
+</li>
+
+<li>Substitution variables in the <code>Config.xml</code> (i.e., <b>%PRIMARYDIR%</b>, <b>%SECONDARYDIR%</b>) are no longer supported </li>
+</ul>
 
 <hr>
 
 <h2 id="restrictionresolutions" class="anchor"><a class="heading-anchor" href="#restrictionresolutions"><span></span></a>Restriction Resolutions</h2>
 
 <table class="facelift" style="width:100%" border="1" padding="5px"> <!-- <col width="10%" /><col width="68%" /><col width="22%" /> -->
-    <tbody><tr bgcolor="#dce8ef"><th class="tableHeading">Storage Restriction</th>
-        <th class="tableHeading">Solution</th>
-    </tr>
-    <tr>
-        <td class="clsSyntaxCells clsOddRow">Mass deployment of Enterprise Browser Config.xml file to SDCARD is no more supported. <br><code>/sdcard/Android/data/com.zebra.mdna.enterprisebrowser</code> <br><code>/sdcard/EnterpriseBrowser</code></td>
-        <td class="clsSyntaxCells clsOddRow">Note: Developer pushing Config.xml to <br><code>/sdcard/Android/data/com.zebra.mdna.enterprisebrowser</code> via adb command is not affected. Mass deployment of Enterprise Browser Config.xml file should be performed to <br><code>/enterprise/device/enterprisebrowser/</code>
-</td>
-    </tr>
-    <tr>
-        <td class="clsSyntaxCells clsOddRow">Substitution Variables %PRIMARYDIR% and %SECONDARYDIR% usage is no more supported inside <code>Config.xml</code>. </td>
-        <td class="clsSyntaxCells clsOddRow">Modify <code>Config.xml</code> file to use %PERSISTCONFDIR% instead. Eg: <startpagevalue="file: %persistconfdir%="" menu.html"name="Menu"></startpagevalue="file:></td>
-    </tr>
-    <tr>
-        <td class="clsSyntaxCells clsOddRow">Mass Deployment of the below configuration files to sdcard is no more supported, Keycode mapping, Shortcuts, DOM injection, Native tabbar, Custom CSS, ButtonBar, Page-based Actions. Note: Developer pushing above configuration files to /sdcard/Android/data/com.zebra.mdna.enterprisebrowser via adb command is not affected. </td>
-        <td class="clsSyntaxCells clsOddRow">Admin need to revisit the Config.xml file and modify any reference to sdcard path to enterprise path. Mass deploy the config files to <code>/enterprise/device/enterprisebrowser/</code> and update <code>Config.xml</code> with %PERSISTCONFDIR% Eg: <code>CustomDOMElements value="file://% PERSISTCONFDIR %/mytags.txt"/</code> 
-</td>
-    </tr>
-    <tr>
-        <td class="clsSyntaxCells clsOddRow">Enterprise Browser application using below mentioned List of API’s, to read/write from sdcard is no longer supported. The only paths supported are <code>/enterprise/device/enterprisebrowser/</code> and  
-<code>/sdcard/Android/data/com.zebra.mdna.enterprisebrowser</code> 
-</td>
-        <td class="clsSyntaxCells clsOddRow">Developers need to revisit the web application to modify any reference to sdcard. Options are listed below, If you have any specific usecase where EMM Client or any third party app requires to access EB created files, store files into: Eg: <code>file:///enterprise/device/enterprisebrowser/Img.jpg</code> Zebra recommends developers to migrate to use EB installation directory and File transfer API’s instead of using EMM clients if possible. For all other usecases, Zebra recommends application to store data to EB installation directory and use File transfer API’s <code>/sdcard/Android/data/com.zebra.mdna.enterprisebrowser</code> •Revised installation instructions reflect the new process for manual and mass deployment. APIs: AudioCapture, Barcode, Camera, Database, RhoFile, MediaPlayer, Network, Printer, PrinterZebra, Signature, FileTransfer </td>
-    </tr>
+
+<tbody><tr bgcolor="#dce8ef"><th class="tableHeading">Restricted Condition</th>
+        <th class="tableHeading">Resolution</th>
+</tr>
+
+<tr>
+        <td class="clsSyntaxCells clsOddRow"><b>If <code>Config.xml</code> file contains:</b> <br><code>/sdcard/EnterpriseBrowser</code> <br>or<br> <code>/sdcard/Android/data/com.zebra.mdna.enterprisebrowser</code>
+        </td>
+        <td class="clsSyntaxCells clsOddRow">Change to: <br><code>/enterprise/device/enterprisebrowser/</code><br><hr><b>NOTE: Using adb to <u>manually push</u> individual <code>Config.xml</code> files to <br><code>/sdcard/Android/data/com.zebra.mdna.enterprisebrowser</code> <u>remains supported</u> under scoped storage</b>. 
+        </td>
+</tr>
+
+<tr>
+        <td class="clsSyntaxCells clsOddRow">If the <code>Config.xml</code> file contains substitution variables:<br> <b>%PRIMARYDIR%</b><br>or<br><b>%SECONDARYDIR%</b><br>  
+        </td>
+        <td class="clsSyntaxCells clsOddRow">Change substitution variables to:<br><b>%PERSISTCONFDIR%</b><br><b>Example</b>:<br><b>&lt;StartPagevalue="file://%PERSISTCONFDIR%/menu.html"name="Menu"/&gt;</b>
+        </td>
+</tr>
+
+<tr>
+        <td class="clsSyntaxCells clsOddRow"><b>If mass-deploying config files for one or more optional EB features</b>:<br>• Keycode mapping<br>• Shortcuts<br>• DOM injection<br>• Native tabbar<br>• Custom CSS<br>• ButtonBar<br>• Page-based Actions<br><b>to the path</b>:<br><code>/sdcard/Android/data/com.zebra.mdna.enterprisebrowser</code>
+        </td>
+        <td class="clsSyntaxCells clsOddRow"><b>Change the path to</b>: <code>/enterprise/device/enterprisebrowser/</code> and update path reference(s) in corresponding tag(s) in the <code>Config.xml</code> with:<br><b>%PERSISTCONFDIR%</b><br><b>Example</b>:<br><code>&lt;CustomDOMElements value="file://% PERSISTCONFDIR%/mytags.txt"/&gt;</code><br><hr>
+        <b>NOTE: Using adb to <u>manually push</u> individual <code>Config.xml</code> files to <br><code>/sdcard/Android/data/com.zebra.mdna.enterprisebrowser</code> <u>remains supported</u> under scoped storage</b>.</td>
+</tr>
+
+<tr>
+        <td class="clsSyntaxCells clsOddRow"><b>If an EB app uses any EB API to read from or write to</b>:<br><code>/sdcard/EnterpriseBrowser</code> <br><b>or</b><br> <code>/sdcard/Android/data/com.zebra.mdna.enterprisebrowser</code><br> 
+        </td>
+        <td class="clsSyntaxCells clsOddRow"><b>The corresponding JavaScript must be modified to replace references to path(s) containing</b> <code>/sdcard</code> <b>with</b>:<br><code>/enterprise/device/enterprisebrowser/</code><br> or <br><code>/sdcard/Android/data/com.zebra.mdna.enterprisebrowser</code><hr><b>NOTE: If the use case requires an EMM client or other third-party app to access EB-created files, store the files in the <code>/enterprise/</code> directory.</b><br><b>Example:</b><br><code>file:///enterprise/device/enterprisebrowser/fileName.ext</code><br>Zebra recommends using file transfer APIs and this directory in place of EMM clients whenever possible.
+        </td>
+</tr>
+
 </tbody></table>
+
+<hr>
 
 <h2 id="alsosee" class="anchor"><a class="heading-anchor" href="#alsosee"><span></span></a>Also See</h2>
 
-<p>links to Android docs
-etc.</p><p></p>
+<h4 id="relatedzebratools" class="anchor"><a class="heading-anchor" href="#relatedzebratools"><span></span></a>Related Zebra Tools</h4>
+
+<p><a href="/ssm">Secure Storage Manager</a> | Securely share and persist data</p>
+
+<h4 id="fromtheandroiddevelopmentcommunity" class="anchor"><a class="heading-anchor" href="#fromtheandroiddevelopmentcommunity"><span></span></a>From the Android Development Community</h4>
+
+<p><a href="https://developer.android.com/about/versions/11/privacy">Android 11 Storage Overview</a> | Changes introduced with Android 11 and their effect on apps</p>
+
+<p><a href="https://developer.android.com/training/data-storage/use-cases">Storage Use Cases and Best Practices</a> | Help preparing apps for scoped storage</p>
+
+<p><a href="https://developer.android.com/training/data-storage">Android Storage Overview</a> | The basics of Android data and file storage</p><p></p>
                                         
 
 
