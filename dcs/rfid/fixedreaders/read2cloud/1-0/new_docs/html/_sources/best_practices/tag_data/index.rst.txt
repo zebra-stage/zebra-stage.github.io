@@ -1,0 +1,58 @@
+=====================================
+Best practices for Tag Data Interface
+=====================================
+
+QoS level
+=========
+
+    * QoS 0: Highly recommended, since QoS 1 and 2 options can cause higher CPU utilization.
+
+    * QoS 1 & 2: Not recommended, since data retention is default enabled for **Tag Data Interface**.
+
+Tag Data Retention
+==================
+
+This feature enables reader to buffer the tag events and stream data back to server in case of network issues or server failures.
+
+    * Current retention configuration can be queried using GET /config API for Local REST deployment or get_config command for MQTT deployments. Retention is default enabled for **Tag Data Interface**.
+
+    *  Sample rentention configuration:
+
+        .. literalinclude:: files/retention.json
+            :language: JSON
+        
+        * throttle: Rate to which reader should send retained events to server. (default 500 TPS)
+
+                * For large number of reader deployments it is recommended to adjust the trottle depends on the number of readers deployed, tag read rate and server processing capability.
+
+                * throttle value should be greater that the read rate to reduce the deplay of current tag data.
+        
+        * maxNumEvents: Maximum number of revents to be retained. (default 150000 Events)
+
+        * maxEventRetentionTimeInMin: Single event retention time. (default: Events will be retained until reboot or maxNumEvents exceeded).
+    
+    * Retention configuration can be updated using PUT /config API for Local REST deployment or set_config command for MQTT deployments.
+
+    * Retention can be disabled by configuring maxNumEvents to 0.
+
+Tag Data Batching
+=================
+
+This feature enables reader to group multiple tag data events into single event based on the configuration. Batching reduces network usage as well as reader CPU usage.
+
+    * Current batching configuration can be queried using GET /config API for Local REST deployment or get_config command for MQTT deployments. Batching is default enabled for HTTP POST Endpoint and disabled for MQTT Endpoint.
+
+    *  Sample batching configuration:
+
+        .. literalinclude:: files/batching.json
+            :language: JSON
+    
+        * reportingInterval: Batched event report interval in milli seconds. (default: 1000 milli seconds for HTTP POST Endpoint).
+
+        * maxPayloadSizePerReport: Maximum batching event size in bytes. (default: 256000 bytes for HTTP POST Endpoint).
+    
+    * It is recommended to use batching for higher tag read rate scenarios to reduce network usage and reader CPU usage.
+
+    * Batching configuration can be updated using PUT /config API for Local REST deployment or set_config command for MQTT deployments.
+
+    * Retention can be disabled by configuring maxPayloadSizePerReport and reportingInterval to 0.
