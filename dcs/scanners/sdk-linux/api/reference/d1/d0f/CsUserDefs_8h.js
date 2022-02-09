@@ -34,6 +34,7 @@ var CsUserDefs_8h =
       [ "CMD_START_NEW_FIRMWARE", "d1/d0f/CsUserDefs_8h.html#a34aacde1efe94ac5734af88b84dce645a855db81b2acc6fc7092a1ceeced9c7ce", null ],
       [ "CMD_DEVICE_UPDATE_FIRMWARE", "d1/d0f/CsUserDefs_8h.html#a34aacde1efe94ac5734af88b84dce645afd0bb48cafa4f6a11cf285ff2e414481", null ],
       [ "CMD_DEVICE_UPDATE_FIRMWARE_FROM_PLUGIN", "d1/d0f/CsUserDefs_8h.html#a34aacde1efe94ac5734af88b84dce645a5637439f528607019160d6ac81993dbb", null ],
+      [ "CMD_LOAD_CONFIGURATION", "d1/d0f/CsUserDefs_8h.html#a34aacde1efe94ac5734af88b84dce645a40a6f9ce4b22c44b6825af8ca239ff0d", null ],
       [ "CMD_DEVICE_SWITCH_HOST_MODE", "d1/d0f/CsUserDefs_8h.html#a34aacde1efe94ac5734af88b84dce645aef6ae8345df1fcaea505467684be8a59", null ],
       [ "CMD_SWITCH_CDC_DEVICES", "d1/d0f/CsUserDefs_8h.html#a34aacde1efe94ac5734af88b84dce645a3560939ccea52b951ba72ec6f0ea8fcc", null ]
     ] ],
@@ -66,7 +67,8 @@ var CsUserDefs_8h =
       [ "SCANNER_NOTIFICATION_UKNOWN", "d1/d0f/CsUserDefs_8h.html#a6844f5a6b08c6996c16fc7bae99d32c8aec4265a7256e45f79ea841a69900f3e6", null ],
       [ "SCANNER_NOTIFICATION_DECODE_MODE", "d1/d0f/CsUserDefs_8h.html#a6844f5a6b08c6996c16fc7bae99d32c8a3c557ae875bd0cdc110e880bcd919799", null ],
       [ "SCANNER_NOTIFICATION_SNAPSHOT_MODE", "d1/d0f/CsUserDefs_8h.html#a6844f5a6b08c6996c16fc7bae99d32c8a5980d413ea31aba0029cff14168d3741", null ],
-      [ "SCANNER_NOTIFICATION_VIDEO_MODE", "d1/d0f/CsUserDefs_8h.html#a6844f5a6b08c6996c16fc7bae99d32c8aae200ed9ece8c7a4e029125eaa30d7b6", null ]
+      [ "SCANNER_NOTIFICATION_VIDEO_MODE", "d1/d0f/CsUserDefs_8h.html#a6844f5a6b08c6996c16fc7bae99d32c8aae200ed9ece8c7a4e029125eaa30d7b6", null ],
+      [ "SCANNER_NOTIFICATION_NO_DECODE_EVENT", "d1/d0f/CsUserDefs_8h.html#a6844f5a6b08c6996c16fc7bae99d32c8a8b7f14d9c42c8eb35c7a2f9e362b1f4d", null ]
     ] ],
     [ "ScannerType", "d1/d0f/CsUserDefs_8h.html#a7f83202bed206c9c3ce6beca08cffd14", [
       [ "SCANNER_TYPE_ALL", "d1/d0f/CsUserDefs_8h.html#a7f83202bed206c9c3ce6beca08cffd14a349c0f9ba1c56e2df1a6b09c8a1606a8", null ],
@@ -111,7 +113,10 @@ var CsUserDefs_8h =
       [ "ERROR_FW_UPDATE_ALREADY_ABORTED", "d1/d0f/CsUserDefs_8h.html#a26688ca6a181d6c6cf4f21d9839d4125a8116a6e4efe8ccb8ff8db3de57bb3fa4", null ],
       [ "ERROR_FW_UPDATE_ABORTED", "d1/d0f/CsUserDefs_8h.html#a26688ca6a181d6c6cf4f21d9839d4125a88222ec95e606fde40282627e7d5412c", null ],
       [ "ERROR_FW_SCN_DETTACHED", "d1/d0f/CsUserDefs_8h.html#a26688ca6a181d6c6cf4f21d9839d4125af29c242178a0d5165e5f2416faadbc18", null ],
-      [ "STATUS_FW_SWCOMP_RESIDENT", "d1/d0f/CsUserDefs_8h.html#a26688ca6a181d6c6cf4f21d9839d4125ae6b6a766184cb1961a4f560f9af8c3f7", null ]
+      [ "STATUS_FW_SWCOMP_RESIDENT", "d1/d0f/CsUserDefs_8h.html#a26688ca6a181d6c6cf4f21d9839d4125ae6b6a766184cb1961a4f560f9af8c3f7", null ],
+      [ "STATUS_ERROR_INVALID_CONFIG_FILE", "d1/d0f/CsUserDefs_8h.html#a26688ca6a181d6c6cf4f21d9839d4125aa28f53bad0e9989825eb4295c43ca0c4", null ],
+      [ "STATUS_ERROR_INCOMPATIBLE_CONFIG_FILE", "d1/d0f/CsUserDefs_8h.html#a26688ca6a181d6c6cf4f21d9839d4125a8538d26ae3f9cd89854b24fdc20ff4ef", null ],
+      [ "STATUS_ERROR_CONFIG_FILE_SYNTAX_VALIDATION_FAILED", "d1/d0f/CsUserDefs_8h.html#a26688ca6a181d6c6cf4f21d9839d4125a0db573e1c386f48bbfb643d03efc95a5", null ]
     ] ],
     [ "UpdateFirmwareEventID", "d1/d0f/CsUserDefs_8h.html#a661b766333359b7544dab53d8e871ea0", [
       [ "SCANNER_UF_SESS_START", "d1/d0f/CsUserDefs_8h.html#a661b766333359b7544dab53d8e871ea0a7fdaff0bd6baba53a467a24bb9404ce8", null ],
@@ -119,7 +124,10 @@ var CsUserDefs_8h =
       [ "SCANNER_UF_DL_PROGRESS", "d1/d0f/CsUserDefs_8h.html#a661b766333359b7544dab53d8e871ea0ae126d42f6863ca2aef31afb904f9de89", null ],
       [ "SCANNER_UF_DL_END", "d1/d0f/CsUserDefs_8h.html#a661b766333359b7544dab53d8e871ea0a4a459ec358af847c5b9be46a87a4656c", null ],
       [ "SCANNER_UF_SESS_END", "d1/d0f/CsUserDefs_8h.html#a661b766333359b7544dab53d8e871ea0adeffc75123559d0e7faa706098b7b915", null ],
-      [ "SCANNER_UF_STATUS", "d1/d0f/CsUserDefs_8h.html#a661b766333359b7544dab53d8e871ea0ad335063971180f71c1da467d4e2721c0", null ]
+      [ "SCANNER_UF_STATUS", "d1/d0f/CsUserDefs_8h.html#a661b766333359b7544dab53d8e871ea0ad335063971180f71c1da467d4e2721c0", null ],
+      [ "SCANNER_UC_SESS_START", "d1/d0f/CsUserDefs_8h.html#a661b766333359b7544dab53d8e871ea0a8dcbb5f0352f0d711397f6342232baba", null ],
+      [ "SCANNER_UC_PROGRESS", "d1/d0f/CsUserDefs_8h.html#a661b766333359b7544dab53d8e871ea0ac43aa6438df04999a665f7e0a415c71a", null ],
+      [ "SCANNER_UC_SESS_END", "d1/d0f/CsUserDefs_8h.html#a661b766333359b7544dab53d8e871ea0ac19cb47b10494b5214b35f985e712f60", null ]
     ] ],
     [ "VideoEventType", "d1/d0f/CsUserDefs_8h.html#a488c7cdb2cc2905dccfede3d10f35309", [
       [ "VIDEO_FRAME_COMPLETE", "d1/d0f/CsUserDefs_8h.html#a488c7cdb2cc2905dccfede3d10f35309a0ed2468cd223db461c65e93e189d2318", null ]
