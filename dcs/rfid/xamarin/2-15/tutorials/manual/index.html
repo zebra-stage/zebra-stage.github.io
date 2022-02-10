@@ -193,69 +193,89 @@
                                                 </ul>
 
                                                 <h3 id="tutorial1" class="anchor"><a class="heading-anchor" href="#tutorial1"><span></span></a>Details</h3>
-                                                <p>The Zebra RFID SDK for Android provides the ability to manage RFID readers’ connections, perform various
-                                                    operations with connected RFID readers, configure connected RFID readers and knowing other information related
-                                                    to connected RFID readers.
-                                                   
-                                                    All available APIs are defined under the com.zebra.rfid.api3 package. RFIDReader is the root Java class in the
-                                                    SDK. The application uses a single instance of an RFIDReader object to interact with a particular reader.
-                                                    Use available readers and the RFIDReader object to register for events, connect with readers, and after successful
-                                                    connection, perform required operations such as inventory, access and locate.
-                                                    It is recommended that all API calls should be made using Android ‘AsyncTask’ so that operations are performed in
-                                                    the background thread keeping the UI thread free.
-                                                    If the API call fails, the API throws an exception. The application should call all APIs in try-catch block for handling
-                                                    exceptions.</p>
-                                                    <h2 id="Connection" class="anchor"><a class="heading-anchor" href="#Connection"><span></span></a>Connection Management</h2>
+                                                <p>Zebra RFID Xamarin consists of library in dll format that should be linked with an external Xamarin application. All
+                                                    available APIs are defined under the Com.Zebra.Rfid.Api3 namespace. RFIDReader is the root class in the SDK.
+                                                    The application uses a single instance of an RFIDReader object to interact with a particular reader. Use available
+                                                    readers and the RFIDReader object to register for events, connect with readers, and after successful connection,
+                                                    perform required operations such as inventory, access, and locate. It is recommended that all API calls are made
+                                                    using Xamarin <code>ThreadPool.QueueUserWorkItem</code> so that operations are performed in the background thread
+                                                    keeping the UI thread free. If the API call fails, the API throws an exception. The application calls all APIs in
+                                                    try-catch block for handling exceptions</p>
+                                                
+                                                <h2 id="Connection" class="anchor"><a class="heading-anchor" href="#Connection"><span></span></a>Connection Management</h2>
                                                     <h3 id="connection" class="anchor"><a class="heading-anchor" href="#connection"><span></span></a>Connect to an RFID Reader</h3>
-                                                     <p>Please refer <a href="/dcs/rfid/android/2-0-2-75/guide/connection">Connect to RFID reader</a></p>
-                                             
-                                                        <h4 id="" class="anchor"><a class="heading-anchor" href="#"><span></span></a>Region Is Not Configured </h4>
-                                                        If the region is not configured, then exception gives RFID_READER_REGION_NOT_CONFIGURED result the
-                                                        caller then gets supported regions and chooses operation regulatory region from list. Set region with required
-                                                        configurations
-                                                        <pre class="prettyprint"><code>
-    if (ex.getResults() == RFIDResults.RFID_READER_REGION_NOT_CONFIGURED) {
-        // Get and Set regulatory configuration settings
-        // RegulatoryConfig regulatoryConfig = rfidReader.Config.getRegulatoryConfig();
-        // RegionInfo regionInfo =
-            rfidReader.ReaderCapabilities.SupportedRegions.getRegionInfo(1);
-        // regulatoryConfig.setRegion(regionInfo.getRegionCode());
-        // rfidReader.Config.setRegulatoryConfig(regulatoryConfig);
+                                                        <p>Connection is the first step to talk to an RFID reader. Importing package is the first step to use any API. Import the
+                                                            package as follows:</p>
+                                                            <code>using Com.Zebra.Rfid.Api3;</code>
+                                                        <p>As first step create instance of Readers class with passing activity context as first parameter and enum value
+                                                            ServiceSerial as second parameter</p>
+                                                            <code>readers = new Readers(this.context, ENUM_TRANSPORT.ServiceSerial);</code>
+                                                        <p>The Readers class instance gives a list of all available/paired RFID readers with an Android device. Readers list is
+                                                            in the form of ReaderDevice class.</p>
+                                                            <code>IList<ReaderDevice> readersList = readers.AvailableRFIDReaderList;
+                                                                ReaderDevice readerDevice = readersList[0];</code>
+                                                        <p>ReaderDevice class includes instance of RFIDReader class; which is root class to interface and performing all
+                                                            operations with RFID reader.</p>
+                                                            <code>rfidReader.Connect();</code>
+                                                            
+                                                        <p>In addition, the application can implement Readers.IRFIDReaderEventHandler in the following way to get
+                                                            notified for RFID reader getting attached (added) / detached (removal)</p>
+                                                            public class MainActivity: Activity, Java.Lang.Object, Readers.IRFIDReaderEventHandler
+                                                            <pre class="prettyprint"><code> 
+{
+    public void RFIDReaderAppeared(ReaderDevice readerDevice)
+    {
+    // handle reader addition
     }
+    public void RFIDReaderDisappeared(ReaderDevice readerDevice)
+    {
+    // handle reader removal
+    }
+}
                                                         </code></pre>
-                                                        <h4 id="" class="anchor"><a class="heading-anchor" href="#"><span></span></a>Reader Requires Bluetooth (BT )Password (RFD8500 only) </h4>
-                                                        If the BT connection password is configured for connection, a direct call to the connection results with an exception
-                                                        pointing that the BT password is required. Set the password in the RFIDReader instance and then call connect
-                                                        again.
-                                                        <pre class="prettyprint"><code>
-    if (ex.getResults() == RFIDResults.RFID_CONNECTION_PASSWORD_ERROR) {
-        // get password showPasswordDialog();
-        rfidReader.setPassword(password);
-        rfidReader.connect();
+                                                    <h4 id="" class="anchor"><a class="heading-anchor" href="#"><span></span></a>Special Connection Handling Cases </h4>
+                                                        <p>In a normal scenario, the reader connects fine, but the following are the cases which require special handling at the
+                                                            time of connection.</p>
+                                                        <p>The following example demonstrates the connection is handled under try-catch block and OperationFailure
+                                                            exception is thrown by connection API is stored and used for further analysis.</p>
+                                                            <pre class="prettyprint"><code> 
+    private OperationFailureException Ex;
+    try {
+    // Establish connection to the RFID Reader
+        RfidReader.Connect();
+    } catch (InvalidUsageException E) {
+        E.PrintStackTrace();
+    } catch (OperationFailureException E) {
+        E.PrintStackTrace();
+        Ex = E;
+    }
+                                                                </code></pre>
+                                                            <h4 id="" class="anchor"><a class="heading-anchor" href="#"><span></span></a>Special Connection Handling Cases </h4>
+                                                        
+                                                        <p>If the region is not configured, then exception gives RfidReaderRegionNotConfigured result the caller then gets
+                                                            supported regions and chooses operation regulatory region from list. Set region with required configurations</p>
+                                                            <pre class="prettyprint"><code> 
+    if (ex.Results == RFIDResults.RfidReaderRegionNotConfigured) {
+        // Get and Set regulatory configuration settings
+        // RegulatoryConfig regulatoryConfig = rfidReader.Config.RegulatoryConfig;
+        // RegionInfo regionInfo =
+            rfidReader.ReaderCapabilities.SupportedRegions.GetRegionInfo(1);
+        // regulatoryConfig.Region=regionInfo.RegionCode;
+        // rfidReader.Config.RegulatoryConfig=regulatoryConfig;
         }
-                                                        </code></pre>
-                                                        <h4 id="" class="anchor"><a class="heading-anchor" href="#"><span></span></a>Reader Is Running In Batch Mode (RFD8500 only) </h4>
-                                                        If the reader is configured with auto or batch mode enabled, the reader continues performing the inventory
-                                                        operation even it is not connected to an Android device. If, at that time, there is a connection made to a specific
-                                                        RFID reader, then the connection API throws the following exception. Then the application should stop the
-                                                        operation as required by usage
-                                                        <pre class="prettyprint"><code>
-    if (ex.getResults() == RFIDResults.RFID_BATCHMODE_IN_PROGRESS) {
-        // handle batch mode related stuff
-        }
-                                                        </code></pre>
-                                                        <p>Note that as the batch operation runs on the reader, the reader related information cannot be autonomously
-                                                            retrieved by the SDK. It is the responsibility of the application to retrieve/update reader related information using
-                                                            the following API once the BATCH operation is stopped before any other use</p>
-                                                        <code>
-                                                            rfidReader.PostConnectReaderUpdate();
-                                                        </code>
+                                                                </code></pre>
 
-
-
-
-
-
+                                                                <h3 id="connection" class="anchor"><a class="heading-anchor" href="#connection"><span></span></a>Disconnect</h3>
+                                                                <p>When the application is done with the connection and operations on the RFID reader, it calls the following API to close the connection, and to release and clean up the resources.</p>
+                                                                <code>RfidReader.Disconnect();</code>
+                                                                <p><strong>Note:</strong> If a reader disconnection occurs, the reader.isConnected() flag may return the value false. If the
+                                                                    application calls reader.connect(), the application should call reader.disconnect() regardless of the flag
+                                                                    status</p>
+                                                                <h3 id="connection" class="anchor"><a class="heading-anchor" href="#connection"><span></span></a>Dispose</h3>
+                                                                <p>When the application main activity is destroyed, it is required to dispose the SDK instance so that it can cleanly exit
+                                                                    (unregistration and unbind by SDK as required).</p>
+                                                                <code>RfidReader.Dispose();</code>
+                                                                
                                                  <h2 id="Knowing-the-Reader-Capabilities" class="anchor"><a class="heading-anchor" href="#Knowing-the-Reader-Capabilities"><span></span></a>Knowing the Reader Capabilities</h2>
                                                     <p>The capabilities (or Read-Only properties) of the reader are known using the ReaderCapabilites class. The reader
                                                         capabilities include the following:</p>
@@ -330,78 +350,38 @@ System.out.println("\nNumPreFilters: " + reader.ReaderCapabilities.getMaxNumPreF
 System.out.println("\nNumAntennaSupported: " +
     reader.ReaderCapabilities.getNumAntennaSupported())
                                                             </code></pre>
-                                                            <h2 id="" class="anchor"><a class="heading-anchor" href="#"><span></span></a>Configuring the Reader</h2>
-                                                            <h3 id="" class="anchor"><a class="heading-anchor" href="#"><span></span></a>RF-Mode</h3>
-                                                            <p>The reader has one or more sets of C1G2 RF Mode that the reader is capable of operating. The supported RF
-                                                                mode is retrieved from the RF Mode table using the ReaderCapabilities class.</p>
-                                                            <p>The API <code>GetRFModeTableInfo</code> in reader capabilities.RFModes gets the RF Mode table from the
-                                                                reader. The getLinkedProfiles function described below populates the RFModeTable into an
-                                                                List</p>
-                                                                <pre class="prettyprint"><code>
-        // The rfModeTable is populated by the GetRFModeTableInfo function
-        public RFModeTable rfModeTable = Reader.ReaderCapabilities.RFModes.GetRFModeTableInfo(0);
-        // The linked profiles are added to an list
-        private void getLinkedProfiles(List<String> linkedProfiles)
-            {
-            RFModeTableEntry rfModeTableEntry = null;
-            for (int i = 0; i < rfModeTable.Length(); i++)
-            {
-                rfModeTableEntry = rfModeTable.GetRFModeTableEntryInfo(i);
-                linkedProfiles.Add(rfModeTableEntry.BdrValue + " " +
-                rfModeTableEntry.Modulation + " " + rfModeTableEntry.PieValue + "  " +
-                rfModeTableEntry.MaxTariValue + " " +
-                rfModeTableEntry.MaxTariValue + " " +
-                rfModeTableEntry.StepTariValue);
-            } 
-        }
-                                                                </code></pre>
-                                                                <h3 id="" class="anchor"><a class="heading-anchor" href="#"><span></span></a>Antenna specific configurations</h3>
-                                                                    <h4 id="" class="anchor"><a class="heading-anchor" href="#"><span></span></a>Antenna configurations</h4>
-                                                                  Please refer <a href = "/dcs/rfid/android/2-0-2-75/tutorials/antenna">Antenna configurations</a>
-                                                                <h4 id="" class="anchor"><a class="heading-anchor" href="#"><span></span></a>Singulation Control</h4>
-                                                                  Please refer <a href = "/dcs/rfid/android/2-0-2-75/tutorials/singulation">Singulation Control</a>
-                                                                <h4 id="" class="anchor"><a class="heading-anchor" href="#"><span></span></a>Tag report configuration</h4>
-                                                                  The SDK provides an ability to configure a set of fields to be reported in a response to an operation by a specific
-                                                                  active RFID reader.
-                                                                  <p>Supported fields that might be reported include the following:</p>
-                                                                  <ul>
-                                                                        <li>First seen time</li>
-                                                                        <li> Last seen time</li>                                                              
-                                                                        <li>PC value</li>
-                                                                        <li> RSSI value</li>
-                                                                        <li> Phase value</li>
-                                                                        <li>Channel index</li>
-                                                                        <li>Tag seen count</li>
-                                                                </ul>
-                                                                 <p> The function getTagStorageSettings retrieves the tag report parameters from the reader for the given Antenna
-                                                                  ID.
-                                                                  To set the Tag report parameters, the setTagStorageSettings method is used. The following settings can be
-                                                                  configured</p>
-                                                                  <pre class="prettyprint"><code>
 
-// Get tag storage settings from the reader
- TagStorageSettings tagStorageSettings = reader.Config.getTagStorageSettings();
-// set tag storage settings on the reader with all fields
- tagStorageSettings.setTagFields(TAG_FIELD.ALL_TAG_FIELDS);
- reader.Config.setTagStorageSettings(tagStorageSettings);
-                                                                    </code></pre>
-                                                                    <h4 id="" class="anchor"><a class="heading-anchor" href="#"><span></span></a>Regulatory Configuration</h4>
-                                                                        Please  refer <a href="/dcs/rfid/android/2-0-2-75/guide/regulatory">Region setting guide</a>
-                                                                <h3 id="" class="anchor"><a class="heading-anchor" href="#"><span></span></a>Reset Configuration to Factory Defaults </h3>
-                                                                            The SDK provides a way to reset the RFID reader to the factory default settings. The resetFactoryDefaults API
-                                                                            can be used to attain this functionality. Once this method is called, all the reader settings like events, singulation
-                                                                            control, etc will be lost and the RFID reader reboots. A connected application shall lose connectivity to the reader
-                                                                            and must connect back again and is required to redo the basic steps for initializing the reader. The following
-                                                                            example demonstrates utilization of mentioned API function.
-                                                                            <code>reader.Config.resetFactoryDefaults();</code>
+                                                        <h2 id="" class="anchor"><a class="heading-anchor" href="#"><span></span></a>Configuring the Reader</h2>
+                                                        <h3 id="" class="anchor"><a class="heading-anchor" href="#"><span></span></a>RF-Mode</h3>
+                                                        <p>The reader has one or more sets of C1G2 RF Mode that the reader is capable of operating. The supported RF
+                                                            mode is retrieved from the RF Mode table using the ReaderCapabilities class.</p>
+                                                        <p>The API <code>GetRFModeTableInfo</code> in reader capabilities.RFModes gets the RF Mode table from the
+                                                            reader. The getLinkedProfiles function described below populates the RFModeTable into an
+                                                            List</p>
+                                                            <pre class="prettyprint"><code>
+    // The rfModeTable is populated by the GetRFModeTableInfo function
+    public RFModeTable rfModeTable = Reader.ReaderCapabilities.RFModes.GetRFModeTableInfo(0);
+    // The linked profiles are added to an list
+    private void getLinkedProfiles(List<String> linkedProfiles)
+        {
+        RFModeTableEntry rfModeTableEntry = null;
+        for (int i = 0; i < rfModeTable.Length(); i++)
+        {
+            rfModeTableEntry = rfModeTable.GetRFModeTableEntryInfo(i);
+            linkedProfiles.Add(rfModeTableEntry.BdrValue + " " +
+            rfModeTableEntry.Modulation + " " + rfModeTableEntry.PieValue + "  " +
+            rfModeTableEntry.MaxTariValue + " " +
+            rfModeTableEntry.MaxTariValue + " " +
+            rfModeTableEntry.StepTariValue);
+        } 
+    }
+                                                            </code></pre>
+                                                            <h3 id="" class="anchor"><a class="heading-anchor" href="#"><span></span></a>Antenna specific configurations</h3>
+                                                            <h4 id="" class="anchor"><a class="heading-anchor" href="#"><span></span></a>Antenna configurations</h4>
+                                                            <p>Please refer <a href = "/dcs/rfid/xamarin/2-15/tutorials">Antenna configurations</a> in tutorials</p>
+                                                            
 
-                                                                <h3 id="" class="anchor"><a class="heading-anchor" href="#"><span></span></a>Managing Events </h3>
-                                                                    Please refer <a href="/dcs/rfid/android/2-0-2-75/guide/event-handling">Event handling</a>
-                                                        
-                                                        <h2 id="" class="anchor"><a class="heading-anchor" href="#"><span></span></a>Basic operations</h2>
-                                                        <h3 id="tag-storage-settings" class="anchor"><a class="heading-anchor" href="#tag-storage-settings"><span></span></a>Tag storage settings</h3>  
-                                                        <p>Please refer <a href = "/dcs/rfid/android/2-0-2-75/tutorials/TagStorageSettings">Tag storage</a></p>
-                                                        <h3 id="tag-storage-usecases" class="anchor"><a class="heading-anchor" href="#tag-storage-usecases"><span></span></a>Tag storage usecases</h3>  
+                                                        <h2 id="tag-storage-usecases" class="anchor"><a class="heading-anchor" href="#tag-storage-usecases"><span></span></a>Tag storage usecases</h2>  
                                                         <ul>
                                                             <li><h4 id="usecase1" class="anchor"><a class="heading-anchor" href="#usecase1"><span></span></a>Read</h4>
                                                                 <p>Please refer <a href = "/dcs/rfid/android/2-0-2-75/tutorials/readaccess">read</a></p>
@@ -474,11 +454,6 @@ reader.Actions.TagAccess.killWait(tagId, killAccessParams,null);
                                                                 Example:
                                                                 <code>reader.Config.setAccessOperationWaitTimeout(1000);</code>
                                                         </ul>
-                                                        <h2 id="" class="anchor"><a class="heading-anchor" href="#"><span></span></a>Advanced operations</h2>
-                                                        <h3 id="Using-Triggers" class="anchor"><a class="heading-anchor" href="#Using-Triggers"><span></span></a>Using Prefilters</h3>
-                                                        <p>Please refer <a href = "/dcs/rfid/android/2-0-2-75/tutorials/prefilter"> Prefilters</a></p>
-                                                        <h3 id="Using-Triggers" class="anchor"><a class="heading-anchor" href="#Using-Triggers"><span></span></a>Singulation</h3>
-                                                        <p>Please refer <a href = "/dcs/rfid/android/2-0-2-75/tutorials/singulation"> Singulation</a></p>
                                                         <h3 id="Using-Triggers" class="anchor"><a class="heading-anchor" href="#Using-Triggers"><span></span></a>Using Triggers</h3> 
                                                         <p>>Triggers are the conditions that are satisfied in order to start or stop an operation (Inventory or Access Sequence).
                                                         This information can be specified using TriggerInfo class. The application can also configure the Tag-Report trigger
@@ -553,7 +528,7 @@ reader.Actions.Inventory.perform();
                                                                 </code></pre>
                                                             </li>
                                                         </ul>  
-                                                        <h3 id="Access" class="anchor"><a class="heading-anchor" href="#Access"><span></span></a>Access </h3> 
+                                                        <h2 id="Access" class="anchor"><a class="heading-anchor" href="#Access"><span></span></a>Access </h2> 
                                                         <ul>
                                                             <li>
                                                                 <h4 id="usecase1" class="anchor"><a class="heading-anchor" href="#usecase1"><span></span></a>Using Access-Filter</h4>
@@ -678,52 +653,10 @@ completing
     reader.Actions.TagAccess.OperationSequence.stopSequence();
                                                                 </code></pre>
                                                             </li>
-                                                        </ul> 
-                                                            <h3 id="Using-Triggers" class="anchor"><a class="heading-anchor" href="#Using-Triggers"><span></span></a>Gen2v2 Operations</h3>
-                                                               <p>Please refer <a href = "/dcs/rfid/android/2-0-2-75/guide/g2v2"> G2v2</a></p>
-                                                            <h3 id="Using-Triggers" class="anchor"><a class="heading-anchor" href="#Using-Triggers"><span></span></a>Resetting the Reader</h3>
-                                                            <p>The RFID SDK supports performing soft-reset of the reader. A connected application shall lose connectivity to the
-                                                                reader, must connect back again, and is required to redo the basic steps for initializing the reader. The following
-                                                                example demonstrates utilization of then API function.</p>
-                                                                <code>reader.Actions.reset();</code>
-                                                            <h3 id="Using-Triggers" class="anchor"><a class="heading-anchor" href="#Using-Triggers"><span></span></a>Tag Locationing</h3>
-                                                            <p>Readers that support the Tag Locationing feature report the same in the field isTagLocationingSupported of
-                                                                ReaderCapabilities as true. This feature is supported only on hand-held readers and is useful to locate a specific
-                                                                tag in the field of view of the reader’s antenna. The default locationing algorithm supported on the reader can
-                                                                perform locationing only on a single antenna. reader.Actions.TagLocationing.Perform can be used to start locating
-                                                                a tag, and reader.Actions.TagLocationing.Stop to stop the locationing operation. The result of locationing of a tag is
-                                                                reported as LocationInfo in TagData and is present in TagData if tagData isContainsLocationInfo is true.
-                                                                tagData.LocationInfo.getRelativeDistance gives the relative distance of the tag from the reader antenna.</p>
-                                                                Performing Tag Locationing on a particular tag ID
-                                                                <pre class="prettyprint"><code>
-    reader.Actions.TagLocationing.Perform("E2002849491502421020B330",null);
-    try {
-        Thread.sleep(5000);
-        } catch (InterruptedException e) {
-        e.printStackTrace();
-    }
-            reader.Actions.Inventory.stop();
-            //The response of the tag locationing comes through eventReadNotify in the following Event Handler.
-            public class EventHandler implements RfidEventsListener {
-            // Read Event Notification
-            public void eventReadNotify(RfidReadEvents e) {
-            TagData[] myTags = reader.Actions.getReadTags(100);
-            if (myTags != null) {
-            for (int index = 0; index < myTags.length; index++) {
-                System.out.println("Tag ID " + myTags[index].getTagID());
-                    if (myTags[index].isContainsLocationInfo()) {
-                    int tag = index;
-                    System.out.println("Tag locationing distance " +
-                    myTags[tag].LocationInfo.getRelativeDistance());
-                     }
-                 }
-            }
-        }
-    }
-                                                                </code></pre>
-                                                                 
-                                                                <h2 id="" class="anchor"><a class="heading-anchor" href="#"><span></span></a>Trigger Mode - RFID and Barcode</h2> 
-                                                                Please refer <a href = "/dcs/rfid/android/2-0-2-75/tutorials/trigger-mode">Trigger Mode - RFID and Barcode</a>
+                                                            
+                                                            </li>
+                                                        </ul>
+                                                                  
                                                 </div>
                                             </div>
     
