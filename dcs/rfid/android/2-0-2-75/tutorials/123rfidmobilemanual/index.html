@@ -389,6 +389,12 @@ System.out.println("\nNumAntennaSupported: " +
                                                                     </code></pre>
                                                                     <h4 id="" class="anchor"><a class="heading-anchor" href="#"><span></span></a>Regulatory Configuration</h4>
                                                                         Please  refer <a href="/dcs/rfid/android/2-0-2-75/guide/regulatory">Region setting guide</a>
+                                                                        <h4 id="save" class="anchor"><a class="heading-anchor" href="#save"><span></span></a>Saving Configuration</h4>
+                                                                        <p>Various parameters of a specific RFID reader configured via SDK are lost after the next power down. The SDK
+                                                                            provides an ability to save a persistent configuration of RFID reader. The saveConfig API function can be used to
+                                                                            make the current configuration persistent over power down and power up cycles. The following example
+                                                                            demonstrates utilization of mentioned API functions</p>
+                                                                            <pre class="prettyprint"><code>reader.Config.saveConfig();</code></pre>
                                                                 <h3 id="" class="anchor"><a class="heading-anchor" href="#"><span></span></a>Reset Configuration to Factory Defaults </h3>
                                                                             The SDK provides a way to reset the RFID reader to the factory default settings. The resetFactoryDefaults API
                                                                             can be used to attain this functionality. Once this method is called, all the reader settings like events, singulation
@@ -402,9 +408,43 @@ System.out.println("\nNumAntennaSupported: " +
                                                         
                                                         <h2 id="" class="anchor"><a class="heading-anchor" href="#"><span></span></a>Basic operations</h2>
                                                         <h3 id="tag-storage-settings" class="anchor"><a class="heading-anchor" href="#tag-storage-settings"><span></span></a>Tag storage settings</h3>  
-                                                        <p>Please refer <a href = "/dcs/rfid/android/2-0-2-75/tutorials/TagStorageSettings">Tag storage</a></p>
+                                                        <p>This section covers the basic operations that an application needs to perform on an RFID reader which includes
+                                                            inventory and single tag access operations</p>
+                                                            <p>The application needs to get the tags from the dll which are reported by the reader. Tags can be reported as part of
+                                                                an Inventory operation (Reader.Actions.Inventory.Perform) or a Read Access operation
+                                                                (Reader.Actions.TagAccess.ReadEvent or Reader.Actions.TagAccess.ReadWait).</p>
+                                                                <p>Applications can also configure to receive tag reports that indicate the results of access operations as shown
+                                                                    below.</p>
+                                                                    <pre class="prettyprint"><code>
+TagStorageSettings tagStorageSettings = reader.Config.getTagStorageSettings();
+reader.Config.setTagStorageSettings(tagStorageSettings)
+        </code></pre>
+                                                            <p>Each tag has a set of associated information along with it. During the Inventory operation, the reader reports
+                                                                theEPC-ID of the tag, where as during the Read-Access operation the requested Memory Bank Data is also
+                                                                reportedapart from EPC-ID. In either case, there is additional information such as PC-bits, RSSI, last time seen,
+                                                                tag seen count, etc. that is available for each tag. This information is reported to the application as TagData for
+                                                                each tagreported by the reader.</p>
+                                                            <p>Applications can also choose to enable/disable reporting certain fields in TAG_DATA. Disabling certain fields
+                                                                cansometimes improve the performance as the reader and the sdk are not processing that information. It can also
+                                                                resultin specific behavior. For example, disabling reporting an Antenna Id can result in the application receiving a
+                                                                single unique tag even though they were multiple entries of the same tag reported from different antennas. The following demonstrates enabling the reporting of PeakRSSI, Tag Seen Count, PC and CRC only and disabling
+                                                                other fields such as Antenna ID, Time Stamps, and XPC.</p>
+                                                                <pre class="prettyprint"><code>
+TagStorageSettings tagStorageSettings = reader.Config.getTagStorageSettings();
+TAG_FIELD[] tagField = new TAG_FIELD[4];
+tagField[0] = TAG_FIELD.PC; tagField[1] =
+    TAG_FIELD.PEAK_RSSI; tagField[2] =
+    TAG_FIELD.TAG_SEEN_COUNT; tagField[3] =
+    TAG_FIELD.CRC;
+tagStorageSettings.setTagFields(tagField);
+reader.Config.setTagStorageSettings(tagStorageSettings);
+
+                                                                </code></pre>
                                                         <h3 id="tag-storage-usecases" class="anchor"><a class="heading-anchor" href="#tag-storage-usecases"><span></span></a>Tag storage usecases</h3>  
                                                         <ul>
+                                                            <li><h4 id="usecase1" class="anchor"><a class="heading-anchor" href="#usecase1"><span></span></a>Inventory</h4>
+                                                                <p>Please refer <a href = "/dcs/rfid/android/2-0-2-75/tutorials/inventory">Inventory</a></p>
+                                                            </li>
                                                             <li><h4 id="usecase1" class="anchor"><a class="heading-anchor" href="#usecase1"><span></span></a>Read</h4>
                                                                 <p>Please refer <a href = "/dcs/rfid/android/2-0-2-75/tutorials/readaccess">read</a></p>
                                                             </li>
@@ -415,11 +455,44 @@ System.out.println("\nNumAntennaSupported: " +
                                                             </li>
                                                             <li>
                                                                 <h4 id="usecase1" class="anchor"><a class="heading-anchor" href="#usecase1"><span></span></a>Block Erase</h4>
-                                                                <p>Please refer <a href = "/dcs/rfid/android/2-0-2-75/tutorials/BlockErase"> BlockErase</a></p>
+                                                                <p>The application calls RFID_BlockErase to erase the contents of a tag.</p>
+                                                                <pre class="prettyprint"><code>
+// Block Erase
+TagData tagData = new TagData ();
+String tagId = "1234ABCD00000000000025B1";
+TagAccess.BlockEraseAccessParams blockEraseAccessParams = tagAccess.new
+BlockEraseAccessParams();
+blockEraseAccessParams.setAccessPassword(0);
+blockEraseAccessParams.setMemoryBank(MEMORY_BANK.MEMORY_BANK_USER); // user memory bank
+blockEraseAccessParams.setOffset(0); // start erasing from word offset 0
+blockEraseAccessParams.setCount(8); // number of words to erase
+mConnectedReader.Actions.TagAccess.blockEraseWait(tagId,
+blockEraseAccessParams, null,tagData);
+                                                                </code></pre>
                                                             </li>
                                                             <li>
                                                                 <h4 id="usecase1" class="anchor"><a class="heading-anchor" href="#usecase1"><span></span></a>Block-Permalock</h4>
-                                                                <p>Please refer <a href = "/dcs/rfid/android/2-0-2-75/tutorials/BlockPermalock">BlockPermalock</a></p>
+                                                                <p>The application calls method Reader.Actions.TagAccess.blockPermalockWait to block a permalock tag. Tags
+                                                                    reported as part of Block-Permalock access operation have TagData.getOpCode as
+                                                                    ACCESS_OPERATION_BLOCK_PERMALOCK and TagData.getOpStatus indicating the result of the operation; if
+                                                                    TagData.OpStatus is ACCESS_SUCCESS, TagData.getMemoryBankData contains the Block-Permalock Mask
+                                                                    Data.</p>
+                                                                    <pre class="prettyprint"><code>
+    // Block-Perma Lock the tag
+    String tagId = "1234ABCD00000000000025B1";
+    TagAccess tagAccess = new TagAccess();
+    TagAccess.BlockPermalockAccessParams blockPermalockAccessParams = tagAccess.new
+    BlockPermalockAccessParams();
+    byte[] permalockMask = new byte[] {(byte)0xF0, 0x00};
+    blockPermalockAccessParams.setReadLock(true);
+    blockPermalockAccessParams.setMemoryBank(MEMORY_BANK.MEMORY_BANK_USER);
+    blockPermalockAccessParams.setOffset(0); // start BlockPermalock from word offset 0
+    blockPermalockAccessParams.setCount(1); // start BlockPermalock from word offset 0
+    blockPermalockAccessParams.setMask(permalockMask);
+    blockPermalockAccessParams.setMaskLength(2);
+    reader.Actions.TagAccess.blockPermalockWait(tagId, blockPermalockAccessParams, null);
+                                                                    </code></pre>
+
                                                             </li>
                                                             <li><h4 id="usecase1" class="anchor"><a class="heading-anchor" href="#usecase1"><span></span></a>Lock</h4></li>
                                                                 <p>The application calls method reader.Actions.TagAccess.lockWait to perform a lock operation on one or more
