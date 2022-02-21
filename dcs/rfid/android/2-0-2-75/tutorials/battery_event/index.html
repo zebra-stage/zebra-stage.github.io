@@ -187,7 +187,7 @@
                                                 <p></p>
                                                 <h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-                                                <p>This Tutorial provides a walk-through of the steps toThis Tutorial provides a walk-through of the steps to received battery event data on the device using <a href="../../apis">RFID3 API</a></p>
+                                                <p>This Tutorial provides a walk-through of the steps toThis Tutorial provides a walk-through of the steps to receive battery event data on the device using <a href="../../apis">RFID3 API</a></p>
 
 
                                                 <h3 id="createtheproject" class="anchor"><a class="heading-anchor" href="#createtheproject"><span></span></a>Create The Project</h3>
@@ -206,11 +206,39 @@
                                                     <code>getCause()</code> , <code>getLevel()</code> , <code>getCharging()</code> are the methods to get battery status
                                                     </p>
                                                 <pre class="prettyprint"><code>
-Events.BatteryData batteryData = RfidStatusEvents.StatusEventData.BatteryData;
-Log.d("BatteryData", batteryData.getCause());
-Log.d("BatteryData", batteryData.getLevel());
-Log.d("BatteryData", batteryData.getCharging());
-</code></pre>
+//Start polling for Battery data
+public static void startTimer() {
+    if (scheduler == null) {
+        scheduler = Executors.newScheduledThreadPool(1);
+        final Runnable task = new Runnable() {
+            public void run() {
+                try {
+                    if (reader != null)
+                        reader.Config.getDeviceStatus(true, true, false);
+                    else
+                        stopTimer();
+                } catch (InvalidUsageException e) {
+                    Log.d(TAG, e.getMessage());
+                } catch (OperationFailureException e) {
+                    Log.d(TAG, e.getMessage());
+                }
+            }
+        };
+        taskHandle = scheduler.scheduleAtFixedRate(task, 0, 60, SECONDS);
+    }
+}
+
+//Handling Battery callback event
+
+public void eventStatusNotify(RfidStatusEvents rfidStatusEvents) {
+            if( rfidStatusEvents.StatusEventData.getStatusEventType() == STATUS_EVENT_TYPE.BATTERY_EVENT ){
+                    final Events.BatteryData batteryData = RfidStatusEvents.StatusEventData.BatteryData;
+                    Log.d("BatteryData", batteryData.getCause());
+                    Log.d("BatteryData", batteryData.getLevel());
+                    Log.d("BatteryData", batteryData.getCharging());
+            }
+}
+                                                </code></pre>
 
 
 
