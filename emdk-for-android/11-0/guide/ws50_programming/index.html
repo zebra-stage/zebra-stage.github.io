@@ -665,54 +665,61 @@ _It's easier to type on a wider SIP. Click to enlarge_.<br>
 
 <h2 id="aidlapis" class="anchor"><a class="heading-anchor" href="#aidlapis"><span></span></a>AIDL APIs</h2>
 
-<p>The following is the AIDL file for controlling the two WS50 LEDs. </p>
+<p>The following code can be used to control the WS50's left and right multi-color LEDs beyond what's available in Android's Notification API. Use these APIs to specify which LED to control on the device, and to light an LED without showing an on-screen notification. </p>
 
-<p><code>More to come...</code>  </p>
+<h4 id="tocontrolws50leds" class="anchor"><a class="heading-anchor" href="#tocontrolws50leds"><span></span></a>To control WS50 LEDs:</h4>
 
-<pre class="prettyprint"><code>// Copyright (c) 2020-2021 Zebra Technologies Corporation and/or its affiliates. All rights reserved.
+<ol>
+<li><p>Bind the app to the LED service: </p>
 
+<pre class="prettyprint"><code>
+Intent intent = new Intent().setComponent(new ComponentName("com.zebra.led", "com.zebra.led.LedService"));
+context.bindService(intent, ledConnection, Context.BIND_AUTO_CREATE);
+</code></pre></li>
+
+<li><p>Interface with, specify and control the desired LED: </p>
+
+<pre class="prettyprint"><code>
 package com.zebra.led;
-
-/**
- * Interface for apps to control device LEDs. Use this interface when you wish to control LEDs
- * beyond what is available in Android's Notification API; for example, to light an LED without
- * showing an on-screen notification, or to specify which LED when there is more than one (such as
- * on the WS50).
- */
-interface ILed
+// Interface for apps to control device LEDs:
+interface ILed 
 {
-    /** LED id for a single app-controlled LED (available on Sharp RZ-H270, red and green
-        colors only) */
-    const int LED_USER = 1;
-    /** LED id for the left LED on devices with multiple LEDs (available on Zebra WS50) */
-    const int LED_LEFT = 2;
-    /** LED id for the right LED on devices with multiple LEDs (available on Zebra WS50) */
-    const int LED_RIGHT = 3;
+const int LED_LEFT = 2; // WS50 left LED
+const int LED_RIGHT = 3; // WS50 right LED
 
-    /**
-     * Sets an LED to a solid color. LED and color availability varies by product.
-     *
-     * @param ledID the LED to control, one of the LED_ constants
-     * @param color the color to set, in standard Android ARGB format. The opacity (A) is
-     *              ignored. Use Color.TRANSPARENT (0) to turn the LED off.
-     * @throws IllegalArgumentException the LED is not available to control on this product, or the
-     *                                  the given color is not supported for the LED
-     */
-    void setLed(int ledId, int color);
+// Set LED to solid color:
+//
+// @param ledID - the LED to control, one of the LED_ constants
+// @param color - the color to set, in standard Android ARGB format. The opacity (A) is ignored. 
+// Color.TRANSPARENT (0) - turns the LED off
+// @throws IllegalArgumentException - the LED is not available or given color is not supported
 
-    /**
-     * Sets an LED to a blinking color. LEDs, color availability, and blinking support varies by
-     * product.
-     *
-     * @param ledID the LED to control, one of the LED_ constants
-     * @param color the color to set, in standard Android ARGB format. The opacity (A) is
-     *              ignored.
-     * @throws IllegalArgumentException the LED is not available to control on this product, or the
-     *                                  the given color is not supported for the LED
-     * @throws UnsupportedOperationException blinking is not supported for this product or LED
-     */
-    void setLedBlinking(int ledId, int color);
+void setLed(int ledId, int color);
+
+// Set LED to blinking color:
+//
+// @param ledID - the LED to control, one of the LED_ constants
+// @param color - the color to set, in standard Android ARGB format. The opacity (A) is ignored.
+// @throws IllegalArgumentException - the LED is not available or given color is not supported
+// @throws UnsupportedOperationException - blinking is not supported on the device or LED
+
+void setLedBlinking(int ledId, int color);
 }
+</code></pre></li>
+</ol>
+
+<h3 id="androidstudiowarning" class="anchor"><a class="heading-anchor" href="#androidstudiowarning"><span></span></a>Android Studio Warning</h3>
+
+<p>When connecting the WS50 device to a development host computer, Android Studio sometimes displays a message similar to the image below:</p>
+
+<p><img alt="image" style="height:150px" src="ws50_studioWarning.png">
+<em>Android Studio warning can be safely ignored or supressed</em>.
+<br></p>
+
+<p>To prevent display of the message above, add the following line to the app's <code>manifest.xml</code> file:</p>
+
+<pre class="prettyprint"><code>
+&lt;uses-feature android:name="android.hardware.type.watch" required=”false” /&gt; 
 </code></pre>
 
 <hr>
