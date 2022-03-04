@@ -226,17 +226,17 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>Share files securely with 3 methods of deployment:</p>
+<p>Deploy files, such as configuration files, to be accessed or consumed by target apps by using one of the following methods:</p>
 
 <ul>
-<li><strong>StageNow -</strong> To deploy and persist shared files across an enterprise reset, use Zebra’s <a href="/stagenow">StageNow</a> tool. This is a standard method to overcome <a href="https://developer.android.com/about/versions/11/privacy/storage">scoped storage</a> restrictions enforced in Android 11 and higher. After the file is deployed, it can be accessed by the intended target application.</li>
+<li><strong>StageNow -</strong> For administrators to deploy files for use by a specific target apps, use Zebra’s <a href="/stagenow">StageNow</a> tool. This is a standard method to overcome <a href="https://developer.android.com/about/versions/11/privacy/storage">scoped storage</a> restrictions enforced in Android 11 or higher. </li>
 
-<li><strong>Enterprise Mobility Management (EMM) system -</strong> To deploy and persist the shared file via an EMM for large scale deployments, use <a href="/oemconfig/latest/mc/">OEMConfig File Management (Zebra Managed Configuration)</a>. </li>
+<li><strong>Enterprise Mobility Management (EMM) -</strong> For administrators to deploy files for use by a specific target app via an EMM for large scale deployments, use <a href="/oemconfig/latest/mc/">OEMConfig File Management (Zebra Managed Configuration)</a>. </li>
 
-<li><strong>App file sharing -</strong> An app that is sharing files (sharing app) can programmatically store the shared file in SSM to be accessed only by the intended target app. </li>
+<li><strong>App file sharing -</strong> An app that is sharing files can programmatically store the shared file in SSM to be accessed only by the intended target app. </li>
 </ul>
 
-<p>After the shared file is deployed, SSM detects, processes and stores the shared file for access by the intended target app. </p>
+<p>After the shared file is deployed, developers can write their own app (target app) to consume the shared file using File Provider and Content Provider interfaces exposed via Secure Storage Manager (SSM).</p>
 
 <hr>
 
@@ -244,15 +244,34 @@
 
 <ul>
 <li>SDM660 devices with Android 11 (May 2022 LifeGuard release)</li>
+
+<li>StageNow v5.6 or higher</li>
+
+<li>Target apps consuming the shared deployed file must target API Level 30 (Android 11) or above and have the appropriate permissions for access in the manifest file:</li>
 </ul>
+
+<p>Add the permissions to access the SSM Content and File Provider:</p>
+
+<pre class="prettyprint"><code>&lt;uses-permission android:name="com.zebra.securestoragemanager.securecontentprovider.PERMISSION.WRITE" /&gt;
+&lt;uses-permission android:name="com.zebra.securestoragemanager.securecontentprovider.PERMISSION.READ" /&gt;
+</code></pre>
+
+<p>Add the Query provider:</p>
+
+<pre class="prettyprint"><code>&lt;queries&gt;
+    &lt;provider android:authorities="com.zebra.securestoragemanager.securecontentprovider"/&gt; 
+&lt;/queries&gt;
+</code></pre>
 
 <hr>
 
-<h2 id="stagenow" class="anchor"><a class="heading-anchor" href="#stagenow"><span></span></a>StageNow</h2>
+<h2 id="filedeployment" class="anchor"><a class="heading-anchor" href="#filedeployment"><span></span></a>File Deployment</h2>
 
-<p>Any file, such as a configuration file, can be deployed to devices and shared to specific targeted applications for access (target application). With StageNow, administrators use <a href="/stagenow/latest/csp/file/">File Manager</a> to create a staging profile that deploys the shared file. The target application retrieves the shared file via <a href="../api">Content Provider</a> and File Provider interfaces exposed via Secure Storage Manager (SSM). File Manager contains an option to set the shared file to be persistent.</p>
+<p>Any file being shared, such as a configuration file, can be deployed to devices and shared securely to specific targeted applications (target app) for access. For large scale deployments, creating a StageNow profile is a prerequisite for using EMM.</p>
 
-<h3 id="deployment-1" class="anchor"><a class="heading-anchor" href="#deployment-1"><span></span></a>Deployment</h3>
+<h3 id="stagenow" class="anchor"><a class="heading-anchor" href="#stagenow"><span></span></a>StageNow</h3>
+
+<p>With StageNow, administrators use <a href="/stagenow/latest/csp/file/">File Manager</a> to create a staging profile that deploys the shared file. The target application retrieves the shared file via <a href="../api">Content Provider</a> and File Provider interfaces exposed via Secure Storage Manager (SSM). File Manager contains an option to set the shared file to be persistent.</p>
 
 <p>When deploying a shared file to devices, the following information is required:</p>
 
@@ -275,7 +294,7 @@
 
 <li>In the StageNow home screen, click <strong>Create New Profile</strong> from the left menu.</li>
 
-<li>Ensure MX version 11.4 or higher is selected at the top drop-down selector. The MX version on the device should match this or higher. See <a href="/mx/mx-version-on-device/">MX documentation</a> for instructions how to check the version. </li>
+<li>Ensure MX version 11.3 or higher is selected at the top drop-down selector. The MX version on the device should match this or higher. See <a href="/mx/mx-version-on-device/">MX documentation</a> for instructions how to check the version. </li>
 
 <li>Select <strong>Xpert Mode</strong> from the list and click <strong>Create.</strong>
 <img alt="image" style="height:350px" src="./sn-xpert-mode.png"> </li>
@@ -293,10 +312,10 @@
 <ul>
 <li><strong>File Action:</strong> Deploy file for an application </li>
 
-<li><strong>Target Application File Definition:</strong> [Enter the package name of the target application followed by <code>/</code> and the full path of the file]<br>
-For example, to deploy a configuration file "MC93SD.encrypted" and have it persist after an enterprise reset for package “com.ztestapp.clientapplication” with the file located in the ‘config’ folder, enter: <code>com.ztestapp.clientapplication/config/MC93SD.encrypted</code></li>
+<li><strong>Target Application File Definition:</strong> [Enter the package name of the target app (that is accessing the shared file) followed by <code>/</code> and the full path of the file]<br>
+For example, to deploy a configuration file named "MC93SD.encrypted" located in the "config" folder and have it persist after an enterprise reset for app package “com.ztestapp.clientapplication”, enter: <code>com.ztestapp.clientapplication/config/MC93SD.encrypted</code></li>
 
-<li><strong>Target Application Signature:</strong>  [Enter the signature of the target application for security purposes. <i>This is optional, but recommended.</i>]<br> 
+<li><strong>Target Application Signature:</strong> [Enter the signature of the target app for security purposes. <i>This is optional, but recommended.</i>]<br> 
 The signature must be in Base64 string format, which can be obtained by using <a href="/emdk-for-android/latest/samples/sigtools/">SigTools.jar</a>. If this field is empty, it introduces the risk of compromising the security of the deployed file.</li>
 
 <li><strong>Persist The File:</strong> [Select whether or not to persist the file]</li>
@@ -305,17 +324,28 @@ The signature must be in Base64 string format, which can be obtained by using <a
 
 <li><strong>Source file URI:</strong> [Enter the source file path, either from a remote server or from the local device storage]</li></ul>
 </li>
+
+<li>Click <strong>Complete Profiles.</strong> Profile creation is complete.</li>
+
+<li>Select one of the following based on the deployment method:
+
+
+<ul>
+<li><strong>StageNow:</strong> Generate the barcode from the StageNow profile. Open StageNow client on the device and scan the barcode(s) generated.</li>
+
+<li><strong>EMM:</strong> Export XML from the StageNow profile. Do not edit the XML file - it can cause unexpected behavior. Send the XML using <a href="/oemconfig/latest/mc/">OEMConfig File Management (Zebra Managed Configuration)</a> to be consumed by the EMM.</li></ul>
+</li>
 </ol>
 
 <hr>
 
-<h2 id="noticeofdeployedfile" class="anchor"><a class="heading-anchor" href="#noticeofdeployedfile"><span></span></a>Notice of Deployed File</h2>
+<h2 id="targetapp" class="anchor"><a class="heading-anchor" href="#targetapp"><span></span></a>Target App</h2>
 
 <p>After the shared file is deployed, it is ready to be accessed by the intended target app on the device. The method to receive notification of the deployed file varies depending on whether or not the target app is running on the device prior to file deployment.</p>
 
-<h3 id="targetapprunningondevice" class="anchor"><a class="heading-anchor" href="#targetapprunningondevice"><span></span></a>Target App Running on Device</h3>
+<h3 id="launchedbeforedeployment" class="anchor"><a class="heading-anchor" href="#launchedbeforedeployment"><span></span></a>Launched Before Deployment</h3>
 
-<p>After file deployment, SSM broadcasts an explicit intent to notify the target app. The target app must register for the broadcast receiver to receive this intent and process the intent extras to retrieve the file information. SSM implemented a File Provider, which generates the content URIs for the file. The file URI provides access to the file, which the target app possesses read and write permission. </p>
+<p>After file deployment, if the target app is already running on the device, SSM broadcasts an explicit intent to notify the target app. The target app must register for the broadcast receiver to receive this intent and process the intent extras to retrieve the file information. SSM implemented a File Provider, which generates the content URIs for the file. The file URI provides access to the file and read/write permissions. The intent contains information to access the deployed file.</p>
 
 <p>Intent extras:</p>
 
@@ -352,7 +382,7 @@ The signature must be in Base64 string format, which can be obtained by using <a
 
  <tr>
     <td>secure_file_persist</td>
-    <td>Flag to specify whether or not the file shall persist.</td>
+    <td>Flag to specify whether or not the file is persistent.</td>
     <td>True or false</td>
  </tr>
 
@@ -360,58 +390,9 @@ The signature must be in Base64 string format, which can be obtained by using <a
 
 <p><br></p>
 
-<!--
-the broadcast intent to retrieve the response and determine whether the deployment was successful. Deployed files can be retrieved via a query as follows: 
-
-    public void onClickQuery(View view) {   
-
-        Uri cpUriQuery = Uri.parse(AUTHORITY_FILE +"/com.ztestapp.clientapplication");
-        boolean persist = true;
-        String selection = "target_path = '/com.ztestapp.clientapplication' AND " + "data_persist_required = '" + persist + "';
-
-        Cursor cursor = null;
-
-        try {
-            cursor = getContentResolver().query(cpUriQuery, null, selection, null, null);
-
-        } 
-        catch (Exception e) {
-            Log.d(TAG, "Error: "+ e.getMessage());
-        }
-
-        try {
-            if(cursor !=null && cursor.moveToFirst()){
-                StringBuilder strBuild = new StringBuilder();
-                String uriString = null;
-                while (!cursor.isAfterLast()) {
-
-                    uriString = cursor.getString (cursor.getColumnIndex("secure_file_uri"));
-                    String fileName = cursor.getString(cursor.getColumnIndex("secure_file_name"));
-                    String isDir = cursor.getString(cursor.getColumnIndex("secure_is_dir"));
-                    String crc = cursor.getString(cursor.getColumnIndex("secure_file_crc"));
-                    strBuild.append("\n");
-                    strBuild.append(uriString).append("\n").append(fileName).append("\n").append(isDir).append("\n").append(crc);
-                cursor.moveToNext();
-                }
-            }
-        } 
-
-        catch (Exception e) {
-            Log.d(TAG, "Query data error: " + e.getMessage());
-        } 
-
-        finally {
-            if(cursor != null){
-                cursor.close();
-            }
-        }
-    }
-
--->
-
 <h4 id="implementabroadcastreceiverinthetargetapptoreceivethefiledeploymentnotification" class="anchor"><a class="heading-anchor" href="#implementabroadcastreceiverinthetargetapptoreceivethefiledeploymentnotification"><span></span></a>Implement a broadcast receiver in the target app to receive the file deployment notification:</h4>
 
-<p>Modify the manifest file:</p>
+<p>Add to the manifest file:</p>
 
 <pre class="prettyprint"><code>&lt;receiver android:name=".FileNotificationReceiver"&gt;
     &lt;intent-filter &gt;
@@ -445,20 +426,13 @@ the broadcast intent to retrieve the response and determine whether the deployme
 }
 </code></pre>
 
-<h3 id="targetapplaunchedafterfiledeployment" class="anchor"><a class="heading-anchor" href="#targetapplaunchedafterfiledeployment"><span></span></a>Target App Launched After File Deployment</h3>
+<h3 id="launchedafterdeployment" class="anchor"><a class="heading-anchor" href="#launchedafterdeployment"><span></span></a>Launched After Deployment</h3>
 
-<p>If the target app is launched after the shared file is deployed, the target app can query for the deployed file through SSM via the Content Provider interface.</p>
+<p>If the target app is launched after the shared file is deployed, the target app can query for the presence of the deployed file through SSM via the Content Provider interface.</p>
 
-<h4 id="queryadeployedfile" class="anchor"><a class="heading-anchor" href="#queryadeployedfile"><span></span></a>Query a deployed file:</h4>
+<p>See <a href="#queryfile">Query File</a> for more information.</p>
 
-<p>In the manifest file, add the Query provider for apps targeting API Level 30 (Android 11) and above:</p>
-
-<pre class="prettyprint"><code>&lt;queries&gt;
-    &lt;provider android:authorities="com.zebra.securestoragemanager.securecontentprovider"/&gt;
-&lt;/queries&gt;
-</code></pre>
-
-<p>To query the deployed file, the AUTHORITY and <em>selection</em> criteria must be provided. The <em>selection</em> must have the file path and persistence must be defined (true/false). The SSM response returns the cursor containing the following information:</p>
+<p>When the query is made to SSM for the deployed files, all the files deployed for the target app are returned in the Content Provider cursor containing the following information:</p>
 
 <table class="facelift" align="center" style="width:100%" border="1" padding="5px">
   <tbody><tr bgcolor="#dce8ef">
@@ -481,19 +455,19 @@ the broadcast intent to retrieve the response and determine whether the deployme
 
  <tr>
     <td>secure_is_dir</td>
-    <td>Whether the file uri points to a directory or file. </td>
+    <td>Determines whether the file URI points to a directory or file. If false, the URI points to a file.</td>
     <td>True or false</td>
  </tr>
 
  <tr>
     <td>secure_file_crc</td>
-    <td>MD5 Check sum of the file. This can be checked by applications to see whether they already process this file or not.</td>
+    <td>MD5 checksum of the file. This can be checked by an application to determine whether or not the file has been processed.</td>
     <td>N/A</td>
  </tr>
 
  <tr>
     <td>secure_file_persist</td>
-    <td>Flag to notify whether or not the file persists</td>
+    <td>Flag to determine whether or not the file is persistent.</td>
     <td>True or false</td>
  </tr>
 
@@ -501,57 +475,51 @@ the broadcast intent to retrieve the response and determine whether the deployme
 
 <hr>
 
-<h2 id="sharedfileaccess" class="anchor"><a class="heading-anchor" href="#sharedfileaccess"><span></span></a>Shared File Access</h2>
+<h2 id="consumedeployedfile" class="anchor"><a class="heading-anchor" href="#consumedeployedfile"><span></span></a>Consume Deployed File</h2>
 
-<h3 id="updatedeleteorquerydeployedfile" class="anchor"><a class="heading-anchor" href="#updatedeleteorquerydeployedfile"><span></span></a>Update, Delete, or Query Deployed File</h3>
+<p>This section discusses the operations available for the target app to consume the deployed file. If the target app is not registered to receive the intent from SSM when a file is deployed (see <a href="#targetapplaunchedbeforedeployment">Target App Launched Before Deployment</a>), the first step is to query the file to verify it exists on the device, before performing any other operations. </p>
 
-<p>To update, delete, or query the deployed file, add the following permissions in the manifest file:</p>
+<h3 id="queryfile" class="anchor"><a class="heading-anchor" href="#queryfile"><span></span></a>Query File</h3>
 
-<pre class="prettyprint"><code>&lt;uses-permission android:name="com.zebra.securestoragemanager.securecontentprovider.PERMISSION.WRITE"/&gt;
-&lt;uses-permission android:name="com.zebra.securestoragemanager.securecontentprovider.PERMISSION.READ"/&gt;
-</code></pre>
+<p>To query the file, the authority and target information (in string format) must be provided. The target must have the file path and persistent flag (true/false) defined. When the query is made to SSM for the deployed files, all the files deployed for the target application are retuned in the Content Provider cursor. </p>
 
-<h3 id="retrievefolderfile" class="anchor"><a class="heading-anchor" href="#retrievefolderfile"><span></span></a>Retrieve Folder/File</h3>
-
-<p>Allow AUTHORITY:</p>
+<p>Allow authority is required:</p>
 
 <pre class="prettyprint"><code>private String AUTHORITY_FILE = "content://com.zebra.securestoragemanager.securecontentprovider/file/*"
 Uri cpUriQuery = Uri.parse(AUTHORITY_FILE);
 </code></pre>
 
-<p>Add "selection" statement to retrieve the folder, subfolders and files present in the target application:</p>
+<p><strong>To query all the files deployed for the target application,</strong> add a string that contains the target application package name (target_app_package) and file persistence status (data_persist_required): </p>
 
-<pre class="prettyprint"><code>String selection = "target_app_package = 'com.ztestapp.clientapplication' AND data_persist_required = 'true'";
+<pre class="prettyprint"><code>String selection = "target_app_package = '" + context.getPackagename() + "'" +" AND data_persist_required = 'true'";
 </code></pre>
 
-<p>Add "selection" statement to retrieve the folder, subfolders and files present in the target application path:</p>
+<p><strong>To query a specific file or folder,</strong> add a string that contains the target_path attribute set (packagename/folder/file) and the file persistence status to retrieve the subfolder folder and files present in the specified target path:</p>
 
-<pre class="prettyprint"><code>String selection = "target_path = '/com.ztestapp.clientapplication/folder' AND data_persist_required = 'true'";
+<pre class="prettyprint"><code>String selection = "target_path = '" + context.getPackageName()+"/folder/" + "' AND  data_persist_required = 'true'";
 </code></pre>
 
-<h3 id="retrievedeployedfilefromgiventargetapppath" class="anchor"><a class="heading-anchor" href="#retrievedeployedfilefromgiventargetapppath"><span></span></a>Retrieve Deployed File from Given Target App Path</h3>
+<p>Sample code to query a specific file or folder:</p>
 
-<p>Allow AUTHORITY: </p>
+<pre class="prettyprint"><code>private String AUTHORITY_FILE = "content://com.zebra.securestoragemanager.securecontentprovider/file/*";
 
-<pre class="prettyprint"><code>private String AUTHORITY_FILE = "content://com.zebra.securestoragemanager.securecontentprovider/files";
-Uri cpUriQuery = Uri.parse(AUTHORITY_FILE +"/com.ztestapp.clientapplication");
-String selection = "target_path = '/com.ztestapp.clientapplication' AND data_persist_required = 'true'";
-</code></pre>
+public void queryFiles(Context context) {
 
-<p>Sample code to query a deployed file:</p>
-
-<pre class="prettyprint"><code>public void onClickQuery(View view) {        
+    Uri cpUriQuery = Uri.parse(AUTHORITY_FILE);
+    String selection = "target_path = '" + context.getPackageName()+"/folder/" + "' AND  data_persist_required = 'true'";
 
     Cursor cursor = null;
     try {
-        cursor = getContentResolver().query(cpUriQuery, null, selection, null, null);
+        cursor = context.getContentResolver().query(cpUriQuery, null, selection, null, null);
+
     } catch (Exception e) {
         Log.e(TAG, "Error: "+ e.getMessage());
     }
+
     try {
         if(cursor !=null &amp;&amp; cursor.moveToFirst()){
 
-            StringBuilder strBuilder = new StringBuilder();
+            StringBuilder strBuild = new StringBuilder();
             String uriString = null;
             while (!cursor.isAfterLast()) {
 
@@ -559,8 +527,11 @@ String selection = "target_path = '/com.ztestapp.clientapplication' AND data_per
                 String fileName = cursor.getString(cursor.getColumnIndex("secure_file_name"));
                 String isDir = cursor.getString(cursor.getColumnIndex("secure_is_dir"));
                 String crc = cursor.getString(cursor.getColumnIndex("secure_file_crc"));
-                strBuilder.append("\n");
-                strBuilder.append(uriString).append("\n").append(fileName).append("\n").append(isDir).append("\n").append(crc);
+
+                strBuild.append(uriString).append("\n").
+                        append(fileName).append("\n").
+                        append(isDir).append("\n").append(crc);
+
                 cursor.moveToNext();
             }
         }
@@ -574,83 +545,175 @@ String selection = "target_path = '/com.ztestapp.clientapplication' AND data_per
 }
 </code></pre>
 
-<h3 id="readdeployedfileusingcontenturi" class="anchor"><a class="heading-anchor" href="#readdeployedfileusingcontenturi"><span></span></a>Read Deployed File Using Content URI</h3>
+<h3 id="readfile" class="anchor"><a class="heading-anchor" href="#readfile"><span></span></a>Read File</h3>
 
-<p>The resulting cursor provides the URI and <em>isDir</em>, which determines if the URI corresponds to a folder or file:</p>
-
-<ul>
-<li>If the URI corresponds with a file, the data from the file can be read using the URI since SSM provides the URI read permission to a calling application package based on the signature authentication. </li>
-
-<li>If the URI corresponds with a folder, use the subfolder path as the target path in the selection and send the query again to get the file URI inside the folder. Repeat this process until the file URI is obtained.</li>
-</ul>
+<p>The resulting cursor from the file query provides the URI and secure_is_dir, which determines if the URI corresponds to a folder or file. If the URI points to a file, the data from the file can be read using the URI since SSM provides the URI read permission to the target application package based on the signature authentication. </p>
 
 <p>To read content from the file URI, use Content Resolver:</p>
 
-<pre class="prettyprint"><code>private readFile(Context context , String uriString) throws IOException {
-
-    InputStream inputStream = context.getContentResolver().openInputStream(uriString.parse(uriString));
+<pre class="prettyprint"><code>private readFile(Context context , String fileUri) throws IOException {
+    InputStream inputStream = context.getContentResolver().openInputStream(Uri.parse(fileUri));
     InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
     BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-    String strBuilder = new StringBuilder();
+    StringBuilder strBuilder = new StringBuilder();
     String line;
-
-    while((line = bufferedReader.readLine() != null)) {
+    while(null != (line = bufferedReader.readLine())) {
         strBuilder.append(line);
     }
-    Log.i(TAG, “full content = ” + strBuilder.toString());
+    // To Something with the file content
 }
 </code></pre>
 
-<h3 id="deleteadeployedfile" class="anchor"><a class="heading-anchor" href="#deleteadeployedfile"><span></span></a>Delete a Deployed File</h3>
+<h3 id="deletefile" class="anchor"><a class="heading-anchor" href="#deletefile"><span></span></a>Delete File</h3>
 
-<p>Deployed files can be deleted after use or when the file is no longer needed. This is achieved by using the standard delete() API from the Android ContentResolver class. SSM Authority (see the previous section) and <em>whereClause</em> are required. Provide the file path in <em>whereClause</em> as <i>target_path</i> of the deployed file. The following sample code uses <em>com.ztestapp.clientapplication</em> as a sample target app package name:</p>
+<p>Deployed files can be deleted after use or when the file is no longer required. This can be achieved by using the standard Android delete() API for data - Authority and whereClause are required. Provide the file path in the where clause as the target_path of the deployed file.</p>
 
-<pre class="prettyprint"><code>Uri cpUriFileUpdate = Uri.parse(AUTHORITY_FILE +"/com.ztestapp.clientapplication");
+<p>Allow Authority is required: </p>
 
-String whereClause = "target_path = '/com.ztestapp.clientapplication' AND data_persist_required = 'false'";
-try {
-    int deleteStatus = getContentResolver().delete(cpUriFileUpdate, whereClause , null);
-    Log.i(TAG, “File deleted status = ” + deleteStatus);
-} 
-catch(Exception e) {
-    Log.e(TAG, “Delete file error =  ” + e.getMessage());
+<pre class="prettyprint"><code>private String AUTHORITY_FILE = "content://com.zebra.securestoragemanager.securecontentprovider/files";
+Uri cpUriFileUpdate = Uri.parse(AUTHORITY_FILE +"/”+context.getPackagename());
+</code></pre>
+
+<p>A string containing containing the file path (packagename/folder/file) and value for data persistence is required: </p>
+
+<pre class="prettyprint"><code>String selection = "target_path = '" + context.getPackageName() + "' AND  data_persist_required = 'true'";
+</code></pre>
+
+<p>Sample code:</p>
+
+<pre class="prettyprint"><code>private String AUTHORITY_FILE = "content://com.zebra.securestoragemanager.securecontentprovider/files";
+
+private void deleteFile(Context context) {
+    Uri cpUriFileUpdate = Uri.parse(AUTHORITY_FILE +"/"+context.getPackageName());
+
+    String selection = "target_path = '/context.getPackagename()' AND data_persist_required = 'false'";
+
+    try {
+        int deleteStatus = context.getContentResolver().delete(cpUriFileUpdate, selection , null);
+        Log.i(TAG, "File deleted status = " + deleteStatus);
+    } 
+    catch (Exception e) {
+        Log.e(TAG, "Delete file error = " + e.getMessage());
+    }
 }
 </code></pre>
 
-<h3 id="updateadeployedfile" class="anchor"><a class="heading-anchor" href="#updateadeployedfile"><span></span></a>Update a Deployed File</h3>
+<!-- 
 
-<p>To update a shared deployed file, use the standard Android update() API. The content values can be passed with the file URI as per the data_value. This passes data into the file, replacing the entire content of the file. </p>
+### Retrieve Deployed File from Given Target App Path
 
-<p>Sample code to update a deployed file:</p>
+Allow AUTHORITY: 
 
-<pre class="prettyprint"><code>Uri cpUriFileUpdate = Uri.parse(AUTHORITY_FILE +"/com.ztestapp.clientapplication");
-String sourcePathContent = “/sdcard/1.txt”;
-String filePathToUpdate = “/com.ztestapp.clientapplication/1.txt”;
+    private String AUTHORITY_FILE = "content://com.zebra.securestoragemanager.securecontentprovider/files";
+    Uri cpUriQuery = Uri.parse(AUTHORITY_FILE +"/com.ztestapp.clientapplication");
+    String selection = "target_path = '/com.ztestapp.clientapplication' AND data_persist_required = 'true'";
 
-ContentValues values = new ContentValues();
-values.put(COLUMN_TARGET_APP_PACKAGE, "{\"pkgs_sigs\":[{\"pkg\":\"com.ztestapp.clientapplication\", \"sig\":\"signature_string\"}]}");
-values.put(COLUMN_DATA_NAME, sourcePathContent);
-values.put(COLUMN_DATA_VALUE, filePathToUpdate);
-values.put(COLUMN_DATA_PERSIST_REQUIRED,"true");
-values.put(COLUMN_MULTI_INSTANCE_REQUIRED,"false");
-try {
-    int rowNumbers = getContentResolver().update(cpUriFileUpdate, values, null , null);
-    Log.i(TAG, “Files Updated = ” + rowNumbers);
-} 
-catch(Exception e) {
-    Log.e(TAG, “file update error = ” + e.getMessage());
-}
-</code></pre>
+Sample code to query a deployed file:
 
-<p>Note: </p>
+    public void onClickQuery(View view) {        
 
-<ul>
-<li>COLUMN_DATA_NAME = updated content source</li>
+        Cursor cursor = null;
+        try {
+            cursor = getContentResolver().query(cpUriQuery, null, selection, null, null);
+        } catch (Exception e) {
+            Log.e(TAG, "Error: "+ e.getMessage());
+        }
+        try {
+            if(cursor !=null && cursor.moveToFirst()){
 
-<li>COLUMN_DATA_VALUE = file path to be updated</li>
-</ul>
+                StringBuilder strBuilder = new StringBuilder();
+                String uriString = null;
+                while (!cursor.isAfterLast()) {
 
-<p><br></p>
+                    uriString = cursor.getString (cursor.getColumnIndex("secure_file_uri"));
+                    String fileName = cursor.getString(cursor.getColumnIndex("secure_file_name"));
+                    String isDir = cursor.getString(cursor.getColumnIndex("secure_is_dir"));
+                    String crc = cursor.getString(cursor.getColumnIndex("secure_file_crc"));
+                    strBuilder.append("\n");
+                    strBuilder.append(uriString).append("\n").append(fileName).append("\n").append(isDir).append("\n").append(crc);
+                    cursor.moveToNext();
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Query data error: " + e.getMessage());
+        } finally {
+            if(cursor != null){
+                cursor.close();
+            }
+        }
+    }
+
+### Read Deployed File Using Content URI
+
+The resulting cursor provides the URI and _isDir_, which determines if the URI corresponds to a folder or file:
+* If the URI corresponds with a file, the data from the file can be read using the URI since SSM provides the URI read permission to a calling application package based on the signature authentication. 
+* If the URI corresponds with a folder, use the subfolder path as the target path in the selection and send the query again to get the file URI inside the folder. Repeat this process until the file URI is obtained.
+
+To read content from the file URI, use Content Resolver:
+
+    private readFile(Context context , String uriString) throws IOException {
+
+        InputStream inputStream = context.getContentResolver().openInputStream(uriString.parse(uriString));
+        InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+        BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+        String strBuilder = new StringBuilder();
+        String line;
+
+        while((line = bufferedReader.readLine() != null)) {
+            strBuilder.append(line);
+        }
+        Log.i(TAG, “full content = ” + strBuilder.toString());
+    }
+
+### Delete a Deployed File
+
+Deployed files can be deleted after use or when the file is no longer needed. This is achieved by using the standard delete() API from the Android ContentResolver class. SSM Authority (see the previous section) and _whereClause_ are required. Provide the file path in _whereClause_ as <i>target_path</i> of the deployed file. The following sample code uses _com.ztestapp.clientapplication_ as a sample target app package name:
+
+    Uri cpUriFileUpdate = Uri.parse(AUTHORITY_FILE +"/com.ztestapp.clientapplication");
+
+    String whereClause = "target_path = '/com.ztestapp.clientapplication' AND data_persist_required = 'false'";
+    try {
+        int deleteStatus = getContentResolver().delete(cpUriFileUpdate, whereClause , null);
+        Log.i(TAG, “File deleted status = ” + deleteStatus);
+    } 
+    catch(Exception e) {
+        Log.e(TAG, “Delete file error =  ” + e.getMessage());
+    }
+
+
+### Update a Deployed File
+
+To update a shared deployed file, use the standard Android update() API. The content values can be passed with the file URI as per the data_value. This passes data into the file, replacing the entire content of the file. 
+
+Sample code to update a deployed file:
+
+    Uri cpUriFileUpdate = Uri.parse(AUTHORITY_FILE +"/com.ztestapp.clientapplication");
+    String sourcePathContent = “/sdcard/1.txt”;
+    String filePathToUpdate = “/com.ztestapp.clientapplication/1.txt”;
+
+    ContentValues values = new ContentValues();
+    values.put(COLUMN_TARGET_APP_PACKAGE, "{\"pkgs_sigs\":[{\"pkg\":\"com.ztestapp.clientapplication\", \"sig\":\"signature_string\"}]}");
+    values.put(COLUMN_DATA_NAME, sourcePathContent);
+    values.put(COLUMN_DATA_VALUE, filePathToUpdate);
+    values.put(COLUMN_DATA_PERSIST_REQUIRED,"true");
+    values.put(COLUMN_MULTI_INSTANCE_REQUIRED,"false");
+    try {
+        int rowNumbers = getContentResolver().update(cpUriFileUpdate, values, null , null);
+        Log.i(TAG, “Files Updated = ” + rowNumbers);
+    } 
+    catch(Exception e) {
+        Log.e(TAG, “file update error = ” + e.getMessage());
+    }
+
+
+
+Note: 
+* COLUMN_DATA_NAME = updated content source
+* COLUMN_DATA_VALUE = file path to be updated
+
+<br />
+
+-->
 
 <!-- 
 
