@@ -231,12 +231,12 @@
 <ul>
 <li><strong>StageNow -</strong> For administrators to deploy files for use by a specific target apps, use Zebra’s <a href="/stagenow">StageNow</a> tool. This is a standard method to overcome <a href="https://developer.android.com/about/versions/11/privacy/storage">scoped storage</a> restrictions enforced in Android 11 or higher. </li>
 
-<li><strong>Enterprise Mobility Management (EMM) -</strong> For administrators to deploy files for use by a specific target app via an EMM for large scale deployments, use <a href="/oemconfig/latest/mc/">OEMConfig File Management (Zebra Managed Configuration)</a>. </li>
+<li><strong>Enterprise Mobility Management (EMM) -</strong> For administrators to deploy files for use by a specific target app via an EMM for large scale deployments, use StageNow and <a href="/oemconfig/latest/mc/">File Management (Zebra Managed Configuration)</a> from OEMConfig. </li>
 
-<li><strong>App file sharing -</strong> An app that is sharing files can programmatically store the shared file in SSM to be accessed only by the intended target app. </li>
+<li><strong>App file sharing -</strong> An app that is sharing files can programmatically store the shared file in <a href="../use">SSM</a> to be accessed only by the intended target app. </li>
 </ul>
 
-<p>After the shared file is deployed, developers can write their own app (target app) to consume the shared file using File Provider and Content Provider interfaces exposed via Secure Storage Manager (SSM).</p>
+<p>After the shared file is deployed, developers can write their own app (target app) to consume the shared file using File Provider and <a href="/api">Content Provider</a> interfaces exposed via Secure Storage Manager (SSM).</p>
 
 <hr>
 
@@ -267,7 +267,7 @@
 
 <h2 id="filedeployment" class="anchor"><a class="heading-anchor" href="#filedeployment"><span></span></a>File Deployment</h2>
 
-<p>Any file being shared, such as a configuration file, can be deployed to devices and shared securely to specific targeted applications (target app) for access. For large scale deployments, creating a StageNow profile is a prerequisite for using EMM.</p>
+<p>Any shared file can be deployed to devices and shared securely to specific target applications for access. For large scale deployments, creating a StageNow profile is a prerequisite for using EMM.</p>
 
 <h3 id="stagenow" class="anchor"><a class="heading-anchor" href="#stagenow"><span></span></a>StageNow</h3>
 
@@ -337,6 +337,14 @@ The signature must be in Base64 string format, which can be obtained by using <a
 </li>
 </ol>
 
+<h3 id="emm" class="anchor"><a class="heading-anchor" href="#emm"><span></span></a>EMM</h3>
+
+<p>For large scale deployments, administrators use <a href="#stagenow">StageNow</a> to generate the XML (follow the procedure above). Then, send the XML using <a href="/oemconfig/latest/mc/">File Management (Zebra Managed Configuration)</a> from OEMConfig for consumption by the EMM. </p>
+
+<h3 id="appfilesharing" class="anchor"><a class="heading-anchor" href="#appfilesharing"><span></span></a>App File Sharing</h3>
+
+<p>Developers can include routines in their app (target app) to programmatically store the shared file in <a href="../use">SSM</a> to be accessed only by this intended target app.</p>
+
 <hr>
 
 <h2 id="targetapp" class="anchor"><a class="heading-anchor" href="#targetapp"><span></span></a>Target App</h2>
@@ -345,7 +353,7 @@ The signature must be in Base64 string format, which can be obtained by using <a
 
 <h3 id="launchedbeforedeployment" class="anchor"><a class="heading-anchor" href="#launchedbeforedeployment"><span></span></a>Launched Before Deployment</h3>
 
-<p>After file deployment, if the target app is already running on the device, SSM broadcasts an explicit intent to notify the target app. The target app must register for the broadcast receiver to receive this intent and process the intent extras to retrieve the file information. SSM implemented a File Provider, which generates the content URIs for the file. The file URI provides access to the file and read/write permissions. The intent contains information to access the deployed file.</p>
+<p>If the target app is already running on the device when the shared file is deployed, SSM broadcasts an explicit intent to notify the target app. The target app must register for the broadcast receiver to receive this intent and process the intent extras to retrieve the file information. SSM implemented a File Provider, which generates the content URIs for the file. The file URI provides access to the file and read/write permissions. The intent contains information to access the deployed file.</p>
 
 <p>Intent extras:</p>
 
@@ -428,11 +436,9 @@ The signature must be in Base64 string format, which can be obtained by using <a
 
 <h3 id="launchedafterdeployment" class="anchor"><a class="heading-anchor" href="#launchedafterdeployment"><span></span></a>Launched After Deployment</h3>
 
-<p>If the target app is launched after the shared file is deployed, the target app can query for the presence of the deployed file through SSM via the Content Provider interface.</p>
+<p>If the target app is launched after the shared file is deployed, the target app can query the deployed file through SSM via the Content Provider interface. If there are multiple files deployed for the target app, all the files are returned in the Content Provider cursor. </p>
 
-<p>See <a href="#queryfile">Query File</a> for more information.</p>
-
-<p>When the query is made to SSM for the deployed files, all the files deployed for the target app are returned in the Content Provider cursor containing the following information:</p>
+<p>The Content Provider cursor contains the following information:</p>
 
 <table class="facelift" align="center" style="width:100%" border="1" padding="5px">
   <tbody><tr bgcolor="#dce8ef">
@@ -473,11 +479,15 @@ The signature must be in Base64 string format, which can be obtained by using <a
 
 </tbody></table>
 
+<p><br></p>
+
+<p>See <a href="#queryfile">Query File</a> for information on implementation.</p>
+
 <hr>
 
 <h2 id="consumedeployedfile" class="anchor"><a class="heading-anchor" href="#consumedeployedfile"><span></span></a>Consume Deployed File</h2>
 
-<p>This section discusses the operations available for the target app to consume the deployed file. If the target app is not registered to receive the intent from SSM when a file is deployed (see <a href="#targetapplaunchedbeforedeployment">Target App Launched Before Deployment</a>), the first step is to query the file to verify it exists on the device, before performing any other operations. </p>
+<p>This section discusses the operations available for the target app to consume the deployed file. If the target app is not registered to receive the intent from SSM when a file is deployed (see <a href="#targetapplaunchedbeforedeployment">Target App Launched Before Deployment</a>), the first step is to <a href="#queryfile">query</a> the file to verify it exists on the device, before performing any other operations. </p>
 
 <h3 id="queryfile" class="anchor"><a class="heading-anchor" href="#queryfile"><span></span></a>Query File</h3>
 
@@ -547,7 +557,7 @@ public void queryFiles(Context context) {
 
 <h3 id="readfile" class="anchor"><a class="heading-anchor" href="#readfile"><span></span></a>Read File</h3>
 
-<p>The resulting cursor from the file query provides the URI and secure_is_dir, which determines if the URI corresponds to a folder or file. If the URI points to a file, the data from the file can be read using the URI since SSM provides the URI read permission to the target application package based on the signature authentication. </p>
+<p>The resulting cursor from the file query provides the URI and <i>secure_is_dir,</i> which determines if the URI corresponds to a folder or file. If the URI points to a file, the data from the file can be read using the URI since SSM provides the URI read permission to the target application package based on the signature authentication. </p>
 
 <p>To read content from the file URI, use Content Resolver:</p>
 
@@ -566,7 +576,7 @@ public void queryFiles(Context context) {
 
 <h3 id="deletefile" class="anchor"><a class="heading-anchor" href="#deletefile"><span></span></a>Delete File</h3>
 
-<p>Deployed files can be deleted after use or when the file is no longer required. This can be achieved by using the standard Android delete() API for data - Authority and whereClause are required. Provide the file path in the where clause as the target_path of the deployed file.</p>
+<p>Deployed files can be deleted after use or when the file is no longer required. This is achieved by using the standard Android data API delete(). </p>
 
 <p>Allow Authority is required: </p>
 
