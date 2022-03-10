@@ -322,8 +322,8 @@ _Click images to enlarge._
 </tr>
 <tr>
 <th>Specification</th>
-<th>WS50 Alone</th>
-<th>WS50 + Mount</th>
+<th>WS50 Wrist (device)</th>
+<th>WS50 Wrist (with mount)</th>
 <th>WS50 Converged</th>
 </tr>
 
@@ -336,9 +336,9 @@ _Click images to enlarge._
 
 <tr>
 <td><b>Weight</b></td>
-<td>2.89 oz. (82g)</td>
-<td>3.77 oz. (107g)</td>
-<td>4.48oz. (127g)</td>
+<td>2.47 oz. (70g)</td>
+<td>3.95 oz. (112g)</td>
+<td>4.73oz. (134g)</td>
 </tr>
 
 
@@ -387,7 +387,7 @@ _Click images to enlarge._
 
 <li><strong>Modalities</strong>: Two-finger Trigger Mount, Back-of-Hand (BoH), Wrist</li>
 
-<li><strong>Sensors</strong>: 3-axis accelerometer, gyroscope, ambient light, proximity (optional)</li>
+<li><strong>Sensors</strong>: 3-axis accelerometer, MEMS gyroscope, ambient light, proximity (optional)</li>
 
 <li><strong>Radios</strong>: Bluetooth 4.2 BLE, NFC, Wi-Fi 802.11 a/b/g/n/ac/d/h/i/r</li>
 
@@ -395,9 +395,16 @@ _Click images to enlarge._
 
 <li><strong>Camera</strong>: 13 megapixel </li>
 
-<li><strong>Programmable physical buttons</strong>: four (4)</li>
+<li><strong>Physical buttons</strong>: 
 
-<li><strong>Charging</strong>: USB-C Cable Cup, Cradle, multi-slot "toaster" cradle</li>
+
+<ul>
+<li><strong>Wrist</strong>: four (programmable)</li>
+
+<li><strong>Converged</strong>: trigger plus two (all programmable)</li></ul>
+</li>
+
+<li><strong>Charging</strong>: USB-C cable cup, cradle, multi-slot "toaster" cradle</li>
 
 <li><strong>LEDs</strong>: four (4): 1-charging, 1-notification, 2-scan/programmable <a href="#aidlapis">via AIDL</a></li>
 
@@ -405,11 +412,17 @@ _Click images to enlarge._
 
 
 <ul>
-<li>Up to 6-foot (1.8 m) drop to concrete (in mount)</li>
+<li>Up to 6-foot (1.8 m) drop to concrete (Converged)</li>
 
-<li>1000 tumbles at 19.7 inches (0.5 m)</li>
+<li>Up to 4-foot (1.2 m) drop to concrete (Wrist)</li>
 
-<li>Operating temperature -10˚C to 50˚C</li>
+<li>2000 tumbles at 19.7 inches (0.5 m) (Converged)</li>
+
+<li>1000 tumbles at 19.7 inches (0.5 m) (Wrist)</li>
+
+<li>Operating temperature 14˚F to 122˚F (-10˚C to 50˚C)</li>
+
+<li>Humidity 5% to 95% non-condensing </li>
 
 <li>IP65 rating</li></ul>
 </li>
@@ -709,6 +722,8 @@ _Click images to enlarge._
 <h4 id="tocontrolws50leds" class="anchor"><a class="heading-anchor" href="#tocontrolws50leds"><span></span></a>To control WS50 LEDs:</h4>
 
 <ol>
+<li><p><a href="Zebra_iLed.aidl">Download</a> and add the <code>.aidl</code> file (similar to that shown below) into the Android Studio project.  </p></li>
+
 <li><p>Bind the app to the LED service: </p>
 
 <pre class="prettyprint"><code>
@@ -718,26 +733,78 @@ context.bindService(intent, ledConnection, Context.BIND_AUTO_CREATE);
 
 <li><p>Interface with, specify and control the desired LED: </p>
 
-<pre class="prettyprint"><code>
-package com.zebra.led;
-// Interface for apps to control device LEDs:
-interface ILed 
-{
-const int LED_LEFT = 2; // WS50 left LED
-const int LED_RIGHT = 3; // WS50 right LED
+<pre class="prettyprint"><code>// Copyright (c) 2020-2021 Zebra Technologies Corporation and/or its affiliates. All rights reserved.
 
-// Set LED to solid color:
-void setLed(int ledId, int color);  
-}
+package com.zebra.led;
+
+//
+// Interface for apps to control device LEDs. Use this interface when you wish to control LEDs
+// beyond what is available in Android's Notification API; for example, to light an LED without
+// showing an on-screen notification, or to specify which LED when there is more than one (such as
+// on the WS50).
+// 
+
+interface ILed
+{
+    // LED id for a single app-controlled LED (available on Sharp RZ-H270, red and green only)
+    const int LED_USER = 1;
+
+<pre><code>// LED id for the left LED on devices with multiple LEDs (available on Zebra WS50)
+const int LED_LEFT = 2;
+
+// LED id for the right LED on devices with multiple LEDs (available on Zebra WS50) 
+const int LED_RIGHT = 3;
+
+//
+// Sets an LED to a solid color. LED and color availability varies by product.
+//
+// @param ledID the LED to control, one of the LED_ constants
+// @param color the color to set, in standard Android ARGB format. The opacity (A) is
+//              ignored. Use Color.TRANSPARENT (0) to turn the LED off.
+// @throws IllegalArgumentException the LED is not available to control on this product, or the
+//                                  the given color is not supported for the LED
+//
+void setLed(int ledId, int color);
+
+//
+// Sets an LED to a blinking color. LEDs, color availability, and blinking support varies by
+// product.
 
 // Other parameters:
 //
 // @param ledID - the LED to control, one of the LED_ constants
 // @param color - the color to set, in standard Android ARGB format. The opacity (A) is ignored. 
 // Color.TRANSPARENT (0) - turns the LED off
-// @throws IllegalArgumentException - the LED is not available or given color is not supported
+// @throws IllegalArgumentException - LED not available or given color not supported
+void setLedBlinking(int ledId, int color); // NOT supported on WS50
+</code></pre>
+
+}
 </code></pre></li>
 </ol>
+
+<!-- 
+2. Interface with, specify and control the desired LED: 
+
+        :::xml
+        package com.zebra.led;
+        // Interface for apps to control device LEDs:
+        interface ILed 
+        {
+        const int LED_LEFT = 2; // WS50 left LED
+        const int LED_RIGHT = 3; // WS50 right LED
+
+        // Set LED to solid color:
+        void setLed(int ledId, int color);  
+        }
+
+        // Other parameters:
+        //
+        // @param ledID - the LED to control, one of the LED_ constants
+        // @param color - the color to set, in standard Android ARGB format. The opacity (A) is ignored. 
+        // Color.TRANSPARENT (0) - turns the LED off
+        // @throws IllegalArgumentException - the LED is not available or given color is not supported
+-->
 
 <p><i class="fa fa-exclamation-triangle" aria-hidden="true" style="color:#FFA500;"></i> <strong>The WS50 LEDs support only solid illumination</strong>; "blinking" or "flashing" of the LEDs is not supported.</p>
 
