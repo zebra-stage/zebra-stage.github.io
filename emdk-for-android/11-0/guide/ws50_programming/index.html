@@ -399,14 +399,14 @@ _Click images to enlarge._
 
 
 <ul>
-<li><strong>Wrist</strong>: four (programmable)</li>
+<li><strong>Wrist</strong>: four (4, programmable)</li>
 
-<li><strong>Converged</strong>: trigger plus two (all programmable)</li></ul>
+<li><strong>Converged</strong>: two (2, programmable), plus trigger (programmable)</li></ul>
 </li>
 
 <li><strong>Charging</strong>: USB-C cable cup, cradle, multi-slot "toaster" cradle</li>
 
-<li><strong>LEDs</strong>: four (4): 1-charging, 1-notification, 2-scan/programmable <a href="#aidlapis">via AIDL</a></li>
+<li><strong>LEDs</strong>: four (4): 1-charging, 1-notification, 2-scan/programmable <a href="#ledcontrol">via AIDL</a></li>
 
 <li><strong>Durability</strong>: 
 
@@ -515,7 +515,7 @@ _Click images to enlarge._
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/m1diVY4Uzjc" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen=""></iframe>
 
-<p><strong>Zebra recommends using <a href="https://material.io/design/">Google Material Design</a></strong> tools and its <a href="https://material.io/design/introduction/#principles">design goals and principles</a> as a foundation for starting new apps. See the video above for a quick overview. Zebra also advises observing the guidelines below when building UI screens from scratch. </p>
+<p><strong>Zebra recommends using <a href="https://material.io/design/">Google Material Design</a></strong> tools and its <a href="https://material.io/design/guidelines-overview">design guidelines</a> as a foundation for starting new apps. See the video above for a quick overview. Zebra also advises observing the guidelines below when building UI screens from scratch. </p>
 
 <hr>
 
@@ -722,61 +722,83 @@ _Click images to enlarge._
 <h4 id="tocontrolws50leds" class="anchor"><a class="heading-anchor" href="#tocontrolws50leds"><span></span></a>To control WS50 LEDs:</h4>
 
 <ol>
-<li><p><a href="Zebra_iLed.aidl">Download</a> and add the <code>.aidl</code> file (similar to that shown below) into the Android Studio project.  </p></li>
+<li><p><a href="Zebra_iLed.aidl">Download</a> and add the <code>.aidl</code> file into the Android Studio project.  </p>
 
-<li><p>Bind the app to the LED service: </p>
+<p><img alt="image" style="height:200px" src="ws50_add_aidl.png">
+<br></p></li>
+</ol>
+
+<!-- 
+2. Bind the app to the LED service: 
+
+        :::java
+        Intent intent = new Intent().setComponent(new ComponentName("com.zebra.led", "com.zebra.led.LedService"));
+        context.bindService(intent, ledConnection, Context.BIND_AUTO_CREATE);
+ -->
+
+<ol>
+<li><p>Add the standard AIDL boilerplate code to connect with and disconnect from the Zebra LED service.<br><strong>Note the component name</strong> <code>com.zebra.led</code> in the sample code below:</p>
 
 <pre class="prettyprint"><code>
-Intent intent = new Intent().setComponent(new ComponentName("com.zebra.led", "com.zebra.led.LedService"));
-context.bindService(intent, ledConnection, Context.BIND_AUTO_CREATE);
-</code></pre></li>
+package com.mycompany.mysampleapp;
+//
+// ...imports go here...
+//
+public class MySampleActivity extends Activity {
+    private static final String TAG = "MySampleActivity"
+    private ILed mLedService = null;
 
-<li><p>Interface with, specify and control the desired LED: </p>
-
-<pre class="prettyprint"><code>// Copyright (c) 2020-2021 Zebra Technologies Corporation and/or its affiliates. All rights reserved.
-
-package com.zebra.led;
+<pre><code>@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    // ...
+</code></pre>
 
 //
-// Interface for apps to control device LEDs. Use this interface when you wish to control LEDs
-// beyond what is available in Android's Notification API; for example, to light an LED without
-// showing an on-screen notification, or to specify which LED when there is more than one (such as
-// on the WS50).
-// 
+// Connect to the AIDL interface for LED control:
+//
+    Intent intent = new Intent().setComponent(new ComponentName("com.zebra.led", "com.zebra.led.LedService"));
+        bindService(intent, ledConnection, Context.BIND_AUTO_CREATE);
+    }
 
-interface ILed
-{
-    // LED id for a single app-controlled LED (available on Sharp RZ-H270, red and green only)
-    const int LED_USER = 1;
+<pre><code>@Override
+protected void onDestroy()
+</code></pre>
 
-<pre><code>// LED id for the left LED on devices with multiple LEDs (available on Zebra WS50)
-const int LED_LEFT = 2;
-
-// LED id for the right LED on devices with multiple LEDs (available on Zebra WS50) 
-const int LED_RIGHT = 3;
+{         unbindService(ledConnection);         super.onDestroy();     }
 
 //
-// Sets an LED to a solid color. LED and color availability varies by product.
+// Monitor the connection to the LED service:
 //
-// @param ledID the LED to control, one of the LED_ constants
-// @param color the color to set, in standard Android ARGB format. The opacity (A) is
-//              ignored. Use Color.TRANSPARENT (0) to turn the LED off.
-// @throws IllegalArgumentException the LED is not available to control on this product, or the
-//                                  the given color is not supported for the LED
+    private final ServiceConnection ledConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+            mLedService = ILed.Stub.asInterface(iBinder);
+        }
+        @Override
+        public void onServiceDisconnected(ComponentName componentName)
+
+{             mLedService = null;         }
+    };
+    // ...
 //
-void setLed(int ledId, int color);
+// Call setLed to control the Left and Right LEDs:
+//
+    private void sampleLedOperations() {
 
 //
-// Sets an LED to a blinking color. LEDs, color availability, and blinking support varies by
-// product.
-
-// Other parameters:
+// Connection from bindService is asynchronous, so be sure we have a connection first:
 //
-// @param ledID - the LED to control, one of the LED_ constants
-// @param color - the color to set, in standard Android ARGB format. The opacity (A) is ignored. 
-// Color.TRANSPARENT (0) - turns the LED off
-// @throws IllegalArgumentException - LED not available or given color not supported
-void setLedBlinking(int ledId, int color); // NOT supported on WS50
+    if (mLedService == null) return;
+
+<pre><code>try {
+    mLedService.setLed(LED_LEFT, Color.WHITE);          // Sets the Left LED to white
+    mLedService.setLed(LED_RIGHT, Color.BLUE);          // Sets the Right LED to blue
+    mLedService.setLed(LED_LEFT, Color.TRANSPARENT);    // Turns off the Left LED
+} catch (RemoteException|IllegalArgumentException|UnsupportedOperationException e) {
+    Log.e(TAG,"Failed to set led. Error: "+ e);
+    Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
+}
 </code></pre>
 
 }
@@ -810,6 +832,60 @@ void setLedBlinking(int ledId, int color); // NOT supported on WS50
 
 <hr>
 
+<h2 id="aidlfile" class="anchor"><a class="heading-anchor" href="#aidlfile"><span></span></a>AIDL File</h2>
+
+<p>The Zebra <code>aidl</code> file shown below is =equivalent to the version available for <a href="Zebra_iLed.aidl">download</a> with slight changes to comments and formatting.  </p>
+
+<pre class="prettyprint"><code>    // Copyright (c) 2020-2022 Zebra Technologies Corporation and/or its affiliates. All rights reserved.
+
+    package com.zebra.led;
+
+    //
+    // Interface for apps to control device LEDs. Use this interface when you wish to control LEDs
+    // beyond what is available in Android's Notification API; for example, to light an LED without
+    // showing an on-screen notification, or to specify which LED when there is more than one (such as
+    // on the WS50).
+    // 
+
+    interface ILed
+    {
+    // LED id for a single app-controlled LED (available on Sharp RZ-H270, red and green only)
+        const int LED_USER = 1;
+
+    // LED id for the left LED on devices with multiple LEDs (available on Zebra WS50)
+        const int LED_LEFT = 2;
+
+    // LED id for the right LED on devices with multiple LEDs (available on Zebra WS50) 
+        const int LED_RIGHT = 3;
+
+    //
+    // Sets an LED to a solid color. LED and color availability varies by product.
+    //
+    // @param ledID the LED to control, one of the LED_ constants
+    // @param color the color to set, in standard Android ARGB format. The opacity (A) is
+    //              ignored. Use Color.TRANSPARENT (0) to turn the LED off.
+    // @throws IllegalArgumentException the LED is not available to control on this product, or the
+    //                                  the given color is not supported for the LED
+    //
+        void setLed(int ledId, int color);
+
+    //
+    // Sets an LED to a blinking color. LEDs, color availability, and blinking support varies by
+    // product.
+
+    // Other parameters:
+    //
+    // @param ledID - the LED to control, one of the LED_ constants
+    // @param color - the color to set, in standard Android ARGB format. The opacity (A) is ignored. 
+    // Color.TRANSPARENT (0) - turns the LED off
+    // @throws IllegalArgumentException - LED not available or given color not supported
+    //
+        void setLedBlinking(int ledId, int color); // NOT supported on WS50
+    }
+</code></pre>
+
+<hr>
+
 <h2 id="androidstudiowarning" class="anchor"><a class="heading-anchor" href="#androidstudiowarning"><span></span></a>Android Studio Warning</h2>
 
 <p>When connecting the WS50 device to a development host computer, Android Studio sometimes displays a message similar to that shown in the image below:</p>
@@ -826,113 +902,9 @@ void setLedBlinking(int ledId, int color); // NOT supported on WS50
 
 <hr>
 
-<!-- 
-### Input Alternatives
-
-To avoid manual text input through the SIP, implement drop-down "spinner" menus or "left-right navigators" whenever possible. Use the `setItemList` API to provide the list of items and the `getSelectedItem` API to get the text for the selected item text.
-
-<img alt="image" style="height:250px" src="spinner_LR_nav.png"/>
-_Click image to enlarge._
-
-#### To use input alternatives:
-
-1. Download the desired controls from the list below:<br>
-    [dropdown.aar](dropdown.aar) | Drop-down spinner<br>
-    [CustomSelectionView.aar](CustomSelectionView.aar) | Left-right navigator<br>
-2. **Import the code**: <br>
-**File->Project Structure -> “+" (plus sign in top-left corner) ->import .JAR/.AAR package -> [file name]**
-
-3. **Add control to layout .xml** as below:<br>
-    **Drop-down spinner**:<br>
-
-        <com.zebra.dropdown.DropDown
-            android:id="@+id/cdp1"
-            android:layout_width="300dp"
-            android:layout_height="40dp"
-            android:layout_marginTop="30dp"
-            android:layout_marginLeft="10dp"
-            app:dd_gravity="CENTER"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintTop_toTopOf="parent"/>
-
-    **Left-right navigator**:<br>
-
-        <com.zebra.selectionview.CustomSelectionView
-            android:id="@+id/csv1"
-            android:layout_width="300dp"
-            android:layout_height="40dp"
-            android:layout_marginTop="30dp"
-            android:layout_marginLeft="10dp"
-            app:csv_gravity="CENTER"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/cdp1"/>
-
-4. **Add items in the control** using the `setItemList()` method as below: 
-
-        :::java
-        public class MainActivity extends AppCompatActivity {
-
-            private DropDown mCustomDropDown;
-            private CustomSelectionView mCustomSelectionView;
-
-            @Override
-            protected void onCreate(Bundle savedInstanceState) {
-                super.onCreate(savedInstanceState);
-                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-                setContentView(R.layout.activity_main);
-
-                ArrayList<String> strings = new ArrayList<String>();
-                for (int i = 0; i <= 50; i++) {
-                    strings.add("Item " + i);
-                }
-                mCustomDropDown = (DropDown) findViewById(R.id.cdp1);
-                mCustomDropDown.setItemList(strings);
-
-                mCustomSelectionView = (CustomSelectionView) findViewById(R.id.csv1);
-                mCustomSelectionView.setItemList(strings);
-        }
-
-5. **Access selected item from drop-down or left-right navigator control** using the `getSelectedItem()` method as below: 
-
-        :::java
-        public void onSubmitClick(View view){
-                Toast.makeText(this,"Selected Item on Drop down is = " + mCustomDropDown.getSelectedItem() 
-                            "\n Selected Item on Left Right Navigator is = " + mCustomSelectionView.getSelectedItem(),Toast.LENGTH_SHORT).show();
-        }
-
------ 
--->
-
-<!-- 
-### Embedded Tools
-
-`The EC30` implements embedded tools to simplify changes to display size and font scaling during development. Accessed through the "Power-off" menu when developer options are enabled on the device, the tools are designed to simplify changes to the UX for testing and can be easily disabled before device deployment. 
-
-<img alt="image" style="height:250px" src="embedded_apps.png"/>
-_Click image to enlarge._
-
-### Remove Small-screen Restriction
-
-`The EC30` falls to the category of small-screen devices, and a migrated app will fail to launch if the “smallScreens” attribute in its Android manifest file is to "false." To prevent this issue in the migrated app, the smallScreens attribute must be "true" in the app's manifest:
-
-    <supports-screens 
-                      android:resizeable=["true"| "false"]
-                      android:smallScreens=["true" | "false"] <-- SET TO "true" FOR EC30
-                      android:normalScreens=["true" | "false"]
-                      android:largeScreens=["true" | "false"]
-                      android:xlargeScreens=["true" | "false"]
-                      android:anyDensity=["true" | "false"]
-                      android:requiresSmallestWidthDp="integer"
-                      android:compatibleWidthLimitDp="integer"
-                      android:largestWidthLimitDp="integer“
-    /> 
-
------
- -->
-
 <h2 id="powermanagement" class="anchor"><a class="heading-anchor" href="#powermanagement"><span></span></a>Power Management</h2>
 
-<p>The WS50's 1300 mAh Li-Ion PowerPrecision+ battery is rated to provide a full 10 hours of continuous operation. However, battery performance varies greatly depending on usage patterns and device settings, especially those of the display panel. <strong>To maximize operation of WS50 devices while on battery power, Zebra recommends the power-management best practices listed below</strong>. </p>
+<p>The WS50's 1300 mAh Li-Ion PowerPrecision+ battery is rated to provide a full 10 hours of continuous operation. However, battery performance varies greatly depending on usage patterns and device settings, especially those of the display panel. <strong>To maximize operation of WS50 devices while on battery power, Zebra recommends the following power-management best practices</strong>: </p>
 
 <h5 id="toprolongbatterylife" class="anchor"><a class="heading-anchor" href="#toprolongbatterylife"><span></span></a>To Prolong Battery Life:</h5>
 
