@@ -713,7 +713,7 @@ _Click images to enlarge._
 
 <h2 id="ledcontrol" class="anchor"><a class="heading-anchor" href="#ledcontrol"><span></span></a>LED Control</h2>
 
-<p>The left and right multi-color LEDs on the WS50 are controlled using the <a href="https://developer.android.com/guide/components/aidl">Android Interface Definition Language (AIDL)</a>. AIDL permits control of these LEDs without the need for Android Notification APIs and the accompanying on-screen notifications. The sample code below can be used in an app to specify which LED to control on the device and which color to display using <a href="https://developer.android.com/reference/android/graphics/Color">Android ARGB specifications</a>. </p>
+<p>The left and right multi-color LEDs on the WS50 are controlled using the Zebra LED service through its <a href="https://developer.android.com/guide/components/aidl">Android Interface Definition Language (AIDL)</a> interface. This permits an app to control WS50 LEDs without the need for Android Notification APIs and the accompanying on-screen notifications. The sample code below can be used in an app to specify which LED to control on the device and which color to display. </p>
 
 <p><img alt="image" style="height:200px" src="ws50_LEDs.png">
 <em>Click image to enlarge; ESC to exit</em>.
@@ -722,18 +722,17 @@ _Click images to enlarge._
 <h4 id="tocontrolws50leds" class="anchor"><a class="heading-anchor" href="#tocontrolws50leds"><span></span></a>To control WS50 LEDs:</h4>
 
 <ol>
-<li><p><a href="Zebra_iLed.aidl">Download</a> and add the <code>.aidl</code> file into the Android Studio project.  </p>
-
-<p><img alt="image" style="height:200px" src="ws50_add_aidl.png">
+<li><p><strong><a href="ILed.aidl">Download</a> and add the <code>.aidl</code> file</strong> into the Android Studio project. <br>
+<img alt="image" style="height:200px" src="ws50_add_aidl.png">
 <br></p></li>
 
-<li><p>Add the standard AIDL boilerplate code to connect with and disconnect from the Zebra LED service.<br><strong>Note the component name</strong> <code>com.zebra.led</code> in the sample code below:</p>
+<li><p><strong>Add the standard AIDL boilerplate code</strong> to connect with and disconnect from the Zebra LED service.<br><strong>Note the component name in the sample code below</strong>:</p>
 
 <pre class="prettyprint"><code>
 package com.mycompany.mysampleapp;
-//
-// ...imports go here...
-//
+
+// …imports go here…
+
 public class MySampleActivity extends Activity {
     private static final String TAG = "MySampleActivity"
     private ILed mLedService = null;
@@ -741,26 +740,22 @@ public class MySampleActivity extends Activity {
 <pre><code>@Override
 protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    // ...
-</code></pre>
+    //...
 
-//
-// Connect to the AIDL interface for LED control:
-//
-    Intent intent = new Intent().setComponent(new ComponentName("com.zebra.led", "com.zebra.led.LedService"));
-        bindService(intent, ledConnection, Context.BIND_AUTO_CREATE);
-    }
+    // Connect to the AIDL interface for LED control.
+    __        Intent intent = new Intent().setComponent(new ComponentName("com.zebra.led", "com.zebra.led.LedService"));
+    bindService(intent, ledConnection, Context.BIND_AUTO_CREATE);
+}
 
-<pre><code>@Override
+@Override
 protected void onDestroy()
 </code></pre>
 
 {         unbindService(ledConnection);         super.onDestroy();     }
-
-//
-// Monitor the connection to the LED service:
-//
-    private final ServiceConnection ledConnection = new ServiceConnection() {
+    /**
+     * Monitors the connection to the LED service.
+     */
+    __    private final ServiceConnection ledConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
             mLedService = ILed.Stub.asInterface(iBinder);
@@ -770,29 +765,30 @@ protected void onDestroy()
 
 {             mLedService = null;         }
     };
-    // ...
+
+<pre><code>//...
+</code></pre>
+
 </code></pre></li>
 
-<li><p>Call <code>setLed</code> to control the Left and Right LEDs:</p>
+<li><p><strong>Call <code>setLed</code></strong> to control the Left and Right LEDs:</p>
 
 <pre class="prettyprint"><code>    
-    private void sampleLedOperations() {        
-//
-// Connection from bindService is asynchronous, so be sure we have a connection first:
-//
-    if (mLedService == null) return;
+    private void sampleLedOperations() {
+        // Connection from bindService is asynchronous, so be sure we have a connection first.
+        __        if (mLedService == null) return;
 
-<pre><code>try {
-    mLedService.setLed(LED_LEFT, Color.WHITE);          // Sets the Left LED to white
-    mLedService.setLed(LED_RIGHT, Color.BLUE);          // Sets the Right LED to blue
-    mLedService.setLed(LED_LEFT, Color.TRANSPARENT);    // Turns off the Left LED
-} catch (RemoteException|IllegalArgumentException|UnsupportedOperationException e) {
-    Log.e(TAG,"Failed to set led. Error: "+ e);
-    Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
+<pre><code>    try {
+        mLedService.setLed(LED_LEFT, Color.WHITE);          // Sets the Left LED to white
+        mLedService.setLed(LED_RIGHT, Color.BLUE);          // Sets the Right LED to blue
+        mLedService.setLed(LED_LEFT, Color.TRANSPARENT);    // Turns off the Left LED
+    } catch (RemoteException|IllegalArgumentException|UnsupportedOperationException e) {
+        Log.e(TAG,"Failed to set led. Error: "+ e);
+        Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
+    }
 }
 </code></pre>
 
-}
 </code></pre></li>
 </ol>
 
@@ -825,54 +821,52 @@ protected void onDestroy()
 
 <h2 id="aidlfile" class="anchor"><a class="heading-anchor" href="#aidlfile"><span></span></a>AIDL File</h2>
 
-<p>The Zebra <code>aidl</code> file shown below is =equivalent to the version available for <a href="Zebra_iLed.aidl">download</a> with slight changes to comments and formatting.  </p>
+<p>The Zebra <code>aidl</code> file shown below is equivalent to the version available for <a href="ILed.aidl">download</a>.  </p>
 
-<pre class="prettyprint"><code>    // Copyright (c) 2020-2022 Zebra Technologies Corporation and/or its affiliates. All rights reserved.
+<pre class="prettyprint"><code>// Copyright (c) 2020-2021 Zebra Technologies Corporation and/or its affiliates. All rights reserved.
 
-    package com.zebra.led;
+package com.zebra.led;
 
-    //
-    // Interface for apps to control device LEDs. Use this interface when you wish to control LEDs
-    // beyond what is available in Android's Notification API; for example, to light an LED without
-    // showing an on-screen notification, or to specify which LED when there is more than one (such as
-    // on the WS50).
-    // 
+/**
+ * Interface for apps to control device LEDs. Use this interface when you wish to control LEDs
+ * beyond what is available in Android's Notification API; for example, to light an LED without
+ * showing an on-screen notification, or to specify which LED when there is more than one (such as
+ * on the WS50).
+ */
+interface ILed
+{
+    /** LED id for a single app-controlled LED (available on Sharp RZ-H270, red and green
+        colors only) */
+    const int LED_USER = 1;
+    /** LED id for the left LED on devices with multiple LEDs (available on Zebra WS50) */
+    const int LED_LEFT = 2;
+    /** LED id for the right LED on devices with multiple LEDs (available on Zebra WS50) */
+    const int LED_RIGHT = 3;
 
-    interface ILed
-    {
-    // LED id for a single app-controlled LED (available on Sharp RZ-H270, red and green only)
-        const int LED_USER = 1;
+    /**
+     * Sets an LED to a solid color. LED and color availability varies by product.
+     *
+     * @param ledID the LED to control, one of the LED_ constants
+     * @param color the color to set, in standard Android ARGB format. The opacity (A) is
+     *              ignored. Use Color.TRANSPARENT (0) to turn the LED off.
+     * @throws IllegalArgumentException the LED is not available to control on this product, or the
+     *                                  the given color is not supported for the LED
+     */
+    void setLed(int ledId, int color);
 
-    // LED id for the left LED on devices with multiple LEDs (available on Zebra WS50)
-        const int LED_LEFT = 2;
-
-    // LED id for the right LED on devices with multiple LEDs (available on Zebra WS50) 
-        const int LED_RIGHT = 3;
-
-    //
-    // Sets an LED to a solid color. LED and color availability varies by product.
-    //
-    // @param ledID the LED to control, one of the LED_ constants
-    // @param color the color to set, in standard Android ARGB format. The opacity (A) is
-    //              ignored. Use Color.TRANSPARENT (0) to turn the LED off.
-    // @throws IllegalArgumentException the LED is not available to control on this product, or the
-    //                                  the given color is not supported for the LED
-    //
-        void setLed(int ledId, int color);
-
-    //
-    // Sets an LED to a blinking color. LEDs, color availability, and blinking support varies by
-    // product.
-
-    // Other parameters:
-    //
-    // @param ledID - the LED to control, one of the LED_ constants
-    // @param color - the color to set, in standard Android ARGB format. The opacity (A) is ignored. 
-    // Color.TRANSPARENT (0) - turns the LED off
-    // @throws IllegalArgumentException - LED not available or given color not supported
-    //
-        void setLedBlinking(int ledId, int color); // NOT supported on WS50
-    }
+    /**
+     * Sets an LED to a blinking color. LEDs, color availability, and blinking support varies by
+     * product.
+     *
+     * @param ledID the LED to control, one of the LED_ constants
+     * @param color the color to set, in standard Android ARGB format. The opacity (A) is
+     *              ignored.
+     * @throws IllegalArgumentException the LED is not available to control on this product, or the
+     *                                  the given color is not supported for the LED
+     * @throws UnsupportedOperationException blinking is not supported for this product or LED
+     */
+    void setLedBlinking(int ledId, int color);
+}
 </code></pre>
 
 <hr>
