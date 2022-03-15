@@ -281,6 +281,50 @@
 
 <h3 id="1whitelistapprovedapp" class="anchor"><a class="heading-anchor" href="#1whitelistapprovedapp"><span></span></a>1. Whitelist Approved App</h3>
 
+<h4 id="fordatawedge113andlater" class="anchor"><a class="heading-anchor" href="#fordatawedge113andlater"><span></span></a>For DataWedge 11.3 and later:</h4>
+
+<p>The first step to control access to DataWedge Intent APIs is for the admin to whitelist the app using <a href="/mx/accessmgr">AccessMgr CSP</a> from <a href="/flux/about">Zebra Device Manager (ZDM)</a>. Whitelisting allows only the apps specified on a list to run, restricting use of apps not on the approved whitelist. Use <a href="/stagenow">StageNow</a> to deploy the configuration to whitelist the app. Set the following parameters:</p>
+
+<ul>
+<li><strong>Service Access Action</strong>: "Allow caller"</li>
+
+<li><strong>Service Identifier</strong>: &lt;delegation scope of the API category&gt;</li>
+
+<li><strong>Specify Caller Package Name</strong>: &lt;enter app package name, e.g.: com.company.appname&gt;</li>
+
+<li><strong>Caller Signature</strong>: &lt;select signature file that contains the app certificate&gt;</li>
+</ul>
+
+<p>Delegation scopes for each intent API category:</p>
+
+<table class="facelift" style="width:70%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>Intent API Category</th>
+    <th>Delegation Scope</th>
+  </tr>
+
+  <tr>
+    <td>Query APIs</td>
+    <td>delegation_scope_datawedge_query_api</td>
+  </tr>
+
+  <tr>
+    <td>Runtime APIs</td>
+    <td>delegation_scope_datawedge_control_api</td>
+  </tr>
+
+  <tr>
+    <td>Notification APIs</td>
+    <td>delegation_scope_datawedge_notification_api</td>
+  </tr>
+  <tr>
+    <td>Configuration APIs</td>
+    <td>delegation_scope_datawedge_config_api</td>
+  </tr>
+</tbody></table>
+
+<h4 id="fordatawedge112andearlier" class="anchor"><a class="heading-anchor" href="#fordatawedge112andearlier"><span></span></a>For DataWedge 11.2 and earlier:</h4>
+
 <p>The first step to control access to DataWedge Intent APIs is for the admin to whitelist the app using <a href="/mx/accessmgr">AccessMgr CSP</a> from MX. Whitelisting allows only the apps specified on a list to run, restricting use of apps not on the approved whitelist. Use <a href="/stagenow">StageNow</a> or EMDK Profile Manager (<a href="/emdk-for-android/latest/guide/profile-manager-guides/">Android</a> or <a href="/emdk-for-xamarin/latest/guide/profile-manager-guides/">Xamarin</a>) to deploy the configuration to whitelist the app. Set the following parameters:</p>
 
 <ul>
@@ -302,7 +346,7 @@
 
 <table class="facelift" style="width:70%" border="1" padding="5px">
   <tbody><tr bgcolor="#dce8ef">
-    <th>API Category</th>
+    <th>Intent API Category</th>
     <th>Control Modes</th>
   </tr>
 
@@ -317,7 +361,7 @@
   </tr>
 
   <tr>
-    <td>Query API</td>
+    <td>Query APIs</td>
     <td>Uncontrolled<br>Controlled</td>
   </tr>
   <tr>
@@ -374,6 +418,52 @@
 <p>See <a href="../../api">DataWedge APIs</a>.</p>
 
 <h3 id="3acquireatoken" class="anchor"><a class="heading-anchor" href="#3acquireatoken"><span></span></a>3. Acquire a Token</h3>
+
+<h4 id="fordatawedge113andlater-1" class="anchor"><a class="heading-anchor" href="#fordatawedge113andlater-1"><span></span></a>For DataWedge 11.3 and later:</h4>
+
+<p>Only whitelisted applications are allowed to call DataWedge service identifier/delegation scopes to generate tokens. The applications must use ZDM Content Provider to generate a token by passing the required delegation.</p>
+
+<p>To generate a token:</p>
+
+<ol>
+<li><p>Add ZDM read permission to the application manifest:</p>
+
+<pre class="prettyprint"><code>&lt;uses-permission android:name="com.zebra.devicemanager.provider.READ_PERMISSION"/&gt;
+</code></pre></li>
+
+<li><p>Access the ZDM content provider.  Sample code:</p>
+
+<pre class="prettyprint"><code>static final Uri AUTHORITY_URI = Uri.parse("content://com.zebra.devicemanager.zdmcontentprovider");
+Uri ACQUIRE_TOKEN_URI = Uri.withAppendedPath(AUTHORITY_URI, "AcquireToken");
+
+public static final String COLUMN_QUERY_RESULT = "query_result";
+
+public String acquireToken(String delegation_scope) {
+    String token = "";
+    try {
+        Cursor cursor = mContext.getContentResolver().query(ACQUIRE_TOKEN_URI, (String[])null,
+                "delegation_scope=?", new String[]{delegation_scope}, (String)null);
+        if (cursor != null &amp;&amp; cursor.getCount() &gt; 0) {
+            cursor.moveToFirst();
+            token = cursor.getString(cursor.getColumnIndex(COLUMN_QUERY_RESULT));
+            cursor.close();
+        }
+    } catch (Exception var3) {
+        if (var3 instanceof SecurityException) {
+            Log.e("BroadcastProtection", "Invalid Token/Caller");
+        } else {
+            Log.e("BroadcastProtection", "Unknown Caller to acquire token");
+        }
+    }
+
+<pre><code>return token;
+</code></pre>
+
+}
+</code></pre></li>
+</ol>
+
+<h4 id="fordatawedge112andearlier-1" class="anchor"><a class="heading-anchor" href="#fordatawedge112andearlier-1"><span></span></a>For DataWedge 11.2 and earlier:</h4>
 
 <p>Only whitelisted applications are allowed to call DataWedge service identifier to generate tokens.
 The applications must use EMDK ProfileManager APIs to acquire a token from AccessMgr CSP.</p>
@@ -709,6 +799,15 @@ The applications must use EMDK ProfileManager APIs to acquire a token from Acces
 </li>
 
 <li>If intent APIs are placed in protected mode, existing Zebra apps that use DataWedge may not work as expected. E.g. If Runtime APIs are placed in protected mode, the scan button of the Enterprise Keyboard does not work on Enterprise Keyboard versions 4.0 or lower.</li>
+
+<li>For DataWedge 11.3 and later:
+
+
+<ul>
+<li>When devices are using both MX and ZDM, ZDM becomes the preferred option. </li>
+
+<li>If ZDM is present in the device, tokens acquired using MX via EMDK Profile Manager cannot be used.</li></ul>
+</li>
 </ul>
 
 <hr>
@@ -808,7 +907,22 @@ The applications must use EMDK ProfileManager APIs to acquire a token from Acces
 
 </script> 
 
-    
+<!-- 3/1/19 - comment out per Rob
+<script>
+    ChatraID = 'QDvZ76min4DhLW5vJ';
+    (function(d, w, c) {
+        var n = d.getElementsByTagName('script')[0],
+            s = d.createElement('script');
+        w[c] = w[c] || function() {
+            (w[c].q = w[c].q || []).push(arguments);
+        };
+        s.async = true;
+        s.src = (d.location.protocol === 'https:' ? 'https:': 'http:')
+            + '//call.chatra.io/chatra.js';
+        n.parentNode.insertBefore(s, n);
+    })(document, window, 'Chatra');
+</script>   
+-->      
 
 
 
