@@ -294,7 +294,7 @@ _Click images to enlarge._
 
 <li><strong>Split screen functionality is disabled</strong> for all apps</li>
 
-<li><strong>Capacitive navigation buttons are off-screen</strong> to maximize screen space for apps</li></ul>
+<li><strong>Status bar is hidden and Navigation bar removed</strong> to maximize screen space for apps</li></ul>
 </li>
 
 <li><strong>Memory limited to 1GB RAM, 8GB internal storage</strong></li>
@@ -721,14 +721,12 @@ _Click images to enlarge._
 
 <h4 id="tocontrolws50leds" class="anchor"><a class="heading-anchor" href="#tocontrolws50leds"><span></span></a>To control WS50 LEDs:</h4>
 
-<ol>
-<li><p><strong><a href="ILed.aidl">Download</a> and add the <code>.aidl</code> file</strong> into the Android Studio project. <br>
-<img alt="image" style="height:200px" src="ws50_add_aidl.png">
-<br></p></li>
+<p><strong>1. <a href="ILed.aidl">Download</a> and add the <code>.aidl</code> file</strong> into the Android Studio project. <br>
+ <img alt="image" style="height:200px" src="ws50_add_aidl.png">
+<br>
+<strong>2. Add the standard AIDL boilerplate code</strong> to connect with and disconnect from the Zebra LED service.<br><strong>Note the component name in the sample code below</strong>:</p>
 
-<li><p><strong>Add the standard AIDL boilerplate code</strong> to connect with and disconnect from the Zebra LED service.<br><strong>Note the component name in the sample code below</strong>:</p>
-
-<pre class="prettyprint"><code>
+<pre class="prettyprint"><code>    
 package com.mycompany.mysampleapp;
 
 // …imports go here…
@@ -737,60 +735,54 @@ public class MySampleActivity extends Activity {
     private static final String TAG = "MySampleActivity"
     private ILed mLedService = null;
 
-<pre><code>@Override
-protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    //...
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        //...
 
-    // Connect to the AIDL interface for LED control.
-    __        Intent intent = new Intent().setComponent(new ComponentName("com.zebra.led", "com.zebra.led.LedService"));
-    bindService(intent, ledConnection, Context.BIND_AUTO_CREATE);
-}
+        // Connect to the AIDL interface for LED control.
+        Intent intent = new Intent().setComponent(new ComponentName("com.zebra.led", "com.zebra.led.LedService"));
+        bindService(intent, ledConnection, Context.BIND_AUTO_CREATE);
+    }
 
-@Override
-protected void onDestroy()
-</code></pre>
+    @Override
+    protected void onDestroy() {
+        unbindService(ledConnection);
+        super.onDestroy();
+    }
 
-{         unbindService(ledConnection);         super.onDestroy();     }
     /**
      * Monitors the connection to the LED service.
      */
-    __    private final ServiceConnection ledConnection = new ServiceConnection() {
+    private final ServiceConnection ledConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
             mLedService = ILed.Stub.asInterface(iBinder);
         }
         @Override
-        public void onServiceDisconnected(ComponentName componentName)
-
-{             mLedService = null;         }
+        public void onServiceDisconnected(ComponentName componentName) {
+            mLedService = null;
+        }
     };
-
-<pre><code>//...
 </code></pre>
 
-</code></pre></li>
-
-<li><p><strong>Call <code>setLed</code></strong> to control the Left and Right LEDs:</p>
+<p><strong>3. Call <code>setLed</code></strong> to control the Left and Right LEDs:</p>
 
 <pre class="prettyprint"><code>    
     private void sampleLedOperations() {
         // Connection from bindService is asynchronous, so be sure we have a connection first.
-        __        if (mLedService == null) return;
-
-<pre><code>    try {
-        mLedService.setLed(LED_LEFT, Color.WHITE);          // Sets the Left LED to white
-        mLedService.setLed(LED_RIGHT, Color.BLUE);          // Sets the Right LED to blue
-        mLedService.setLed(LED_LEFT, Color.TRANSPARENT);    // Turns off the Left LED
-    } catch (RemoteException|IllegalArgumentException|UnsupportedOperationException e) {
-        Log.e(TAG,"Failed to set led. Error: "+ e);
-        Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
+        if (mLedService == null) return;
+        try {
+            mLedService.setLed(LED_LEFT, Color.WHITE);          // Sets the Left LED to white
+            mLedService.setLed(LED_RIGHT, Color.BLUE);          // Sets the Right LED to blue
+            mLedService.setLed(LED_LEFT, Color.TRANSPARENT);    // Turns off the Left LED
+        } catch (RemoteException|IllegalArgumentException|UnsupportedOperationException e) {
+            Log.e(TAG,"Failed to set led. Error: "+ e);
+            Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
     }
 }
 </code></pre>
-
-</code></pre></li>
-</ol>
 
 <!-- 
 2. Interface with, specify and control the desired LED: 
@@ -821,7 +813,7 @@ protected void onDestroy()
 
 <h2 id="aidlfile" class="anchor"><a class="heading-anchor" href="#aidlfile"><span></span></a>AIDL File</h2>
 
-<p>The Zebra <code>aidl</code> file shown below is equivalent to the version available for <a href="ILed.aidl">download</a>.  </p>
+<p>The Zebra <code>aidl</code> file is shown below and is available for <a href="ILed.aidl">download</a>.  </p>
 
 <pre class="prettyprint"><code>// Copyright (c) 2020-2021 Zebra Technologies Corporation and/or its affiliates. All rights reserved.
 
