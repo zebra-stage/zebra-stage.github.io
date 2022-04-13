@@ -43,9 +43,6 @@
                 </div>
                 <div class="collapse navbar-collapse navbar-right">
                     <ul class="nav navbar-nav">
-                        
-
-
                         <li><a href="/datawedge/dw-jp/11-3/guide/about">情報</a></li>
                         <li><a href="/datawedge/dw-jp/11-3/guide/gettingstarted">ご使用の前に</a></li>
                         <li><a href="/datawedge/dw-jp/11-3/guide/profiles">プロファイル</a></li>
@@ -204,6 +201,50 @@
 
 <h3 id="1whitelistapprovedapp" class="anchor"><a class="heading-anchor" href="#1whitelistapprovedapp"><span></span></a>1.承認済みアプリをホワイトリストに登録</h3>
 
+<h4 id="fordatawedge113andlater" class="anchor"><a class="heading-anchor" href="#fordatawedge113andlater"><span></span></a>DataWedge 11.3 以降の場合:</h4>
+
+<p>DataWedge Intent API へのアクセスを制御する最初の手順では、管理者が、<a href="/flux/about">Zebra Device Manager (ZDM)</a> から <a href="/mx/accessmgr">AccessMgr CSP</a> を使用してアプリをホワイトリストに登録します。ホワイトリストを使用することで、リストに指定されているアプリのみを実行でき、承認済みのホワイトリストに登録されていないアプリの使用が制限されます。<a href="/stagenow">StageNow</a> を使用して、アプリをホワイトリストに登録するための構成を展開します。以下のパラメータを設定します。</p>
+
+<ul>
+<li><strong>サービス アクセス アクション</strong>: &quot;Allow caller&quot;</li>
+
+<li><strong>サービス ID</strong>: &lt;API カテゴリの委任範囲&gt;</li>
+
+<li><strong>呼び出し元パッケージ名の指定</strong>: &lt;Com.company.appname など、アプリのパッケージ名を入力&gt;</li>
+
+<li><strong>呼び出し元の署名</strong>: &lt;アプリ証明書を含む署名ファイルを選択&gt;</li>
+</ul>
+
+<p>各インテント API カテゴリの委任範囲:</p>
+
+<table class="facelift" style="width:70%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>インテント API カテゴリ</th>
+    <th>委任範囲</th>
+  </tr>
+
+  <tr>
+    <td>クエリ API</td>
+    <td>delegation_scope_datawedge_query_api</td>
+  </tr>
+
+  <tr>
+    <td>ランタイム API</td>
+    <td>delegation_scope_datawedge_control_api</td>
+  </tr>
+
+  <tr>
+    <td>通知 API</td>
+    <td>delegation_scope_datawedge_notification_api</td>
+  </tr>
+  <tr>
+    <td>構成 API</td>
+    <td>delegation_scope_datawedge_config_api</td>
+  </tr>
+</tbody></table>
+
+<h4 id="fordatawedge112andearlier" class="anchor"><a class="heading-anchor" href="#fordatawedge112andearlier"><span></span></a>DataWedge 11.2 以前の場合:</h4>
+
 <p>DataWedge Intent API へのアクセスを制御する最初の手順では、管理者が、MX の <a href="/mx/accessmgr">AccessMgr CSP</a> を使用してアプリをホワイトリストに登録します。ホワイトリストを使用することで、リストに指定されているアプリのみを実行でき、承認済みのホワイトリストに登録されていないアプリの使用が制限されます。<a href="/stagenow">StageNow</a> または EMDK Profile Manager (<a href="/emdk-for-android/latest/guide/profile-manager-guides/">Android</a> または <a href="/emdk-for-xamarin/latest/guide/profile-manager-guides/">Xamarin</a>) を使用して構成を展開し、アプリをホワイトリストに登録します。以下のパラメータを設定します。</p>
 
 <ul>
@@ -222,7 +263,7 @@
 
 <table class="facelift" style="width:70%" border="1" padding="5px">
   <tbody><tr bgcolor="#dce8ef">
-    <th>API カテゴリ</th>
+    <th>インテント API カテゴリ</th>
     <th>制御モード</th>
   </tr>
 
@@ -292,6 +333,52 @@
 <p><a href="../../api">「DataWedge API」</a>を参照してください。</p>
 
 <h3 id="3acquireatoken" class="anchor"><a class="heading-anchor" href="#3acquireatoken"><span></span></a>3.トークンを取得</h3>
+
+<h4 id="fordatawedge113andlater-1" class="anchor"><a class="heading-anchor" href="#fordatawedge113andlater-1"><span></span></a>DataWedge 11.3 以降の場合:</h4>
+
+<p>ホワイトリストに登録されたアプリケーションのみが、DataWedge サービス ID/委任範囲を呼び出してトークンを生成できます。アプリケーションは、ZDM コンテンツ プロバイダを使用して、必要な委任を渡すことによってトークンを生成する必要があります。</p>
+
+<p>トークンを生成するには:</p>
+
+<ol>
+<li><p>アプリケーション マニフェストに ZDM 読み取り権限を追加します。</p>
+
+<pre class="prettyprint"><code>&lt;uses-permission android:name=&quot;com.zebra.devicemanager.provider.READ_PERMISSION&quot;/&gt;
+</code></pre></li>
+
+<li><p>ZDM コンテンツ プロバイダにアクセスします。サンプル コード:</p>
+
+<pre class="prettyprint"><code>static final Uri AUTHORITY_URI = Uri.parse(&quot;content://com.zebra.devicemanager.zdmcontentprovider&quot;);
+Uri ACQUIRE_TOKEN_URI = Uri.withAppendedPath(AUTHORITY_URI, &quot;AcquireToken&quot;);
+
+public static final String COLUMN_QUERY_RESULT = &quot;query_result&quot;;
+
+public String acquireToken(String delegation_scope) {
+    String token = &quot;&quot;;
+    try {
+        Cursor cursor = mContext.getContentResolver().query(ACQUIRE_TOKEN_URI, (String[])null,
+                &quot;delegation_scope=?&quot;, new String[]{delegation_scope}, (String)null);
+        if (cursor != null &amp;&amp; cursor.getCount() &gt; 0) {
+            cursor.moveToFirst();
+            token = cursor.getString(cursor.getColumnIndex(COLUMN_QUERY_RESULT));
+            cursor.close();
+        }
+    } catch (Exception var3) {
+        if (var3 instanceof SecurityException) {
+            Log.e(&quot;BroadcastProtection&quot;, &quot;Invalid Token/Caller&quot;);
+        } else {
+            Log.e(&quot;BroadcastProtection&quot;, &quot;Unknown Caller to acquire token&quot;);
+        }
+    }
+</code></pre>
+
+<pre><code>return token;
+
+}
+</code></pre></li>
+</ol>
+
+<h4 id="fordatawedge112andearlier-1" class="anchor"><a class="heading-anchor" href="#fordatawedge112andearlier-1"><span></span></a>DataWedge 11.2 以前の場合:</h4>
 
 <p>ホワイトリストに登録されたアプリケーションのみが、DataWedge サービス ID を呼び出してトークンを生成できます。アプリケーションでは、EMDK ProfileManager API を使用して AccessMgr CSP からトークンを取得する必要があります。</p>
 
@@ -543,7 +630,7 @@
 
 <li><code>MX_NOT_INITIALIZED</code>: MX が初期化されていません。これは通常、リブート直後に発生します。</li>
 
-<li><code>FAILED_TO_VERIFY_APPLICATION</code>: 呼び出し元のアプリケーションを確認できません (トークンが無効、アプリケーションがホワイトリストに登録されていないなど)。</li></ul>
+<li><code>FAILED_TO_VERIFY_APPLICATION</code>: 呼び出し元のアプリケーションを確認できません (トークンが無効である、アプリケーションがホワイトリストに登録されていないなど)。</li></ul>
 </li>
 </ul>
 
@@ -617,6 +704,12 @@
 </li>
 
 <li>インテント API が保護モードになっている場合、DataWedge を使用する既存の Zebra アプリが期待どおりに機能しないことがあります。たとえば、ランタイム API が保護モードになっている場合、エンタープライズ キーボード バージョン 4.0 以前ではエンタープライズ キーボードのスキャン ボタンは機能しません。</li>
+
+<li>DataWedge 11.3 以降の場合:<ul>
+<li>デバイスが MX と ZDM の両方を使用している場合、ZDM が優先オプションになります。</li>
+
+<li>ZDM がデバイスに存在する場合、EMDK プロファイル マネージャを介して MX を使用して取得したトークンは使用できません。</li></ul>
+</li>
 </ul>
 
 <hr>
@@ -708,10 +801,19 @@
   ga('create', 'UA-72584442-1', 'auto');
   ga('send', 'pageview');
 
-</script> 
-
-    
-
-
-
-</body></html>
+</script><!-- 3/1/19 - comment out per Rob
+<script>
+    ChatraID = 'QDvZ76min4DhLW5vJ';
+    (function(d, w, c) {
+        var n = d.getElementsByTagName('script')[0],
+            s = d.createElement('script');
+        w[c] = w[c] || function() {
+            (w[c].q = w[c].q || []).push(arguments);
+        };
+        s.async = true;
+        s.src = (d.location.protocol === 'https:' ? 'https:': 'http:')
+            + '//call.chatra.io/chatra.js';
+        n.parentNode.insertBefore(s, n);
+    })(document, window, 'Chatra');
+</script>   
+--></body></html>
