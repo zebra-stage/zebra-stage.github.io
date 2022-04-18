@@ -10,8 +10,8 @@
     <meta name="author" content="Zebra Technologies">
     <meta name="google-site-verification" content="i4B78BrWnNy8ShJwe5feRW3jO3HE6gfYlYqYbxfl8yY">
     <meta name="msvalidate.01" content="6B651B00161BCE79B8950AC09D5C4C75">
-    <meta title="About SSM">
-    <title>About SSM - TechDocs</title>
+    <meta title="Data Sharing">
+    <title>Data Sharing - TechDocs</title>
     <!-- core CSS -->
     <link href="/css/bootstrap.min.css" rel="stylesheet">
 <!--     
@@ -127,7 +127,7 @@
                     <nav id="toc" data-toggle="toc" data-spy="affix" style="height: 75%; max-width: 225px; overflow-y: auto; ">
                         
                         <ul class="nav">
-                            <li><strong>About SSM</strong></li>
+                            <li><strong>Data Sharing</strong></li>
                         </ul>
                     </nav>
                     <div class="modal fade" id="modal-smartdocs" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true" data-backdrop="true">
@@ -213,7 +213,7 @@
                         <div class="col-sm-12">
                             <section id="cta" class="wow fadeIn">
                                 <div class="">
-                                    <h1 id="about-ssm" class="anchor"><a class="heading-anchor" href="#about-ssm"><span></span></a>About SSM</h1>
+                                    <h1 id="data-sharing" class="anchor"><a class="heading-anchor" href="#data-sharing"><span></span></a>Data Sharing</h1>
                                     <p>
                                             Secure Storage Manager
                                             1.1
@@ -231,53 +231,132 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p><strong>Secure Storage Manager (SSM)</strong> is an application built into Zebra devices that provides a mechanism for securely sharing data and files from an originating app to one or more target apps, or to itself. </p>
+<p><strong>Secure Storage Manager (SSM)</strong> securely stores data provided by an originating app and delivers the data to an authenticated instance of a target app, or stores data for consumption by the app itself. SSM ensures that data is delivered to the target app only after the authenticity of the app accessing the data is verified with its package name and signature. SSM implements Android <a href="../api">Content Provider</a> to share data and manage data access between apps, providing methods to securely create, retrieve, update and delete (CRUD) data. After acquiring data, the target app gains ownership of the data. </p>
 
-<p><strong>File sharing -</strong> Files are securely shared through one of the following methods:</p>
-
-<ul>
-<li><a href="../deploy/">File deployment</a> - Shared files are deployed to the device via one of the following methods and then consumed by the <a href="../share-files/#targetapp">target app</a>:
-
-
-<ul>
-<li>StageNow </li>
-
-<li>Enterprise Mobility Management (EMM)</li></ul>
-</li>
-
-<li><a href="../share-files/#appfilesharing">App file sharing</a> - The originating app shares files by programmatically storing them in SSM for access by the <a href="../share-files/#targetapp">target app</a>.</li>
-</ul>
-
-<p><strong>Data sharing -</strong> Securely <a href="../share-data/">share data</a>, manage data access between apps and persist data through an enterprise reset by using <a href="../api/">Content Provider APIs</a> implemented by SSM.</p>
+<p>This guide explains how to use SSM to share and retrieve data for consumption by a target app. </p>
 
 <hr>
 
-<h2 id="requirements" class="anchor"><a class="heading-anchor" href="#requirements"><span></span></a>Requirements</h2>
+<h2 id="usecases" class="anchor"><a class="heading-anchor" href="#usecases"><span></span></a>Use Cases</h2>
+
+<p>Common SSM use cases to share data:<br></p>
 
 <ul>
-<li>Zebra mobile computer with Android 11 or higher</li>
+<li><strong>Share data with other apps -</strong> an originating application shares data with a target application (e.g. network settings, file URIs etc.).</li>
+
+<li><strong>Persist data to same app -</strong> an application  stores data in a persistent manner for its own use after an enterprise reset (e.g. login credentials, application configurations etc.).
+<!--
+- **Share data among multi-user instances -** instances of an application running in different user profiles are required to share the same data among each app instance (e.g. application configurations).
+  --></li>
 </ul>
+
+<p><img src="SSM-UseCases.png"></p>
+
+<p><em>SSM use cases</em></p>
 
 <hr>
 
-<h2 id="newinssm11" class="anchor"><a class="heading-anchor" href="#newinssm11"><span></span></a>New in SSM 1.1</h2>
+<h2 id="howitworks" class="anchor"><a class="heading-anchor" href="#howitworks"><span></span></a>How It Works</h2>
 
-<ul>
-<li>New secure <a href="../share-files/">file sharing</a> capability and ability to <a href="../deploy">deploy</a> files via StageNow or EMM.</li>
-</ul>
+<p>Data items are structured as name/value pairs. Each pair is uniquely identified by the originating app name and data-item name when made available to a target app. Ownership of the data, including the ability to change or delete, starts with the originating app and transitions to the target app once the data is delivered. SSM implements Android Content Provider to share data and manage data access between apps.</p>
+
+<p>An originating app must instruct SSM to store data either in a persistent or non-persistent manner. Persistent data stored under SSM remains available after an Enterprise Reset is performed; a Factory Reset erases all device data.</p>
+
+<p>To encrypt data from the originating app prior to storing the data in SSM, use the <a href="/det">Data Encryption Tool</a>.</p>
+
+<hr>
+
+<h2 id="configureanapptousessm" class="anchor"><a class="heading-anchor" href="#configureanapptousessm"><span></span></a>Configure an app to use SSM</h2>
+
+<p>To configure an app to use Secure Storage Manager (SSM), insert the appropriate line(s) in the client app’s manifest file (based on Java/Kotlin):</p>
+
+<p><strong>Insert / update / delete data:</strong></p>
+
+<pre class="prettyprint"><code>&lt;uses-permission android:name="com.zebra.securestoragemanager.securecontentprovider.PERMISSION.WRITE"/&gt;
+</code></pre>
+
+<p><strong>Query data:</strong></p>
+
+<pre class="prettyprint"><code>&lt;uses-permission android:name="com.zebra.securestoragemanager.securecontentprovider.PERMISSION.READ"/&gt;
+</code></pre>
+
+<p><strong>Query provider for apps targeting API Level 30 and above:</strong></p>
+
+<pre class="prettyprint"><code>&lt;queries&gt;
+    &lt;provider android:authorities="com.zebra.securestoragemanager.securecontentprovider"/&gt;
+&lt;/queries&gt;
+</code></pre>
+
+<p><strong>Retrieve data using SSM</strong> by declaring the content URI of the SSM Content Provider:</p>
+
+<pre class="prettyprint"><code>private String AUTHORITY = "content://com.zebra.securestoragemanager.securecontentprovider/data";
+</code></pre>
+
+<p>See <a href="../api/#samplecode">Sample Code</a> for complete context.</p>
+
+<hr>
+
+<h2 id="receivingencrypteddatatossm" class="anchor"><a class="heading-anchor" href="#receivingencrypteddatatossm"><span></span></a>Receiving Encrypted Data to SSM</h2>
+
+<p>If SSM receives encrypted data from an originating app (e.g. with the use of <a href="/det">Data Encryption Tool</a>), it decrypts the incoming data and saves it in SSM-encrypted format in the SSM database. The procedure to encrypt data to be stored in SSM is provided below. When the data is retrieved, SSM removes the SSM encryption and delivers the data according to the data output form required by the target app.</p>
+
+<p><img alt="image" src="SSM_DET.png"></p>
+
+<p><strong>To encrypt data, use AES Secret Key:</strong></p>
+
+<ol>
+<li><p>Create an AES secret key:</p>
+
+<pre class="prettyprint"><code>private SecretKey getRandomKey(String algorithmType)
+{
+
+<pre><code>SecureRandom rand = new SecureRandom();
+KeyGenerator generator;
+try {
+    generator = KeyGenerator.getInstance(algorithmType);
+    generator.init(128, rand);
+    mSecretKey = generator.generateKey();
+    Log.d(TAG, "mSecretKey = "+ mSecretKey);
+    return mSecretKey;
+} catch (NoSuchAlgorithmException e) {
+    e.printStackTrace();
+}
+return null;
+</code></pre>
+
+}
+</code></pre></li>
+
+<li><p>Encrypt data using the secret key created in Step 1.</p></li>
+
+<li><p>Encrypt the secret key using SSM public key (Base64 String):</p>
+
+<pre class="prettyprint"><code>MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwE1qxpfNZVGq3wfPp3AqSeSpCPi3NUC1cCBuh5nkPvC3TfYHiozsy3gBYyUoYWIoAYlgypehqLIQfdHTrLpsVbS1BW6mnv76WvYwmaGrGfHzi50ETA8bFDwkrboG3jcHnvDJPH904BdU5eMrsq1o+BDmTmF/OAm1rJPohb8mukWh+o6OW6iNhO28IDRb26pKuTu6sckHn8I1I51bl44qaxq55A4wVR4mHEZL0EK/q2hY0Iqcak2dA8w8N0nJrWzbIbp5FeT/WyGO2pure7UxKEZfE5pkewPfcHSGp+0sbdCMaw6KrDpC5jusry4PjFw92sS/Huywv6/pv7WVPmwIDAQAB
+</code></pre></li>
+
+<li><p>Insert the encrypted secret key and data into the SSM database. Specify the data input and output form to detect the encrypted data:</p>
+
+<pre class="prettyprint"><code>values.put("data_input_form”, "2"); // plaintext=1, encrypted=2
+values.put("data_output_form", "1"); // plaintext=1, encrypted=2
+values.put("data_input_encrypted_key","Encrypted Secret Key");
+values.put("data_value", inputData);
+</code></pre></li>
+</ol>
+
+<h2 id="contentproviderinterfaceapis" class="anchor"><a class="heading-anchor" href="#contentproviderinterfaceapis"><span></span></a>Content Provider Interface APIs</h2>
+
+<p>See <a href="../api">Content Provider Interface APIs</a> to add, update or retrieve data.</p>
 
 <hr>
 
 <h2 id="seealso" class="anchor"><a class="heading-anchor" href="#seealso"><span></span></a>See Also</h2>
 
 <ul>
+<li><a href="../about/">About SSM</a></li>
+
 <li><a href="../deploy/">File Deployment</a></li>
 
-<li><a href="../share-data">Data Sharing</a></li>
-
 <li><a href="../share-files">File Sharing</a></li>
-
-<li><a href="../api">Content Provider Interface APIs</a></li>
 </ul><p></p>
                                         
 
