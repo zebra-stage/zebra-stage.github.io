@@ -232,19 +232,21 @@
 <li><strong>DISABLE_DIMENSION -</strong> Releases all dimensioning framework resources, including camera hardware.</li>
 </ul>
 
-<p>More information on each API are provided in the following sections.</p>
+<p>More information on each API is provided in the following sections.</p>
 
 <h3 id="security" class="anchor"><a class="heading-anchor" href="#security"><span></span></a>Security</h3>
 
-<p>To ensure that only trusted applications communicate with the Dimensioning Framework, Zebra requires that developers use an access control method through Access Manager. For detailed instructions, refer to <a href="/mx/accessmgr/">MX Access Manager</a>.</p>
+<p>To ensure that only trusted applications communicate with the Dimensioning Framework, Zebra requires that developers use an access control method through Access Manager. For detailed instructions, refer to <a href="/mx/accessmgr/">MX Access Manager</a>. The Service Identifier for the Dimension Service is “delegation-zebra-com.zebra.mobiledimensioning-Enable”.</p>
 
 <p>The application must send both the API_TOKEN and the package name with each API request. If either the token or package name is incorrect, the Dimensioning API reports the result code <em>Failed</em> with a result message of <em>Access Denied.</em></p>
 
-<h3 id="statediagram" class="anchor"><a class="heading-anchor" href="#statediagram"><span></span></a>State Diagram</h3>
+<!-- 
+### State Diagram
 
-<p>The following state diagram for the Mobile Parcel Dimensioning client explains the sequence of intents followed during the dimensioning process.</p>
+The following state diagram for the Mobile Parcel Dimensioning client explains the sequence of intents followed during the dimensioning process.
 
-<p><img alt="image" style="height:450px" src="./state-diagram.png"> </p>
+<img alt="image" style="height:450px" src="./state-diagram.png"/> 
+-->
 
 <hr>
 
@@ -325,22 +327,18 @@
   <tr>
        <td>RESULT_CODE</td>
     <td>Integer</td>
-    <td>0: Success<br>1: Fail<br>2: Error</td>
+    <td>0: Success<br>1: Failure<br>2: Error</td>
   </tr>
 
   <tr>
        <td>RESULT_MESSAGE</td>
     <td>String</td>
-    <td>Success<br><p style="font-family:'Courier New'">• Success</p>Failed<br><p style="font-family:'Courier New'">• Dimensioning In Use by Another App<br>• Failed to Open Camera<br>• Failed to Enable<br>• Framework Not Installed<br>• Failed Integrity Check<br>• Insufficient Permissions</p>Error<br><p style="font-family:'Courier New'">• Access Denied<br>• Invalid Module Parameter</p></td>
-  </tr>
-
-  <tr>
-       <td>MODULE</td>
-    <td>String</td>
-    <td><p style="font-family:'Courier New'">parcel</p></td>
+    <td>Success<br><p style="font-family:'Courier New'">• Success</p>Failure<br><p style="font-family:'Courier New'">• Dimensioning In Use by Another App<br>• Dimensioning Already In Use<br>• Dimensioning Not Supported<br>• Failed to Open Camera<br>• Failed to Enable<br>• Framework Not Installed<br>• Failed Integrity Check <sup>1</sup><br>• Integrity Check Fault <sup>2</sup><br>• Insufficient Permissions</p><sup>1</sup> Incorrect Dimensioning framework loaded.<br><sup>2</sup> System failure while running integrity check.<br>Error<br><p style="font-family:'Courier New'">• Access Denied<br>• Invalid Module Parameter</p></td>
   </tr>
 
 </tbody></table>
+
+<p><br></p>
 
 <h3 id="samplecode" class="anchor"><a class="heading-anchor" href="#samplecode"><span></span></a>Sample Code</h3>
 
@@ -348,7 +346,7 @@
     public static final String ENABLE_EXTRA_KEY = "MODULE";
     public static final String ENABLE_EXTRA_VALUE = "parcel";
 
-    sendIntentApi(ConstantUtils.INTENT_ACTION_ENABLE_DIMENSION, ENABLE_EXTRA_KEY, ENABLE_EXTRA_VALUE);
+    sendIntentApi(INTENT_ACTION_ENABLE_DIMENSION, ENABLE_EXTRA_KEY, ENABLE_EXTRA_VALUE);
 </code></pre>
 
 <p>See <a href="#sendintentapi">sendIntentApi()</a> for the function definition. 
@@ -412,13 +410,13 @@
   <tr>
        <td>RESULT_CODE</td>
     <td>Integer</td>
-    <td>0: Success<br>1: Fail<br>2: Error</td>
+    <td>0: Success<br>1: Failure<br>2: Error</td>
   </tr>
 
   <tr>
        <td>RESULT_MESSAGE</td>
     <td>String</td>
-    <td>Success<br><p style="font-family:'Courier New'">• Success</p>Failed<br><p style="font-family:'Courier New'">• Dimensioning In Use by Another App<br>• Failed to Disable</p>Error<br><p style="font-family:'Courier New'">• Access Denied</p></td>
+    <td>Success<br><p style="font-family:'Courier New'">• Success</p>Failure<br><p style="font-family:'Courier New'">• Dimensioning Already In Use<br>• Failed to Disable</p>Error<br><p style="font-family:'Courier New'">• Access Denied</p></td>
   </tr>
 
 </tbody></table>
@@ -429,7 +427,7 @@
 
 <pre class="prettyprint"><code>    public static final String INTENT_ACTION_DISABLE_DIMENSION = "com.zebra.dimensioning.DISABLE_DIMENSION";
 
-    sendIntentApi(ConstantUtils.INTENT_ACTION_DISABLE_DIMENSION);
+    sendIntentApi(INTENT_ACTION_DISABLE_DIMENSION);
 </code></pre>
 
 <p>See <a href="#sendintentapi">sendIntentApi()</a> for the function definition.</p>
@@ -438,7 +436,7 @@
 
 <h2 id="getdimension" class="anchor"><a class="heading-anchor" href="#getdimension"><span></span></a>Get Dimension</h2>
 
-<p>GET_DIMENSION returns the values of the parcel measurements when an end-user dimensions a parcel. When calling this intent, the dimensioning framework renders its user interface (UI) on top of the application, allowing the user to aim the camera at the parcel and begin dimensioning. Upon successful dimensioning and confirmation from the user, the results are sent back to the application through an intent response. If dimensioning fails, the dimensioning results are set to read-only values and a result message displays details about the cause of failure.</p>
+<p>GET_DIMENSION returns the values of the parcel measurements when an end-user dimensions a parcel. When this API is called, the dimensioning framework renders its user interface (UI) on top of the application, allowing the user to aim the camera at the parcel and begin dimensioning. Upon successful dimensioning and confirmation from the user, the results are sent back to the application through an intent response. If dimensioning fails, the result message contains details about the cause of failure.</p>
 
 <p><strong>NOTE:</strong> When calling GET_DIMENSION, dimensioning UI controls overlay on top of the application, preventing the user from accessing the application until the dimensioning is complete or the user exits the dimensioning session by tapping the Back button.</p>
 
@@ -484,7 +482,7 @@
        <td>PARCEL_ID</td>
     <td>String</td>
     <td>No</td>
-    <td>Barcode ID of parcel</td>
+    <td>ID of parcel</td>
   </tr>
 
 </tbody></table>
@@ -505,31 +503,31 @@
   <tr>
        <td>RESULT_CODE</td>
     <td>Integer</td>
-    <td>0: Success<br>1: Fail<br>2: Error<br>3: Cancelled</td>
+    <td>0: Success<br>1: Failure<br>2: Error<br>3: Cancelled</td>
   </tr>
 
   <tr>
        <td>RESULT_MESSAGE</td>
     <td>String</td>
-    <td>Success<br><p style="font-family:'Courier New'">• Dimension Complete</p>Failed<br><p style="font-family:'Courier New'">• Dimensioning In Use by Another App<br>• Failed to Get Dimension<br>• Insufficient Permissions</p>Error<br><p style="font-family:'Courier New'">• Access Denied<br>• Already Dimensioning<br>• User Cancelled<br>• User Inactivity</p></td>
+    <td>Success<br><p style="font-family:'Courier New'">• Dimension Complete</p>Failure<br><p style="font-family:'Courier New'">• Dimensioning Already In Use<br>• Failed to Get Dimension<br>• Insufficient Permissions</p>Error<br><p style="font-family:'Courier New'">• Access Denied<br>• Already Dimensioning</p>Cancelled<br><p style="font-family:'Courier New'">• User Cancelled<br>• User Inactivity</p></td>
   </tr>
 
   <tr>
        <td>LENGTH</td>
     <td>BigDecimal</td>
-    <td>Values returned after successful dimension</td>
+    <td>Length of parcel</td>
   </tr>
 
   <tr>
        <td>WIDTH</td>
     <td>BigDecimal</td>
-    <td>Values returned after successful dimension</td>
+    <td>Width of parcel</td>
   </tr>
 
   <tr>
        <td>HEIGHT</td>
     <td>BigDecimal</td>
-    <td>Values returned after successful dimension</td>
+    <td>Height of parcel</td>
   </tr>
 
   <tr>
@@ -553,19 +551,19 @@
   <tr>
        <td>DIMENSIONING_UNIT</td>
     <td>String</td>
-    <td><p style="font-family:'Courier New'">(in/cm)</p></td>
+    <td><p style="font-family:'Courier New'">• Inch<br>• CM</p></td>
   </tr>
 
   <tr>
        <td>TIMESTAMP</td>
     <td>Instant</td>
-    <td>Time of dimension</td>
+    <td>Time when dimension took place</td>
   </tr>
 
   <tr>
        <td>IMAGE</td>
     <td>Bitmap</td>
-    <td>Bitmap Image</td>
+    <td>Bitmap Image (only reported if REPORT_IMAGE parameter is enabled)</td>
   </tr>
 
   <tr>
@@ -576,12 +574,14 @@
 
 </tbody></table>
 
+<p><br></p>
+
 <h3 id="samplecode-2" class="anchor"><a class="heading-anchor" href="#samplecode-2"><span></span></a>Sample Code</h3>
 
 <pre class="prettyprint"><code>    public static final String INTENT_ACTION_GET_DIMENSION = "com.zebra.parceldimensioning.GET_DIMENSION";
     public static final String BOX_ID = "BOX_ID";
 
-    sendIntentApi(ConstantUtils.INTENT_ACTION_GET_DIMENSION, ConstantUtils.BOX_ID, boxID);
+    sendIntentApi(INTENT_ACTION_GET_DIMENSION, BOX_ID, boxID);
 </code></pre>
 
 <p>See <a href="#sendintentapi">sendIntentApi()</a> for the function definition. </p>
@@ -596,7 +596,7 @@
 
 <p>Use the following action to call GET_DIMENSION_PARAMETER:</p>
 
-<pre class="prettyprint"><code>com.zebra.dimensioning GET_DIMENSION_PARAMETER
+<pre class="prettyprint"><code>com.zebra.dimensioning.GET_DIMENSION_PARAMETER
 </code></pre>
 
 <p>Add the following keys with the intent:</p>
@@ -644,55 +644,55 @@
   <tr>
        <td>RESULT_CODE</td>
     <td>Integer</td>
-    <td>0: Success<br>1: Fail<br>2: Error</td>
+    <td>0: Success<br>1: Failure<br>2: Error</td>
   </tr>
 
   <tr>
        <td>RESULT_MESSAGE</td>
     <td>String</td>
-    <td>Success<br><p style="font-family:'Courier New'">• Get Parameter Success</p>Failed<br><p style="font-family:'Courier New'">• Dimensioning In Use by Another App<br>• Failed to Get Parameters</p><br>Error<p style="font-family:'Courier New'">• Access Denied<br>• Invalid State</p></td>
+    <td>Success<br><p style="font-family:'Courier New'">• Success</p>Failure<br><p style="font-family:'Courier New'">• Dimensioning Already In Use<br>• Failed to Get Parameters</p><br>Error<p style="font-family:'Courier New'">• Access Denied<br>• Invalid State</p></td>
   </tr>
 
   <tr>
        <td>READY_LENGTH</td>
     <td>BigDecimal</td>
-    <td>0.0 in / 0 cm</td>
+    <td>Length value to display in app when ready to dimension </td>
   </tr>
 
   <tr>
        <td>READY_WIDTH</td>
     <td>BigDecimal</td>
-    <td>0.0 in / 0 cm</td>
+    <td>Width value to display in app when ready to dimension </td>
   </tr>
 
   <tr>
        <td>READY_HEIGHT</td>
     <td>BigDecimal</td>
-    <td>0.0 in / 0 cm</td>
+    <td>Height value to display in app when ready to dimension </td>
   </tr>
 
   <tr>
        <td>DIMENSION_UNIT</td>
     <td>String</td>
-    <td><p style="font-family:'Courier New'">(“in”/”cm”)</p></td>
+    <td><p style="font-family:'Courier New'">• Inch<br>• CM</p></td>
   </tr>
 
   <tr>
        <td>FRAMEWORK_VERSION</td>
     <td>String</td>
-    <td>FrameworkVersion</td>
+    <td>Framework version</td>
   </tr>
 
   <tr>
        <td>SERVICE_VERSION</td>
     <td>String</td>
-    <td>ServiceVersion</td>
+    <td>Service version</td>
   </tr>
 
   <tr>
        <td>PACKAGE_VERSION</td>
     <td>String</td>
-    <td>Parcel Dimensioning Software Package Version</td>
+    <td>Parcel dimensioning software package version</td>
   </tr>
 
   <tr>
@@ -704,22 +704,24 @@
   <tr>
        <td>SUPPORTED_UNITS</td>
     <td>String</td>
-    <td>(“in”,”cm”)<br>"in"<br>"cm"</td>
+    <td>(“Inch”,”CM”)<br>("CM")</td>
   </tr>
 
   <tr>
        <td>REPORT_IMAGE</td>
     <td>Boolean</td>
-    <td>True or False</td>
+    <td>• True<br>• False</td>
   </tr>
 
 </tbody></table>
+
+<p><br></p>
 
 <h3 id="samplecode-3" class="anchor"><a class="heading-anchor" href="#samplecode-3"><span></span></a>Sample Code</h3>
 
 <pre class="prettyprint"><code>    public static final String INTENT_ACTION_GET_DIMENSION_PARAMETER = "com.zebra.parceldimensioning.GET_DIMENSION_PARAMETER";
 
-    sendIntentApi(ConstantUtils.INTENT_ACTION_GET_DIMENSION_PARAMETER);
+    sendIntentApi(INTENT_ACTION_GET_DIMENSION_PARAMETER);
 </code></pre>
 
 <p>See <a href="#sendintentapi">sendIntentApi()</a> for the function definition.</p>
@@ -732,7 +734,7 @@
 
 <h3 id="request-4" class="anchor"><a class="heading-anchor" href="#request-4"><span></span></a>Request</h3>
 
-<p>ENABLE_DIMENSION must be called before calling SET_DIMENSION_PARAMETER. Supported values are reported by the SUPPORTED_UNITS value in GET_DIMENSION_PARAMETER.</p>
+<p>ENABLE_DIMENSION must be called before calling SET_DIMENSION_PARAMETER. Supported values for DIMENSIONING_UNIT are reported by the SUPPORTED_UNITS value in GET_DIMENSION_PARAMETER.</p>
 
 <p><strong>NOTE:</strong> Changing DIMENSIONING_UNIT may change the ready value.</p>
 
@@ -776,14 +778,14 @@
        <td>DIMENSIONING_UNIT</td>
     <td>String</td>
     <td>No</td>
-    <td><p style="font-family:'Courier New'">in<br>cm</p></td>
+    <td><p style="font-family:'Courier New'">• Inch<br>• CM</p></td>
   </tr>
 
   <tr>
        <td>REPORT_IMAGE</td>
     <td>Boolean</td>
     <td>No</td>
-    <td><p style="font-family:'Courier New'">True or False</p></td>
+    <td><p style="font-family:'Courier New'">• True<br>• False</p></td>
   </tr>
 
 </tbody></table>
@@ -804,25 +806,25 @@
   <tr>
        <td>RESULT_CODE</td>
     <td>Integer</td>
-    <td>0: Success<br>1: Fail<br>2: Error</td>
+    <td>0: Success<br>1: Failure<br>2: Error</td>
   </tr>
 
   <tr>
        <td>RESULT_MESSAGE</td>
     <td>String</td>
-    <td>Success<br><p style="font-family:'Courier New'">• Success</p>Failed<br><p style="font-family:'Courier New'">• Dimensioning In Use by Another App<br>• Failed to Set Parameter</p>Error<br><p style="font-family:'Courier New'">• Access Denied<br>• Invalid State<br>• Invalid Value<br>• Invalid Parameter</p></td>
+    <td>Success<br><p style="font-family:'Courier New'">• Success</p>Failure<br><p style="font-family:'Courier New'">• Dimensioning Already In Use<br>• Failed to Set Parameter</p>Error<br><p style="font-family:'Courier New'">• Access Denied<br>• Invalid State<br>• Invalid Value<br>• Invalid Parameter</p></td>
   </tr>
 
 </tbody></table>
+
+<p><br></p>
 
 <h3 id="samplecode-4" class="anchor"><a class="heading-anchor" href="#samplecode-4"><span></span></a>Sample Code</h3>
 
 <pre class="prettyprint"><code>    public static final String INTENT_ACTION_SET_DIMENSION_PARAMETER = "com.zebra.parceldimensioning.SET_DIMENSION_PARAMETER";
     public static final String DIMENSIONING_UNIT = "DIMENSIONING_UNIT";
 
-
-    sendIntentApi(ConstantUtils.INTENT_ACTION_SET_DIMENSION_PARAMETER,
-            ConstantUtils.DIMENSIONING_UNIT, mUnit);
+    sendIntentApi(INTENT_ACTION_SET_DIMENSION_PARAMETER, DIMENSIONING_UNIT, mUnit);
 </code></pre>
 
 <p>See <a href="#sendintentapi">sendIntentApi()</a> for the function definition.</p>
@@ -855,20 +857,20 @@
         Log.d(TAG, "sendIntentApi " + action);
         Intent intent = new Intent();
         intent.setAction(action);
-        intent.setPackage(ConstantUtils.CMP_PACKAGE);
-        intent.putExtra(ConstantUtils.PACKAGE_NAME, getPackageName());
-        intent.putExtra(ConstantUtils.API_TOKEN, token);
+        intent.setPackage(CMP_PACKAGE);
+        intent.putExtra(PACKAGE_NAME, getPackageName());
+        intent.putExtra(API_TOKEN, token);
 
         if (extras != null)
         {
             intent.putExtras(extras);
         }
 
-        PendingIntent lobPendingIntent = createPendingResult(ConstantUtils.REQUEST_CODE, new Intent(), PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent lobPendingIntent = createPendingResult(REQUEST_CODE, new Intent(), PendingIntent.FLAG_UPDATE_CURRENT);
 
-        intent.putExtra(ConstantUtils.CALLBACK_RESPONSE, lobPendingIntent);
+        intent.putExtra(CALLBACK_RESPONSE, lobPendingIntent);
 
-        if (intent.getAction().equals(ConstantUtils.INTENT_ACTION_ENABLE_DIMENSION))
+        if (intent.getAction().equals(INTENT_ACTION_ENABLE_DIMENSION))
         {
             startForegroundService(intent);
         }
@@ -940,12 +942,15 @@ public void onCreate() {
 }
 
 public void handleUncaughtException (Thread thread, Throwable e) {
-    Log.d(TAG, "handleUncaughtException start:");
-    Intent intent = new Intent();
-    intent.setAction(ConstantUtils.INTENT_ACTION_DISABLE_DIMENSION);
-    intent.setPackage(ConstantUtils.SDK_PACKAGE);
-    sendBroadcast(intent);
-    Log.d(TAG, "handleUncaughtException stop:");
+    if (DimensioningClientApp.token != null &amp;amp;&amp;amp; !DimensioningClientApp.token.isEmpty())
+    {
+        Intent intent = new Intent();
+        intent.setAction(ConstantUtils.INTENT_ACTION_DISABLE_DIMENSION);
+        intent.setPackage(ConstantUtils.CMP_PACKAGE);
+        intent.putExtra(ConstantUtils.PACKAGE_NAME, getPackageName());
+        intent.putExtra(ConstantUtils.API_TOKEN, DimensioningClientApp.token);
+        sendBroadcast(intent);
+    }
 }
 </code></pre>
 
@@ -955,7 +960,7 @@ public void handleUncaughtException (Thread thread, Throwable e) {
 
 <h3 id="serviceunavailable" class="anchor"><a class="heading-anchor" href="#serviceunavailable"><span></span></a>Service Unavailable</h3>
 
-<p>If the dimensioning service is not available, a notification can be sent to the app so it can initiate app data cleanup and inform the user of the unavailability of the dimensioning service.</p>
+<p>If the dimensioning service encounters a failure, a notification can be sent to the app so it can initiate app data cleanup and inform the user of the unavailability of the dimensioning service.</p>
 
 <p>The following code notifies the app when the dimensioning service is unavailable:</p>
 
