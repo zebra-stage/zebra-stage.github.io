@@ -216,7 +216,7 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>Mobile Parcel API is designed based on the Android Intent architecture, reducing library dependencies and integration time for app developers. To ensure the interface is secure, it uses explicit and pending intents secured using an API token. </p>
+<p>Mobile Parcel API is designed based on the Android Intent architecture, reducing library dependencies and integration time for app developers. To ensure the interface is secure, it uses explicit and pending intents secured using an API token. This section discussed the Mobile Parcel APIs and how they are used.</p>
 
 <p>APIs available:</p>
 
@@ -232,13 +232,9 @@
 <li><strong>DISABLE_DIMENSION -</strong> Releases all dimensioning framework resources, including camera hardware.</li>
 </ul>
 
-<p>More information on each API is provided in the following sections.</p>
+<p>The application must send both the API_TOKEN and the package name with each API request. If either the token or package name is incorrect, the Dimensioning API reports the result code failed with a result message of access denied.</p>
 
-<h3 id="security" class="anchor"><a class="heading-anchor" href="#security"><span></span></a>Security</h3>
-
-<p>To ensure that only trusted applications communicate with the Dimensioning Framework, Zebra requires that developers use an access control method through Access Manager. For detailed instructions, refer to <a href="/mx/accessmgr/">MX Access Manager</a>. The Service Identifier for the Dimension Service is “delegation-zebra-com.zebra.mobiledimensioning-Enable”.</p>
-
-<p>The application must send both the API_TOKEN and the package name with each API request. If either the token or package name is incorrect, the Dimensioning API reports the result code <em>Failed</em> with a result message of <em>Access Denied.</em></p>
+<p>Only trusted applications can communicate with the Dimensioning Framework. See <a href="#security">Security</a> for instructions on how to allow your app to be included in the "whitelist".</p>
 
 <!-- 
 ### State Diagram
@@ -333,7 +329,7 @@ The following state diagram for the Mobile Parcel Dimensioning client explains t
   <tr>
        <td>RESULT_MESSAGE</td>
     <td>String</td>
-    <td>Success<br><p style="font-family:'Courier New'">• Success</p>Failure<br><p style="font-family:'Courier New'">• Dimensioning In Use by Another App<br>• Dimensioning Already In Use<br>• Dimensioning Not Supported<br>• Failed to Open Camera<br>• Failed to Enable<br>• Framework Not Installed<br>• Failed Integrity Check <sup>1</sup><br>• Integrity Check Fault <sup>2</sup><br>• Insufficient Permissions</p><sup>1</sup> Incorrect Dimensioning framework loaded.<br><sup>2</sup> System failure while running integrity check.<br>Error<br><p style="font-family:'Courier New'">• Access Denied<br>• Invalid Module Parameter</p></td>
+    <td>Success<br><p style="font-family:'Courier New'">• Success</p>Failure<br><p style="font-family:'Courier New'">• Dimensioning In Use by Another App<br>• Dimensioning Already In Use<br>• Dimensioning Not Supported<br>• Failed to Open Camera<br>• Failed to Enable<br>• Framework Not Installed<br>• Failed Integrity Check <sup>1</sup><br>• Integrity Check Fault <sup>2</sup><br>• Insufficient Permissions</p>Error<br><p style="font-family:'Courier New'">• Access Denied<br>• Invalid Module Parameter</p><br><sup>1</sup> Incorrect Dimensioning framework loaded.<br><sup>2</sup> System failure while running integrity check.</td>
   </tr>
 
 </tbody></table>
@@ -704,13 +700,13 @@ The following state diagram for the Mobile Parcel Dimensioning client explains t
   <tr>
        <td>SUPPORTED_UNITS</td>
     <td>String</td>
-    <td>(“Inch”,”CM”)<br>("CM")</td>
+    <td><p style="font-family:'Courier New'">• (“Inch”,”CM”)<br>• ("CM")</p></td>
   </tr>
 
   <tr>
        <td>REPORT_IMAGE</td>
     <td>Boolean</td>
-    <td>• True<br>• False</td>
+    <td><p style="font-family:'Courier New'">• True<br>• False</p></td>
   </tr>
 
 </tbody></table>
@@ -831,6 +827,88 @@ The following state diagram for the Mobile Parcel Dimensioning client explains t
 
 <hr>
 
+<h2 id="security" class="anchor"><a class="heading-anchor" href="#security"><span></span></a>Security</h2>
+
+<p>To ensure that only trusted applications communicate with the Dimensioning Framework, Zebra requires that developers use an access control method through <a href="/mx/accessmgr/">MX Access Manager</a> to allow their application package to the "whitelist". This is accomplished by performing the following:</p>
+
+<ol>
+<li><a href="#extractclientappcertificate">Extract the client app certificate</a>, which is required as a prerequisite to the next step to create the StageNow profile.</li>
+
+<li>Place the custom Mobile Parcel app to the device "whitelist" by <a href="#createdeploystagenowprofile">creating and deploying the StageNow profile</a> using Access Manager.</li>
+</ol>
+
+<h3 id="extractclientappcertificate" class="anchor"><a class="heading-anchor" href="#extractclientappcertificate"><span></span></a>Extract Client App Certificate</h3>
+
+<p>Extracting the client app certificate from the custom Mobile Parcel app is a pre-requisite to create the StageNow profile that places the app in the device's allow list.</p>
+
+<p>Steps to extract the client app certificate:</p>
+
+<ol>
+<li><p>Download SigTools.jar from <a href="https://techdocs.zebra.com/emdk-for-android/latest/samples/sigtools/">Zebra’s App Signature Tools</a>.</p></li>
+
+<li><p>Follow the instructions provided from the link to extract the certificate from the custom Mobile Parcel client APK file using command:<br>
+<code>java -jar SigTools.jar GetCert -INFORM APK -OUTFORM DER -IN [filename.apk] -OUTFILE [filename.crt]</code><br>
+where <em>[filename.apk]</em> is the full path and file name of the custom Mobile Parcel client APK file and <em>[filename.crt]</em> is the designated certificate file name. The file extensions should be preserved in both file names. </p></li>
+
+<li><p>The certificate file is extracted as the CRT file.
+The certificate file is needed to create the StageNow profile.
+<br><br></p></li>
+</ol>
+
+<h3 id="createdeploystagenowprofile" class="anchor"><a class="heading-anchor" href="#createdeploystagenowprofile"><span></span></a>Create &amp; Deploy StageNow Profile</h3>
+
+<p>To create a StageNow profile to place the app in the allow list of the device:</p>
+
+<ol>
+<li>Download and install <a href="https://www.zebra.com/us/en/support-downloads/software/utilities/stagenow.html">StageNow</a> on a host computer.</li>
+
+<li>Open StageNow. In the StageNow home screen, click <strong>Create New Profile</strong> from the left menu.
+<img alt="" style="height:350px" src="create-profile.png"></li>
+
+<li>Ensure MX version 11.1 or higher is selected at the top drop-down selector. The MX version on the device should match this or higher. See <a href="/mx/mx-version-on-device/">MX documentation</a> for instructions how to check the version. If automatically bypassing the overlay permission for Check-out, select MX 10.0 or higher.</li>
+
+<li>Select <strong>Xpert Mode</strong> from the list and click <strong>Create.</strong>
+<img alt="" style="height:350px" src="wizard-selection.png"></li>
+
+<li>Enter the profile name. Click <strong>Start.</strong>
+<img alt="" style="height:350px" src="profile-name.png"></li>
+
+<li>Scroll to <strong>AccessMgr</strong> and click the plus (+) sign to add AccessMgr to the Config tab on the right side.
+<img alt="" style="height:350px" src="add-accessmgr.png"></li>
+
+<li>Click <strong>Add.</strong></li>
+
+<li>Enter the appropriate information as prompted:
+
+
+<ul>
+<li><strong>Service Identifier:</strong> delegation-zebra-com.zebra.mobiledimensioning-Enable</li>
+
+<li><strong>Caller Package Name:</strong> [Enter package name of the client app.]</li>
+
+<li><strong>Caller Signature:</strong> [Browse to the app certificate generated from the <a href="#extractclientappcertificate">Extract Client App Certificate</a>.]
+Click <strong>Continue.</strong>
+<img alt="" style="height:350px" src="accessmgr.png"></li></ul>
+</li>
+
+<li>Click <strong>Complete Profiles.</strong> Profile creation is complete.
+<img alt="" style="height:350px" src="complete-profile.png">
+<!-- 
+10. Select **StageNow**, then click **Test** to generate PDF417 staging barcodes.
+   <img alt="" style="height:350px"  src="generate-barcode.png" />
+ --></li>
+</ol>
+
+<p>Perform <strong>one</strong> of the following steps based on the staging method. Ensure devices are connected to the network during the staging process:</p>
+
+<ul>
+<li><strong>StageNow:</strong> Generate the barcode. Open StageNow on the device and scan the barcode to deploy the changes, placing the app on the allow list.</li>
+
+<li><strong>EMM:</strong> Click on <strong>Export the XML for MDM.</strong> Send the XML using either <a href="/oemconfig">OEMConfig</a> or <a href="/mx/overview">MX</a> to configure the app and grant all required permissions.</li>
+</ul>
+
+<hr>
+
 <h2 id="samplecode-5" class="anchor"><a class="heading-anchor" href="#samplecode-5"><span></span></a>Sample Code</h2>
 
 <p>The following sections provide code samples for developing a Mobile Parcel Dimensioning app.</p>
@@ -942,6 +1020,7 @@ public void onCreate() {
 }
 
 public void handleUncaughtException (Thread thread, Throwable e) {
+
     if (DimensioningClientApp.token != null &amp;amp;&amp;amp; !DimensioningClientApp.token.isEmpty())
     {
         Intent intent = new Intent();
