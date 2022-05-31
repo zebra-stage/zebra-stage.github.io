@@ -232,7 +232,7 @@
 <li><strong>DISABLE_DIMENSION -</strong> Releases all Dimensioning service resources, including camera hardware.</li>
 </ul>
 
-<p><strong>The application must send both the API_TOKEN and the package name with each API request.</strong> If either the token or package name is incorrect, the Mobile Parcel API reports the error result code with an access denied message.</p>
+<p><strong>The application must send both the API token and the package name with each API request.</strong> If either the token or package name is incorrect, the Mobile Parcel API reports the error result code with an access denied message.</p>
 
 <p>Only trusted applications can communicate with the Mobile Parcel API. See <a href="#security">Security</a> for instructions on how to allow your app to be included in the "whitelist".</p>
 
@@ -252,7 +252,7 @@ The following state diagram for the Mobile Parcel Dimensioning client explains t
 
 <h3 id="definethepackagename" class="anchor"><a class="heading-anchor" href="#definethepackagename"><span></span></a>Define the package name</h3>
 
-<p>Add the <code>&lt;queries&gt;</code> tag in the AndroidManifest.xml of the app to define the Dimensioning service package name. This is required to allow the Mobile Parcel API to communicate with the app.</p>
+<p>Add the <code>&lt;queries&gt;</code> tag in the AndroidManifest.xml of the LOB app to define the Dimensioning service package name. This is required to allow the Mobile Parcel API to communicate with the app.</p>
 
 <pre class="prettyprint"><code>&lt;queries&gt;
     &lt;package android:name="com.zebra.dimensioning"/&gt;
@@ -272,47 +272,46 @@ The following state diagram for the Mobile Parcel Dimensioning client explains t
 <li><p>Add the the .AAR library to the build.gradle file:</p>
 
 <pre class="prettyprint"><code>dependencies {
-    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
     implementation fileTree(dir: 'libs', include: ['*.aar'])
 }
 </code></pre></li>
 
 <li><p>Use BroadCastAuthenticator class to generate the token:</p>
 
-<pre class="prettyprint"><code>private final BroadCastAuthenticator vIntentprotect = new BroadCastAuthenticator();
-private String token = "";
+<pre class="prettify prettyprint"><code>
+    private final BroadCastAuthenticator vIntentprotect = new BroadCastAuthenticator();
+    private String token = "";
+    public static final String SERVICE_IDENTIFIER = "delegation-zebra-com.zebra.mobiledimensioning-Enable";
 
-@Override
-protected void onCreate(Bundle savedInstanceState)
-{
-    super.onCreate(savedInstanceState);
-    // Token authenticator initialization.
-    vIntentprotect.initialize(getApplicationContext(), new OnInitCallback()
+    @Override
+    protected void onCreate(Bundle savedInstanceState)
     {
-        @Override
-        public void onInitialized()
+        super.onCreate(savedInstanceState);
+        // Token authenticator initialization.
+        vIntentprotect.initialize(getApplicationContext(), new OnInitCallback()
         {
-            Log.d(TAG, "BroadCastAuthenticator is successfully initialized");
+            @Override
+            public void onInitialized()
+            {
+                Log.d(TAG, "BroadCastAuthenticator is successfully initialized");
 
-<pre><code>        try
-        {
-            token = vIntentprotect.getToken(ConstantUtils.SERVICE_IDENTIFIER);
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-        if (token != null &amp;amp;&amp;amp; !token.isEmpty())
-        {
-            // Communicate with Service
-        }
+                try
+                {
+                    token = vIntentprotect.getToken(SERVICE_IDENTIFIER);
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+                if (token != null &amp;&amp; !token.isEmpty())
+                {
+                    // Communicate with Service
+                }
+            }
+        });
     }
-});
-</code></pre>
-
-}
-</code></pre></li>
+</code>
+</pre></li>
 </ol>
 
 <hr>
@@ -1121,44 +1120,44 @@ where <em>[filename.apk]</em> is the full path and file name of the LOB app APK 
 &lt;/application&gt;
 </code></pre></li>
 
-<li><p>Make the following change to the JAVA file:</p>
-
-<pre class="prettyprint"><code>public static final String CMP_PACKAGE = "com.zebra.dimensioning";
-public static final String PACKAGE_NAME = "APPLICATION_PACKAGE";
-public static final String API_TOKEN = "TOKEN";
-public static final String INTENT_ACTION_ENABLE_DIMENSION = "com.zebra.dimensioning.ENABLE_DIMENSION";
-
-public class ApplicationDimensioningClient extends Application {
-    private static final String TAG = ApplicationDimensioningClient.class.getSimpleName();
-
-<pre><code>@Override
-public void onCreate() {
-    super.onCreate();
-    Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-        @Override
-        public void uncaughtException(Thread thread, Throwable ex) {
-            handleUncaughtException(thread, ex);
-        } 
-    });
-}
-
-public void handleUncaughtException (Thread thread, Throwable e) {
-
-    if (token != null &amp;amp;&amp;amp; !token.isEmpty())          // Validate application token
-    {
-        Intent intent = new Intent();
-        intent.setAction(INTENT_ACTION_DISABLE_DIMENSION);
-        intent.setPackage(CMP_PACKAGE);
-        intent.putExtra(PACKAGE_NAME, getPackageName());
-        intent.putExtra(API_TOKEN, token);
-        sendBroadcast(intent);
-    }
-}
-</code></pre>
-
-}
-</code></pre></li>
+<li><p>Make the following change to the JAVA file:</p></li>
 </ul>
+
+<pre class="prettify prettyprint"><code>
+    public static final String CMP_PACKAGE = "com.zebra.dimensioning";
+    public static final String PACKAGE_NAME = "APPLICATION_PACKAGE";
+    public static final String API_TOKEN = "TOKEN";
+    public static final String INTENT_ACTION_DISABLE_DIMENSION = "com.zebra.dimensioning.DISABLE_DIMENSION";
+
+    public class ApplicationDimensioningClient extends Application {
+        private static final String TAG = ApplicationDimensioningClient.class.getSimpleName();
+
+        @Override
+        public void onCreate() {
+            super.onCreate();
+            Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+                @Override
+                public void uncaughtException(Thread thread, Throwable ex) {
+                    handleUncaughtException(thread, ex);
+                } 
+            });
+        }
+
+        public void handleUncaughtException (Thread thread, Throwable e) {
+
+            if (token != null &amp;&amp; !token.isEmpty())          // Validate application token
+            {
+                Intent intent = new Intent();
+                intent.setAction(INTENT_ACTION_DISABLE_DIMENSION);
+                intent.setPackage(CMP_PACKAGE);
+                intent.putExtra(PACKAGE_NAME, getPackageName());
+                intent.putExtra(API_TOKEN, token);
+                sendBroadcast(intent);
+            }
+        }
+    }
+</code>
+</pre>
 
 <h3 id="serviceunavailable" class="anchor"><a class="heading-anchor" href="#serviceunavailable"><span></span></a>Service Unavailable</h3>
 
