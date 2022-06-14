@@ -263,6 +263,36 @@ catch (OperationFailureException e)
 rfidReader.disconnect();
 </code></pre>
                                                         <blockquote><strong>NOTE: If a reader disconnection occurs, the reader.isConnected() flag may return the value false. If application has called the <code>reader.connect()</code> then application should call <code>reader.disconnect()</code> regardless of the flag status</strong></blockquote>
+                                                    
+                                                    <h2 id="code2" class="anchor"><a class="heading-anchor" href="#code2"><span></span></a>Reconnection</h2>
+
+                                                        <p>When the connection close event/disconnection is sent form reader and application is not done with the connection and operations on the RFID reader, User can reconnect </p>
+
+                                                        <pre class="prettyprint"><code>
+public void eventStatusNotify(RfidStatusEvents rfidStatusEvents) {
+    if(rfidStatusEvents.StatusEventData.getStatusEventType() == DISCONNECTION_EVENT){
+        try {
+            reader.disconnect();
+            reader.connect();
+            if (reader.isConnected()) {
+                if (eventHandler == null)
+                    eventHandler = new EventHandler();
+
+                reader.Events.addEventsListener(eventHandler);
+                reader.Events.setInventoryStartEvent(true);
+                reader.Events.setInventoryStopEvent(true);
+                reader.Events.setTagReadEvent(true);
+                reader.Events.setBufferFullEvent(true);
+                reader.Events.setBufferFullWarningEvent(true);
+                reader.Events.setReaderDisconnectEvent(true);
+            }
+            reader.Actions.Inventory.perform();
+        } catch (OperationFailureException | InvalidUsageException e) {
+                 e.printStackTrace();
+        }
+    }
+}
+                                                        </code></pre>
 
                                                         <h2 id="code2" class="anchor"><a class="heading-anchor" href="#code2"><span></span></a>Dispose</h2>
 
