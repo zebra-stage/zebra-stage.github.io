@@ -264,31 +264,41 @@ rfidReader.disconnect();
 </code></pre>
                                                         <blockquote><strong>NOTE: If a reader disconnection occurs, the reader.isConnected() flag may return the value false. If application has called the <code>reader.connect()</code> then application should call <code>reader.disconnect()</code> regardless of the flag status</strong></blockquote>
                                                     
-                                                    <h2 id="code2" class="anchor"><a class="heading-anchor" href="#code2"><span></span></a>Reconnection</h2>
+                                                    <h2 id="code2" class="anchor"><a class="heading-anchor" href="#code2"><span></span></a>Detecting Connection Loss and Reconnecting</h2>
 
-                                                        <p>When the connection close event/disconnection is sent form reader and application is not done with the connection and operations on the RFID reader, User can reconnect </p>
+                                                        <p>In order to detect connection loss the user should subscribe for Reader Disconnection event and implement RfidEventsListener class, the eventStatusNotify method of RfidEventsListener will notify the connection loss.
+                                                        The below code can be used for detecting connection loss and reconnecting.
+                                                        </p>
 
                                                         <pre class="prettyprint"><code>
-public void eventStatusNotify(RfidStatusEvents rfidStatusEvents) {
-    if(rfidStatusEvents.StatusEventData.getStatusEventType() == DISCONNECTION_EVENT){
-        try {
-            reader.disconnect();
-            reader.connect();
-            if (reader.isConnected()) {
-                if (eventHandler == null)
-                    eventHandler = new EventHandler();
+public EventHandler eventHandler;
+if (eventHandler == null)
+    eventHandler = new EventHandler();
+reader.Events.addEventsListener(eventHandler);
+reader.Events.setTagReadEvent(true);
+reader.Events.setReaderDisconnectEvent(true);
 
-                reader.Events.addEventsListener(eventHandler);
-                reader.Events.setInventoryStartEvent(true);
-                reader.Events.setInventoryStopEvent(true);
-                reader.Events.setTagReadEvent(true);
-                reader.Events.setBufferFullEvent(true);
-                reader.Events.setBufferFullWarningEvent(true);
-                reader.Events.setReaderDisconnectEvent(true);
+class EventHandler implements RfidEventsListener {
+     public void eventReadNotify(RfidReadEvents e) {
+        TagData[] tag = reader.Actions.getReadTags(200);
+    }
+    public void eventStatusNotify(RfidStatusEvents rfidStatusEvents) {
+        if(rfidStatusEvents.StatusEventData.getStatusEventType() == DISCONNECTION_EVENT){
+            try {
+                reader.disconnect();
+                reader.connect();
+                if (reader.isConnected()) {
+                    if (eventHandler == null)
+                        eventHandler = new EventHandler();
+
+                    reader.Events.addEventsListener(eventHandler);
+                    reader.Events.setTagReadEvent(true);
+                    reader.Events.setReaderDisconnectEvent(true);
+                }
+                reader.Actions.Inventory.perform();
+            } catch (OperationFailureException | InvalidUsageException e) {
+                     e.printStackTrace();
             }
-            reader.Actions.Inventory.perform();
-        } catch (OperationFailureException | InvalidUsageException e) {
-                 e.printStackTrace();
         }
     }
 }
