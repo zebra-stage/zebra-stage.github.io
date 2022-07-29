@@ -85,6 +85,11 @@
                             </a>
                         </li>
                         <li>
+                            <a href="/ssm/1-1/guide/api">
+                                    APIs
+                            </a>
+                        </li>
+                        <li>
                             <a href="https://developer.zebra.com/forum/search?keys=&amp;field_zebra_curated_tags_tid%5B%5D=184">
                                     <i class="fa fa-comments-o"></i>
                             </a>
@@ -223,7 +228,7 @@
 
 <p>This section provides standard Android Content Provider APIs used in Secure Storage Manager (SSM).</p>
 
-<h2 id="contentproviderinterfaceapis" class="anchor"><a class="heading-anchor" href="#contentproviderinterfaceapis"><span></span></a>Content Provider Interface APIs</h2>
+<h2 id="contentproviderapis" class="anchor"><a class="heading-anchor" href="#contentproviderapis"><span></span></a>Content Provider APIs</h2>
 
 <table class="facelift" style="width:100%" border="1" padding="5px">
   <tbody><tr bgcolor="#dce8ef">
@@ -265,7 +270,7 @@ Content Provider parameters:</p>
 
   <tr>
     <td><b>target_app_package</b></td>
-    <td>Package name and signature of the target app in a json array. Multiple target apps and signatures can also be given in a json array. The signature must be provided in Base64 format. To generate the signature of any APK, See <a href="#gettheandroidapksignature">Get the signature of an Android APK</a>.</td>
+    <td>Package name and signature of the target app in a json array. Multiple target apps and signatures can also be given in a json array. The signature must be provided in Base64 format. To generate the signature of any APK, See <a href="#gettheappsignature">Get the app signature</a>.</td>
     <td>Mandatory</td>
   </tr>
 
@@ -319,7 +324,9 @@ plaintext = 1, encrypted = 2</td>
 
 <hr>
 
-<h2 id="gettheandroidapksignature" class="anchor"><a class="heading-anchor" href="#gettheandroidapksignature"><span></span></a>Get the Android APK signature</h2>
+<h2 id="gettheappsignature" class="anchor"><a class="heading-anchor" href="#gettheappsignature"><span></span></a>Get the App Signature</h2>
+
+<p>The target app signature is required to be passed to the SSM Content Provider to aid in authenticating the target app.</p>
 
 <p>To generate the signature (signing certificate) of any APK:</p>
 
@@ -348,7 +355,7 @@ plaintext = 1, encrypted = 2</td>
 
 <hr>
 
-<h2 id="samplecode" class="anchor"><a class="heading-anchor" href="#samplecode"><span></span></a>Sample Code</h2>
+<h2 id="samplecodefordatasharing" class="anchor"><a class="heading-anchor" href="#samplecodefordatasharing"><span></span></a>Sample Code for Data Sharing</h2>
 
 <h3 id="insertupdatedatainasingleapp" class="anchor"><a class="heading-anchor" href="#insertupdatedatainasingleapp"><span></span></a>Insert / Update Data in a Single App</h3>
 
@@ -425,7 +432,7 @@ plaintext = 1, encrypted = 2</td>
     Log.d(TAG, "Created row: " + createdRow.toString());
 </code></pre>
 
-<h3 id="query" class="anchor"><a class="heading-anchor" href="#query"><span></span></a>Query</h3>
+<h3 id="querydata" class="anchor"><a class="heading-anchor" href="#querydata"><span></span></a>Query Data</h3>
 
 <p>Sample code to return the data fields based on the app package name. The cursor object returns the data fields of the app package. Traverse the cursor object to retrieve the data fields. </p>
 
@@ -442,7 +449,7 @@ plaintext = 1, encrypted = 2</td>
     // Then traverse the cursor object to retrieve the data fields.
 </code></pre>
 
-<h3 id="delete" class="anchor"><a class="heading-anchor" href="#delete"><span></span></a>Delete</h3>
+<h3 id="deletedata" class="anchor"><a class="heading-anchor" href="#deletedata"><span></span></a>Delete Data</h3>
 
 <p>Sample code to delete the app package and its data fields:</p>
 
@@ -451,6 +458,58 @@ plaintext = 1, encrypted = 2</td>
     String whereClause = "target_app_package = '" + context.getPackageName() + "'" +" AND "+ "data_persist_required = '" + "true" + "'";
 
     int rowsDeleted = getContentResolver().delete(cpUriDelete, whereClause, null);
+</code></pre>
+
+<hr>
+
+<h2 id="samplecodeforfilesharing" class="anchor"><a class="heading-anchor" href="#samplecodeforfilesharing"><span></span></a>Sample Code for File Sharing</h2>
+
+<h3 id="queryafilefolder" class="anchor"><a class="heading-anchor" href="#queryafilefolder"><span></span></a>Query a File/Folder</h3>
+
+<p>Sample code to query a specific file or folder:</p>
+
+<pre class="prettyprint"><code>private String AUTHORITY_FILE = "content://com.zebra.securestoragemanager.securecontentprovider/file/*";
+
+public void queryFile() {
+
+    Uri cpUriQuery = Uri.parse(AUTHORITY_FILE);
+    String selection = "target_path = '" + context.getPackageName()+"/folder/" + "' AND  data_persist_required = 'true'";
+
+    Cursor cursor = null;
+    try {
+        cursor = context.getContentResolver().query(cpUriQuery, null, selection, null, null);
+
+    } catch (Exception e) {
+        Log.e(TAG, "Error: "+ e.getMessage());
+    }
+
+    try {
+        if(cursor !=null &amp;&amp; cursor.moveToFirst()){
+
+            StringBuilder strBuild = new StringBuilder();
+            String uriString = null;
+            while (!cursor.isAfterLast()) {
+
+                uriString = cursor.getString (cursor.getColumnIndex("secure_file_uri"));
+                String fileName = cursor.getString(cursor.getColumnIndex("secure_file_name"));
+                String isDir = cursor.getString(cursor.getColumnIndex("secure_is_dir"));
+                String crc = cursor.getString(cursor.getColumnIndex("secure_file_crc"));
+
+                strBuild.append(uriString).append("\n").
+                        append(fileName).append("\n").
+                        append(isDir).append("\n").append(crc);
+
+                cursor.moveToNext();
+            }
+        }
+    } catch (Exception e) {
+        Log.e(TAG, "Query data error: " + e.getMessage());
+    } finally {
+        if(cursor != null){
+            cursor.close();
+        }
+    }
+}
 </code></pre>
 
 <hr>
