@@ -75,11 +75,6 @@
                             </a>
                         </li>
                         <li>
-                            <a href="/ssm/1-1/guide/deploy">
-                                    Deployment
-                            </a>
-                        </li>
-                        <li>
                             <a href="/ssm/1-1/guide/share-data">
                                     Data Sharing
                             </a>
@@ -87,11 +82,6 @@
                         <li>
                             <a href="/ssm/1-1/guide/share-files">
                                     File Sharing
-                            </a>
-                        </li>
-                        <li>
-                            <a href="/ssm/1-1/guide/api">
-                                    APIs
                             </a>
                         </li>
                         <li>
@@ -231,7 +221,7 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>This section provides the Content Provider Interface APIs for Secure Storage Manager (SSM).</p>
+<p>This section provides standard Android Content Provider APIs used in Secure Storage Manager (SSM).</p>
 
 <h2 id="contentproviderinterfaceapis" class="anchor"><a class="heading-anchor" href="#contentproviderinterfaceapis"><span></span></a>Content Provider Interface APIs</h2>
 
@@ -293,7 +283,7 @@ Content Provider parameters:</p>
 
   <tr>
     <td><b>data_persist_required</b></td>
-    <td>Set whether persistence is required after Enterprise Reset (true/false).</td>
+    <td>Set whether persistence is required after Enterprise Reset (true/false).<br>If set to true, large data sets are not supported due to Android parcel size limitations - an exception is encountered if the query result data size is too large.</td>
     <td>Mandatory</td>
   </tr>
 
@@ -313,12 +303,14 @@ plaintext = 1, encrypted = 2</td>
 
 </tbody></table>
 
+<p><br></p>
+
 <p><strong>Notes:</strong></p>
 
 <ul>
-<li><strong>Querying persistent data after reboot</strong> could be delayed until the system is completely initialized.</li>
+<li>When <strong>persistent data is queried after a device reboot,</strong> a delay may occur in receiving the query results until the system is completely initialized.</li>
 
-<li><strong>Querying persistent data could be slower than non-persistent data</strong>, since SSM stores persistent data in a device-persistent location.</li>
+<li><strong>Querying persistent data could be slower than querying non-persistent data</strong>, since SSM stores persistent data in a device-persistent location.</li>
 
 <li><strong>Data names (data_name) cannot be duplicated</strong> in the same application when inserting data. If an app tries to insert a duplicate data name, it throws a Duplicate Data Name exception.</li>
 
@@ -338,7 +330,8 @@ plaintext = 1, encrypted = 2</td>
 
 <li><p>Use the command below (adapt as needed)</p>
 
-<p>Java -jar SigTools.jar GetCert -INFORM APK -OUTFORM BASE64 -IN Client.apk -OUTFILE Client.txt</p></li>
+<pre class="prettyprint"><code>Java -jar SigTools.jar GetCert -INFORM APK -OUTFORM BASE64 -IN Client.apk -OUTFILE Client.txt
+</code></pre></li>
 </ol>
 
 <p><strong>NOTES:</strong></p>
@@ -359,7 +352,7 @@ plaintext = 1, encrypted = 2</td>
 
 <h3 id="insertupdatedatainasingleapp" class="anchor"><a class="heading-anchor" href="#insertupdatedatainasingleapp"><span></span></a>Insert / Update Data in a Single App</h3>
 
-<p>Sample code to securely insert data in plain text:</p>
+<p>Sample code to securely insert data in plain text to a single target app. The return URI provides the URI of the newly inserted row.</p>
 
 <pre class="prettyprint"><code>    private String TARGET_APP_PACKAGE = "target_app_package";  
     private String DATA_NAME = "data_name";
@@ -396,11 +389,9 @@ plaintext = 1, encrypted = 2</td>
         "{\"pkgs_sigs\":[{\"pkg\":\"com.ztestapp.clientapplication\",\"sig\":\"24727AB4E6C4A…ACE1FE342F0D6872B27B3C\"}]}");
 -->
 
-<p>The return URI provides the URI of the newly inserted row.</p>
-
 <h3 id="insertupdatedatainmultipleapps" class="anchor"><a class="heading-anchor" href="#insertupdatedatainmultipleapps"><span></span></a>Insert / Update Data in Multiple Apps</h3>
 
-<p>Sample code to insert the package name and signature of all target apps as a json array in the ContentValues object, which is then passed to the insert() method to insert or update the data:</p>
+<p>Sample code to insert the package name and signature of all target apps as a json array in the ContentValues object, which is then passed to the insert() method to insert or update the data. The return URI provides the number of rows updated.</p>
 
 <pre class="prettyprint"><code>    private String TARGET_APP_PACKAGE = "target_app_package";
     private String DATA_NAME = "data_name";
@@ -434,11 +425,9 @@ plaintext = 1, encrypted = 2</td>
     Log.d(TAG, "Created row: " + createdRow.toString());
 </code></pre>
 
-<p>The return URI provides the number of rows updated.</p>
-
 <h3 id="query" class="anchor"><a class="heading-anchor" href="#query"><span></span></a>Query</h3>
 
-<p>Sample code to return the data fields based on the app package name:</p>
+<p>Sample code to return the data fields based on the app package name. The cursor object returns the data fields of the app package. Traverse the cursor object to retrieve the data fields. </p>
 
 <pre class="prettyprint"><code>    Uri cpUriQuery = Uri.parse(AUTHORITY + "/[" + context.getPackageName() + "]");
 
@@ -452,10 +441,6 @@ plaintext = 1, encrypted = 2</td>
     }
     // Then traverse the cursor object to retrieve the data fields.
 </code></pre>
-
-<p>The cursor object returns the data fields of the app package. Traverse the cursor object to retrieve the data fields. </p>
-
-<p><strong>Limitation:</strong> When querying data from persistent storage (i.e <code>data_persist_required = true</code>), large data sets are not supported due to Android parcel size limitations. “TransactionTooLargeException” is encountered if the query result data size is too large.</p>
 
 <h3 id="delete" class="anchor"><a class="heading-anchor" href="#delete"><span></span></a>Delete</h3>
 
@@ -474,8 +459,6 @@ plaintext = 1, encrypted = 2</td>
 
 <ul>
 <li><a href="../about/">About SSM</a></li>
-
-<li><a href="../deploy/">File Deployment</a></li>
 
 <li><a href="../share-data">Data Sharing</a></li>
 

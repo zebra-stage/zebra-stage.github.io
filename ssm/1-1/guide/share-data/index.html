@@ -75,11 +75,6 @@
                             </a>
                         </li>
                         <li>
-                            <a href="/ssm/1-1/guide/deploy">
-                                    Deployment
-                            </a>
-                        </li>
-                        <li>
                             <a href="/ssm/1-1/guide/share-data">
                                     Data Sharing
                             </a>
@@ -87,11 +82,6 @@
                         <li>
                             <a href="/ssm/1-1/guide/share-files">
                                     File Sharing
-                            </a>
-                        </li>
-                        <li>
-                            <a href="/ssm/1-1/guide/api">
-                                    APIs
                             </a>
                         </li>
                         <li>
@@ -258,54 +248,40 @@
 
 <h2 id="howitworks" class="anchor"><a class="heading-anchor" href="#howitworks"><span></span></a>How It Works</h2>
 
+<p>The originating app encrypts the data with <a href="/det">Data Encryption Tool</a> and sends it to SSM. When SSM receives the encrypted data, it decrypts it and saves it in SSM-encrypted format in its database. When the target app retrieves the data, SSM removes the SSM-encryption and delivers the data according to the data output form required by the target app.</p>
+
+<p><img alt="image" src="SSM_DET.png"></p>
+
 <p>Data items are structured as name/value pairs. Each pair is uniquely identified by the originating app name and data-item name when made available to a target app. Ownership of the data, including the ability to change or delete, starts with the originating app and transitions to the target app once the data is delivered. SSM implements Android Content Provider to share data and manage data access between apps.</p>
 
 <p>An originating app must instruct SSM to store data either in a persistent or non-persistent manner. Persistent data stored under SSM remains available after an Enterprise Reset is performed; a Factory Reset erases all device data.</p>
 
-<p>To encrypt data from the originating app prior to storing the data in SSM, use the <a href="/det">Data Encryption Tool</a>.</p>
-
 <hr>
 
-<h2 id="configureanapptousessm" class="anchor"><a class="heading-anchor" href="#configureanapptousessm"><span></span></a>Configure an app to use SSM</h2>
+<h2 id="sharedata" class="anchor"><a class="heading-anchor" href="#sharedata"><span></span></a>Share Data</h2>
 
-<p>To configure an app to use Secure Storage Manager (SSM), insert the appropriate line(s) in the client app’s manifest file (based on Java/Kotlin):</p>
-
-<p><strong>Insert / update / delete data:</strong></p>
-
-<pre class="prettyprint"><code>&lt;uses-permission android:name="com.zebra.securestoragemanager.securecontentprovider.PERMISSION.WRITE"/&gt;
-</code></pre>
-
-<p><strong>Query data:</strong></p>
-
-<pre class="prettyprint"><code>&lt;uses-permission android:name="com.zebra.securestoragemanager.securecontentprovider.PERMISSION.READ"/&gt;
-</code></pre>
-
-<p><strong>Query provider for apps targeting API Level 30 and above:</strong></p>
-
-<pre class="prettyprint"><code>&lt;queries&gt;
-    &lt;provider android:authorities="com.zebra.securestoragemanager.securecontentprovider"/&gt;
-&lt;/queries&gt;
-</code></pre>
-
-<p><strong>Retrieve data using SSM</strong> by declaring the content URI of the SSM Content Provider:</p>
-
-<pre class="prettyprint"><code>private String AUTHORITY = "content://com.zebra.securestoragemanager.securecontentprovider/data";
-</code></pre>
-
-<p>See <a href="../api/#samplecode">Sample Code</a> for complete context.</p>
-
-<hr>
-
-<h2 id="receivingencrypteddatatossm" class="anchor"><a class="heading-anchor" href="#receivingencrypteddatatossm"><span></span></a>Receiving Encrypted Data to SSM</h2>
-
-<p>If SSM receives encrypted data from an originating app (e.g. with the use of <a href="/det">Data Encryption Tool</a>), it decrypts the incoming data and saves it in SSM-encrypted format in the SSM database. The procedure to encrypt data to be stored in SSM is provided below. When the data is retrieved, SSM removes the SSM encryption and delivers the data according to the data output form required by the target app.</p>
-
-<p><img alt="image" src="SSM_DET.png"></p>
-
-<p><strong>To encrypt data, use AES Secret Key:</strong></p>
+<p>In summary, the steps to share data using SSM are:</p>
 
 <ol>
-<li><p>Create an AES secret key:</p>
+<li><strong>Encrypt the data</strong> using Data Encryption tool.</li>
+
+<li><strong>Configure the app</strong> to use SSM.</li>
+
+<li><strong>Use Content Provider</strong> to add, update or retrieve data.</li>
+</ol>
+
+<p>These steps are explained in detail in the following sections.</p>
+
+<hr>
+
+<h3 id="1encryptdata" class="anchor"><a class="heading-anchor" href="#1encryptdata"><span></span></a>1. Encrypt data</h3>
+
+<p>The originating app (app providing the data) encrypts the data with <a href="/det">Data Encryption Tool</a> and sends it to SSM.</p>
+
+<p><strong>To encrypt data:</strong></p>
+
+<ol>
+<li><p>Create an AES secret key for the encryption:</p>
 
 <pre class="prettyprint"><code>private SecretKey getRandomKey(String algorithmType)
 {
@@ -334,7 +310,7 @@ return null;
 <pre class="prettyprint"><code>MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwE1qxpfNZVGq3wfPp3AqSeSpCPi3NUC1cCBuh5nkPvC3TfYHiozsy3gBYyUoYWIoAYlgypehqLIQfdHTrLpsVbS1BW6mnv76WvYwmaGrGfHzi50ETA8bFDwkrboG3jcHnvDJPH904BdU5eMrsq1o+BDmTmF/OAm1rJPohb8mukWh+o6OW6iNhO28IDRb26pKuTu6sckHn8I1I51bl44qaxq55A4wVR4mHEZL0EK/q2hY0Iqcak2dA8w8N0nJrWzbIbp5FeT/WyGO2pure7UxKEZfE5pkewPfcHSGp+0sbdCMaw6KrDpC5jusry4PjFw92sS/Huywv6/pv7WVPmwIDAQAB
 </code></pre></li>
 
-<li><p>Insert the encrypted secret key and data into the SSM database. Specify the data input and output form to detect the encrypted data:</p>
+<li><p>Insert the encrypted secret key and data into the SSM database. Specify the data input (plain text or encrypted) and output (plain text or encrypted) format for the data:</p>
 
 <pre class="prettyprint"><code>values.put("data_input_form”, "2"); // plaintext=1, encrypted=2
 values.put("data_output_form", "1"); // plaintext=1, encrypted=2
@@ -343,9 +319,35 @@ values.put("data_value", inputData);
 </code></pre></li>
 </ol>
 
-<h2 id="contentproviderinterfaceapis" class="anchor"><a class="heading-anchor" href="#contentproviderinterfaceapis"><span></span></a>Content Provider Interface APIs</h2>
+<h3 id="2configurethetargetapp" class="anchor"><a class="heading-anchor" href="#2configurethetargetapp"><span></span></a>2. Configure the target app</h3>
 
-<p>See <a href="../api">Content Provider Interface APIs</a> to add, update or retrieve data.</p>
+<p>The target app must be configured with the proper permissions and visibility to use SSM. Insert the appropriate line(s) in the client app’s manifest file (based on Java/Kotlin):</p>
+
+<p><strong>Insert / update / delete data:</strong></p>
+
+<pre class="prettyprint"><code>&lt;uses-permission android:name="com.zebra.securestoragemanager.securecontentprovider.PERMISSION.WRITE"/&gt;
+</code></pre>
+
+<p><strong>Query data:</strong></p>
+
+<pre class="prettyprint"><code>&lt;uses-permission android:name="com.zebra.securestoragemanager.securecontentprovider.PERMISSION.READ"/&gt;
+</code></pre>
+
+<p><strong>Query provider for apps targeting API Level 30 and above:</strong></p>
+
+<pre class="prettyprint"><code>&lt;queries&gt;
+    &lt;provider android:authorities="com.zebra.securestoragemanager.securecontentprovider"/&gt;
+&lt;/queries&gt;
+</code></pre>
+
+<p><strong>Retrieve data using SSM</strong> by declaring the content URI of the SSM Content Provider:</p>
+
+<pre class="prettyprint"><code>private String AUTHORITY = "content://com.zebra.securestoragemanager.securecontentprovider/data";
+</code></pre>
+
+<h3 id="3usecontentprovider" class="anchor"><a class="heading-anchor" href="#3usecontentprovider"><span></span></a>3. Use Content Provider</h3>
+
+<p>Use SSM's <a href="../api/">Content Provider</a> to add, update or retrieve data. See <a href="../api/#samplecode">Sample Code</a> for complete context.</p>
 
 <hr>
 
@@ -354,9 +356,9 @@ values.put("data_value", inputData);
 <ul>
 <li><a href="../about/">About SSM</a></li>
 
-<li><a href="../deploy/">File Deployment</a></li>
-
 <li><a href="../share-files">File Sharing</a></li>
+
+<li><a href="../api/">Content Provider</a></li>
 </ul><p></p>
                                         
 
