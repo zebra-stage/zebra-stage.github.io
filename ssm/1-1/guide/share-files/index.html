@@ -226,7 +226,7 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>An application securely shares files with other apps through <strong>Secure Storage Manager (SSM)</strong>, which safely stores files and allows the files to be accessible only by an intended target app. The shared file can be made persistent, to remain on the device after an enterprise reset. The authenticity of the target app is verified with its package name and signature. After the shared file is deployed, the target app can consume the shared file.</p>
+<p>An application securely shares files with other apps through <strong>Secure Storage Manager (SSM)</strong>, which safely stores files and allows the files to be accessible only by an intended target app. The shared file can be made persistent, remaining on the device after an enterprise reset. The authenticity of the target app is verified with its package name and signature. After the shared file is deployed, the target app can consume the shared file.</p>
 
 <hr>
 
@@ -235,24 +235,32 @@
 <p>Shared files are deployed using one of the following methods:</p>
 
 <ul>
-<li><strong>File deployment through Stagenow or EMM -</strong> The shared file can be deployed to the device via StageNow or EMM for consumption by the target app. See <a href="../deploy">Deployment</a>. </li>
+<li><strong>Stagenow or EMM -</strong> The shared file can be deployed to the device via StageNow or EMM for consumption by the target app. </li>
 
-<li><strong>Programmatic file deployment -</strong> Store the file in SSM by using the SSM Content Provider insert() API.</li>
+<li><strong>Programmatically -</strong> Store the file in SSM by using the SSM Content Provider insert() API for programmatic file deployment.</li>
 </ul>
 
 <p>Details on the use of each method are provided in the sections that follow.</p>
 
 <h3 id="stagenowemm" class="anchor"><a class="heading-anchor" href="#stagenowemm"><span></span></a>StageNow/EMM</h3>
 
-<p>Deploy shared files, such as configuration files, to be accessed or consumed by target apps by using one of the following methods:</p>
+<p>Deploy shared files (such as configuration files) to be accessed or consumed by target apps by using one of the following methods:</p>
 
 <ul>
 <li><strong><a href="#stagenow">StageNow</a> -</strong> This is a standard method to overcome <a href="https://developer.android.com/about/versions/11/privacy/storage">scoped storage</a> restrictions enforced in Android 11 or higher. For administrators to deploy files for use by a specific target app, use Zebra’s <a href="/stagenow">StageNow</a> tool with <a href="/stagenow/latest/csp/file/">File Manager</a> to create a staging profile, which specifies the file to be deployed, its source location and the target app. After the staging barcode is generated, the user scans the barcode using the StageNow client on the device. This downloads the file and stores it in SSM. </li>
 
-<li><strong><a href="#EMM">Enterprise Mobility Management (EMM)</a> -</strong> For administrators to deploy files for use by a specific target app via an EMM for large scale deployments, use StageNow and <a href="/oemconfig/latest/mc/">File Management (Zebra Managed Configuration)</a> from OEMConfig. Use EMM Console to send Managed Configurations to OEMConfig via File Configuration, which specifies the file to be deployed, its source location and the target app. When the device receives the configurations via OEMConfig, it downloads the file and stores it in SSM.</li>
+<li><strong><a href="#EMM">Enterprise Mobility Management (EMM)</a> -</strong> For administrators to deploy files for use by a specific target app via an EMM for large scale deployments, use StageNow and <a href="/oemconfig/latest/mc/#filemanagement">File Management (Zebra Managed Configuration)</a> from OEMConfig. Use EMM client to send Managed Configurations to OEMConfig via File Configuration, which specifies the file to be deployed, its source location and the target app. When the device receives the configurations via OEMConfig, it downloads the file and stores it in SSM.</li>
 </ul>
 
-<p>When the file is deployed to the device, SSM automatically detects the presence of the file and stores it securely. If the <a href="#launchedbeforedeployment">target app is running</a> on the device when the file is deployed, SSM sends an intent notifying the target app of the deployed file along with the file information. If the <a href="#launchedafterdeployment">target app is not running</a> on the device when the file is deployed, the target app can query SSM for the deployed file using the Content Provider interface. The target app can then retrieve the file using File Provider and consume the file as needed.</p>
+<p>When the file is deployed to the device, SSM automatically detects the presence of the file and stores it securely. The target app is made aware of the deployed file depending on whether or not it is running at the time of deployment:</p>
+
+<ul>
+<li>If the <a href="#launchedbeforedeployment">target app is running</a> on the device when the file is deployed, SSM sends an intent notifying the target app of the deployed file along with the file information. </li>
+
+<li>If the <a href="#launchedafterdeployment">target app is not running</a> on the device when the file is deployed, the target app can query SSM for the deployed file using the Content Provider APIs. </li>
+</ul>
+
+<p>The target app can then retrieve the file using File Provider and consume the file as needed.</p>
 
 <p><img alt="image" style="height:500px" src="ssm-deployment.jpg"></p>
 
@@ -269,11 +277,11 @@
 
 <li>Signature of the target application in Base64 string format (optional, but recommended for security purposes)</li>
 
-<li>Set whether or not to persist the deployed file</li>
+<li>Set whether to persist or not persist the deployed file</li>
 
 <li>Source of the deployed file (remote server or local on the device)</li>
 
-<li>Source file path.</li>
+<li>Source path and filename or remote server URI</li>
 </ul>
 
 <p>To create a StageNow profile to deploy the file:</p>
@@ -309,9 +317,14 @@ The signature must be in Base64 string format, which can be obtained by using <a
 
 <li><strong>Persist The File:</strong> [Select whether or not to persist the file]</li>
 
-<li><strong>Source Access Method:</strong> [Select whether the source file is located on a remote server or local on the device]</li>
+<li><strong>Source Access Method:</strong> [Select whether the source file is located on a remote server or local on the device]
 
-<li><strong>Source file URI:</strong> [Enter the source file path, either from a remote server or from the local device storage]</li></ul>
+
+<ul>
+<li>If <strong>File on a Remote Server</strong> is selected, enter the <strong>Source File URI</strong> (remote source path).</li>
+
+<li>If <strong>File on the Device File System</strong> is selected, enter the <strong>Source Path and File Name.</strong></li></ul>
+</li></ul>
 </li>
 
 <li>Click <strong>Complete Profiles.</strong> Profile creation is complete.</li>
@@ -333,9 +346,6 @@ The signature must be in Base64 string format, which can be obtained by using <a
 <h3 id="programmatic" class="anchor"><a class="heading-anchor" href="#programmatic"><span></span></a>Programmatic</h3>
 
 <p>For programmatic file deployment, use the insert() API from <a href="../api/">Content Provider</a> to store the file in SSM. The stored file can then be accessed by the target app.</p>
-
-<p><img alt="image" src="ssm-share-files.jpg">
-<i>Programmatic file deployment</i></p>
 
 <p>Sample code for programmatic file deployment: </p>
 
@@ -370,11 +380,7 @@ The signature must be in Base64 string format, which can be obtained by using <a
 
 <h2 id="targetapp" class="anchor"><a class="heading-anchor" href="#targetapp"><span></span></a>Target App</h2>
 
-<p>After the shared file is deployed, it is ready to be accessed by the intended target app on the device. The method to receive notification of the deployed shared file varies depending on whether or not the target app is running on the device prior to file deployment.</p>
-
-<p><strong>Target app requirements:</strong></p>
-
-<p>Target apps consuming the deployed or shared file must target API Level 30 (Android 11) or above and have the appropriate access permissions in the manifest file:</p>
+<p>After the shared file is deployed, it is ready to be accessed by the intended target app on the device. Target apps consuming the deployed or shared file must target API Level 30 (Android 11) or above and have the appropriate access permissions in the manifest file:</p>
 
 <ul>
 <li><p>Add permissions to access the SSM Content and File Provider:</p>
@@ -391,47 +397,43 @@ The signature must be in Base64 string format, which can be obtained by using <a
 </code></pre></li>
 </ul>
 
+<p>The method to receive notification of the deployed shared file varies depending on whether or not the target app is running on the device prior to file deployment.</p>
+
 <h3 id="launchedbeforedeployment" class="anchor"><a class="heading-anchor" href="#launchedbeforedeployment"><span></span></a>Launched Before Deployment</h3>
 
 <p>If the target app is already running on the device when the file is deployed or shared, SSM broadcasts an explicit intent to notify the target app. The target app must register for the broadcast receiver to receive this intent and process the intent extras to retrieve the file information. SSM implemented a File Provider, which generates the content URIs for the file. The file URI provides access to the file and read/write permissions. The intent contains information to access the deployed file.</p>
 
 <p>Intent extras:</p>
 
-<table class="facelift" align="center" style="width:100%" border="1" padding="5px">
+<table class="facelift" align="center" style="width:90%" border="1" padding="5px">
   <tbody><tr bgcolor="#dce8ef">
     <th>Cursor Key</th>
     <th>Description</th>
-    <th>Example</th>
   </tr>
 
   <tr>
     <td>secure_file_name</td>
-    <td>Filename or relative file path</td>
-    <td>Config.json or /config/Config.json</td>
+    <td>Filename or relative file path<br><i>Example:</i> Config.json or /config/Config.json</td>
   </tr>
 
   <tr>
     <td>secure_file_uri</td>
-    <td>File content URI to access the file via SSM File Provider. </td>
-    <td>content://com.zebra.securestoragemanager/ config/Config.json</td>
+    <td>File content URI to access the file via SSM File Provider<br><i>Example:</i> content://com.zebra.securestoragemanager/ config/Config.json </td>
   </tr>
 
  <tr>
     <td>secure_is_dir</td>
-    <td>Specifies whether the file URI points to a directory or file. If set to "true", it points to a directory.</td>
-    <td>True or false</td>
+    <td>Specifies whether the file URI points to a directory or file. If set to "true", it points to a directory.<br><i>Values:</i> true or false</td>
  </tr>
 
  <tr>
     <td>secure_file_crc</td>
     <td>MD5 checksum of the file. Applications can use this to determine whether or not the file has already been processed.</td>
-    <td>N/A</td>
  </tr>
 
  <tr>
     <td>secure_file_persist</td>
-    <td>Flag to specify whether or not the file is persistent.</td>
-    <td>True or false</td>
+    <td>Flag to specify whether or not the file is persistent.<br><i>Values:</i> true or false</td>
  </tr>
 
 </tbody></table>
@@ -476,45 +478,39 @@ The signature must be in Base64 string format, which can be obtained by using <a
 
 <h3 id="launchedafterdeployment" class="anchor"><a class="heading-anchor" href="#launchedafterdeployment"><span></span></a>Launched After Deployment</h3>
 
-<p>If the target app is launched after the file(s) is deployed or shared, the target app can query the deployed file(s) through SSM via the Content Provider interface. If the target app is verified by SSM, all the file(s) information are returned in the Content Provider cursor. The target app can read the files by using the content URIs available in the Content Provider cursor.</p>
+<p>If the target app is launched after the file(s) is deployed, the target app can query the deployed file(s) through SSM via the Content Provider interface. If the target app is verified by SSM, all the file(s) information are returned in the Content Provider cursor. The target app can read the file(s) by using the content URIs available in the Content Provider cursor.</p>
 
 <p>The Content Provider cursor contains the following information:</p>
 
-<table class="facelift" align="center" style="width:100%" border="1" padding="5px">
+<table class="facelift" align="center" style="width:90%" border="1" padding="5px">
   <tbody><tr bgcolor="#dce8ef">
     <th>Cursor Key</th>
     <th>Description</th>
-    <th>Example</th>
   </tr>
 
   <tr>
     <td>secure_file_name</td>
-    <td>Filename or relative file path</td>
-    <td>Config.json or /config/Config.json</td>
+    <td>Filename or relative file path<br><i>Example:</i> Config.json or /config/Config.json</td>
   </tr>
 
   <tr>
     <td>secure_file_uri</td>
-    <td>File content URI to access the file via SSM file provider. </td>
-    <td>content://com.zebra.securestoragemanager/config/Config.json</td>
+    <td>File content URI to access the file via SSM file provider<br><i>Example:</i> content://com.zebra.securestoragemanager/config/Config.json </td>
   </tr>
 
  <tr>
     <td>secure_is_dir</td>
-    <td>Determines whether the file URI points to a directory or file. If false, the URI points to a file.</td>
-    <td>True or false</td>
+    <td>Determines whether the file URI points to a directory or file. If false, the URI points to a file.<br><i>Values:</i> true or false</td>
  </tr>
 
  <tr>
     <td>secure_file_crc</td>
     <td>MD5 checksum of the file. This can be checked by an application to determine whether or not the file has been processed.</td>
-    <td>N/A</td>
  </tr>
 
  <tr>
     <td>secure_file_persist</td>
-    <td>Flag to determine whether or not the file is persistent.</td>
-    <td>True or false</td>
+    <td>Flag to determine whether or not the file is persistent<br><i>Values:</i> true or false</td>
  </tr>
 
 </tbody></table>
@@ -539,7 +535,7 @@ The signature must be in Base64 string format, which can be obtained by using <a
 Uri cpUriQuery = Uri.parse(AUTHORITY_FILE);
 </code></pre>
 
-<p><strong>To query all the files deployed for the target application,</strong> add a string that contains the target application package name (target_app_package) and file persistence status (data_persist_required): </p>
+<p><strong>To query all the deployed files present in SSM for the target application,</strong> add a string that contains the target application package name (target_app_package) and file persistence status (data_persist_required): </p>
 
 <pre class="prettyprint"><code>String selection = "target_app_package = '" + context.getPackagename() + "'" +" AND data_persist_required = 'true'";
 </code></pre>
@@ -553,7 +549,7 @@ Uri cpUriQuery = Uri.parse(AUTHORITY_FILE);
 
 <p>where "folder" represents the folder or file path.</p>
 
-<p>See <a href="../api/#queryafilefolder">sample code</a></p>
+<p>See <a href="../api/#queryafilefolder">sample code</a>.</p>
 
 <h3 id="readfile" class="anchor"><a class="heading-anchor" href="#readfile"><span></span></a>Read File</h3>
 
