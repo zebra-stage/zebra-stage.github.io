@@ -85,16 +85,6 @@
                             </a>
                         </li>
                         <li>
-                            <a href="/ssm/1-1/guide/api">
-                                    APIs
-                            </a>
-                        </li>
-                        <li>
-                            <a href="https://developer.zebra.com/forum/search?keys=&amp;field_zebra_curated_tags_tid%5B%5D=184">
-                                    <i class="fa fa-comments-o"></i>
-                            </a>
-                        </li>
-                        <li>
                             <a href="/ssm/1-1/search">
                                     <i class="fa fa-search"></i>
                             </a>
@@ -226,13 +216,23 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p><strong>Secure Storage Manager (SSM)</strong> securely stores data provided by an originating app and delivers the data to an authenticated instance of a target app, or stores data for consumption by the app itself. Data is delivered to the target app only after SSM ensures the authenticity of the app accessing the data is verified with its package name and signature. SSM implements Android <a href="../api">Content Provider</a> to share data and manage data access between apps, providing methods to securely create, retrieve, update and delete (CRUD) data. After acquiring data, the target app gains ownership of the data. Data can be stored to persist through an enterprise reset.</p>
+<p><strong>Secure Storage Manager (SSM)</strong> securely stores data provided by an originating app and delivers the data to an authenticated instance of a target app, or stores data for consumption by the app itself. Data is delivered to the target app only after SSM ensures the authenticity of the app accessing the data is verified with its package name and signature. SSM implements Android <a href="../api">Content Provider</a> to share data and manage data access between apps, providing methods to securely create, retrieve, update and delete (CRUD) data. After acquiring data, the target app gains ownership of the data. Data can be stored to persist through an enterprise reset. This guide explains how to use SSM to share and retrieve data for consumption by a target app. </p>
 
-<p>This guide explains how to use SSM to share and retrieve data for consumption by a target app. </p>
+<p>In summary, the steps to share data using SSM are:</p>
+
+<ol>
+<li><a href="#1encryptdata">Encrypt the data</a> using Data Encryption tool and send it to SSM to store.</li>
+
+<li><a href="#2configuretargetapp">Configure the target app</a> to access the data in SSM.</li>
+
+<li><a href="#3getappsignature">Get the App Signature</a> to authenticate the target app.</li>
+
+<li><a href="#4usecontentproviderapis">Use Content Provider APIs</a> to query, insert, update or delete data in SSM.</li>
+</ol>
 
 <hr>
 
-<h2 id="usecases" class="anchor"><a class="heading-anchor" href="#usecases"><span></span></a>Use Cases</h2>
+<h2 id="howitworks" class="anchor"><a class="heading-anchor" href="#howitworks"><span></span></a>How It Works</h2>
 
 <p>Common SSM use cases to share data:<br></p>
 
@@ -249,10 +249,6 @@
 
 <p><em>SSM use cases</em></p>
 
-<hr>
-
-<h2 id="howitworks" class="anchor"><a class="heading-anchor" href="#howitworks"><span></span></a>How It Works</h2>
-
 <p>The originating app encrypts the data with <a href="/det">Data Encryption Tool</a> and sends it to SSM. When SSM receives the encrypted data, it decrypts it and stores it in SSM-encrypted format into its database. When the target app retrieves the data, SSM decrypts and delivers the data in the data output format specified by the target app.</p>
 
 <p><img alt="image" src="SSM_DET.png"></p>
@@ -261,27 +257,11 @@
 
 <hr>
 
-<h2 id="sharedata" class="anchor"><a class="heading-anchor" href="#sharedata"><span></span></a>Share Data</h2>
-
-<p>In summary, the steps to share data using SSM are:</p>
-
-<ol>
-<li><strong>Encrypt the data</strong> using Data Encryption tool.</li>
-
-<li><strong>Configure the app</strong> to use SSM.</li>
-
-<li><strong>Use Content Provider APIs</strong> to insert, update, delete or query data.</li>
-</ol>
-
-<p>These steps are explained in detail in the following sections.</p>
-
-<hr>
-
-<h3 id="1encryptdata" class="anchor"><a class="heading-anchor" href="#1encryptdata"><span></span></a>1. Encrypt data</h3>
+<h2 id="1encryptdata" class="anchor"><a class="heading-anchor" href="#1encryptdata"><span></span></a>1. Encrypt Data</h2>
 
 <p>The originating app (app providing the data) encrypts the data with <a href="/det">Data Encryption Tool</a> and sends it to SSM.</p>
 
-<p><strong>To encrypt data:</strong></p>
+<p>To encrypt data and insert it into SSM:</p>
 
 <ol>
 <li><p>Follow steps to encrypt data using <a href="/det">Data Encryption Tool</a>.</p></li>
@@ -324,7 +304,7 @@ values.put("data_value", inputData);
 </code></pre></li>
 </ol>
 
-<h3 id="2configurethetargetapp" class="anchor"><a class="heading-anchor" href="#2configurethetargetapp"><span></span></a>2. Configure the target app</h3>
+<h2 id="2configuretargetapp" class="anchor"><a class="heading-anchor" href="#2configuretargetapp"><span></span></a>2. Configure Target App</h2>
 
 <p>The target app must be configured with the proper permissions and visibility to use SSM. Insert the appropriate line(s) in the client app’s manifest file (based on Java/Kotlin):</p>
 
@@ -350,9 +330,229 @@ values.put("data_value", inputData);
 <pre class="prettyprint"><code>private String AUTHORITY = "content://com.zebra.securestoragemanager.securecontentprovider/data";
 </code></pre>
 
-<h3 id="3usecontentproviderapis" class="anchor"><a class="heading-anchor" href="#3usecontentproviderapis"><span></span></a>3. Use Content Provider APIs</h3>
+<h2 id="3getappsignature" class="anchor"><a class="heading-anchor" href="#3getappsignature"><span></span></a>3. Get App Signature</h2>
 
-<p>Use SSM <a href="../api/">Content Provider APIs</a> to insert, update, delete or query data. See <a href="../api/#samplecode">Sample Code</a> for complete context.</p>
+<p>For data sharing, the target app signature is required to be passed to the SSM Content Provider to authenticate the target app.</p>
+
+<p>To generate the app signature of any APK:</p>
+
+<ol>
+<li><p>Go to the <a href="/sigtools/">Zebra App Signature Tool</a> page.</p></li>
+
+<li><p>Follow instructions for downloading and using the tool.</p></li>
+
+<li><p>Use the command below (adapt as needed) to save the target app signature (as Base64 format string) in "Client.txt":</p>
+
+<pre class="prettyprint"><code>Java -jar SigTools.jar GetCert -INFORM APK -OUTFORM BASE64 -IN [Client.apk] -OUTFILE Client.txt
+</code></pre></li>
+</ol>
+
+<p><strong>NOTES:</strong></p>
+
+<ul>
+<li>[Client.apk] represents the app to retrieve the app signature.</li>
+
+<li>If a signature must be read from a file, rename “Client.txt” to “packageName.txt” (substitute “packageName” with that of the target app) and place the file in the /assets directory on the device.</li>
+</ul>
+
+<h2 id="4usecontentproviderapis" class="anchor"><a class="heading-anchor" href="#4usecontentproviderapis"><span></span></a>4. Use Content Provider APIs</h2>
+
+<p>Use standard Android Content Provider APIs to insert, update, query or delete data in SSM.</p>
+
+<table class="facelift" style="width:100%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>Action</th>
+    <th>Method</th>
+  </tr>
+
+  <tr>
+       <td>Add new data<br>See <a href="https://developer.android.com/reference/android/content/ContentProvider#insert(android.net.Uri,%20android.content.ContentValues)">Android reference</a></td>
+    <td>Uri <b>insert</b> (Uri uri, ContentValues values)</td>
+  </tr>
+
+  <tr>
+       <td>Modify/Update existing data<br>See <a href="https://developer.android.com/reference/android/content/ContentProvider#update(android.net.Uri,%20android.content.ContentValues,%20java.lang.String,%20java.lang.String[])">Android reference</a></td>
+    <td>int <b>update</b> (Uri uri, ContentValues values, String selection, String[] selectionArgs)</td>
+  </tr>
+
+  <tr>
+       <td>Return data based on selection criteria <br>See <a href="https://developer.android.com/reference/android/content/ContentProvider#query(android.net.Uri,%20java.lang.String[],%20java.lang.String,%20java.lang.String[],%20java.lang.String)">Android reference</a></td>
+    <td>Cursor <b>query</b> (Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder)</td>
+  </tr>
+
+  <tr>
+       <td>Delete data <br>See <a href="https://developer.android.com/reference/android/content/ContentProvider#delete(android.net.Uri,%20android.os.Bundle)">Android reference</a></td>
+    <td>int <b>delete</b> (Uri uri, String selection, String[] selectionArgs)</td>
+  </tr>
+
+</tbody></table>
+
+<p><br>
+Content Provider parameters:</p>
+
+<table class="facelift" align="center" style="width:100%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>Key</th>
+    <th>Value</th>
+    <th>Mandatory/Optional</th>
+  </tr>
+
+  <tr>
+    <td><b>target_app_package</b></td>
+    <td>A single request can be sent to multiple target apps. The package name and signature of the target app are stored in a json array. Multiple target apps and signatures can also be given in a json array. The signature must be provided in Base64 format. To generate the signature of any APK, see <a href="#3getappsignature">Get App Signature</a>.</td>
+    <td>Mandatory</td>
+  </tr>
+
+  <tr>
+    <td><b>data_name</b></td>
+    <td>Unique name to identify data.<br><b>Note:</b>Data names cannot be duplicated in the same application when inserting data. If an app tries to insert a duplicate data name, it throws a Duplicate Data Name exception.</td>
+    <td>Mandatory</td>
+  </tr>
+
+   <tr>
+    <td><b>data_value</b></td>
+    <td>Any data (string or json).</td>
+    <td>Mandatory</td>
+  </tr>
+
+  <tr>
+    <td><b>data_persist_required</b></td>
+    <td>Set whether persistence is required after Enterprise Reset (true/false).<br>If set to true, large data sets are not supported due to Android parcel size limitations - an exception is encountered if the query result data size is too large.</td>
+    <td>Mandatory</td>
+  </tr>
+
+  <tr>
+    <td><b>data_input_form</b></td>
+    <td>Set whether data received should be encrypted:<br>
+plaintext = 1, encrypted = 2</td>
+    <td>Optional</td>
+  </tr>
+
+  <tr>
+    <td><b>data_output_form</b></td>
+    <td>Set whether data passed to the intended recipient should be encrypted.:<br>
+plaintext = 1, encrypted = 2</td>
+    <td>Optional</td>
+  </tr>
+
+</tbody></table>
+
+<p><br></p>
+
+<p><strong>Notes:</strong></p>
+
+<ul>
+<li>When <strong>persistent data is queried after a device reboot,</strong> a delay may occur in receiving the query results until the system is completely initialized.</li>
+
+<li><strong>Querying persistent data could be slower than querying non-persistent data</strong>, since SSM stores persistent data in a device-persistent location.</li>
+
+<li><strong>Apps can store data only up to 10 KB in a single record.</strong> If any single data record is larger than 10 KB, it must be split and stored as multiple records with unique data names.</li>
+</ul>
+
+<h4 id="samplecode" class="anchor"><a class="heading-anchor" href="#samplecode"><span></span></a>Sample Code</h4>
+
+<p><strong>Insert / Update Data in a Single App:</strong></p>
+
+<p>Sample code to securely insert data in plain text to a single target app. The return URI provides the URI of the newly inserted row.</p>
+
+<pre class="prettyprint"><code>    private String TARGET_APP_PACKAGE = "target_app_package";  
+    private String DATA_NAME = "data_name";
+    private String DATA_VALUE = "data_value";
+    private String DATA_INPUT_FORM = "data_input_form";
+    private String DATA_OUTPUT_FORM = "data_output_form";
+    private String DATA_PERSIST_REQUIRED = "data_persist_required";
+
+    AUTHORITY = "content://com.zebra.securestoragemanager.securecontentprovider/data";
+    Uri cpUri = Uri.parse(AUTHORITY);
+    ContentValues values = new ContentValues();
+
+    // TARGET_APP_PACKAGE gives both package name info and signature info in a single entry. Replace sig value "ABSFFSDF… WREWED" with the actual package name signature.
+
+    values.put(TARGET_APP_PACKAGE, "{\"pkgs_sigs\": [{\"pkg\":\"" + context.getPackageName() + "\",\"sig\":\"" + "ABSFFSDF… WREWED" + "\"}]}");
+
+    // Dummy sig is placed here. Use SigTool to get this base64 string.
+
+    values.put(DATA_NAME, "unique name to identify data in UTF-8 encoded format");  // Replace with unique name
+    values.put(DATA_VALUE, "any string data/json data");    // Replace with data to update/insert
+    values.put(DATA_INPUT_FORM, "1");   // plaintext=1, encrypted=2
+    values.put(DATA_OUTPUT_FORM, "1");  // plaintext=1, encrypted=2, keystrokes=3
+    values.put(DATA_PERSIST_REQUIRED, "true");
+
+    Uri createdRow = getContentResolver().insert(cpUri, values);
+
+    Log.d(TAG, "Created row: " + createdRow.toString());
+</code></pre>
+
+<!-- 
+        // Code snippet - single app support:
+
+        values.put(TARGET_APP_PACKAGE,
+        "{\"pkgs_sigs\":[{\"pkg\":\"com.ztestapp.clientapplication\",\"sig\":\"24727AB4E6C4A…ACE1FE342F0D6872B27B3C\"}]}");
+-->
+
+<p><strong>Insert / Update Data in Multiple Apps:</strong></p>
+
+<p>Sample code to insert the package name and signature of all target apps as a json array in the ContentValues object, which is then passed to the insert() method to insert or update the data. The return URI provides the number of rows updated.</p>
+
+<pre class="prettyprint"><code>    private String TARGET_APP_PACKAGE = "target_app_package";
+    private String DATA_NAME = "data_name";
+    private String DATA_VALUE = "data_value";
+    private String DATA_INPUT_FORM = "data_input_form";
+    private String DATA_OUTPUT_FORM = "data_output_form";
+    private String DATA_PERSIST_REQUIRED = "data_persist_required";
+
+    AUTHORITY = "content://com.zebra.securestoragemanager.securecontentprovider/data";
+    Uri cpUri = Uri.parse(AUTHORITY);
+    ContentValues values = new ContentValues();
+
+    // TARGET_APP_PACKAGE gives both package name info and signature info in a single entry. For multiple target apps, each "com.ztestapp.clientapp" should be replaced with the actual app package name. Replace each sig value (e.g. "24727AB4E6C4A0BE……27B3C") with the actual package name signature.
+
+    values.put(TARGET_APP_PACKAGE, "{\"pkgs_sigs\":[
+    {\"pkg\":\"" + com.ztestapp.clientapp1 + "\",\"sig\":\"24727AB4E6C4A0BE……27B3C\"},
+    {\"pkg\":\"" + com.ztestapp.clientapp2 + "\",\"sig\":\"24727AB4E……872B27B3C\"},
+    {\"pkg\":\"" + com.ztestapp.clientapp3 + "\",\"sig\":\"25677AB4E6C……72B27B3C\"}
+    ]}")
+
+    // Dummy sig is placed here. use SigTool to get this base64 String.
+
+    values.put(DATA_NAME, "unique name to identify data in UTF-8 encoded format");
+    values.put(DATA_VALUE, "any string data/json data");
+    values.put(DATA_INPUT_FORM, "1"); //plaintext =1, encrypted=2
+    values.put(DATA_OUTPUT_FORM, "1"); //plaintext=1, encrypted=2, keystrokes=3
+    values.put(DATA_PERSIST_REQUIRED, "true");
+
+    Uri createdRow = getContentResolver().insert(cpUri, values);
+
+    Log.d(TAG, "Created row: " + createdRow.toString());
+</code></pre>
+
+<p><strong>Query Data:</strong></p>
+
+<p>Sample code to return the data fields based on the app package name. The cursor object returns the data fields of the app package. Traverse the cursor object to retrieve the data fields. </p>
+
+<pre class="prettyprint"><code>    Uri cpUriQuery = Uri.parse(AUTHORITY + "/[" + context.getPackageName() + "]");
+
+    String selection = "target_app_package = '" + context.getPackageName() + "'" +" AND "+ "data_persist_required = '" + "true" + "'";
+    Cursor cursor = null;
+
+    try {
+        cursor = getContentResolver().query(cpUriQuery, null, selection, null, null);
+    } catch (Exception e) {
+        Log.d(TAG, "Error: " + e.getMessage());
+    }
+    // Then traverse the cursor object to retrieve the data fields.
+</code></pre>
+
+<p><strong>Delete Data:</strong></p>
+
+<p>Sample code to delete the app package and its data fields:</p>
+
+<pre class="prettyprint"><code>    Uri cpUriDelete = Uri.parse(AUTHORITY + "/[" + context.getPackageName() + "]");
+
+    String whereClause = "target_app_package = '" + context.getPackageName() + "'" +" AND "+ "data_persist_required = '" + "true" + "'";
+
+    int rowsDeleted = getContentResolver().delete(cpUriDelete, whereClause, null);
+</code></pre>
 
 <hr>
 
@@ -362,8 +562,6 @@ values.put("data_value", inputData);
 <li><a href="../about/">About SSM</a></li>
 
 <li><a href="../share-files">File Sharing</a></li>
-
-<li><a href="../api/">APIs</a></li>
 </ul><p></p>
                                         
 
