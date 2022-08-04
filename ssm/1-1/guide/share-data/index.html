@@ -216,28 +216,10 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p><strong>Secure Storage Manager (SSM)</strong> securely stores data provided by an originating app and delivers the data to an authenticated instance of a target app, or stores data for consumption by the app itself. Data is delivered to the target app only after SSM ensures the authenticity of the app accessing the data is verified with its package name and signature. SSM implements Android <a href="../api">Content Provider</a> to share data and manage data access between apps, providing methods to securely create, retrieve, update and delete (CRUD) data. After acquiring data, the target app gains ownership of the data. Data can be stored to persist through an enterprise reset. This guide explains how to use SSM to share and retrieve data for consumption by a target app. </p>
-
-<p>In summary, the steps to share data using SSM are:</p>
-
-<ol>
-<li><a href="#1encryptdata">Encrypt the data</a> using Data Encryption tool and send it to SSM to store.</li>
-
-<li><a href="#2configuretargetapp">Configure the target app</a> to access the data in SSM.</li>
-
-<li><a href="#3getappsignature">Get the App Signature</a> to authenticate the target app.</li>
-
-<li><a href="#4usecontentproviderapis">Use Content Provider APIs</a> to query, insert, update or delete data in SSM.</li>
-</ol>
-
-<hr>
-
-<h2 id="howitworks" class="anchor"><a class="heading-anchor" href="#howitworks"><span></span></a>How It Works</h2>
-
-<p>Common SSM use cases to share data:<br></p>
+<p><strong>Secure Storage Manager (SSM)</strong> securely stores data for app access based on the following scenarios:</p>
 
 <ul>
-<li><strong>Share data with other apps -</strong> an originating application shares data with a target application (e.g. network settings, file URIs etc.).</li>
+<li><strong>Share data with other apps -</strong> an originating application shares data with a target application (e.g. network settings, file URIs, etc.).</li>
 
 <li><strong>Persist data to same app -</strong> an application stores data in a persistent manner for its own use after an enterprise reset (e.g. login credentials, application configurations etc.).
 <!--
@@ -247,24 +229,40 @@
 
 <p><img src="SSM-UseCases.png"></p>
 
-<p><em>SSM use cases</em></p>
+<p>This guide explains how to use SSM to share and retrieve data for consumption by a target app. In summary, the steps to share data using SSM are:</p>
 
-<p>The originating app encrypts the data with <a href="/det">Data Encryption Tool</a> and sends it to SSM. When SSM receives the encrypted data, it decrypts it and stores it in SSM-encrypted format into its database. When the target app retrieves the data, SSM decrypts and delivers the data in the data output format specified by the target app.</p>
+<ol>
+<li><a href="#1preencryptdata">Pre-Encrypt data</a> using Data Encryption Tool and send it to SSM to store.</li>
 
-<p><img alt="image" src="SSM_DET.png"></p>
+<li><a href="#2configuretargetapp">Configure the target app</a> to access the data in SSM.</li>
 
-<p>In SSM, data items are structured as name/value pairs. Each pair is uniquely identified by the originating app name and data-item name, which are available to the target app. Ownership of the data, including the ability to update or delete, starts with the originating app and transitions to the target app once the data is delivered. SSM implements Android Content Provider to share data and manage data access between apps.</p>
+<li><a href="#3getappsignature">Get the App Signature</a> to authenticate the target app.</li>
+
+<li><a href="#4usecontentproviderapis">Use Content Provider APIs</a> in the target app to query, insert, update or delete data in SSM.</li>
+</ol>
 
 <hr>
 
-<h2 id="1encryptdata" class="anchor"><a class="heading-anchor" href="#1encryptdata"><span></span></a>1. Encrypt Data</h2>
+<h2 id="howitworks" class="anchor"><a class="heading-anchor" href="#howitworks"><span></span></a>How It Works</h2>
 
-<p>The originating app (app providing the data) encrypts the data with <a href="/det">Data Encryption Tool</a> and sends it to SSM.</p>
+<p>The originating app (supplying the data) sends data to SSM either in plain text or pre-encrypted format. To pre-encrypt data, the originating app uses <a href="/det">Data Encryption Tool</a> and sends the resulting pre-encrypted data to SSM. When SSM receives the pre-encrypted data, it decrypts it and stores it in SSM-encrypted format into its database. The target app can access the data only after SSM ensures the authenticity of the app and validates its package name and signature. When the target app retrieves the data, SSM decrypts and delivers the data in the output format (encrypted or plain text) specified by the target app.</p>
 
-<p>To encrypt data and insert it into SSM:</p>
+<p><img alt="image" src="SSM_DET.png"></p>
+
+<p><em>Sending encrypted data to SSM</em></p>
+
+<p>SSM implements Android <a href="#4usecontentproviderapis">Content Provider</a> to securely share data and manage data access between apps with methods to create, retrieve, update and delete (CRUD) data. Data items are structured as name/value pairs. Each pair is uniquely identified by the originating app name and data-item name, which are available to the target app. Ownership of the data, including the ability to update or delete, starts with the originating app and transitions to the target app once the data is delivered. </p>
+
+<hr>
+
+<h2 id="1preencryptdata" class="anchor"><a class="heading-anchor" href="#1preencryptdata"><span></span></a>1. Pre-Encrypt Data</h2>
+
+<p>(Optional) For extra data security, the originating app (app providing the data) can pre-encrypt data with <a href="/det">Data Encryption Tool</a> and then deliver it to SSM. </p>
+
+<p>To pre-encrypt data and store it into SSM:</p>
 
 <ol>
-<li><p>Follow steps to encrypt data using <a href="/det">Data Encryption Tool</a>.</p></li>
+<li><p>Follow steps to encrypt data using <a href="/det">Data Encryption Tool</a>. It generates the encrypted data and key.</p></li>
 
 <li><p>Create an AES secret key for the encryption:</p>
 
@@ -306,29 +304,31 @@ values.put("data_value", inputData);
 
 <h2 id="2configuretargetapp" class="anchor"><a class="heading-anchor" href="#2configuretargetapp"><span></span></a>2. Configure Target App</h2>
 
-<p>The target app must be configured with the proper permissions and visibility to use SSM. Insert the appropriate line(s) in the client app’s manifest file (based on Java/Kotlin):</p>
+<p>The target app must be configured with the proper permissions and visibility to access the data in SSM. Insert the appropriate line(s) in the client app’s manifest file (based on Java/Kotlin):</p>
 
-<p><strong>Insert / update / delete data:</strong></p>
+<ul>
+<li><p><strong>Insert / update / delete data:</strong></p>
 
 <pre class="prettyprint"><code>&lt;uses-permission android:name="com.zebra.securestoragemanager.securecontentprovider.PERMISSION.WRITE"/&gt;
-</code></pre>
+</code></pre></li>
 
-<p><strong>Query data:</strong></p>
+<li><p><strong>Query data:</strong></p>
 
 <pre class="prettyprint"><code>&lt;uses-permission android:name="com.zebra.securestoragemanager.securecontentprovider.PERMISSION.READ"/&gt;
-</code></pre>
+</code></pre></li>
 
-<p><strong>Query provider for apps targeting API Level 30 and above:</strong></p>
+<li><p><strong>Query provider for apps targeting API Level 30 and above:</strong></p>
 
 <pre class="prettyprint"><code>&lt;queries&gt;
     &lt;provider android:authorities="com.zebra.securestoragemanager.securecontentprovider"/&gt;
 &lt;/queries&gt;
-</code></pre>
+</code></pre></li>
 
-<p><strong>Retrieve data using SSM</strong> by declaring the content URI of the SSM Content Provider:</p>
+<li><p><strong>Retrieve data using SSM</strong> by declaring the content URI of the SSM Content Provider:</p>
 
 <pre class="prettyprint"><code>private String AUTHORITY = "content://com.zebra.securestoragemanager.securecontentprovider/data";
-</code></pre>
+</code></pre></li>
+</ul>
 
 <h2 id="3getappsignature" class="anchor"><a class="heading-anchor" href="#3getappsignature"><span></span></a>3. Get App Signature</h2>
 
@@ -343,7 +343,7 @@ values.put("data_value", inputData);
 
 <li><p>Use the command below (adapt as needed) to save the target app signature (as Base64 format string) in "Client.txt":</p>
 
-<pre class="prettyprint"><code>Java -jar SigTools.jar GetCert -INFORM APK -OUTFORM BASE64 -IN [Client.apk] -OUTFILE Client.txt
+<pre class="prettyprint"><code>Java -jar SigTools.jar GetCert -INFORM APK -OUTFORM BASE64 -IN [Client.apk] -OUTFILE [Client.txt]
 </code></pre></li>
 </ol>
 
@@ -352,12 +352,12 @@ values.put("data_value", inputData);
 <ul>
 <li>[Client.apk] represents the app to retrieve the app signature.</li>
 
-<li>If a signature must be read from a file, rename “Client.txt” to “packageName.txt” (substitute “packageName” with that of the target app) and place the file in the /assets directory on the device.</li>
+<li>If a signature must be read from a file, rename [Client.txt] to “packageName.txt” (substitute “packageName” with that of the target app) and place the file in the /assets directory on the device.</li>
 </ul>
 
 <h2 id="4usecontentproviderapis" class="anchor"><a class="heading-anchor" href="#4usecontentproviderapis"><span></span></a>4. Use Content Provider APIs</h2>
 
-<p>Use standard Android Content Provider APIs to insert, update, query or delete data in SSM.</p>
+<p>Use Android Content Provider APIs to insert, update, query or delete data in SSM.</p>
 
 <table class="facelift" style="width:100%" border="1" padding="5px">
   <tbody><tr bgcolor="#dce8ef">
@@ -392,46 +392,51 @@ Content Provider parameters:</p>
 
 <table class="facelift" align="center" style="width:100%" border="1" padding="5px">
   <tbody><tr bgcolor="#dce8ef">
-    <th>Key</th>
-    <th>Value</th>
-    <th>Mandatory/Optional</th>
+    <th style="width:15%">Key</th>
+    <th style="width:15%">Value</th>
+    <th style="width:55%">Description</th>
+    <th style="width:15%">Mandatory/Optional</th>
   </tr>
 
   <tr>
     <td><b>target_app_package</b></td>
-    <td>A single request can be sent to multiple target apps. The package name and signature of the target app are stored in a json array. Multiple target apps and signatures can also be given in a json array. The signature must be provided in Base64 format. To generate the signature of any APK, see <a href="#3getappsignature">Get App Signature</a>.</td>
+    <td>[string]</td>
+    <td>The package name and signature of the target app package are stored in json format. This applies to single or multiple target apps. The signature must be provided in Base64 format. To generate the target app signature, see <a href="#3getappsignature">Get App Signature</a>.</td>
     <td>Mandatory</td>
   </tr>
 
   <tr>
     <td><b>data_name</b></td>
-    <td>Unique name to identify data.<br><b>Note:</b>Data names cannot be duplicated in the same application when inserting data. If an app tries to insert a duplicate data name, it throws a Duplicate Data Name exception.</td>
+    <td>[string]</td>
+    <td>Unique name to identify data.<br><b>Note:</b> Data names cannot be duplicated in the same application when inserting data. If an app tries to insert a duplicate data name, it throws a Duplicate Data Name exception.</td>
     <td>Mandatory</td>
   </tr>
 
    <tr>
     <td><b>data_value</b></td>
-    <td>Any data (string or json).</td>
+    <td>[string or json]</td>
+    <td>Data stored for app access.</td>
     <td>Mandatory</td>
   </tr>
 
   <tr>
     <td><b>data_persist_required</b></td>
-    <td>Set whether persistence is required after Enterprise Reset (true/false).<br>If set to true, large data sets are not supported due to Android parcel size limitations - an exception is encountered if the query result data size is too large.</td>
+    <td>true<br>false</td>
+    <td>Set whether data can be retrieved after enterprise reset. Large data sets are not supported due to Android parcel size limitations - an exception is encountered if the query result data size is too large.</td>
     <td>Mandatory</td>
   </tr>
 
   <tr>
     <td><b>data_input_form</b></td>
-    <td>Set whether data received should be encrypted:<br>
-plaintext = 1, encrypted = 2</td>
+    <td>1 = plain text<br>2 = encrypted </td>
+    <td>Set whether data received from SSM is encrypted from Data Encryption Tool.</td>
     <td>Optional</td>
   </tr>
 
   <tr>
     <td><b>data_output_form</b></td>
-    <td>Set whether data passed to the intended recipient should be encrypted.:<br>
-plaintext = 1, encrypted = 2</td>
+    <td>1 = plain text<br>2 = encrypted<br>3 = keystrokes</td>
+    <td>Set whether data passed to the target app is encrypted.<br></td>
     <td>Optional</td>
   </tr>
 
@@ -449,9 +454,7 @@ plaintext = 1, encrypted = 2</td>
 <li><strong>Apps can store data only up to 10 KB in a single record.</strong> If any single data record is larger than 10 KB, it must be split and stored as multiple records with unique data names.</li>
 </ul>
 
-<h4 id="samplecode" class="anchor"><a class="heading-anchor" href="#samplecode"><span></span></a>Sample Code</h4>
-
-<p><strong>Insert / Update Data in a Single App:</strong></p>
+<h3 id="insertupdatedatainasingleapp" class="anchor"><a class="heading-anchor" href="#insertupdatedatainasingleapp"><span></span></a>Insert / Update Data in a Single App</h3>
 
 <p>Sample code to securely insert data in plain text to a single target app. The return URI provides the URI of the newly inserted row.</p>
 
@@ -490,7 +493,7 @@ plaintext = 1, encrypted = 2</td>
         "{\"pkgs_sigs\":[{\"pkg\":\"com.ztestapp.clientapplication\",\"sig\":\"24727AB4E6C4A…ACE1FE342F0D6872B27B3C\"}]}");
 -->
 
-<p><strong>Insert / Update Data in Multiple Apps:</strong></p>
+<h3 id="insertupdatedatainmultipleapps" class="anchor"><a class="heading-anchor" href="#insertupdatedatainmultipleapps"><span></span></a>Insert / Update Data in Multiple Apps</h3>
 
 <p>Sample code to insert the package name and signature of all target apps as a json array in the ContentValues object, which is then passed to the insert() method to insert or update the data. The return URI provides the number of rows updated.</p>
 
@@ -526,7 +529,7 @@ plaintext = 1, encrypted = 2</td>
     Log.d(TAG, "Created row: " + createdRow.toString());
 </code></pre>
 
-<p><strong>Query Data:</strong></p>
+<h3 id="querydata" class="anchor"><a class="heading-anchor" href="#querydata"><span></span></a>Query Data</h3>
 
 <p>Sample code to return the data fields based on the app package name. The cursor object returns the data fields of the app package. Traverse the cursor object to retrieve the data fields. </p>
 
@@ -543,7 +546,7 @@ plaintext = 1, encrypted = 2</td>
     // Then traverse the cursor object to retrieve the data fields.
 </code></pre>
 
-<p><strong>Delete Data:</strong></p>
+<h3 id="deletedata" class="anchor"><a class="heading-anchor" href="#deletedata"><span></span></a>Delete Data</h3>
 
 <p>Sample code to delete the app package and its data fields:</p>
 
