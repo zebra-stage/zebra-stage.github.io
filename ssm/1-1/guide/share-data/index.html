@@ -244,7 +244,7 @@
 
 <h2 id="howitworks" class="anchor"><a class="heading-anchor" href="#howitworks"><span></span></a>How It Works</h2>
 
-<p>The originating app sends data to SSM either in plain text or pre-encrypted format. If pre-encrypted, SSM decrypts the data. The decrypted or plain text data is stored in SSM-encrypted format into its database. The target app can access the data only after SSM ensures the authenticity of the app and validates its package name and signature. When the target app retrieves the data, SSM decrypts and delivers the data in the output format (encrypted or plain text) specified by the target app.</p>
+<p>The originating app (app supplying the data) sends data to SSM either in plain text or pre-encrypted format. The data is then internally encrypted by SSM before storing it into its database. If pre-encrypted data is received, SSM decrypts the data before performing internal encryption then storing the encrypted data into its database. The target app accesses data from SSM only after SSM ensures the authenticity of the app by validating its package name and signature (optional). When the target app retrieves the data, SSM delivers the data in the output format specified by the target app (encrypted or plain text).</p>
 
 <p><img alt="image" src="SSM_DET.png"></p>
 
@@ -256,9 +256,9 @@
 
 <h2 id="1preencryptdata" class="anchor"><a class="heading-anchor" href="#1preencryptdata"><span></span></a>1. Pre-Encrypt Data</h2>
 
-<p>(Optional) For extra data security, the originating app can pre-encrypt data with <a href="/det">Data Encryption Tool</a>. </p>
+<p>For extra data security, the originating app can <em>optionally</em> pre-encrypt data with <a href="/det">Data Encryption Tool</a> before storing data in SSM. The secret key used for the encryption must also be encrypted by the tool.</p>
 
-<p>To pre-encrypt data:</p>
+<p>Pre-encrypt data and encrypt the secret key:</p>
 
 <ol>
 <li><p>Create an AES secret key for the encryption:</p>
@@ -283,9 +283,9 @@ return null;
 }
 </code></pre></li>
 
-<li><p>Encrypt the data with the secret key using <a href="/det">Data Encryption Tool</a>.</p></li>
+<li><p>Encrypt the data with the secret key (from step 1) using <a href="/det">Data Encryption Tool</a>.</p></li>
 
-<li><p>Encrypt the secret key with the SSM public key using <a href="/det">Data Encryption Tool</a>. SSM public key (Base64 String):</p>
+<li><p>Encrypt the secret key (from step 1) with the SSM public key using <a href="/det">Data Encryption Tool</a>. SSM public key (Base64 String):</p>
 
 <pre class="prettyprint"><code>MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwE1qxpfNZVGq3wfPp3AqSeSpCPi3NUC1cCBuh5nkPvC3TfYHiozsy3gBYyUoYWIoAYlgypehqLIQfdHTrLpsVbS1BW6mnv76WvYwmaGrGfHzi50ETA8bFDwkrboG3jcHnvDJPH904BdU5eMrsq1o+BDmTmF/OAm1rJPohb8mukWh+o6OW6iNhO28IDRb26pKuTu6sckHn8I1I51bl44qaxq55A4wVR4mHEZL0EK/q2hY0Iqcak2dA8w8N0nJrWzbIbp5FeT/WyGO2pure7UxKEZfE5pkewPfcHSGp+0sbdCMaw6KrDpC5jusry4PjFw92sS/Huywv6/pv7WVPmwIDAQAB
 </code></pre></li>
@@ -347,7 +347,7 @@ return null;
 
 <li><p>Rename "PackageName" in the .TXT file name to the target app package name, e.g. "com.zebra.exampleapp.txt".</p></li>
 
-<li><p>Copy the renamed "PackageName.txt" file into the /assets directory on the device.</p></li>
+<li><p>Copy the renamed "PackageName.txt" file into the /assets directory on the device for SSM to access the target app signature.</p></li>
 </ol>
 
 <h2 id="4usecontentproviderapis" class="anchor"><a class="heading-anchor" href="#4usecontentproviderapis"><span></span></a>4. Use Content Provider APIs</h2>
@@ -449,46 +449,67 @@ Content Provider parameters:</p>
 <li><strong>Apps can store data only up to 10 KB in a single record.</strong> If any single data record is larger than 10 KB, it must be split and stored as multiple records with unique data names.</li>
 </ul>
 
-<h3 id="storeupdatedatainasingleapp" class="anchor"><a class="heading-anchor" href="#storeupdatedatainasingleapp"><span></span></a>Store / Update Data in a Single App</h3>
+<h3 id="insertdataforasingleapp" class="anchor"><a class="heading-anchor" href="#insertdataforasingleapp"><span></span></a>Insert Data for a Single App</h3>
 
-<p>Sample code to securely insert data in plain text to a single target app. The return URI provides the URI of the newly inserted row.</p>
+<p>Use insert() to add and store data securely in SSM for access by a single target app. Refer to the following sample code, which demonstrates how to insert data that is received in plain text. Rather than plain text, data can be received in <a href="#1preencryptdata">pre-encrypted</a> form for added security. If successful, the return value is the URI of the newly inserted row which contains the data. </p>
 
 <pre class="prettyprint"><code>    AUTHORITY = "content://com.zebra.securestoragemanager.securecontentprovider/data";
     Uri cpUri = Uri.parse(AUTHORITY);
     ContentValues values = new ContentValues();
 
-    // Replace app signature value "ABSFFSDF… WREWED" with the actual package name signature.
+    // Replace sample app signature value "ABSFFSDF… WREWED" with the actual package name signature.
+    // Use SigTool to get this base64 string.
     values.put("target_app_package", "{\"pkgs_sigs\": [{\"pkg\":\"" + context.getPackageName() + "\",\"sig\":\"" + "ABSFFSDF… WREWED" + "\"}]}"); 
 
-    // Dummy sig is placed here. Use SigTool to get this base64 string.
-
-    values.put("data_name", "unique name to identify data in UTF-8 encoded format");  // Replace with unique name
-    values.put("data_value", "any string data/json data");    // Replace with data to update/insert
-    values.put("data_input_form", "1");   // plaintext=1, encrypted=2
-    values.put("data_output_form", "1");  // plaintext=1, encrypted=2
-    values.put("data_persist_required", "true");
+    values.put("data_name", "unique name to identify data");  // Replace with unique name identifier
+    values.put("data_value", "any string data/json data");    // Replace with data to insert
+    values.put("data_input_form", "1");   // Set to 1 (plain text) or 2 (encrypted) based on whether data is encrypted with Data Encryption Tool
+    values.put("data_output_form", "1");  // Set to 1 (plain text) or 2 (encrypted)
+    values.put("data_persist_required", "true");  // Set to true or false
 
     Uri createdRow = getContentResolver().insert(cpUri, values);
 
     Log.d(TAG, "Created row: " + createdRow.toString());
 </code></pre>
 
-<!-- 
-        // Code snippet - single app support:
+<h3 id="updatedataforasingleapp" class="anchor"><a class="heading-anchor" href="#updatedataforasingleapp"><span></span></a>Update Data for a Single App</h3>
 
-        values.put(TARGET_APP_PACKAGE,
-        "{\"pkgs_sigs\":[{\"pkg\":\"com.ztestapp.clientapplication\",\"sig\":\"24727AB4E6C4A…ACE1FE342F0D6872B27B3C\"}]}");
--->
-
-<h3 id="storeupdatedatainmultipleapps" class="anchor"><a class="heading-anchor" href="#storeupdatedatainmultipleapps"><span></span></a>Store / Update Data in Multiple Apps</h3>
-
-<p>Sample code to insert the package name and signature of all target apps as a json array in the ContentValues object, which is then passed to the insert() method to insert or update the data. The return URI provides the number of rows updated.</p>
+<p>Use update() to securely update existing data stored in SSM for access by a single target app. Refer to the following sample code, which demonstrates how to update data received in plain text from a single target app. Rather than plain text, data can be received in <a href="#1preencryptdata">pre-encrypted</a> form for added security. If successful, the value returned is "1". </p>
 
 <pre class="prettyprint"><code>    AUTHORITY = "content://com.zebra.securestoragemanager.securecontentprovider/data";
     Uri cpUri = Uri.parse(AUTHORITY);
     ContentValues values = new ContentValues();
 
-    // For multiple target apps, each "com.ztestapp.clientapp" should be replaced with the actual app package name. Replace each sig value (e.g. "24727AB4E6C4A0BE……27B3C") with the actual package name signature.
+    // Replace app signature value "ABSFFSDF… WREWED" with the actual package name signature.
+    // Use SigTool to get this base64 string.
+    values.put("target_app_package", "{\"pkgs_sigs\": [{\"pkg\":\"" + context.getPackageName() + "\",\"sig\":\"" + "ABSFFSDF… WREWED" + "\"}]}"); 
+
+    values.put("data_name", "unique name to identify data");  // Replace with unique name identifier
+    values.put("data_value", "any string data/json data");    // Replace with data to update
+    values.put("data_input_form", "1");   // Set to 1 (plain text) or 2 (encrypted) based on whether data is encrypted with Data Encryption Tool
+    values.put("data_output_form", "1");  // Set to 1 (plain text) or 2 (encrypted)
+    values.put("data_persist_required", "true"); // Set to true or false
+
+    int rowNumbers = getContentResolver().update(cpUri, values, null, null);
+    Log.d(TAG, "Records updated: " + rowNumbers);
+    if (rowNumbers &gt; 0) {
+        Toast.makeText(mContext, "User info updated", Toast.LENGTH_SHORT).show();
+        resultView.setText("Query Result");
+    } else {
+        Toast.makeText(mContext, "No records to update", Toast.LENGTH_SHORT).show();
+    }
+</code></pre>
+
+<h3 id="insertdataformultipleapps" class="anchor"><a class="heading-anchor" href="#insertdataformultipleapps"><span></span></a>Insert Data for Multiple Apps</h3>
+
+<p>Use insert() to add data and store data securely in SSM for access by multiple target apps. Refer to the following sample code, which demonstrates how to insert data that is received in plain text for access from multiple target apps. Rather than plain text, data can be received in <a href="#1preencryptdata">pre-encrypted</a> form for added security. The package name and signature of all target apps are stored in json format within the ContentValues object, which is then passed to the update() method. If successful, the return value is the URI of the newly inserted row which contains the data. </p>
+
+<pre class="prettyprint"><code>    AUTHORITY = "content://com.zebra.securestoragemanager.securecontentprovider/data";
+    Uri cpUri = Uri.parse(AUTHORITY);
+    ContentValues values = new ContentValues();
+
+    // For multiple target apps, each "com.ztestapp.clientapp" should be replaced with the actual app package name.
+    // Replace each sig value (e.g. "24727AB4E6C4A0BE……27B3C") with the actual package name signature.
     values.put("target_app_package", "{\"pkgs_sigs\":[
     {\"pkg\":\"" + com.ztestapp.clientapp1 + "\",\"sig\":\"24727AB4E6C4A0BE……27B3C\"},
     {\"pkg\":\"" + com.ztestapp.clientapp2 + "\",\"sig\":\"24727AB4E……872B27B3C\"},
@@ -497,20 +518,56 @@ Content Provider parameters:</p>
 
     // Dummy sig is placed here. use SigTool to get this base64 String.
 
-    values.put("data_name", "unique name to identify data in UTF-8 encoded format");
-    values.put("data_value", "any string data/json data");
-    values.put("data_input_form", "1"); //plaintext =1, encrypted=2
-    values.put("data_output_form", "1"); //plaintext=1, encrypted=2
-    values.put("data_persist_required", "true");
+    values.put("data_name", "unique name to identify data");  // Replace with unique name identifier
+    values.put("data_value", "any string data/json data");  // Replace with data to insert
+    values.put("data_input_form", "1"); // Set to 1 (plain text) or 2 (encrypted) based on whether data is encrypted with Data Encryption Tool
+    values.put("data_output_form", "1"); // Set to 1 (plain text) or 2 (encrypted)
+    values.put("data_persist_required", "true"); // Set to true or false
 
     Uri createdRow = getContentResolver().insert(cpUri, values);
 
     Log.d(TAG, "Created row: " + createdRow.toString());
 </code></pre>
 
+<h3 id="updatedataformultipleapps" class="anchor"><a class="heading-anchor" href="#updatedataformultipleapps"><span></span></a>Update Data for Multiple Apps</h3>
+
+<p>Use update() to update existing data stored in SSM that is being accessed by multiple apps. Refer to the following sample code, which demonstrates how to update data that is received in plain text. Rather than plain text, data can be received in <a href="#1preencryptdata">pre-encrypted</a> form for added security. The package name and signature of all target apps are stored in json format within the ContentValues object, which is then passed to the update() method. If successful, the value returned is "1". </p>
+
+<pre class="prettyprint"><code>    AUTHORITY = "content://com.zebra.securestoragemanager.securecontentprovider/data";
+    Uri cpUri = Uri.parse(AUTHORITY);
+    ContentValues values = new ContentValues();
+
+    // For multiple target apps, each "com.ztestapp.clientapp" should be replaced with the actual app package name.
+    // Replace each sig value (e.g. "24727AB4E6C4A0BE……27B3C") with the actual package name signature.
+    values.put("target_app_package", "{\"pkgs_sigs\":[
+    {\"pkg\":\"" + com.ztestapp.clientapp1 + "\",\"sig\":\"24727AB4E6C4A0BE……27B3C\"},
+    {\"pkg\":\"" + com.ztestapp.clientapp2 + "\",\"sig\":\"24727AB4E……872B27B3C\"},
+    {\"pkg\":\"" + com.ztestapp.clientapp3 + "\",\"sig\":\"25677AB4E6C……72B27B3C\"}
+    ]}")
+
+    // Dummy sig is placed here. use SigTool to get this base64 String.
+
+    values.put("data_name", "unique name to identify data"); // Replace with unique name identifier
+    values.put("data_value", "any string data/json data");  // Replace with data to update
+    values.put("data_input_form", "1"); // Set to 1 (plain text) or 2 (encrypted) based on whether data is encrypted with Data Encryption Tool
+    values.put("data_output_form", "1"); // Set to 1 (plain text) or 2 (encrypted)
+    values.put("data_persist_required", "true"); // Set to true or false
+
+    int rowNumbers = getContentResolver().update(cpUri, values, null, null);
+    Log.d(TAG, "Records updated: " + rowNumbers);
+    if (rowNumbers &gt; 0) {
+        Toast.makeText(mContext, "User info updated", Toast.LENGTH_SHORT).show();
+        resultView.setText("Query Result");
+    } else {
+        Toast.makeText(mContext, "No records to update", Toast.LENGTH_SHORT).show();
+    }
+</code></pre>
+
 <h3 id="querydata" class="anchor"><a class="heading-anchor" href="#querydata"><span></span></a>Query Data</h3>
 
-<p>Sample code to return the data fields based on the app package name. The cursor object returns the data fields of the app package. Traverse the cursor object to retrieve the data fields. </p>
+<p>To query data, data information is retrieved based on the target app package name. Call query() to return the cursor object which contains the data parameters (e.g. data_name, data_value, etc.) of the target app package. Traverse the cursor object to individually retrieve the data parameters. </p>
+
+<p>Sample code to query data:</p>
 
 <pre class="prettyprint"><code>    Uri cpUriQuery = Uri.parse(AUTHORITY + "/[" + context.getPackageName() + "]");
 
@@ -526,6 +583,8 @@ Content Provider parameters:</p>
 </code></pre>
 
 <h3 id="deletedata" class="anchor"><a class="heading-anchor" href="#deletedata"><span></span></a>Delete Data</h3>
+
+<p>Delete data removes the target app package and all related data from SSM. If delete() is successful, it returns "1". Otherwise, "0" is returned indicating there is no data to delete.</p>
 
 <p>Sample code to delete the app package and its data fields:</p>
 
