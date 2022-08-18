@@ -669,7 +669,7 @@ Content Provider parameters:</p>
 Uri cpUriQuery = Uri.parse(AUTHORITY_FILE);
 </code></pre></li>
 
-<li><p>Choose one of the following:</p>
+<li><p>Choose <em>one</em> of the following:</p>
 
 <ul>
 <li><p><strong>For the target app to query all deployed files and folders</strong> from SSM, add a variable that contains the key and value for the target app package and file persistence status: </p>
@@ -770,23 +770,20 @@ Uri cpUriFileUpdate = Uri.parse(AUTHORITY_FILE + context.getPackagename());
 <pre class="prettyprint"><code>    private final String AUTHORITY_FILE = "content://com.zebra.securestoragemanager.securecontentprovider/files/";
     private final String signature = "MIIC5DCCAcwCAQEwDQYJKoZIhvcNAQEFBQAwNzEWMBQGA1UEAwwNQW5kcm9pZ"; // Replace with target app signature
 
-    Uri cpUriQuery = Uri.parse(AUTHORITY_FILE +context.getPackageName());
+    private void updateFile() {
+        Uri cpUriQuery = Uri.parse(AUTHORITY_FILE +context.getPackageName());
 
-    try {
-        ContentValues values = new ContentValues();
-        values.put("target_app_package", String.format("{\"pkgs_sigs\": [{\"pkg\":\"%s\",\"sig\":\"%s\"}]}", context.getPackageName(), signature)); // If app signature is not used, pass in "null" for "signature" 
-        values.put("data_name", "sourcePath");   // Replace “sourcePath” with the updated file located on the device, e.g. "/sdcard/A.txt"
-        values.put("data_value", "targetPath");  // Replace “targetPath” with the package name of the target app that is updating the deployed file (or get the app package name using context.getPackageName()) followed by "/" and the full path of the existing deployed file, e.g. "context.getPackageName()/A.txt"
-        values.put("data_persist_required", true);
-        int rowNumbers = getContentResolver().update(cpUriQuery, values, null , null);
-        Log.d(TAG, "Files updated: " + rowNumbers);
-        if (rowNumbers &gt; 0) {
-            Toast.makeText(mContext, "Files update success", Toast.LENGTH_SHORT).show();
-        } else {
-            Toast.makeText(mContext, "No files to update", Toast.LENGTH_SHORT).show();
+        try {
+            ContentValues values = new ContentValues();
+            values.put("target_app_package", String.format("{\"pkgs_sigs\": [{\"pkg\":\"%s\",\"sig\":\"%s\"}]}", context.getPackageName(), signature)); // If app signature is not used, pass in "null" for "signature" 
+            values.put("data_name", "sourcePath");   // Replace “sourcePath” with the updated file located on the device, e.g. "/sdcard/A.txt"
+            values.put("data_value", "targetPath");  // Replace “targetPath” with the package name of the target app that is updating the deployed file (or get the app package name using context.getPackageName()) followed by "/" and the full path of the existing deployed file, e.g. "context.getPackageName()/A.txt"
+            values.put("data_persist_required", true);
+            int rowNumbers = getContentResolver().update(cpUriQuery, values, null , null);
+            Log.d(TAG, "Files updated: " + rowNumbers);
+        } catch(Exception e){
+            Log.d(TAG, "SSM Update File - Error: " + e.getMessage());
         }
-    } catch(Exception e){
-        Log.d(TAG, "SSM Update File - Error: " + e.getMessage());
     }
 </code></pre>
 
@@ -817,13 +814,7 @@ private void deleteFile() {
     try {
         String selection = "target_app_package" + " = '" + context.getPackageName() + "'" + " AND " + "data_persist_required" + " = '" + true + "'";
         int deleteStatus = getContentResolver().delete(cpUriQuery, selection, null);
-        Log.d(TAG, "File deleted, status = " + deleteStatus);
-
-        if (deleteStatus &gt; 0) {
-            Toast.makeText(mContext, "File delete success", Toast.LENGTH_SHORT).show();
-        } else {
-            Toast.makeText(mContext, "No files to be deleted", Toast.LENGTH_SHORT).show();
-        }
+        Log.d(TAG, "File deleted, status = " + deleteStatus);   // 0 means success
     } catch(Exception e){
         Log.d(TAG, "Delete file - error: " + e.getMessage());
     }
