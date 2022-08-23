@@ -2165,6 +2165,242 @@ This method will provide the scanner SDK version
 }
 </code></pre>
 
+ <h1 class="anchor">Locate Reader</h1>	
+
+<p align="justify">The SDK supports performing locate the reader by calling “srfidLocateReader”. After calling this API reader will beep.</p>
+<p align="justify">The following example demonstrates perform locate reader.</p>
+
+<pre class="prettyprint"><code>
+- (void) locateTheReader:(BOOL)enabled
+{
+    SRFID_RESULT conn_result = SRFID_RESULT_FAILURE;
+    if (self->_apiInstance != nil)
+    {
+        conn_result = [self->_apiInstance srfidLocateReader:_connectedRederID doEnabled:enabled aStatusMessage:nil];
+
+        if (SRFID_RESULT_SUCCESS != conn_result)
+        {
+            NSLog(@"Couldn't locate reader");
+        } else{
+            NSLog(@"Locate the reader");
+        }
+    }
+   
+}
+
+</code></pre>
+
+
+
+<h1 class="anchor">Batch Mode</h1>	
+
+<h2 id="pair-by-scan" class="anchor"><a class="heading-anchor" href="#pair-by-scan"><span></span></a>Get Batch Mode</a></h2>
+
+
+<p align="justify" >This “srfidGetBatchModeConfig” API will return the status (“BATCHMODECONFIG”) of the batch mode.</p>
+
+<pre class="prettyprint"><code>
+typedef enum
+{
+
+    SRFID_BATCHMODECONFIG_DISABLE  = 0x00,
+    SRFID_BATCHMODECONFIG_AUTO     = 0x01,
+    SRFID_BATCHMODECONFIG_ENABLE   = 0x02,
+
+} SRFID_BATCHMODECONFIG;
+
+
+
+-(SRFID_BATCHMODECONFIG)getBatchModeConfig:(NSString **)responsMessage
+{
+    //SRFID_BATCHMODECONFIG_AUTO ,SRFID_BATCHMODECONFIG_ENABLE and SRFID_BATCHMODECONFIG_DISABLE
+    SRFID_BATCHMODECONFIG batchModeConfigiuration = SRFID_BATCHMODECONFIG_AUTO;
+    SRFID_RESULT srfid_result = SRFID_RESULT_FAILURE;
+    
+    for(int i = 0; i < 2; i++)
+    {
+        srfid_result = [self->_apiInstance srfidGetBatchModeConfig:_connectedRederID aBatchModeConfig:&batchModeConfigiuration aStatusMessage:responsMessage ];
+        if ((srfid_result != SRFID_RESULT_RESPONSE_TIMEOUT) && (srfid_result != SRFID_RESULT_FAILURE)) {
+            break;
+        }
+    }
+
+    if (srfid_result == SRFID_RESULT_SUCCESS)
+    {
+        
+        NSLog(@"getBatchMod Response Success: %u", batchModeConfigiuration);
+    }
+    else if(srfid_result == SRFID_RESULT_RESPONSE_ERROR)
+    {
+        NSLog(@"Response Error");
+    }
+    else if(srfid_result == SRFID_RESULT_FAILURE || srfid_result == SRFID_RESULT_RESPONSE_TIMEOUT)
+    {
+        NSLog(@"Timeout or Failure");
+    }
+    
+    return batchModeConfigiuration;
+}
+
+
+
+
+
+- (IBAction)btnGetBatchMode:(id)sender
+{
+    SRFID_BATCHMODECONFIG batchModeConfigiuration =  [self getBatchModeConfig:nil];
+    
+    switch (batchModeConfigiuration) {
+        case SRFID_BATCHMODECONFIG_DISABLE:
+            NSLog(@"Batchmode Disable");
+            break;
+        case SRFID_BATCHMODECONFIG_AUTO:
+            NSLog(@"Batchmode Auto");
+            break;
+        case SRFID_BATCHMODECONFIG_ENABLE:
+            NSLog(@"Batchmode Enable");
+            break;
+        default:
+            break;
+    }
+   
+   
+}
+
+
+</code></pre>
+
+<h1 class="anchor">Auto Reconnect</h1>	
+<p align="justify">Requests to enable/disable “Automatic communication session reestablishment” option.</p>
+<pre class="prettyprint"><code>
+[apiInstance srfidEnableAutomaticSessionReestablishment:YES];
+- (SRFID_RESULT) srfidEnableAutomaticSessionReestablishment:(BOOL)enable;
+
+Parameters
+(BOOL)enable
+[in] Whether the option should be enabled or disabled:
+YES
+Requests to enable “Automatic communication session reestablishment” option.
+NO
+Requests to disable “Automatic communication session reestablishment” option.
+Return Values
+SRFID_RESULT_SUCCESS
+“Automatic communication session reestablishment” option has been enabled/disabled successfully. 
+
+</code>
+</pre>
+
+
+
+
+
+
+
+<h2 id="pair-by-scan" class="anchor"><a class="heading-anchor" href="#pair-by-scan"><span></span></a>Set Batch Mode</a></h2>
+
+<p align="justify">This “srfidSetBatchModeConfig” API will set the batch mode</p>
+
+<pre class="prettyprint"><code>
+
+
+- (void)setBatchModeConfig:(NSString **)statusMessage aBatchModeConfig:(SRFID_BATCHMODECONFIG)batchModeConfig
+{
+    //SRFID_BATCHMODECONFIG_AUTO ,SRFID_BATCHMODECONFIG_ENABLE and SRFID_BATCHMODECONFIG_DISABLE
+    SRFID_RESULT srfid_result = SRFID_RESULT_FAILURE;
+   
+    for(int i = 0; i < 2; i++)
+    {
+        srfid_result = [self->_apiInstance srfidSetBatchModeConfig:_connectedRederID aBatchModeConfig:batchModeConfig aStatusMessage:statusMessage];
+        if ((srfid_result != SRFID_RESULT_RESPONSE_TIMEOUT) && (srfid_result != SRFID_RESULT_FAILURE)) {
+            break;
+        }
+    }
+    
+    if (srfid_result == SRFID_RESULT_SUCCESS)
+    {
+       NSLog(@"setBatchModeConfig Response Success: %u", srfid_result);
+        
+    }
+    else if(srfid_result == SRFID_RESULT_RESPONSE_ERROR)
+    {
+        NSLog(@"Response Error");
+    }
+    else if(srfid_result == SRFID_RESULT_FAILURE || srfid_result == SRFID_RESULT_RESPONSE_TIMEOUT)
+    {
+        NSLog(@"Timeout or Failure");
+    }
+
+}
+
+
+</code></pre>
+<h2 id="pair-by-scan2" class="anchor">Get Tags in Batch Mode</a></h2>
+<p align="justify">This “srfidgetTags”  API will request to receive tags read in batch mode from a particular RFID reader.</p>
+
+<pre class="prettyprint"><code>
+- (SRFID_RESULT)getTags:(NSString **)statusMessage
+{
+
+    NSString *status_msg = nil;
+
+    if (nil != self->_apiInstance)
+    {
+        SRFID_RESULT result;
+        result = [self->_apiInstance srfidgetTags:_connectedRederID aStatusMessage:&status_msg];
+        return result;
+    }
+    return SRFID_RESULT_FAILURE;
+}
+
+</code>
+</pre>
+<h2 id="pair-by-scan3" class="anchor">Purge Tag</a></h2>
+<p align="justify">Request to purge tags read in batch mode from a particular RFID reader.</p>
+<pre class="prettyprint"><code>
+- (SRFID_RESULT)purgeTags:(NSString **)statusMessage
+{
+    NSString *status_msg = nil;
+    
+    if (nil != self->_apiInstance)
+    {
+        SRFID_RESULT result;
+        result = [self->_apiInstance srfidPurgeTags:self->_connectedRederID aS<h1></h1>tatusMessage:&status_msg];
+        return result;
+    }
+    return SRFID_RESULT_FAILURE;
+}
+
+</code>
+</pre>
+
+<h2 id="pair-by-scan3" class="anchor">Get Reader Configuration</a></h2>
+<p align="justify">Request to get the reader configurations after batch mode reconnect.</p>
+<pre class="prettyprint"><code>
+- (void) reconnectAfterBatchMode
+{
+    [self->_apiInstance srfidGetConfigurations];
+}
+Parameters
+(BOOL)enable
+[in] Whether the option should be enabled or disabled:
+YES
+Requests to enable “Automatic communication session reestablishment” option.
+NO
+Requests to disable “Automatic communication session reestablishment” option.
+Return Values
+SRFID_RESULT_SUCCESS
+“Automatic communication session reestablishment” option has been enabled/disabled successfully. 
+
+</code>
+</pre>
+
+<p><strong>NOTES</strong></p>
+<p align="justify">If the option is enabled the SDK will automatically establish communication session with the last active RFID reader that had unexpectedly disappeared once the RFID reader will be recognized as available:
+The RFID reader could be recognized as available automatically by SDK if “Available readers detection” option is enabled.
+The RFID reader could be recognized as available during discovery procedure requested by srfidGetAvailableReadersList API.
+“Session Established” notification will be provided once the communication session is established, if this type of notification is enabled
+</p>
+
 
 <h1 class="anchor">Setting up the Pair by Scan</h1>
 
