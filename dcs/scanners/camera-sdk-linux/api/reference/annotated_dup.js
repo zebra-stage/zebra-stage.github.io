@@ -1,0 +1,45 @@
+var annotated_dup =
+[
+    [ "zebra", null, [
+      [ "camera_sdk", null, [
+        [ "Assets", "classzebra_1_1camera__sdk_1_1_assets.html", "classzebra_1_1camera__sdk_1_1_assets" ],
+        [ "AttributeInfo", "structzebra_1_1camera__sdk_1_1_attribute_info.html", "structzebra_1_1camera__sdk_1_1_attribute_info" ],
+        [ "CameraConfiguration", "classzebra_1_1camera__sdk_1_1_camera_configuration.html", "classzebra_1_1camera__sdk_1_1_camera_configuration" ],
+        [ "ContinuousImageEventListener", "classzebra_1_1camera__sdk_1_1_continuous_image_event_listener.html", null ],
+        [ "DecodeImageEventListener", "classzebra_1_1camera__sdk_1_1_decode_image_event_listener.html", null ],
+        [ "DecodeSessionStatusChangeEventListener", "classzebra_1_1camera__sdk_1_1_decode_session_status_change_event_listener.html", "classzebra_1_1camera__sdk_1_1_decode_session_status_change_event_listener" ],
+        [ "FirmwareDownloadEventListener", "classzebra_1_1camera__sdk_1_1_firmware_download_event_listener.html", "classzebra_1_1camera__sdk_1_1_firmware_download_event_listener" ],
+        [ "FirmwareDownloadEventsArgs", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args" ],
+        [ "FrameType", "structzebra_1_1camera__sdk_1_1_frame_type.html", "structzebra_1_1camera__sdk_1_1_frame_type" ],
+        [ "Image", "classzebra_1_1camera__sdk_1_1_image.html", "classzebra_1_1camera__sdk_1_1_image" ],
+        [ "ImageData", "structzebra_1_1camera__sdk_1_1_image_data.html", "structzebra_1_1camera__sdk_1_1_image_data" ],
+        [ "ImageEventData", "structzebra_1_1camera__sdk_1_1_image_event_data.html", "structzebra_1_1camera__sdk_1_1_image_event_data" ],
+        [ "ImageEventListener", "classzebra_1_1camera__sdk_1_1_image_event_listener.html", "classzebra_1_1camera__sdk_1_1_image_event_listener" ],
+        [ "ImageEventMetaData", "structzebra_1_1camera__sdk_1_1_image_event_meta_data.html", "structzebra_1_1camera__sdk_1_1_image_event_meta_data" ],
+        [ "ProduceImageEventListener", "classzebra_1_1camera__sdk_1_1_produce_image_event_listener.html", null ],
+        [ "Property", "classzebra_1_1camera__sdk_1_1_property.html", "classzebra_1_1camera__sdk_1_1_property" ],
+        [ "PropertyAuto", "classzebra_1_1camera__sdk_1_1_property_auto.html", "classzebra_1_1camera__sdk_1_1_property_auto" ],
+        [ "PropertyEx", "classzebra_1_1camera__sdk_1_1_property_ex.html", "classzebra_1_1camera__sdk_1_1_property_ex" ],
+        [ "SnapshotImageEventListener", "classzebra_1_1camera__sdk_1_1_snapshot_image_event_listener.html", null ],
+        [ "Version", "structzebra_1_1camera__sdk_1_1_version.html", "structzebra_1_1camera__sdk_1_1_version" ],
+        [ "WhiteBalance", "structzebra_1_1camera__sdk_1_1_white_balance.html", "structzebra_1_1camera__sdk_1_1_white_balance" ],
+        [ "ZebraCamera", "classzebra_1_1camera__sdk_1_1_zebra_camera.html", "classzebra_1_1camera__sdk_1_1_zebra_camera" ],
+        [ "ZebraCameraClient", "classzebra_1_1camera__sdk_1_1_zebra_camera_client.html", "classzebra_1_1camera__sdk_1_1_zebra_camera_client" ],
+        [ "ZebraCameraClientConcrete", "classzebra_1_1camera__sdk_1_1_zebra_camera_client_concrete.html", "classzebra_1_1camera__sdk_1_1_zebra_camera_client_concrete" ],
+        [ "ZebraCameraManager", "classzebra_1_1camera__sdk_1_1_zebra_camera_manager.html", "classzebra_1_1camera__sdk_1_1_zebra_camera_manager" ],
+        [ "ZebraCameraManagerClient", "classzebra_1_1camera__sdk_1_1_zebra_camera_manager_client.html", "classzebra_1_1camera__sdk_1_1_zebra_camera_manager_client" ],
+        [ "ZebraCameraManagerClientConcrete", "classzebra_1_1camera__sdk_1_1_zebra_camera_manager_client_concrete.html", "classzebra_1_1camera__sdk_1_1_zebra_camera_manager_client_concrete" ]
+      ] ],
+      [ "DeviceAttachedListener", "classzebra_1_1_device_attached_listener.html", "classzebra_1_1_device_attached_listener" ],
+      [ "DeviceDetachedListener", "classzebra_1_1_device_detached_listener.html", "classzebra_1_1_device_detached_listener" ],
+      [ "DeviceInfo", "structzebra_1_1_device_info.html", "structzebra_1_1_device_info" ],
+      [ "DeviceManager", "classzebra_1_1_device_manager.html", "classzebra_1_1_device_manager" ]
+    ] ],
+    [ "BoundingBoxPoint", "struct_bounding_box_point.html", "struct_bounding_box_point" ],
+    [ "CameraBoundingBoxDetector", "class_camera_bounding_box_detector.html", "class_camera_bounding_box_detector" ],
+    [ "CameraBoundingBoxDetectorInterface", "class_camera_bounding_box_detector_interface.html", "class_camera_bounding_box_detector_interface" ],
+    [ "CameraImageProcessingFactory", "class_camera_image_processing_factory.html", null ],
+    [ "DirectoryObserver", "class_directory_observer.html", "class_directory_observer" ],
+    [ "ImageEventSubscriber", "class_image_event_subscriber.html", "class_image_event_subscriber" ],
+    [ "Version", "struct_version.html", "struct_version" ]
+];

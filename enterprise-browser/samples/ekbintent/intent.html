@@ -1,0 +1,281 @@
+
+
+        
+
+  <title>Enterprise Browser Intent API Test APP</title>
+<script type="text/javascript" charset="utf-8" src="ebapi-modules.js"></script>
+<script type="text/javascript">
+
+function hide(){
+	document.getElementById('availablelayouts').style.visibility = 'hidden';
+	document.getElementById('resetRowDiv').style.visibility = 'hidden';
+	document.getElementById('quitRowDiv').style.visibility = 'hidden';
+}
+
+var parameters = function (intentType, permission, action, categories, appName, targetClass, uri, mimeType, data) {
+    var result = {};
+    if (permission != "") result.permission = permission;
+    if (intentType != "") result.intentType = intentType;
+    if (action != "") result.action = action;
+    if (categories != "") result.categories = categories;
+    if (appName != "") result.appName = appName;
+    if (targetClass != "") result.targetClass = targetClass;
+    if (uri != "") result.uri = uri;
+    if (mimeType != "") result.mimeType = mimeType;
+    if (data != "") result.data = data;
+    return result;
+	};
+
+	function getLayouts() 
+	{
+		var propertiesToRetrieve = ["AVAILABLE_LAYOUTS"];
+		var data= {'PROPERTIES_TO_GET' : propertiesToRetrieve};
+		var params = new parameters(EB.Intent.BROADCAST, "", "com.symbol.ekb.api.ACTION_GET", "", "", "", "", "", data);
+		document.getElementById('availablelayouts').style.visibility = 'visible';
+		EB.Intent.send(params, availablelayouts);
+	}
+	
+	function availablelayouts(result)
+	{	
+		document.getElementById('availablelayouts').innerHTML = result ;
+		var x = document.getElementById("selectlayoutgroup");
+		var y = document.getElementById("selectlayoutname");
+		var params = JSON.parse(result);
+		for(var i=0;i< params.NO_OF_LAYOUT_GROUPS; i++)
+			{
+			  var option = document.createElement("option");
+			  option.text = params.AVAILABLE_LAYOUTS[i].LAYOUT_GROUP;
+			  x.add(option);
+			  for(var j=0;j< params.AVAILABLE_LAYOUTS[i].NO_OF_LAYOUTS; j++)
+			  {
+			  
+					if (typeof (params.AVAILABLE_LAYOUTS[i].LAYOUTS[j]) != 'undefined')
+					{
+						var option = document.createElement("option");
+						option.text = params.AVAILABLE_LAYOUTS[i].LAYOUTS[j].LAYOUT_NAME;
+						y.add(option);
+					}
+					else
+					{
+					  alert("Layoutname Undefined");
+					  break;
+					}
+				}
+			}
+	}
+	function getCurrentlayoutGroupandName() 
+	{
+		var propertiesToRetrieve = ["CURRENT_LAYOUT_GROUP","CURRENT_LAYOUT_NAME"];
+		var data= {'PROPERTIES_TO_GET' : propertiesToRetrieve};
+		var params = new parameters(EB.Intent.BROADCAST, "", "com.symbol.ekb.api.ACTION_GET", "", "", "", "", "", data);
+		EB.Intent.send(params, currentlayout);
+	}
+	
+	function currentlayout(params)
+	{
+		document.getElementById('currentlayout').style.visibility = 'visible';
+		document.getElementById('currentlayout').innerHTML = params;
+	}
+	
+	function setlayout() 
+	{
+		var layoutGroupName = document.getElementById('selectlayoutgroup').value;
+		var layout = document.getElementById('selectlayoutname').value ;
+		var bool = new Boolean(false);
+		var data= {'CURRENT_LAYOUT_GROUP' : layoutGroupName, 'CURRENT_LAYOUT_NAME': layout};
+		var params = new parameters(EB.Intent.BROADCAST, "", "com.symbol.ekb.api.ACTION_UPDATE", "", "", "", "", "", data);
+		EB.Intent.send(params, intentReceived);
+	}
+	
+	function showLayout() 
+	{
+		var bool = new Boolean(true);
+		var data= {'SHOW' : bool};
+		var params = new parameters(EB.Intent.BROADCAST, "", "com.symbol.ekb.api.ACTION_UPDATE", "", "", "", "", "", data);
+		EB.Intent.send(params, intentReceived);
+	}
+	
+	function hideLayout() 
+	{
+		var bool = new Boolean(false);
+		var data= {'SHOW' : bool};
+		var params = new parameters(EB.Intent.BROADCAST, "", "com.symbol.ekb.api.ACTION_UPDATE", "", "", "", "", "", data);
+		EB.Intent.send(params, intentReceived);
+	}
+	
+	function enableLayout() 
+	{
+		var bool = new Boolean(true);
+		var data= {'ENABLE' : bool};
+		var params = new parameters(EB.Intent.BROADCAST, "", "com.symbol.ekb.api.ACTION_UPDATE", "", "", "", "", "", data);
+		EB.Intent.send(params, intentReceived);
+	}
+	
+	function disableLayout() 
+	{
+		var bool = new Boolean(false);
+		var data= {'ENABLE' : bool};
+		var params = new parameters(EB.Intent.BROADCAST, "", "com.symbol.ekb.api.ACTION_UPDATE", "", "", "", "", "", data);
+		EB.Intent.send(params, intentReceived);
+	}
+	
+	
+	function resetKeyBoard() 
+	{
+		var bool = new Boolean(true);
+		var data= {'RESET_LAYOUT' : bool};
+		var params = new parameters(EB.Intent.BROADCAST, "", "com.symbol.ekb.api.ACTION_DO", "", "", "", "", "", data);
+		EB.Intent.send(params, intentReceived);
+	}
+	
+	function intentReceived(param)
+	{
+		document.getElementById('result').innerHTML = param;
+	}
+
+	function reset()
+	{
+		window.location.reload();
+		document.getElementById('resetRowDiv').style.visibility = 'visible';
+		document.getElementById("resetMesgDiv").innerHTML = "Application Reset ";		
+	}
+		
+	function quit() {
+		EB.Application.quit();
+		document.getElementById('quitRowDiv').style.visibility = 'visible';
+		document.getElementById("quitMesgDiv").innerHTML = "EB.Application.quit()";		  
+	}	
+</script>
+<style>
+
+table {
+	border: 2px solid black;
+	width:100%;
+}
+
+button{
+	width: 80%;
+	margin-left: 10%;
+	margin-right: 10%;
+	padding: 1em;
+	margin-top: 2%;
+	margin-bottom: 2%;
+	text-align: center;
+	font-size: x-large;
+}
+.col_2{
+	padding: 1em;
+    font-size: x-large;
+    text-align: center;
+}
+.noteMesg{
+    font-size: x-large;
+}
+
+</style>
+
+
+<h2 align="center" id="enterprise-browser-intent-api-sample-app" class="anchor"><a class="heading-anchor" href="#enterprise-browser-intent-api-sample-app"><span></span></a>Enterprise Browser Intent API Sample APP</h2>
+
+<br>
+<div>
+	<table border="1">
+		
+		<tbody><tr>
+			<td colspan="2">
+				<textarea style="width:100%;text-align:center;color:green">Input text</textarea>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="2">
+				<button width="100%" onclick="getLayouts();">Get Available Layouts</button>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="2">
+				<div class="col_2" id="availablelayouts"></div>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="2">
+				<button width="100%" onclick="getCurrentlayoutGroupandName();">Get Current Layout group and Name</button>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="2">
+				<div class="col_2" id="currentlayout"></div>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="1">
+				Enter LayoutGroup name: <select id="selectlayoutgroup" style="width:100%"></select>
+			</td>
+			<td colspan="1" rowspan="2"> 
+				<button width="100%" onclick="enableLayout();">Enable KeyBoard </button>
+				
+			</td>
+		</tr>
+		<tr>
+			<td colspan="1">
+				Enter Layout name: <select id="selectlayoutname" style="width:100%"></select>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="1">
+				<button onclick="setlayout()">Set Layout</button>
+			</td>
+			<td colspan="1">
+			<button width="100%" onclick="disableLayout();">Disable KeyBoard </button>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="2">
+				<div class="col_2" id="result"></div>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="2">
+			<button width="100%" onclick="resetKeyBoard();">Reset KeyBoard </button>
+			</td>
+		</tr>
+		
+		<tr>
+			<td colspan="2">
+			<button width="100%" onclick="reset();">Reset App</button>
+			</td>
+		</tr>
+		
+		<tr id="resetRowDiv">
+			<td colspan="2">
+				<div class="col_2" id="resetMesgDiv"></div></td>
+			
+		</tr>
+		
+		<tr>
+			<td colspan="2">
+			<button width="100%" onclick="quit();">Quit App</button>
+			</td>
+		</tr>
+		
+		<tr id="quitRowDiv">
+			<td colspan="2">
+				<div class="col_2" id="quitMesgDiv"></div></td>
+			
+		</tr>
+		
+	</tbody></table>
+	
+</div>
+<div>
+<p class="noteMesg"> Note: This sample requires the following on the target device:</p>
+<p class="noteMesg"> 1. <b>An .encrypted key layout file (generated by Zebra Enterprise Keyboard Designer) saved  in the /enterprise/device/settings/ekb/config/ device folder.</b></p> 
+<p class="noteMesg"> 2. <b>Zebra Enterprise Keyboard v2.2 or later installed.</b></p> 
+<br>
+</div>
+
+
+
+
+
+
+

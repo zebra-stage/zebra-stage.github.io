@@ -1,0 +1,54 @@
+
+
+        <p>The XML Manager (XmlMgr) specifies the Processing Mode used by the MX Management System (MXMS) to handle errors when processing a Request XML document. The MXMS processes a Request XML document that contains one or more Features as defined in the CSP. Each Feature is represented by a top-level characteristic tag in the Request XML document, whose type matches that CSP Feature. For example, a Feature of "XmlMgr" CSP in XML would begin with:</p>
+
+<pre class="prettyprint"><code>
+&lt;characteristic type="XmlMgr" ...
+</code></pre>
+
+<p>The MXMS executes Features by passing them to the corresponding CSPs in the order they appear in the Request XML document. When a Feature is executed by a CSP, the CSP returns a Result XML document. On success of a Feature, a characteristic tag is returned by the CSP. On failure, a characteristic-error tag is returned. The MXMS aggregates the Result XML returned by the CSPs in the order the Features are executed to create the final Result XML.</p>
+
+<h3 id="processingprecedence" class="anchor"><a class="heading-anchor" href="#processingprecedence"><span></span></a>Processing Precedence</h3>
+
+<p>The XmlMgr permits selection of the Processing Mode to use when processing a Request XML document. If no XmlMgr Features are present in a Request XML document, the entire document is processed using the default Processing Mode ("Execute all to end"). If an XmlMgr Feature is present, the Processing Mode specified by that XmlMgr Feature is used by the MXMS when executing subsequent Features in the Request XML document until the next XmlMgr Feature changes the mode or the end of the Request XML document is reached. XmlMgr Processing Modes are explained below. </p>
+
+<h4 id="executealltoend" class="anchor"><a class="heading-anchor" href="#executealltoend"><span></span></a>Execute all to end</h4>
+
+<p>In this (default) mode, the MXMS attempts to execute all Features in the Request XML document in the order they appear without respect to success or failure until the end of the XML is reached. The Result XML then returns all successes and all failures, in the order of the attempted execution. The Result XML contains the same number of characteristic tags as in the Request XML document plus any characteristic-error tags. </p>
+
+<p><strong>While this default mode is generally considered adequate for most situations, a "domino effect" can occur if a sequence of Features depends on the success of one</strong>. As a remedy, XmlMgr offers the "Execute until error, then stop" Processing Mode, explained below. </p>
+
+<h4 id="executeuntilerrorthenstop" class="anchor"><a class="heading-anchor" href="#executeuntilerrorthenstop"><span></span></a>Execute until error, then stop</h4>
+
+<p>The MXMS attempts to execute Features in the Request XML document in the order they appear so long as those Features succeed, stopping on the first failure and ignoring the remaining Features. This mode returns a Result XML that contains only the characteristic tags for the Features that succeeded plus the one characteristic-error tag that caused the stoppage. This mode avoids the "domino effect" when subsequent Features are dependent on earlier ones.</p>
+
+<h4 id="tryuntilerrorthenskiptocatch" class="anchor"><a class="heading-anchor" href="#tryuntilerrorthenskiptocatch"><span></span></a>Try until error, then Skip to Catch</h4>
+
+<p>This mode can be used to skip over trouble spots. The MXMS attempts to execute Features in the Request XML document in the order they appear so long as those Features succeed. On the first failure, it begins skipping Features until a "Catch error, Execute remainder" XmlMgr Feature is encountered or the end of the Request XML document is reached. If a "Catch" is reached, the MXMS continues execution of subsequent Features as if the Processing Mode was set to "Execute all to end." The Result XML then returns all successes and the first failure in the order of the attempted execution of the Features.</p>
+
+<h4 id="catcherrorexecuteremainder" class="anchor"><a class="heading-anchor" href="#catcherrorexecuteremainder"><span></span></a>Catch error, Execute remainder</h4>
+
+<p>Indicates the location of a "Catch" point as described above.</p>
+
+<h3 id="successfailure" class="anchor"><a class="heading-anchor" href="#successfailure"><span></span></a>Success/Failure</h3>
+
+<p>Any Feature that can be executed at all is considered a success; Features that cannot be executed are considered to have failed. Errors are handled by the MXMS based on the Processing Mode in effect. The default mode ("Execute all to end") is always in effect at the beginning of each new Request XML document processed. The Processing Mode can be left as the default or can be changed one or more times within a single Request XML document.</p>
+
+<h3 id="mainfunctionality" class="anchor"><a class="heading-anchor" href="#mainfunctionality"><span></span></a>Main Functionality</h3>
+
+<ul>
+<li>Select the XML Processing Mode for subsequent Request XML Features:
+
+
+<ul>
+<li>Attempt to execute all Features; report all successes and failures (default)</li>
+
+<li>Execute until first error; then stop and report all successes and failure</li>
+
+<li>Execute until first error, then skip to next "Catch" or end</li>
+
+<li>Stop skipping and resume execution of Features</li></ul>
+</li>
+</ul>
+
+

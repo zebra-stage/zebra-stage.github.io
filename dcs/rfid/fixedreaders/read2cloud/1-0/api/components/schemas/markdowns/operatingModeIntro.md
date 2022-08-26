@@ -1,0 +1,1 @@
+Cloud Connect for RFID provides the ability to configure the radio to different modes of operation that optimize the radio configuration based on intended use case. Once configured, the mode can be started using the START REST API and will continue to operate until the STOP REST API is called.

@@ -1,0 +1,67 @@
+var classzebra_1_1camera__sdk_1_1_firmware_download_events_args =
+[
+    [ "OperationCode", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#ad28e8409b5ee4928766cfa1689659b78", [
+      [ "kSessionStart", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#ad28e8409b5ee4928766cfa1689659b78a81a9a26d82ca8fe4a305c111ca185491", null ],
+      [ "kDownloadStart", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#ad28e8409b5ee4928766cfa1689659b78a3deb2cdddcaaeb042bc4778365d8f714", null ],
+      [ "kProgress", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#ad28e8409b5ee4928766cfa1689659b78a97942460d1e7fe977ba2ea46a37863be", null ],
+      [ "kDownloadEnd", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#ad28e8409b5ee4928766cfa1689659b78ad8ed613bb26749f60d146aa2806faf3c", null ],
+      [ "kSessionStop", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#ad28e8409b5ee4928766cfa1689659b78a8fdf0072634665c53ad4d9dff0d50b7c", null ],
+      [ "kError", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#ad28e8409b5ee4928766cfa1689659b78a03003e595dbac19025e95f8c6a48212a", null ],
+      [ "kSessionStart", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#ad28e8409b5ee4928766cfa1689659b78a81a9a26d82ca8fe4a305c111ca185491", null ],
+      [ "kDownloadStart", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#ad28e8409b5ee4928766cfa1689659b78a3deb2cdddcaaeb042bc4778365d8f714", null ],
+      [ "kProgress", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#ad28e8409b5ee4928766cfa1689659b78a97942460d1e7fe977ba2ea46a37863be", null ],
+      [ "kDownloadEnd", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#ad28e8409b5ee4928766cfa1689659b78ad8ed613bb26749f60d146aa2806faf3c", null ],
+      [ "kSessionStop", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#ad28e8409b5ee4928766cfa1689659b78a8fdf0072634665c53ad4d9dff0d50b7c", null ],
+      [ "kError", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#ad28e8409b5ee4928766cfa1689659b78a03003e595dbac19025e95f8c6a48212a", null ]
+    ] ],
+    [ "OperationCode", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#ad28e8409b5ee4928766cfa1689659b78", [
+      [ "kSessionStart", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#ad28e8409b5ee4928766cfa1689659b78a81a9a26d82ca8fe4a305c111ca185491", null ],
+      [ "kDownloadStart", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#ad28e8409b5ee4928766cfa1689659b78a3deb2cdddcaaeb042bc4778365d8f714", null ],
+      [ "kProgress", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#ad28e8409b5ee4928766cfa1689659b78a97942460d1e7fe977ba2ea46a37863be", null ],
+      [ "kDownloadEnd", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#ad28e8409b5ee4928766cfa1689659b78ad8ed613bb26749f60d146aa2806faf3c", null ],
+      [ "kSessionStop", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#ad28e8409b5ee4928766cfa1689659b78a8fdf0072634665c53ad4d9dff0d50b7c", null ],
+      [ "kError", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#ad28e8409b5ee4928766cfa1689659b78a03003e595dbac19025e95f8c6a48212a", null ],
+      [ "kSessionStart", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#ad28e8409b5ee4928766cfa1689659b78a81a9a26d82ca8fe4a305c111ca185491", null ],
+      [ "kDownloadStart", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#ad28e8409b5ee4928766cfa1689659b78a3deb2cdddcaaeb042bc4778365d8f714", null ],
+      [ "kProgress", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#ad28e8409b5ee4928766cfa1689659b78a97942460d1e7fe977ba2ea46a37863be", null ],
+      [ "kDownloadEnd", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#ad28e8409b5ee4928766cfa1689659b78ad8ed613bb26749f60d146aa2806faf3c", null ],
+      [ "kSessionStop", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#ad28e8409b5ee4928766cfa1689659b78a8fdf0072634665c53ad4d9dff0d50b7c", null ],
+      [ "kError", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#ad28e8409b5ee4928766cfa1689659b78a03003e595dbac19025e95f8c6a48212a", null ]
+    ] ],
+    [ "Status", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#aaffb0127cee6af48594d87b06968bb46", [
+      [ "kSuccessful", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#aaffb0127cee6af48594d87b06968bb46aae0f2fe1549cb66c767af571d33c0267", null ],
+      [ "kFailedInDevice", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#aaffb0127cee6af48594d87b06968bb46a7e275e6508a4e9e3e50367b597d3b715", null ],
+      [ "kCanceled", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#aaffb0127cee6af48594d87b06968bb46abb073ff91ddf3d4e7bcd6ae8895b379d", null ],
+      [ "kSuccessful", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#aaffb0127cee6af48594d87b06968bb46aae0f2fe1549cb66c767af571d33c0267", null ],
+      [ "kFailedInDevice", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#aaffb0127cee6af48594d87b06968bb46a7e275e6508a4e9e3e50367b597d3b715", null ],
+      [ "kCanceled", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#aaffb0127cee6af48594d87b06968bb46abb073ff91ddf3d4e7bcd6ae8895b379d", null ]
+    ] ],
+    [ "Status", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#aaffb0127cee6af48594d87b06968bb46", [
+      [ "kSuccessful", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#aaffb0127cee6af48594d87b06968bb46aae0f2fe1549cb66c767af571d33c0267", null ],
+      [ "kFailedInDevice", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#aaffb0127cee6af48594d87b06968bb46a7e275e6508a4e9e3e50367b597d3b715", null ],
+      [ "kCanceled", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#aaffb0127cee6af48594d87b06968bb46abb073ff91ddf3d4e7bcd6ae8895b379d", null ],
+      [ "kSuccessful", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#aaffb0127cee6af48594d87b06968bb46aae0f2fe1549cb66c767af571d33c0267", null ],
+      [ "kFailedInDevice", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#aaffb0127cee6af48594d87b06968bb46a7e275e6508a4e9e3e50367b597d3b715", null ],
+      [ "kCanceled", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#aaffb0127cee6af48594d87b06968bb46abb073ff91ddf3d4e7bcd6ae8895b379d", null ]
+    ] ],
+    [ "FirmwareDownloadEventsArgs", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#a7f11936c610d5ec845e0a53a93e78f4b", null ],
+    [ "FirmwareDownloadEventsArgs", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#a7f11936c610d5ec845e0a53a93e78f4b", null ],
+    [ "GetAssetInformation", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#a6e746d868961a533f749fbf214477bcc", null ],
+    [ "GetAssetInformation", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#a6e746d868961a533f749fbf214477bcc", null ],
+    [ "GetCurrentRecord", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#ae295f7bd59b90926a5b534eb9dab04b0", null ],
+    [ "GetCurrentRecord", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#ae295f7bd59b90926a5b534eb9dab04b0", null ],
+    [ "GetOperationCode", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#a11a491313aa19d9b2ac7b50c624e8277", null ],
+    [ "GetOperationCode", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#a11a491313aa19d9b2ac7b50c624e8277", null ],
+    [ "GetStatus", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#a1c2d4d5540965e22e1d3719a1913eec3", null ],
+    [ "GetStatus", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#a1c2d4d5540965e22e1d3719a1913eec3", null ],
+    [ "GetTotalRecords", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#a52e4b14af951a4825f427de66eb8f11a", null ],
+    [ "GetTotalRecords", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#a52e4b14af951a4825f427de66eb8f11a", null ],
+    [ "SetCurrentRecord", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#a1c9725cc4bcf9cb23b4cc1eafae5f0fc", null ],
+    [ "SetCurrentRecord", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#a1c9725cc4bcf9cb23b4cc1eafae5f0fc", null ],
+    [ "SetOperationCode", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#a888330b37c5891f6e732ad9501e4fb8c", null ],
+    [ "SetOperationCode", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#a888330b37c5891f6e732ad9501e4fb8c", null ],
+    [ "SetStatus", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#a421741bc62f05f8058f4e8af57dd2886", null ],
+    [ "SetStatus", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#a421741bc62f05f8058f4e8af57dd2886", null ],
+    [ "SetTotalRecords", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#a2d58a4d60a043a48364359dfa0be82ac", null ],
+    [ "SetTotalRecords", "classzebra_1_1camera__sdk_1_1_firmware_download_events_args.html#a2d58a4d60a043a48364359dfa0be82ac", null ]
+];

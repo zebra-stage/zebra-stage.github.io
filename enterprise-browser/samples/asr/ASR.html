@@ -1,0 +1,245 @@
+
+
+        
+
+  <title>Enterprise Browser Intent API Test APP</title>
+<script type="text/javascript" charset="utf-8" src="ebapi-modules.js"></script>
+<script type="text/javascript" charset="utf-8" src="elements.js"></script>
+<script type="text/javascript">
+	
+	var myobj;
+	
+	function reset()
+	{
+		window.location.reload();
+		document.getElementById('resetRowDiv').style.visibility = 'visible';
+		document.getElementById("resetMesgDiv").innerHTML = "Application Reset";		
+	}
+		
+	function quit() {
+		EB.Application.quit();
+		document.getElementById('quitRowDiv').style.visibility = 'visible';
+		document.getElementById("quitMesgDiv").innerHTML = "EB.Application.quit()";		  
+	}	
+	
+	 
+	function startlisteners() {
+		createSpeechRecognitionobj();
+		setlisteners();
+	}	
+    function setlisteners() 
+	{ 		
+			setonresultevent();
+            setonstartlistener();
+            setonendlistener();
+            setonspeechstartlistener();
+            setonerrorlistener();
+    }    
+
+    function setonerrorlistener() 
+	{
+            myobj.onerror = function(event) {
+                var temp = document.getElementById("myTextarea").value;
+                document.getElementById("myTextarea").value = temp + event.error;
+
+                var temp1 = document.getElementById("myTextarea4").value;
+                document.getElementById("myTextarea4").value =temp1 + " \nEvent onerror:- " + event.error + " \nError Message:- " + event.message;
+            };
+	}    
+
+    function setonendlistener() {
+            myobj.onend = function(event) {
+                var temp = document.getElementById("myTextarea4").value;
+                document.getElementById("myTextarea4").value = temp + " Event:-onend";
+            };
+
+    }
+
+    function setonstartlistener() {
+            myobj.onstart = function(event) {
+                var temp = document.getElementById("myTextarea4").value;
+                document.getElementById("myTextarea4").value = temp + " Event:-onstart";
+            };
+
+    }
+
+    function setonspeechstartlistener() 
+	{
+            myobj.onspeechstart = function(event) {
+                var temp = document.getElementById("myTextarea4").value;
+                document.getElementById("myTextarea4").value = temp + " Event:-onspeechstart";
+            };
+	}    
+
+    function createSpeechRecognitionobj() 
+	{
+            myobj = new SpeechRecognition();
+    }   
+
+    function RecognizeSpeech() 
+	{		
+			startlisteners();
+			myobj.start();
+			document.getElementById('myTextarea').value = '';
+			document.getElementById('myTextarea2').value = '';
+			document.getElementById('myTextarea3').value = '';
+		    document.getElementById('myTextarea4').value = '';
+    }
+
+    function abortrecognition() 
+	{
+            myobj.abort();
+    }		
+
+    function stoprecognition() 
+	{
+            myobj.stop();
+    }    
+		
+	function setonresulteventonlyfinalres() 
+	{
+            myobj.onresult = function(event) {
+                if (event.results.length > 0) {
+                    alert("speech to text value: "+event.results[0][0].transcript+"   confidence:- "+ event.results[0][0].confidence);
+                }
+            };
+	}	
+
+
+    function setonresultevent() 
+	{		
+            var partialresult = "";
+            myobj.onresult = function(event) {
+			
+               var temp = document.getElementById("myTextarea4").value;
+                document.getElementById("myTextarea4").value = temp + "Event:-onresult";
+                document.getElementById("myTextarea3").value = JSON.stringify(event);
+                for (var i = 0; i < event.results.length; i++) {
+                    
+                    for (var j = 0; j < event.results[i].length; j++) {
+                        if (event.results[i].final) {
+                            if (typeof(event.results[i][j]) != 'undefined') {
+                               
+                                document.getElementById("myTextarea").value = "Final Result:-  " + event.results[i][j].transcript + "  Confidence:- " + event.results[i][j].confidence;
+                            } else {
+                                break;
+                            }
+                        } else {
+                            if (typeof(event.results[i][j]) != 'undefined') {
+                                partialresult = partialresult + "  " + event.results[i][j].transcript;
+                            } else {
+                                break;
+                            }
+                        }
+                        document.getElementById("myTextarea2").value = "Partial Result:-  " + partialresult;
+                    }
+                }
+            }
+    }   
+	
+	function doalert(checkboxElem)
+	{	
+		  if (checkboxElem.checked) {
+			createSpeechRecognitionobj();
+			myobj.interimResults = true;
+		} else {
+			myobj.interimResults = false;
+		  }
+	}
+
+</script>
+<style>
+
+table {
+	border: 2px solid black;
+	width:100%;
+}
+
+button{
+	width: 90%;
+	margin-left: 5%;
+	margin-right: 5%;
+	padding: 1em;
+	margin-top: 2%;
+	margin-bottom: 2%;
+	text-align: center;
+	font-size: x-large;
+}
+
+.noteMesg{
+    font-size: x-large;
+}
+
+</style>
+
+
+<h2 align="center" id="enterprise-browser-asr-api-sample-app" class="anchor"><a class="heading-anchor" href="#enterprise-browser-asr-api-sample-app"><span></span></a>Enterprise Browser ASR API Sample APP</h2>
+
+<br>
+<div>
+	<table border="1">
+		
+		<tbody><tr>
+			<td colspan="2">
+				<textarea id="myTextarea" style="width:100%;text-align:center;" rows="5"></textarea>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="2">
+				<textarea id="myTextarea2" style="width:100%;text-align:center;" rows="5"></textarea>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="2">
+				<textarea id="myTextarea3" style="width:100%;text-align:center;" rows="5"></textarea>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="2">
+				<textarea id="myTextarea4" style="width:100%;text-align:center;" rows="5"></textarea>
+			</td>
+		</tr>
+		
+		<tr>
+			<td colspan="1"> 
+				<button onclick="RecognizeSpeech()">Start Recognition</button>
+			</td>
+			<td colspan="1" style="text-align: center;font-size:x-large;">
+				 Partial Result:<input type="checkbox" id="myCheck" onchange="doalert(this)">
+			</td>
+		</tr>
+		
+		<tr>
+			<td colspan="1"> 
+				<button onclick="stoprecognition()">Stop Recognition</button>
+			</td>
+			<td colspan="1">
+				<button class="col_1" width="100%" onclick="abortrecognition();">Abort Recognition</button>
+			</td>
+		</tr>
+	</tbody></table>
+	
+	<table border="1">
+		
+		<tbody><tr>
+			<td>
+				<button class="col_1" width="100%" onclick="reset();">Reset App</button>
+			</td>
+		</tr>
+		
+		<tr>
+			<td>
+				<button class="col_1" width="100%" onclick="quit();">Quit App</button>
+			</td>
+		</tr>
+		
+	</tbody></table>
+</div>
+
+
+
+
+
+
+
+

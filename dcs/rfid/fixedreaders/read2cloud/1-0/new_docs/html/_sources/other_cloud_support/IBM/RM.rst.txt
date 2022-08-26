@@ -1,0 +1,116 @@
+===================================
+Configure device using RM Interface
+===================================
+
+This page guides user to configure reader using ``Reader Management`` Interface.
+
+.. important::
+
+    This guide uses `Postman Tool <https://www.postman.com/>`_ for sending API calls to reader.
+
+
+.. _IBM ENDPOINT:
+
+Generate Endpoint Configuration
+===============================
+
+1. Create IBM Endpoint JSON object.
+
+    Edit Example IBM endpoint JOSN object shown below.
+
+    .. literalinclude:: files/ibm_template.json
+       :language: JSON
+    
+    1. Replace ``{organizationId}`` string with ``Watson IoT Platform ID`` created.
+    
+    2. Replace ``{deviceType}`` string with ``device type`` created.
+    
+    3. Replace ``{deviceId}`` string with ``device id`` created.
+    
+    4. Replace ``{authenticationToken}`` string with ``token`` created.
+
+.. note::
+
+    Topics used in configuration.
+
+    ``tagEvents``
+        - Reader uses this topic to send tag read events.
+    
+    ``managementEvents``
+        - Reader uses this topic to send asynchronous events like heartbeats, GPI, userapp, errors and warnings.
+        
+    ``command``
+        - Reader will subscribe to this topic and listening for commands from cloud.
+    
+    ``response`` 
+        - Reader uses this topic to send responses to commands.
+
+
+Import Configuration into Reader
+================================
+
+1. Download and import postman collections `Cloud Connect Enhanced UI.postman_collection.json <https://zebra-my.sharepoint.com/:u:/p/rbachina/EbubPEpPi0xOntmEuUA2qisBRE1AtFQZdEvXls-NQ7cCAQ?e=AFdNy0>`_ and `Cloud Connect - RM-commands.postman_collection.json <https://zebra-my.sharepoint.com/:u:/p/rbachina/EcLM0v6DLxRBnZRPe6qzPIoBPUkDD5unJuDJbzF22xUy8g?e=RjbfHc>`_
+
+2. Create an environment variables ``protocol`` (http/https) and ``reader-ip`` (10.17.231.7).
+
+3. Execute ``Login`` API.
+
+    .. important::
+        change ``username`` and ``password`` field in the body with readers username and password configured.
+
+    .. image:: images/IBM1.png
+
+4. Goto ``ADD endpoint (IBM) API`` and replace the JSON object between ``<motorm:data> </motorm:data>`` with the GCP Endpoint JSON object created in :ref:`IBM ENDPOINT`.
+
+    .. image:: images/IBM2.png
+
+    * The response ``200 OK`` indicate the endpoint got added successfully.
+
+    * Status other than ``200`` indicate error and response contain the failure reason and check ``reader syslog`` to get more info on error.
+
+5. Create Endpoint Mapping for GCP.
+
+    * Goto ``UPDATE endpoint mapping API`` and edit control, data, event, and management endpoints to the ``name`` used in ``GCP endpoint`` JSON object.
+
+    .. important::
+
+        Reader is configured to IBM endpoint for all the interfaces.
+
+        refer :ref:`ENDPOINT CONFIG` for ``Interface to Endpoint Mapping`` schema.
+    
+    .. image:: images/IBM3.png
+
+    * The response ``200 OK`` indicate the endpoint got added successfully.
+
+    * Status other than ``200`` indicate error and response contain the failure reason and check reader syslog to get more info on error.
+
+Connect to Cloud
+================
+
+1. Goto ``isEnrolledToCloud`` and check if reader is enrolled for IoT connect or not.
+
+    .. image:: images/IBM4.png
+
+2. If device is not enrolled currently, Send ``EnrollToCloud API``.
+
+    .. image:: images/IBM5.png
+
+3. If device is already enrolled, Send ``disconnectFromCloud API`` and ``connectToCloud API``.
+
+disconnectFromCloud API:
+
+    .. image:: images/IBM6.png
+
+
+connectToCloud API:
+
+    .. image:: images/IBM7.png
+
+
+
+Verify Cloud Connection
+=======================
+
+1. Check Cloud Connection Status using ``isConnectedToCloud API``.
+
+    .. image:: images/IBM8.png

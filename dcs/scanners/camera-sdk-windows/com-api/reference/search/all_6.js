@@ -1,0 +1,28 @@
+var searchData=
+[
+  ['getbacklight',['GetBacklight',['../interface_i_camera.html#a976232e6a8d87082af7c1467621fce0c',1,'ICamera']]],
+  ['getbacklightinfo',['GetBacklightInfo',['../interface_i_camera.html#ac2035630dcb05fc52415ecb223842cc1',1,'ICamera']]],
+  ['getbrightness',['GetBrightness',['../interface_i_camera.html#afda5ba0510a270b084d2c4ff9ae4eac2',1,'ICamera']]],
+  ['getbrightnessinfo',['GetBrightnessInfo',['../interface_i_camera.html#a1165c602cd9c5e0ba4347ea04c7a30d6',1,'ICamera']]],
+  ['getcontrast',['GetContrast',['../interface_i_camera.html#a2a09dbdb12c3bfc12014af2702480e37',1,'ICamera']]],
+  ['getcontrastinfo',['GetContrastInfo',['../interface_i_camera.html#abe61a57dd1ac88c97c052c5ef3164a7e',1,'ICamera']]],
+  ['getcurrentframetype',['GetCurrentFrameType',['../interface_i_camera.html#a209086085807658699dae0ab25c12d6d',1,'ICamera']]],
+  ['getexposure',['GetExposure',['../interface_i_camera.html#a48a240c9db1d926977060dab82ad0741',1,'ICamera']]],
+  ['getexposureinfo',['GetExposureInfo',['../interface_i_camera.html#ad4a9131e1fca87a2a8394d488d70196f',1,'ICamera']]],
+  ['getgain',['GetGain',['../interface_i_camera.html#a398e890e8e784487c65b552108195278',1,'ICamera']]],
+  ['getgaininfo',['GetGainInfo',['../interface_i_camera.html#a9dc7a89fe38dd69b57f7699148303f27',1,'ICamera']]],
+  ['getgamma',['GetGamma',['../interface_i_camera.html#ac6505d8d3f1b8efcb8119d60f6fb03c4',1,'ICamera']]],
+  ['getgammainfo',['GetGammaInfo',['../interface_i_camera.html#ab4340ad2eeffd370bc923c9693aa3baf',1,'ICamera']]],
+  ['getilluminationmode',['GetIlluminationMode',['../interface_i_camera.html#ab6c8a6fc98d0559efe4e66b2fead608a',1,'ICamera']]],
+  ['getimagetype',['GetImageType',['../interface_i_camera.html#aa5b3e1dcbaa43baa32df14c264600def',1,'ICamera']]],
+  ['getpowerusermode',['GetPowerUserMode',['../interface_i_camera.html#af8b6ead005693ecf9574fd8b5208c564',1,'ICamera']]],
+  ['getsaturation',['GetSaturation',['../interface_i_camera.html#a7cce5e16785540369381d9383e3df89f',1,'ICamera']]],
+  ['getsaturationinfo',['GetSaturationInfo',['../interface_i_camera.html#ac645ce4fda79cf6651ac1a4104147ef0',1,'ICamera']]],
+  ['getsharpness',['GetSharpness',['../interface_i_camera.html#a6b2079723acf92ba2419a2a9c140f1e0',1,'ICamera']]],
+  ['getsharpnessinfo',['GetSharpnessInfo',['../interface_i_camera.html#a34c4b882782f2a34714d507842da1f16',1,'ICamera']]],
+  ['getsupportedframetypes',['GetSupportedFrameTypes',['../interface_i_camera.html#a0a0b04f2cd543de4a22d197ee6338802',1,'ICamera']]],
+  ['getversion',['GetVersion',['../interface_i_camera.html#a3661fc81160733211394777bce2db3b4',1,'ICamera']]],
+  ['getvideomode',['GetVideoMode',['../interface_i_camera.html#aa8a4417e5b369f02140e3418b69f047a',1,'ICamera']]],
+  ['getwhitebalance',['GetWhiteBalance',['../interface_i_camera.html#a451f1cb3a696764d19fab59c84df1878',1,'ICamera']]],
+  ['getwhitebalanceinfo',['GetWhiteBalanceInfo',['../interface_i_camera.html#a415233872d5b3638de68cd0062962568',1,'ICamera']]]
+];
