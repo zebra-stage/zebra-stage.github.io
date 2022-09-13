@@ -261,7 +261,7 @@ The following state diagram for the Mobile Parcel Dimensioning client explains t
 
 <h3 id="generateapitoken" class="anchor"><a class="heading-anchor" href="#generateapitoken"><span></span></a>Generate API token</h3>
 
-<p>The API token is one of the parameters that must be sent with each API request for authentication. </p>
+<p>The API token is one of the parameters that must be sent with each API request for authentication. The API token will expire after 24 hours and must be re-generated.</p>
 
 <p>To generate the API token:</p>
 
@@ -281,6 +281,7 @@ The following state diagram for the Mobile Parcel Dimensioning client explains t
 <pre class="prettify prettyprint"><code>
     private final BroadCastAuthenticator vIntentprotect = new BroadCastAuthenticator();
     private String token = "";
+    private Instant tokenExpiration;
     public static final String SERVICE_IDENTIFIER = "delegation-zebra-com.zebra.mobiledimensioning-Enable";
 
     @Override
@@ -305,6 +306,7 @@ The following state diagram for the Mobile Parcel Dimensioning client explains t
                 }
                 if (token != null &amp;&amp; !token.isEmpty())
                 {
+                    tokenExpiration = Instant.now().plus(24, ChronoUnit.HOURS);
                     // Communicate with Service
                 }
             }
@@ -637,9 +639,9 @@ The following state diagram for the Mobile Parcel Dimensioning client explains t
 <h4 id="samplecode-2" class="anchor"><a class="heading-anchor" href="#samplecode-2"><span></span></a>Sample Code</h4>
 
 <pre class="prettyprint"><code>    public static final String INTENT_ACTION_GET_DIMENSION = "com.zebra.parceldimensioning.GET_DIMENSION";
-    public static final String BOX_ID = "BOX_ID";
+    public static final String PARCEL_ID = "PARCEL_ID";
 
-    sendIntentApi(INTENT_ACTION_GET_DIMENSION, BOX_ID, boxID);
+    sendIntentApi(INTENT_ACTION_GET_DIMENSION, PARCEL_ID, boxID);
 </code></pre>
 
 <p>See <a href="#sendintentapi">sendIntentApi()</a> for the function definition. </p>
@@ -761,8 +763,8 @@ The following state diagram for the Mobile Parcel Dimensioning client explains t
 
   <tr>
        <td>SUPPORTED_UNITS</td>
-    <td>String</td>
-    <td><p style="font-family:'Courier New'">• (“Inch”,”CM”)<br>• ("CM")</p></td>
+    <td>StringArray</td>
+    <td><p style="font-family:'Courier New'">• ("Inch","CM")<br>• ("CM")</p></td>
   </tr>
 
   <tr>
@@ -793,8 +795,6 @@ The following state diagram for the Mobile Parcel Dimensioning client explains t
 <h4 id="request-4" class="anchor"><a class="heading-anchor" href="#request-4"><span></span></a>Request</h4>
 
 <p>ENABLE_DIMENSION must be called before calling SET_DIMENSION_PARAMETER. Supported values for DIMENSIONING_UNIT are reported by the SUPPORTED_UNITS value in GET_DIMENSION_PARAMETER.</p>
-
-<p><strong>NOTE:</strong> Changing DIMENSIONING_UNIT may change the ready value.</p>
 
 <p>Use the following to call SET_DIMENSION_PARAMETER:</p>
 
@@ -836,7 +836,7 @@ The following state diagram for the Mobile Parcel Dimensioning client explains t
        <td>DIMENSIONING_UNIT</td>
     <td>String</td>
     <td>No</td>
-    <td><p style="font-family:'Courier New'">• Inch<br>• CM</p></td>
+    <td><p style="font-family:'Courier New'">• Inch<br>• CM</p><b>Note:</b> Changing DIMENSIONING_UNIT will change the ready values of length, width and height.</td>
   </tr>
 
   <tr>
@@ -1071,15 +1071,6 @@ where <em>[filename.apk]</em> is the full path and file name of the LOB app APK 
                     if (dimResultMessage == null) 
                         dimResultMessage = ""; 
                     Log.d(TAG, "onActivityResult: " + actionName + ", " + dimResultCode + ", " + dimResultMessage); 
-
-                    if (!mRetryingToken &amp;&amp; (dimResultCode == ERROR) &amp;&amp; dimResultMessage.equals("Access Denied")) 
-                    { 
-                        // The token expired (after 24 hours) 
-                        mRetryingToken = true; 
-                        generateToken(); 
-                        return; 
-                    } 
-                    mRetryingToken = false; 
 
                     switch (actionName) 
                     { 
