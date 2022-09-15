@@ -80,6 +80,11 @@
                             </a>
                         </li>
                         <li>
+                            <a href="/mobile-parcel/1-0/guide/sample">
+                                    Sample
+                            </a>
+                        </li>
+                        <li>
                             <a href="https://developer.zebra.com/forum/search?keys=&amp;field_zebra_curated_tags_tid%5B%5D=184">
                                     <i class="fa fa-comments-o"></i>
                             </a>
@@ -232,9 +237,15 @@
 <li><strong>DISABLE_DIMENSION -</strong> Releases all Dimensioning service resources, including camera hardware.</li>
 </ul>
 
-<p><strong>The application must send both the API token and the package name with each API request.</strong> If either the token or package name is incorrect, the Mobile Parcel API reports the error result code with an access denied message.</p>
+<p><strong>Notes:</strong></p>
 
-<p>Only trusted applications can communicate with the Mobile Parcel API. See <a href="#security">Security</a> for instructions on how to allow your app to be included in the "whitelist".</p>
+<ul>
+<li><strong>Multi-window or split-screen</strong> is not supported due to an Android bug.</li>
+
+<li>The <strong>API token expires after 24 hours</strong> and must be regenerated, see <a href="#generateapitoken">Generate API token</a>.</li>
+
+<li><strong>Camera failure can occur</strong> from rapid succession of start/stop dimensioning after suspend/resume. </li>
+</ul>
 
 <!-- 
 ### State Diagram
@@ -248,9 +259,9 @@ The following state diagram for the Mobile Parcel Dimensioning client explains t
 
 <h2 id="requirements" class="anchor"><a class="heading-anchor" href="#requirements"><span></span></a>Requirements</h2>
 
-<p>The LOB app must define the Dimensioning service package name and generate the API token to be sent to the Mobile Parcel API.</p>
+<p>The line-of-business (LOB) app must define the Dimensioning service package name and generate the API token. Both are required to be sent with each Mobile Parcel API request. If either the token or package name is incorrect, the Mobile Parcel API reports the error result code with an access denied message. Additionally, API security is enforced by only allowing trusted applications to communicate with the Mobile Parcel API. Make sure to add your app to this allow list.</p>
 
-<h3 id="definethepackagename" class="anchor"><a class="heading-anchor" href="#definethepackagename"><span></span></a>Define the package name</h3>
+<h3 id="1definethepackagename" class="anchor"><a class="heading-anchor" href="#1definethepackagename"><span></span></a>1. Define the package name</h3>
 
 <p>Add the <code>&lt;queries&gt;</code> tag in the AndroidManifest.xml of the LOB app to define the Dimensioning service package name. This is required to allow the Mobile Parcel API to communicate with the app.</p>
 
@@ -259,14 +270,14 @@ The following state diagram for the Mobile Parcel Dimensioning client explains t
 &lt;/queries&gt;
 </code></pre>
 
-<h3 id="generateapitoken" class="anchor"><a class="heading-anchor" href="#generateapitoken"><span></span></a>Generate API token</h3>
+<h3 id="2generateapitoken" class="anchor"><a class="heading-anchor" href="#2generateapitoken"><span></span></a>2. Generate API token</h3>
 
-<p>The API token is one of the parameters that must be sent with each API request for authentication. The API token will expire after 24 hours and must be re-generated.</p>
+<p>The API token is one of the parameters that must be sent with each API request for authentication. <em>The API token expires after 24 hours and must be regenerated.</em></p>
 
 <p>To generate the API token:</p>
 
 <ol>
-<li><p>Add the .AAR library file (e.g. broadcastprotection-1.6.aar) to the <em>libs</em> folder of the application project.
+<li><p>Add the .AAR library file (https://github.com/ZebraDevs/Mobile_Dimensioning_Samples/blob/main/Java/ParcelMDClientSampleApp/app/libs/broadcastprotection-1.6.aar) to the <em>libs</em> folder of the application project.
 <img alt="" style="height:100px" src="libs-folder.png"></p></li>
 
 <li><p>Add the the .AAR library to the build.gradle file:</p>
@@ -315,6 +326,73 @@ The following state diagram for the Mobile Parcel Dimensioning client explains t
 </code>
 </pre></li>
 </ol>
+
+<h3 id="3addyourapptotheallowlist" class="anchor"><a class="heading-anchor" href="#3addyourapptotheallowlist"><span></span></a>3. Add your app to the allow list</h3>
+
+<p>Zebra requires developers use an access control method through <a href="/mx/accessmgr/">MX Access Manager</a> to ensure that only trusted applications communicate with the Mobile Parcel API. To allow the LOB application package to be placed on the allow list, perform the following procedure:</p>
+
+<h4 id="aextractclientappcertificate" class="anchor"><a class="heading-anchor" href="#aextractclientappcertificate"><span></span></a>A. Extract Client App Certificate</h4>
+
+<p>Extract the client app certificate from the LOB app. This is a pre-requisite to create the StageNow profile that places the app in the allow list.</p>
+
+<p>Steps to extract the client app certificate:</p>
+
+<ol>
+<li>Download SigTools.jar from <a href="https://techdocs.zebra.com/emdk-for-android/latest/samples/sigtools/">Zebra’s App Signature Tools</a>.</li>
+
+<li>Follow the instructions provided from the link to extract the certificate from the LOB app APK file using command:<br>
+<code>java -jar SigTools.jar GetCert -INFORM APK -OUTFORM DER -IN [filename.apk] -OUTFILE [filename.crt]</code><br>
+where <em>[filename.apk]</em> is the full path and file name of the LOB app APK file and <em>[filename.crt]</em> is the designated certificate file name. The file extensions should be preserved in both file names. The certificate file is extracted as the CRT file. The certificate file is needed to create the StageNow profile.</li>
+</ol>
+
+<h4 id="bcreatestagenowprofile" class="anchor"><a class="heading-anchor" href="#bcreatestagenowprofile"><span></span></a>B. Create StageNow Profile</h4>
+
+<p>Create a StageNow profile to place the app in the allow list:</p>
+
+<ol>
+<li><p>Download and install <a href="https://www.zebra.com/us/en/support-downloads/software/utilities/stagenow.html">StageNow</a> on a host computer.</p></li>
+
+<li><p>Open StageNow. In the StageNow home screen, click <strong>Create New Profile</strong> from the left menu.
+<img alt="" style="height:350px" src="create-profile.png"></p></li>
+
+<li><p>Ensure MX version 11.1 or higher is selected at the top drop-down selector. The MX version on the device should match this or higher. See <a href="/mx/mx-version-on-device/">MX documentation</a> for instructions how to check the version.</p></li>
+
+<li><p>Select <strong>Xpert Mode</strong> from the list and click <strong>Create.</strong>
+<img alt="" style="height:350px" src="wizard-selection.png"></p></li>
+
+<li><p>Enter the profile name. Click <strong>Start.</strong>
+<img alt="" style="height:350px" src="profile-name.png"></p></li>
+
+<li><p>Scroll to <strong>AccessMgr</strong> and click the plus (+) sign to add AccessMgr to the Config tab on the right side.
+<img alt="" style="height:350px" src="add-accessmgr.png"></p></li>
+
+<li><p>Click <strong>Add.</strong></p></li>
+
+<li><p>Enter the appropriate information as prompted:</p>
+
+<ul>
+<li><strong>Service Access Action:</strong> Allow Caller to Call Service</li>
+
+<li><strong>Service Identifier:</strong> delegation-zebra-com.zebra.mobiledimensioning-Enable</li>
+
+<li><strong>Caller Package Name:</strong> [Enter package name of the client app.]</li>
+
+<li><strong>Caller Signature:</strong> [Browse to the app certificate generated from <a href="#extractclientappcertificate">Extract Client App Certificate</a>.]</li></ul>
+
+<p>Click <strong>Continue.</strong>
+<img alt="" style="height:350px" src="accessmgr.png"></p></li>
+
+<li><p>Click <strong>Complete Profiles.</strong> Profile creation is complete.
+<img alt="" style="height:350px" src="complete-profile.png"></p></li>
+</ol>
+
+<p>Perform <strong>one</strong> of the following steps based on the staging method. Ensure devices are connected to the network during the staging process:</p>
+
+<ul>
+<li><strong>StageNow:</strong> Generate the barcode. Open StageNow on the device and scan the barcode to place the app in the allow list.</li>
+
+<li><strong>EMM:</strong> Click on <strong>Export the XML for MDM.</strong> Send the XML using either <a href="/oemconfig">OEMConfig</a> or <a href="/mx/overview">MX</a> to place the app in the allow list.</li>
+</ul>
 
 <hr>
 
@@ -491,13 +569,254 @@ The following state diagram for the Mobile Parcel Dimensioning client explains t
 
 <hr>
 
+<h3 id="getdimensionparameter" class="anchor"><a class="heading-anchor" href="#getdimensionparameter"><span></span></a>Get Dimension Parameter</h3>
+
+<p>GET_DIMENSION_PARAMETER returns the values for all Mobile Parcel API parameters. Only call this API after ENABLE_DIMENSION is successfully called.</p>
+
+<h4 id="request-2" class="anchor"><a class="heading-anchor" href="#request-2"><span></span></a>Request</h4>
+
+<p>Use the following action to call GET_DIMENSION_PARAMETER:</p>
+
+<pre class="prettyprint"><code>com.zebra.parceldimensioning.GET_DIMENSION_PARAMETER
+</code></pre>
+
+<p>Add the following keys with the intent:</p>
+
+<table class="facelift" style="width:80%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>Key</th>
+    <th>Type</th>
+    <th>Description/Value</th>
+  </tr>
+
+  <tr>
+       <td>API_TOKEN</td>
+    <td>String</td>
+    <td>API authentication token</td>
+  </tr>
+
+  <tr>
+       <td>PACKAGE_NAME</td>
+    <td>String</td>
+    <td>LOB application package name</td>
+  </tr>
+
+  <tr>
+       <td>CALLBACK_RESPONSE</td>
+    <td>PendingIntent</td>
+    <td>PendingIntent object that receives the response</td>
+  </tr>
+
+</tbody></table>
+
+<p><br></p>
+
+<h4 id="response-2" class="anchor"><a class="heading-anchor" href="#response-2"><span></span></a>Response</h4>
+
+<p>A response is sent back to the app:</p>
+
+<table class="facelift" style="width:80%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>Key</th>
+    <th>Type</th>
+    <th>Description/Value</th>
+  </tr>
+
+  <tr>
+       <td>RESULT_CODE</td>
+    <td>Integer</td>
+    <td>0: Success<br>1: Failure<br>2: Error</td>
+  </tr>
+
+  <tr>
+       <td>RESULT_MESSAGE</td>
+    <td>String</td>
+    <td>Success<br><p style="font-family:'Courier New'">• Success</p>Failure<br><p style="font-family:'Courier New'">• Dimensioning Already In Use<br>• Failed to Get Parameters</p><br>Error<p style="font-family:'Courier New'">• Access Denied<br>• Invalid State</p></td>
+  </tr>
+
+  <tr>
+       <td>READY_LENGTH</td>
+    <td>BigDecimal</td>
+    <td>Length value to display in app when ready to dimension </td>
+  </tr>
+
+  <tr>
+       <td>READY_WIDTH</td>
+    <td>BigDecimal</td>
+    <td>Width value to display in app when ready to dimension </td>
+  </tr>
+
+  <tr>
+       <td>READY_HEIGHT</td>
+    <td>BigDecimal</td>
+    <td>Height value to display in app when ready to dimension </td>
+  </tr>
+
+  <tr>
+       <td>DIMENSION_UNIT</td>
+    <td>String</td>
+    <td><p style="font-family:'Courier New'">• Inch<br>• CM</p></td>
+  </tr>
+
+  <tr>
+       <td>FRAMEWORK_VERSION</td>
+    <td>String</td>
+    <td>Framework version</td>
+  </tr>
+
+  <tr>
+       <td>SERVICE_VERSION</td>
+    <td>String</td>
+    <td>Service version</td>
+  </tr>
+
+  <tr>
+       <td>PACKAGE_VERSION</td>
+    <td>String</td>
+    <td>Parcel dimensioning software package version</td>
+  </tr>
+
+  <tr>
+       <td>REGULATORY_APPROVAL</td>
+    <td>String</td>
+    <td>For Certified Solution: "OIML1234"<br>For Non-Certified Solution: ""</td>
+  </tr>
+
+  <tr>
+       <td>SUPPORTED_UNITS</td>
+    <td>StringArray</td>
+    <td><p style="font-family:'Courier New'">• ("Inch","CM")<br>• ("CM")</p></td>
+  </tr>
+
+  <tr>
+       <td>REPORT_IMAGE</td>
+    <td>Boolean</td>
+    <td>Enable reporting proof of dimension image with dimension response:<p style="font-family:'Courier New'">• True<br>• False</p></td>
+  </tr>
+
+</tbody></table>
+
+<p><br></p>
+
+<h4 id="samplecode-2" class="anchor"><a class="heading-anchor" href="#samplecode-2"><span></span></a>Sample Code</h4>
+
+<pre class="prettyprint"><code>    public static final String INTENT_ACTION_GET_DIMENSION_PARAMETER = "com.zebra.parceldimensioning.GET_DIMENSION_PARAMETER";
+
+    sendIntentApi(INTENT_ACTION_GET_DIMENSION_PARAMETER);
+</code></pre>
+
+<p>See <a href="#sendintentapi">sendIntentApi()</a> for the function definition.</p>
+
+<hr>
+
+<h3 id="setdimensionparameter" class="anchor"><a class="heading-anchor" href="#setdimensionparameter"><span></span></a>Set Dimension Parameter</h3>
+
+<p>SET_DIMENSION_PARAMETER configures the parameters supported by the Mobile Parcel API. Set any number of parameters through a single call by adding them as intent extras. <em>ENABLE_DIMENSION must be called before calling SET_DIMENSION_PARAMETER.</em></p>
+
+<h4 id="request-3" class="anchor"><a class="heading-anchor" href="#request-3"><span></span></a>Request</h4>
+
+<p>Supported values for DIMENSIONING_UNIT are reported by the SUPPORTED_UNITS value in GET_DIMENSION_PARAMETER.</p>
+
+<p>Use the following to call SET_DIMENSION_PARAMETER:</p>
+
+<pre class="prettyprint"><code>com.zebra.parceldimensioning.SET_DIMENSION_PARAMETER
+</code></pre>
+
+<p>Add the following keys to the intent:</p>
+
+<table class="facelift" style="width:80%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>Key</th>
+    <th>Type</th>
+    <th>Required</th>
+    <th>Description/Value</th>
+  </tr>
+
+  <tr>
+       <td>API_TOKEN</td>
+    <td>String</td>
+    <td>Yes</td>
+    <td>API authentication token</td>
+  </tr>
+
+  <tr>
+       <td>PACKAGE_NAME</td>
+    <td>String</td>
+    <td>Yes</td>
+    <td>LOB application package name</td>
+  </tr>
+
+  <tr>
+       <td>CALLBACK_RESPONSE</td>
+    <td>PendingIntent</td>
+    <td>Yes</td>
+    <td>PendingIntent object that receives the response</td>
+  </tr>
+
+  <tr>
+       <td>DIMENSIONING_UNIT</td>
+    <td>String</td>
+    <td>No</td>
+    <td><p style="font-family:'Courier New'">• Inch<br>• CM</p><b>Note:</b> Changing DIMENSIONING_UNIT will change the ready values of length, width and height.</td>
+  </tr>
+
+  <tr>
+       <td>REPORT_IMAGE</td>
+    <td>Boolean</td>
+    <td>No</td>
+    <td><p style="font-family:'Courier New'">• True<br>• False</p></td>
+  </tr>
+
+</tbody></table>
+
+<p><br></p>
+
+<h4 id="response-3" class="anchor"><a class="heading-anchor" href="#response-3"><span></span></a>Response</h4>
+
+<p>A response is sent back to the app:</p>
+
+<table class="facelift" style="width:80%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>Key</th>
+    <th>Type</th>
+    <th>Description/Value</th>
+  </tr>
+
+  <tr>
+       <td>RESULT_CODE</td>
+    <td>Integer</td>
+    <td>0: Success<br>1: Failure<br>2: Error</td>
+  </tr>
+
+  <tr>
+       <td>RESULT_MESSAGE</td>
+    <td>String</td>
+    <td>Success<br><p style="font-family:'Courier New'">• Success</p>Failure<br><p style="font-family:'Courier New'">• Dimensioning Already In Use<br>• Failed to Set Parameter</p>Error<br><p style="font-family:'Courier New'">• Access Denied<br>• Invalid State<br>• Invalid Value<br>• Invalid Parameter</p></td>
+  </tr>
+
+</tbody></table>
+
+<p><br></p>
+
+<h4 id="samplecode-3" class="anchor"><a class="heading-anchor" href="#samplecode-3"><span></span></a>Sample Code</h4>
+
+<pre class="prettyprint"><code>    public static final String INTENT_ACTION_SET_DIMENSION_PARAMETER = "com.zebra.parceldimensioning.SET_DIMENSION_PARAMETER";
+    public static final String DIMENSIONING_UNIT = "DIMENSIONING_UNIT";
+
+    sendIntentApi(INTENT_ACTION_SET_DIMENSION_PARAMETER, DIMENSIONING_UNIT, mUnit);
+</code></pre>
+
+<p>See <a href="#sendintentapi">sendIntentApi()</a> for the function definition.</p>
+
+<hr>
+
 <h3 id="getdimension" class="anchor"><a class="heading-anchor" href="#getdimension"><span></span></a>Get Dimension</h3>
 
 <p>GET_DIMENSION returns the values of the parcel measurements when an end-user dimensions a parcel. When this API is called, the Mobile Parcel API renders its user interface (UI) on top of the application, allowing the user to aim the camera at the parcel and begin dimensioning. Upon successful dimensioning and confirmation from the user, the results are sent back to the application through an intent response. If dimensioning fails, the result message contains details about the cause of failure.</p>
 
 <p><strong>NOTE:</strong> When calling GET_DIMENSION, the Mobile Parcel UI controls are overlaid on top of the application. This prevents the user from accessing the application until the dimensioning is complete or the user exits the dimensioning session by tapping the Back button.</p>
 
-<h4 id="request-2" class="anchor"><a class="heading-anchor" href="#request-2"><span></span></a>Request</h4>
+<h4 id="request-4" class="anchor"><a class="heading-anchor" href="#request-4"><span></span></a>Request</h4>
 
 <p>Use the following action to call GET_DIMENSION:</p>
 
@@ -546,7 +865,7 @@ The following state diagram for the Mobile Parcel Dimensioning client explains t
 
 <p><br></p>
 
-<h4 id="response-2" class="anchor"><a class="heading-anchor" href="#response-2"><span></span></a>Response</h4>
+<h4 id="response-4" class="anchor"><a class="heading-anchor" href="#response-4"><span></span></a>Response</h4>
 
 <p>A response is sent back to the app:</p>
 
@@ -636,7 +955,7 @@ The following state diagram for the Mobile Parcel Dimensioning client explains t
 
 <p><br></p>
 
-<h4 id="samplecode-2" class="anchor"><a class="heading-anchor" href="#samplecode-2"><span></span></a>Sample Code</h4>
+<h4 id="samplecode-4" class="anchor"><a class="heading-anchor" href="#samplecode-4"><span></span></a>Sample Code</h4>
 
 <pre class="prettyprint"><code>    public static final String INTENT_ACTION_GET_DIMENSION = "com.zebra.parceldimensioning.GET_DIMENSION";
     public static final String PARCEL_ID = "PARCEL_ID";
@@ -648,312 +967,14 @@ The following state diagram for the Mobile Parcel Dimensioning client explains t
 
 <hr>
 
-<h3 id="getdimensionparameter" class="anchor"><a class="heading-anchor" href="#getdimensionparameter"><span></span></a>Get Dimension Parameter</h3>
+<h2 id="bestpractices" class="anchor"><a class="heading-anchor" href="#bestpractices"><span></span></a>Best Practices</h2>
 
-<p>GET_DIMENSION_PARAMETER returns the values for all Mobile Parcel API parameters. Only call this API after ENABLE_DIMENSION is successfully called.</p>
-
-<h4 id="request-3" class="anchor"><a class="heading-anchor" href="#request-3"><span></span></a>Request</h4>
-
-<p>Use the following action to call GET_DIMENSION_PARAMETER:</p>
-
-<pre class="prettyprint"><code>com.zebra.parceldimensioning.GET_DIMENSION_PARAMETER
-</code></pre>
-
-<p>Add the following keys with the intent:</p>
-
-<table class="facelift" style="width:80%" border="1" padding="5px">
-  <tbody><tr bgcolor="#dce8ef">
-    <th>Key</th>
-    <th>Type</th>
-    <th>Description/Value</th>
-  </tr>
-
-  <tr>
-       <td>API_TOKEN</td>
-    <td>String</td>
-    <td>API authentication token</td>
-  </tr>
-
-  <tr>
-       <td>PACKAGE_NAME</td>
-    <td>String</td>
-    <td>LOB application package name</td>
-  </tr>
-
-  <tr>
-       <td>CALLBACK_RESPONSE</td>
-    <td>PendingIntent</td>
-    <td>PendingIntent object that receives the response</td>
-  </tr>
-
-</tbody></table>
-
-<p><br></p>
-
-<h4 id="response-3" class="anchor"><a class="heading-anchor" href="#response-3"><span></span></a>Response</h4>
-
-<p>A response is sent back to the app:</p>
-
-<table class="facelift" style="width:80%" border="1" padding="5px">
-  <tbody><tr bgcolor="#dce8ef">
-    <th>Key</th>
-    <th>Type</th>
-    <th>Description/Value</th>
-  </tr>
-
-  <tr>
-       <td>RESULT_CODE</td>
-    <td>Integer</td>
-    <td>0: Success<br>1: Failure<br>2: Error</td>
-  </tr>
-
-  <tr>
-       <td>RESULT_MESSAGE</td>
-    <td>String</td>
-    <td>Success<br><p style="font-family:'Courier New'">• Success</p>Failure<br><p style="font-family:'Courier New'">• Dimensioning Already In Use<br>• Failed to Get Parameters</p><br>Error<p style="font-family:'Courier New'">• Access Denied<br>• Invalid State</p></td>
-  </tr>
-
-  <tr>
-       <td>READY_LENGTH</td>
-    <td>BigDecimal</td>
-    <td>Length value to display in app when ready to dimension </td>
-  </tr>
-
-  <tr>
-       <td>READY_WIDTH</td>
-    <td>BigDecimal</td>
-    <td>Width value to display in app when ready to dimension </td>
-  </tr>
-
-  <tr>
-       <td>READY_HEIGHT</td>
-    <td>BigDecimal</td>
-    <td>Height value to display in app when ready to dimension </td>
-  </tr>
-
-  <tr>
-       <td>DIMENSION_UNIT</td>
-    <td>String</td>
-    <td><p style="font-family:'Courier New'">• Inch<br>• CM</p></td>
-  </tr>
-
-  <tr>
-       <td>FRAMEWORK_VERSION</td>
-    <td>String</td>
-    <td>Framework version</td>
-  </tr>
-
-  <tr>
-       <td>SERVICE_VERSION</td>
-    <td>String</td>
-    <td>Service version</td>
-  </tr>
-
-  <tr>
-       <td>PACKAGE_VERSION</td>
-    <td>String</td>
-    <td>Parcel dimensioning software package version</td>
-  </tr>
-
-  <tr>
-       <td>REGULATORY_APPROVAL</td>
-    <td>String</td>
-    <td>For Certified Solution: "OIML1234"<br>For Non-Certified Solution: ""</td>
-  </tr>
-
-  <tr>
-       <td>SUPPORTED_UNITS</td>
-    <td>StringArray</td>
-    <td><p style="font-family:'Courier New'">• ("Inch","CM")<br>• ("CM")</p></td>
-  </tr>
-
-  <tr>
-       <td>REPORT_IMAGE</td>
-    <td>Boolean</td>
-    <td><p style="font-family:'Courier New'">• True<br>• False</p></td>
-  </tr>
-
-</tbody></table>
-
-<p><br></p>
-
-<h4 id="samplecode-3" class="anchor"><a class="heading-anchor" href="#samplecode-3"><span></span></a>Sample Code</h4>
-
-<pre class="prettyprint"><code>    public static final String INTENT_ACTION_GET_DIMENSION_PARAMETER = "com.zebra.parceldimensioning.GET_DIMENSION_PARAMETER";
-
-    sendIntentApi(INTENT_ACTION_GET_DIMENSION_PARAMETER);
-</code></pre>
-
-<p>See <a href="#sendintentapi">sendIntentApi()</a> for the function definition.</p>
-
-<hr>
-
-<h3 id="setdimensionparameter" class="anchor"><a class="heading-anchor" href="#setdimensionparameter"><span></span></a>Set Dimension Parameter</h3>
-
-<p>SET_DIMENSION_PARAMETER configures the parameters supported by the Mobile Parcel API. Set any number of parameters through a single call by adding them as intent extras.</p>
-
-<h4 id="request-4" class="anchor"><a class="heading-anchor" href="#request-4"><span></span></a>Request</h4>
-
-<p>ENABLE_DIMENSION must be called before calling SET_DIMENSION_PARAMETER. Supported values for DIMENSIONING_UNIT are reported by the SUPPORTED_UNITS value in GET_DIMENSION_PARAMETER.</p>
-
-<p>Use the following to call SET_DIMENSION_PARAMETER:</p>
-
-<pre class="prettyprint"><code>com.zebra.parceldimensioning.SET_DIMENSION_PARAMETER
-</code></pre>
-
-<p>Add the following keys to the intent:</p>
-
-<table class="facelift" style="width:80%" border="1" padding="5px">
-  <tbody><tr bgcolor="#dce8ef">
-    <th>Key</th>
-    <th>Type</th>
-    <th>Required</th>
-    <th>Description/Value</th>
-  </tr>
-
-  <tr>
-       <td>API_TOKEN</td>
-    <td>String</td>
-    <td>Yes</td>
-    <td>API authentication token</td>
-  </tr>
-
-  <tr>
-       <td>PACKAGE_NAME</td>
-    <td>String</td>
-    <td>Yes</td>
-    <td>LOB application package name</td>
-  </tr>
-
-  <tr>
-       <td>CALLBACK_RESPONSE</td>
-    <td>PendingIntent</td>
-    <td>Yes</td>
-    <td>PendingIntent object that receives the response</td>
-  </tr>
-
-  <tr>
-       <td>DIMENSIONING_UNIT</td>
-    <td>String</td>
-    <td>No</td>
-    <td><p style="font-family:'Courier New'">• Inch<br>• CM</p><b>Note:</b> Changing DIMENSIONING_UNIT will change the ready values of length, width and height.</td>
-  </tr>
-
-  <tr>
-       <td>REPORT_IMAGE</td>
-    <td>Boolean</td>
-    <td>No</td>
-    <td><p style="font-family:'Courier New'">• True<br>• False</p></td>
-  </tr>
-
-</tbody></table>
-
-<p><br></p>
-
-<h4 id="response-4" class="anchor"><a class="heading-anchor" href="#response-4"><span></span></a>Response</h4>
-
-<p>A response is sent back to the app:</p>
-
-<table class="facelift" style="width:80%" border="1" padding="5px">
-  <tbody><tr bgcolor="#dce8ef">
-    <th>Key</th>
-    <th>Type</th>
-    <th>Description/Value</th>
-  </tr>
-
-  <tr>
-       <td>RESULT_CODE</td>
-    <td>Integer</td>
-    <td>0: Success<br>1: Failure<br>2: Error</td>
-  </tr>
-
-  <tr>
-       <td>RESULT_MESSAGE</td>
-    <td>String</td>
-    <td>Success<br><p style="font-family:'Courier New'">• Success</p>Failure<br><p style="font-family:'Courier New'">• Dimensioning Already In Use<br>• Failed to Set Parameter</p>Error<br><p style="font-family:'Courier New'">• Access Denied<br>• Invalid State<br>• Invalid Value<br>• Invalid Parameter</p></td>
-  </tr>
-
-</tbody></table>
-
-<p><br></p>
-
-<h4 id="samplecode-4" class="anchor"><a class="heading-anchor" href="#samplecode-4"><span></span></a>Sample Code</h4>
-
-<pre class="prettyprint"><code>    public static final String INTENT_ACTION_SET_DIMENSION_PARAMETER = "com.zebra.parceldimensioning.SET_DIMENSION_PARAMETER";
-    public static final String DIMENSIONING_UNIT = "DIMENSIONING_UNIT";
-
-    sendIntentApi(INTENT_ACTION_SET_DIMENSION_PARAMETER, DIMENSIONING_UNIT, mUnit);
-</code></pre>
-
-<p>See <a href="#sendintentapi">sendIntentApi()</a> for the function definition.</p>
-
-<hr>
-
-<h2 id="security" class="anchor"><a class="heading-anchor" href="#security"><span></span></a>Security</h2>
-
-<p>Zebra requires developers use an access control method through <a href="/mx/accessmgr/">MX Access Manager</a> to ensure that only trusted applications communicate with the Mobile Parcel API. To allow the LOB application package to be placed on the "whitelist", perform the procedures that follow.</p>
-
-<h3 id="1extractclientappcertificate" class="anchor"><a class="heading-anchor" href="#1extractclientappcertificate"><span></span></a>1. Extract Client App Certificate</h3>
-
-<p>Extract the client app certificate from the LOB app. This is a pre-requisite to create the StageNow profile that places the app in the "whitelist".</p>
-
-<p>Steps to extract the client app certificate:</p>
-
-<ol>
-<li>Download SigTools.jar from <a href="https://techdocs.zebra.com/emdk-for-android/latest/samples/sigtools/">Zebra’s App Signature Tools</a>.</li>
-
-<li>Follow the instructions provided from the link to extract the certificate from the LOB app APK file using command:<br>
-<code>java -jar SigTools.jar GetCert -INFORM APK -OUTFORM DER -IN [filename.apk] -OUTFILE [filename.crt]</code><br>
-where <em>[filename.apk]</em> is the full path and file name of the LOB app APK file and <em>[filename.crt]</em> is the designated certificate file name. The file extensions should be preserved in both file names. The certificate file is extracted as the CRT file. The certificate file is needed to create the StageNow profile.</li>
-</ol>
-
-<p><br></p>
-
-<h3 id="2createstagenowprofile" class="anchor"><a class="heading-anchor" href="#2createstagenowprofile"><span></span></a>2. Create StageNow Profile</h3>
-
-<p>Create a StageNow profile to place the app in the "whitelist":</p>
-
-<ol>
-<li><p>Download and install <a href="https://www.zebra.com/us/en/support-downloads/software/utilities/stagenow.html">StageNow</a> on a host computer.</p></li>
-
-<li><p>Open StageNow. In the StageNow home screen, click <strong>Create New Profile</strong> from the left menu.
-<img alt="" style="height:350px" src="create-profile.png"></p></li>
-
-<li><p>Ensure MX version 11.1 or higher is selected at the top drop-down selector. The MX version on the device should match this or higher. See <a href="/mx/mx-version-on-device/">MX documentation</a> for instructions how to check the version.</p></li>
-
-<li><p>Select <strong>Xpert Mode</strong> from the list and click <strong>Create.</strong>
-<img alt="" style="height:350px" src="wizard-selection.png"></p></li>
-
-<li><p>Enter the profile name. Click <strong>Start.</strong>
-<img alt="" style="height:350px" src="profile-name.png"></p></li>
-
-<li><p>Scroll to <strong>AccessMgr</strong> and click the plus (+) sign to add AccessMgr to the Config tab on the right side.
-<img alt="" style="height:350px" src="add-accessmgr.png"></p></li>
-
-<li><p>Click <strong>Add.</strong></p></li>
-
-<li><p>Enter the appropriate information as prompted:</p>
+<p>The following best practices provide guidance on Mobile Parcel app development:</p>
 
 <ul>
-<li><strong>Service Identifier:</strong> delegation-zebra-com.zebra.mobiledimensioning-Enable</li>
+<li><strong>Application life cycle -</strong> Enable dimensioning when the app activity is active and disable it when inactive to ensure the resources are freed when not in use.</li>
 
-<li><strong>Caller Package Name:</strong> [Enter package name of the client app.]</li>
-
-<li><strong>Caller Signature:</strong> [Browse to the app certificate generated from <a href="#extractclientappcertificate">Extract Client App Certificate</a>.]</li></ul>
-
-<p>Click <strong>Continue.</strong>
-<img alt="" style="height:350px" src="accessmgr.png"></p></li>
-
-<li><p>Click <strong>Complete Profiles.</strong> Profile creation is complete.
-<img alt="" style="height:350px" src="complete-profile.png"></p></li>
-</ol>
-
-<p>Perform <strong>one</strong> of the following steps based on the staging method. Ensure devices are connected to the network during the staging process:</p>
-
-<ul>
-<li><strong>StageNow:</strong> Generate the barcode. Open StageNow on the device and scan the barcode to place the app in the "whitelist".</li>
-
-<li><strong>EMM:</strong> Click on <strong>Export the XML for MDM.</strong> Send the XML using either <a href="/oemconfig">OEMConfig</a> or <a href="/mx/overview">MX</a> to place the app in the "whitelist".</li>
+<li><strong>Asynchronous errors -</strong> When camera errors are encountered, multiple responses may be received to enable the API. If this occurs, try re-enabling the Dimensioning Framework.</li>
 </ul>
 
 <hr>
@@ -1183,6 +1204,8 @@ where <em>[filename.apk]</em> is the full path and file name of the LOB app APK 
 
 <ul>
 <li><a href="../about">About Mobile Parcel</a></li>
+
+<li><a href="../sample">Sample App</a></li>
 </ul><p></p>
                                         
 
