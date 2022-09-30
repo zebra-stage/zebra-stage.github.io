@@ -204,12 +204,14 @@
 	                            <h4 class="anchor" id=""><a class="heading-anchor" href="#"><span></span></a></h4>
 	                            <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>This sample demonstrates how to use DataWedge to receive scanned barcode data through an Android intent.</p>
+<p>This sample demonstrates how to use DataWedge to receive scanned barcode data through an Android intent. The high level steps are:</p>
 
-<p>Available actions in this sample:</p>
+<ol>
+<li>Configure DataWedge. Set the input (barcode scanner) and output (intent).</li>
 
-<ul>
-<li>Display the following for each decoded barcode:
+<li>Create a profile and associate the app with the profile.</li>
+
+<li>Run the app and scan a barcode. The following information is displayed:
 
 
 <ul>
@@ -219,11 +221,13 @@
 
 <li>decoder type</li></ul>
 </li>
-</ul>
+</ol>
 
 <blockquote>
   <p>This sample application is only intended for educational purposes, demonstrating the use of DataWedge intent API(s).</p>
 </blockquote>
+
+<p>This is the minimal code approach using a generic Android intent rather than DataWedge APIs. To develop an app with finer control of DataWedge settings and data capture, refer to the <a href="../../api">DataWedge API</a> guide and best practices in the <a href="../../gettingstarted">Get Started</a> guide.</p>
 
 <h2 id="apisused" class="anchor"><a class="heading-anchor" href="#apisused"><span></span></a>APIs Used</h2>
 
@@ -255,7 +259,7 @@
 <ol>
 <li><p>Launch DataWedge via Apps &gt; DataWedge.</p></li>
 
-<li><p>Select a profile (e.g. Profile0 which is used for all apps not explicitly assigned a profile), or create a new profile.</p></li>
+<li><p>Select a profile (e.g. Profile0 which is used for all apps not explicitly assigned a profile), or <a href="../../createprofile">create a new profile</a>.</p></li>
 
 <li><p>Associate the profile with this sample app:
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;a. Tap <strong>Associated Apps.</strong>
@@ -276,13 +280,15 @@
 <li><p>Configure the intent output as follows:</p>
 
 <ul>
-<li>Intent action: <strong>com.dwbasicintent1.ACTION</strong> (to match value defined in the <code>strings.xml</code> file)</li>
+<li>Intent action: <strong>com.dwbasicintent1.ACTION</strong> (Must match the value defined in the <code>strings.xml</code> file. This is an implicit intent that is sent by DataWedge. The application must register a broadcast receiver with the given action in order to receive the intent.)</li>
 
 <li>Intent category: (leave blank)</li>
 
 <li>Intent delivery: <strong>Broadcast intent</strong></li></ul>
 
-<p><img style="height:350px" src="dwprofile-settings.png"></p></li>
+<p><img style="height:350px" src="dwprofile-settings.png"></p>
+
+<p>Refer to the <a href="../../output/intent/">DataWedge Intent Output</a> guide for more information about these settings.</p></li>
 </ol>
 
 <h2 id="usingthissample" class="anchor"><a class="heading-anchor" href="#usingthissample"><span></span></a>Using This Sample</h2>
@@ -290,12 +296,95 @@
 <p>To use the app:</p>
 
 <ol>
-<li><p><a href="https://github.com/Zebra/samples-datawedge">Download</a>, build, and launch the sample app.
+<li><p><a href="https://github.com/Zebra/samples-datawedge">Download</a>, build, and launch the BasicIntent1 sample app.
 <img src="basicintent1-1-mini.png" alt="img"></p></li>
 
 <li><p>Scan a barcode. The data fields are populated.
 <img src="basicintent1-2-mini.png" alt="img"></p></li>
 </ol>
+
+<h2 id="samplecodewalkthrough" class="anchor"><a class="heading-anchor" href="#samplecodewalkthrough"><span></span></a>Sample code walk-through</h2>
+
+<p>Refer to <a href="https://github.com/Zebra/samples-datawedge">BasicIntent1 sample app source code</a>.</p>
+
+<p>There are several important points to ensure that the app receives the intent data sent from DataWedge:</p>
+
+<ol>
+<li><b>Pre-define some of the strings in the application project</b> for ease of use when extracting the scanned data. The intent action is defined as `activity_intent_filter_action` in the sample app. When received, the intent’s action contains extras with the scanned data for source, type, and data as described in the <a href="../../output/intent/">DataWedge Intent Output</a> guide. Content from Strings.xml in the sample app:
+<!-- -->
+
+<pre class="prettyprint"><code>&lt;resources&gt;
+    &lt;string name="app_name"&gt;DW BasicIntent1&lt;/string&gt;
+    &lt;string name="activity_intent_filter_action"&gt;com.dwbasicintent1.ACTION&lt;/string&gt;
+    &lt;string name="datawedge_intent_key_source"&gt;com.symbol.datawedge.source&lt;/string&gt;
+    &lt;string name="datawedge_intent_key_label_type"&gt;com.symbol.datawedge.label_type&lt;/string&gt;
+    &lt;string name="datawedge_intent_key_data"&gt;com.symbol.datawedge.data_string&lt;/string&gt;
+&lt;/resources&gt;
+</code></pre></li>
+
+<li><p><b>Register a broadcast receiver.</b> Since DataWedge is configured to send a broadcast intent, the application must register a broadcast receiver. This is done in the onCreate() method in the sample app:</p>
+
+<pre class="prettyprint"><code>protected void onCreate(Bundle savedInstanceState) {
+    IntentFilter filter = new IntentFilter();
+    filter.addCategory(Intent.CATEGORY_DEFAULT);
+    filter.addAction(getResources().getString(R.string.activity_intent_filter_action));
+    registerReceiver(myBroadcastReceiver, filter);
+}
+</code></pre>
+
+<p>Note that the action being filtered matches the action configured in the DataWedge profile. In a production application, for efficiency the register/unregister would likely be done in the onResume()/onPause() methods.</p></li>
+
+<li><p><b>Define the broadcast receiver.</b> This is done in MainActivity.java in the sample app:</p>
+
+<pre class="prettyprint"><code>private BroadcastReceiver myBroadcastReceiver = new BroadcastReceiver() 
+{
+
+<pre><code>@Override
+public void onReceive(Context context, Intent intent) 
+{
+
+    String action = intent.getAction();
+    Bundle b = intent.getExtras();
+
+    if (action.equals(getResources().getString(R.string.activity_intent_filter_action))) 
+    {
+            //  Received a barcode scan
+            try 
+            {
+                displayScanResult(intent, "via Broadcast");
+            } 
+            catch (Exception e) {
+                //  Catch if the UI does not exist when we receive the broadcast
+            }
+    }
+}
+</code></pre>
+
+};
+</code></pre></li>
+
+<li><p><b>Extract the scanned data and display it on the screen.</b> This is done in method displayScanResult() in the sample app:</p>
+
+<pre class="prettyprint"><code>private void displayScanResult(Intent initiatingIntent, String howDataReceived)
+{
+    String decodedSource = initiatingIntent.getStringExtra(getResources().getString(R.string.datawedge_intent_key_source));
+    String decodedData = initiatingIntent.getStringExtra(getResources().getString(R.string.datawedge_intent_key_data));
+    String decodedLabelType = initiatingIntent.getStringExtra(getResources().getString(R.string.datawedge_intent_key_label_type));
+
+<pre><code>final TextView lblScanSource = (TextView) findViewById(R.id.lblScanSource);
+final TextView lblScanData = (TextView) findViewById(R.id.lblScanData);
+final TextView lblScanLabelType = (TextView) findViewById(R.id.lblScanDecoder);
+
+lblScanSource.setText(decodedSource + " " + howDataReceived);
+lblScanData.setText(decodedData);
+lblScanLabelType.setText(decodedLabelType);
+</code></pre>
+
+}
+</code></pre></li>
+</ol>
+
+<p>Note that the extra keys were defined earlier in the strings.xml file. This code assumes a UI exists in which to place the data, as performed in the sample app.</p>
 
 <hr>
 
