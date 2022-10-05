@@ -359,11 +359,60 @@
 
 <h2 id="sso" class="anchor"><a class="heading-anchor" href="#sso"><span></span></a>SSO</h2>
 
-<p>Integrate single sign-on (SSO) with Device Tracker to authenticate users with their SSO credentials. SSO activation allows administrators and managers to login to Device Tracker with their SSO credentials and gain access to their respective dashboards on the device and web portal. For other users, there is no change in Device Tracker client app access when logging in with their SSO credentials - for these users, the <a href="../use/#markdevicetofind">To Be Found</a> screen is seen when the client app is launched. Only SSO OAuth 2.0 is supported.</p>
+<p>Integrate single sign-on (SSO) with Device Tracker to authenticate users with their SSO credentials. SSO activation allows administrators and managers to login to Device Tracker with their SSO credentials and gain access to their respective dashboards on the device and web portal. For other users, there is no change in Device Tracker client app access when logging in with their SSO credentials - for these users, the <a href="../use/#markdevicetofind">To Be Found</a> screen is seen when the client app is launched. <strong><em>Only OAuth 2.0 using Mutual-TLS client certificates for client authentication is supported for SSO integration.</em></strong></p>
 
-<p>To activate SSO, follow the <a href="#ssointegration">SSO integration</a> steps and then <a href="#manageusers">create SSO users</a>. If SSO is activated, only SSO users can login; non-SSO users cannot login. <em>Only activate SSO when all devices have Device Tracker 5.1 or higher.</em></p>
+<h3 id="ssoactivation" class="anchor"><a class="heading-anchor" href="#ssoactivation"><span></span></a>SSO Activation</h3>
 
-<p>After activating SSO, if <a href="#checkincheckoutdevice">Checkin/Checkout</a> is enabled, <em>user accountability does not take place and there is no difference in behavior compared to if this option is disabled.</em></p>
+<p><strong>Prior to activating SSO,</strong> contact Zebra services and provide the following information for SSO to be enabled in the cloud server:</p>
+
+<ul>
+<li>Certificate private key (.key file) from the certificate owner</li>
+
+<li>Certificate password (saved in passphrase.txt) used to generate the private key </li>
+
+<li>SSL certificate issued by the CA (.p7b file)</li>
+
+<li>SSL certificate (.pfx file) converted from P7B</li>
+
+<li>Public certificate (.crt file) generated from PFX format</li>
+
+<li>Certificate expiration date</li>
+</ul>
+
+<p>To generate the SSL certificate, perform the following:</p>
+
+<ol>
+<li><p>Create a certificate CER file with the following command: </p>
+
+<p><code>openssl pkcs7 -print_certs -in ssl_certificate.p7b -out ssl_certificate.cer</code> </p>
+
+<p>where "ssl_certificate.p7b" is the certificate issued by the CA.</p></li>
+
+<li><p>Create an SSL certificate in PFX format using the following command:</p>
+
+<p><code>openssl pkcs12 -export -in ssl_certificate.cer -inkey private.key -out ssl_certificate.pfx</code> </p>
+
+<p>where "private.key" is the private key from the certificate owner and "ssl_certificate.cer" is the file generated from step 1. Save the private key password in <strong>passphrase.txt.</strong> When prompted, enter the certificate password and specify the export password using the same password as the certificate password.</p></li>
+
+<li><p>Generate a public certificate in CRT format with command:</p>
+
+<p><code>Openssl pkcs12 -in ssl_certificate.pfx -clcerts -nokeys -out dtrk_sso_public.crt</code></p></li>
+</ol>
+
+<p>Action is required to <strong>activate SSO for integration with Device Tracker</strong> after Zebra services enables SSO in the cloud server. Follow the <a href="#ssointegration">SSO integration</a> steps and then <a href="#manageusers">create SSO users</a>. If SSO is activated, only SSO users can login; non-SSO users cannot login. <em>Only activate SSO when all devices have Device Tracker 5.1 or higher.</em> </p>
+
+<ul>
+<li><p><strong>When using Chrome for the first time on the device and attempting to login with SSO,</strong> the following steps are required before proceeding to login:  </p>
+
+<ol>
+<li>Accept the Google Terms of Service.</li>
+
+<li>Select the desired option when prompted to turn on sync.</li></ol>
+
+<p>If the device is running Android 8, the SSO login page appears again after logging in sucessfully. Tap the back button to open the Device Tracker dashboard.</p></li>
+</ul>
+
+<p><strong>After activating SSO,</strong> if <a href="#checkincheckoutdevice">Checkin/Checkout</a> is enabled, <em>user accountability does not take place and there is no difference in behavior compared to if this option is disabled.</em></p>
 
 <!-- NOTE: ELS REMOVED FROM v5.1
 **To enforce user accountability and prevent device access until the user logs in with their SSO credentials, install [Enterprise Login Screen (ELS).](#enterpriseloginscreen)** User accountability associates the user to the device based on login so the administrator can track device ownership.
@@ -373,21 +422,7 @@ Behavior if ELS is not installed (no user accountability):
 * **If SSO is activated and Checkin/Checkout is disabled,** the same scenario applies as if Checkin/Checkout is enabled, except that the user barcode cannot be scanned.
 -->
 
-<p><strong>Notes:</strong></p>
-
-<ul>
-<li>To use SSO, <strong>Device Tracker 5.1 or higher is required on the device.</strong> Otherwise, a server connection failed error may occur. To recover, clear the Device Tracker application cache either manually through Android settings or using <a href="/mx/appmgr/">App Manager</a> through MX.</li>
-
-<li><strong>When using Chrome for the first time on the device and attempting to login with SSO,</strong> the following steps are required before proceeding to login:</li>
-</ul>
-
-<ol>
-<li><p>Accept the Google Terms of Service.</p></li>
-
-<li><p>Select the desired option when prompted to turn on sync.</p>
-
-<p>If the device is running Android 8, the SSO login page appears again after logging in sucessfully. Tap the back button to open the Device Tracker dashboard.</p></li>
-</ol>
+<p><strong>Note:</strong> To use SSO, <strong>Device Tracker 5.1 or higher is required on the device.</strong> Otherwise, a server connection failed error may occur. To recover, clear the Device Tracker application cache either manually through Android settings or using <a href="/mx/appmgr/">App Manager</a> through MX.</p>
 
 <h3 id="ssointegration" class="anchor"><a class="heading-anchor" href="#ssointegration"><span></span></a>SSO Integration</h3>
 
