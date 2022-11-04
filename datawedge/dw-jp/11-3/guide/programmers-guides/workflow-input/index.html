@@ -178,7 +178,7 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>概要</h2>
 
-<p>このガイドでは、<a href="../../input/workflow">ワークフロー入力</a>を使用してデータを取得するアプリを開発する方法を説明します。この例では、身分証明書のスキャンに焦点を当てています。同様の手順は、他の <a href="../../input/workflow/#ocr">OCR</a> 機能 (ナンバー プレート、車両識別番号 (VIN)、タイヤ識別番号 (TIN)、メーター読み取り)、および<a href="../../input/workflow/#imagecapture">フリーフォーム イメージ キャプチャ</a>に適用されます。</p>
+<p>このガイドでは、<a href="../../input/workflow">ワークフロー入力</a>を使用してデータを取得するアプリを開発する方法を説明します。この例では、身分証明書のスキャンに焦点を当てています。同様の手順は、他の <a href="../../input/workflow/#ocr">OCR</a> 機能 (ナンバー プレート、車両識別番号 (VIN)、タイヤ識別番号 (TIN)、メーター読み取り)、および<a href="../../input/workflow/#freeformimagecapture">フリーフォーム イメージ キャプチャ</a>と<a href="../../input/workflow/#documentcapture">ドキュメント キャプチャ</a>に適用されます。</p>
 
 <p>使用されたサンプルの身分証明書</p>
 
@@ -222,6 +222,15 @@
 <li>Mobility DNA 検針 OCR Wedge ライセンス</li></ul>
 </li>
 </ul>
+
+<h3 id="packagevisibility" class="anchor"><a class="heading-anchor" href="#packagevisibility"><span></span></a>パッケージの表示</h3>
+
+<p><strong>重要:</strong> Android 11 (API 30) によろパッケージの表示が制限されているため、Android 11 以降を対象とする DataWedge アプリは、AndroidManifest.xml ファイルに次の <code>&lt;queries&gt;</code> 要素を含める必要があります。</p>
+
+<pre class="prettyprint"><code>    &lt;queries&gt;
+        &lt;package android:name=&quot;com.symbol.datawedge&quot; /&gt;
+    &lt;/queries&gt;
+</code></pre>
 
 <hr>
 
@@ -525,7 +534,8 @@ public class ImageProcessing{
         if(imageFormat.equalsIgnoreCase(IMG_FORMAT_YUV))
         {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            YuvImage yuvImage = new YuvImage(data, ImageFormat.NV21, width, height, new int[]{stride, stride});
+            int uvStride = ((stride + 1)/2)*2;  // calculate UV channel stride to support odd strides
+            YuvImage yuvImage = new YuvImage(data, ImageFormat.NV21, width, height, new int[]{stride, uvStride});
             yuvImage.compressToJpeg(new Rect(0, 0, stride, height), 100, out);
             yuvImage.getYuvData();
             byte[] imageBytes = out.toByteArray();
