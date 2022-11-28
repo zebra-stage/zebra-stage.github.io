@@ -1428,7 +1428,7 @@ Error messages are logged for invalid actions and parameters
 
   <tr>
        <td>selected_workflow_name</td>
-    <td>license_plate<br>id_scanning<br>vin_number<br>tin_number<br>meter_reading<br>free_form_capture</td>
+    <td>license_plate<br>id_scanning<br>vin_number<br>tin_number<br>container_scanning<br>meter_reading<br>free_form_capture</td>
   </tr>
 
   <tr>
@@ -3248,6 +3248,113 @@ bParams.putParcelableArrayList("barcode_highlighting_rules", ruleParamList);
     moduleParamsFeedback.putString("decode_audio_feedback_uri", "Heaven");
     moduleParamsFeedback.putString("volume_slider_type", "3");// 0- Ringer, 1- Music and Media, 2-Alarms, 3- Notification
     moduleParamsFeedback.putString("decoding_led_feedback", "false");
+    paramSetFeedbackModule.putBundle("module_params",moduleParamsFeedback);
+
+    ArrayList&lt;Bundle&gt; paramSetList = new ArrayList&lt;&gt;();
+    paramSetList.add(paramSetContainerDecoderModule);
+    paramSetList.add(paramSetFeedbackModule);
+    paramSetList.add(paramSetCameraModule);
+
+    paramList.putParcelableArrayList("workflow_params", paramSetList);
+
+    ArrayList&lt;Bundle&gt; workFlowList = new ArrayList&lt;&gt;();
+    workFlowList.add(paramList);
+
+    bConfigWorkflow.putParcelableArrayList("PARAM_LIST", workFlowList);
+    bundlePluginConfig.add(bConfigWorkflow);
+
+
+    /*###### Configurations for Intent Output [Start] ######*/
+    Bundle bConfigIntent = new Bundle();
+    Bundle bParamsIntent = new Bundle();
+    bConfigIntent.putString("PLUGIN_NAME", "INTENT");
+    bConfigIntent.putString("RESET_CONFIG", "true"); //Reset existing configurations of intent output plugin
+    bParamsIntent.putString("intent_output_enabled", "true"); //Enable intent output plugin
+    bParamsIntent.putString("intent_action", INTENT_OUTPUT_ACTION); //Set the intent action
+    bParamsIntent.putString("intent_category", "android.intent.category.DEFAULT"); //Set a category for intent
+    bParamsIntent.putInt("intent_delivery", 2); // Set intent delivery mechanism, Use "0" for Start Activity, "1" for Start Service, "2" for Broadcast, "3" for start foreground service
+    bParamsIntent.putString("intent_use_content_provider", "true"); //Enable content provider
+    bConfigIntent.putBundle("PARAM_LIST", bParamsIntent);
+    bundlePluginConfig.add(bConfigIntent);
+    /*###### Configurations for Intent Output [Finish] ######*/
+
+    //Putting the INTENT and BARCODE plugin settings to the PLUGIN_CONFIG extra
+    bMain.putParcelableArrayList("PLUGIN_CONFIG", bundlePluginConfig);
+
+
+    /*###### Associate this application to the profile [Start] ######*/
+    Bundle configApplicationList = new Bundle();
+    configApplicationList.putString("PACKAGE_NAME",getPackageName());
+    configApplicationList.putStringArray("ACTIVITY_LIST", new String[]{"*"});
+    bMain.putParcelableArray("APP_LIST", new Bundle[]{
+            configApplicationList
+    });
+    /* ###### Associate this application to the profile [Finish] ######*/
+
+    bMain.putString("PROFILE_NAME", "Demo"); //Specify the profile name
+    bMain.putString("PROFILE_ENABLED", "true"); //Enable the profile
+    bMain.putString("CONFIG_MODE", "CREATE_IF_NOT_EXIST");
+    bMain.putString("RESET_CONFIG", "true");
+
+    Intent iSetConfig = new Intent();
+
+    iSetConfig.setAction("com.symbol.datawedge.api.ACTION");
+    iSetConfig.setPackage("com.symbol.datawedge");
+    iSetConfig.putExtra("com.symbol.datawedge.api.SET_CONFIG", bMain);
+    iSetConfig.putExtra("SEND_RESULT", "COMPLETE_RESULT");
+    iSetConfig.putExtra("COMMAND_IDENTIFIER",
+            "CREATE_PROFILE");
+
+    this.sendBroadcast(iSetConfig);
+}
+</code></pre>
+
+<h3 id="setshippingcontaineridconfiguration" class="anchor"><a class="heading-anchor" href="#setshippingcontaineridconfiguration"><span></span></a>Set Shipping Container ID configuration</h3>
+
+<p>Configure Shipping Container ID parameters from OCR Wedge in Workflow Input:</p>
+
+<pre class="prettyprint"><code>void setShippingContainerIdConfiguration()
+{
+    Bundle bMain = new Bundle();
+
+    Bundle bConfigWorkflow = new Bundle();
+    ArrayList&lt;Bundle&gt; bundlePluginConfig = new ArrayList&lt;&gt;();
+
+    /*###### Configurations for Workflow Input [Start] ######*/
+    bConfigWorkflow.putString("PLUGIN_NAME", "WORKFLOW");
+    bConfigWorkflow.putString("RESET_CONFIG", "true"); //Reset existing configurations of barcode input plugin
+
+    bConfigWorkflow.putString("workflow_input_enabled", "true");
+    bConfigWorkflow.putString("selected_workflow_name", "container_scanning");
+    bConfigWorkflow.putString("workflow_input_source", "2");
+
+    /*###### Configurations for Workflow Input [Finish] ######*/
+
+    Bundle paramList = new Bundle();
+    paramList.putString("workflow_name","container_scanning");
+    paramList.putString("workflow_input_source","2");
+
+    Bundle paramSetContainerDecoderModule = new Bundle();
+    paramSetContainerDecoderModule.putString("module","ContainerDecoderModule");
+    Bundle moduleContainerDecoderModule = new Bundle();
+    moduleContainerDecoderModule.putString("session_timeout", "16000");
+    moduleContainerDecoderModule.putString("output_image", "full");
+    paramSetContainerDecoderModule.putBundle("module_params",moduleContainerDecoderModule);
+
+    Bundle paramSetCameraModule = new Bundle();
+    paramSetCameraModule.putString("module","CameraModule");
+    Bundle moduleCameraModule = new Bundle();
+    moduleCameraModule.putString("illumination", "on");
+    moduleCameraModule.putString("zoom", "3"); //set value 1-8 default is 1
+    paramSetCameraModule.putBundle("module_params",moduleCameraModule);
+
+    Bundle paramSetFeedbackModule = new Bundle();
+    paramSetFeedbackModule.putString("module","FeedbackModule");
+    Bundle moduleParamsFeedback = new Bundle();
+    moduleParamsFeedback.putString("decode_haptic_feedback", "true");
+    moduleParamsFeedback.putString("decode_audio_feedback_uri", "Drip");
+    moduleParamsFeedback.putString("volume_slider_type", "2");
+    moduleParamsFeedback.putString("decoding_led_feedback", "true");
     paramSetFeedbackModule.putBundle("module_params",moduleParamsFeedback);
 
     ArrayList&lt;Bundle&gt; paramSetList = new ArrayList&lt;&gt;();
