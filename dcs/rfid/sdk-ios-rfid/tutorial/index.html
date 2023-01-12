@@ -127,7 +127,7 @@
                 </div>
                 <div class="row">
                     <div class="col-sm-12" id="guides">
-                        <div class="waterfall columns" data-col-min-width="350" data-default-container-width="915" data-autoresize="true">
+                        <div class="waterfall columns" data-autoresize="true">
                             <div>
                                 <h5 id="-start-here-" class="anchor"><a class="heading-anchor" href="#-start-here-"><span></span></a>
 
@@ -1766,6 +1766,26 @@ Events
 The  following example demonstrates performing of read and write access operations on  one of tags being inventoried
 		
 <pre class="prettyprint"><code>
+typedef enum {
+    SRFID_MEMORYBANK_EPC                    = 0x01,
+    SRFID_MEMORYBANK_TID                    = 0x02,
+    SRFID_MEMORYBANK_USER                   = 0x04,
+    SRFID_MEMORYBANK_RESV                   = 0x08,
+    SRFID_MEMORYBANK_NONE                   = 0x10,
+    SRFID_MEMORYBANK_ACCESS                 = 0x20,
+    SRFID_MEMORYBANK_KILL                   = 0x40,
+    SRFID_MEMORYBANK_ALL                    = 0x67,
+} SRFID_MEMORYBANK;
+typedef enum {
+    SRFID_ACCESSPERMISSION_ACCESSIBLE                  = 0x00,
+    SRFID_ACCESSPERMISSION_ACCESSIBLE_PERM             = 0x01,
+    SRFID_ACCESSPERMISSION_ACCESSIBLE_SECURED          = 0x02,
+    SRFID_ACCESSPERMISSION_ALWAYS_NOT_ACCESSIBLE       = 0x03,
+} SRFID_ACCESSPERMISSION;
+</code></pre>
+
+<h4><strong>Read and Write</strong></h4>
+<pre class="prettyprint"><code>
 -(void)accessOperationTagReadAndWrite {
     
     /* allocate object for storing results of access operation */
@@ -1826,6 +1846,35 @@ The  following example demonstrates performing of read and write access operatio
         NSLog(@"Request failed\n");
     }
 
+}
+</code></pre>
+
+
+<h4><strong>Kill</strong></h4>
+<pre class="prettyprint"><code>
+- (SRFID_RESULT)killTag:(NSString *)tagID withTagData:(srfidTagData **)tagData withPassword:(long)password aStatusMessage:(NSString**)statusMessage
+{
+    if (apiInstance != nil)
+    {
+        return [apiInstance srfidKillTag:readerId  aTagID:tagID aAccessTagData:tagData aPassword:password aStatusMessage:statusMessage];
+    }
+    
+    return SRFID_RESULT_FAILURE;
+}
+</code></pre>
+
+
+<h4><strong>Lock</strong></h4>
+
+<pre class="prettyprint"><code>
+- (SRFID_RESULT)lockTag:(NSString *)tagID withTagData:(srfidTagData **)tagData memoryBank:(SRFID_MEMORYBANK)memoryBank accessPermissions:(SRFID_ACCESSPERMISSION)accessPermissions withPassword:(long)password aStatusMessage:(NSString**)statusMessage
+{
+    if (apiInstance != nil)
+    {
+        return [apiInstance srfidLockTag: readerId  aTagID:tagID aAccessTagData:tagData aMemoryBank:memoryBank aAccessPermissions:accessPermissions aPassword:password aStatusMessage:statusMessage];
+    }
+    
+    return SRFID_RESULT_FAILURE;
 }
 
 
@@ -2676,39 +2725,43 @@ memoryBank:(SRFID_MEMORYBANK)memoryBank offset:(int)offset length:(int)length pa
 <h3 class="anchor">Set Trigger Key Configuration</h3>
 <p>This “srfidSetTriggerConfig” API will set the trigger key.</p>
 <pre class="prettyprint"><code>
-- (SRFID_RESULT)setTriggerConfigurationUpperTrigger:(SRFID_NEW_ENUM_KEYLAYOUT_TYPE)upper andLowerTrigger:(SRFID_NEW_ENUM_KEYLAYOUT_TYPE)lower{
+SRFID_NEW_ENUM_KEYLAYOUT_TYPE Enum
 
+/* Trigger mapping new */
+typedef enum{
+    RFID_SCAN           = 0,
+    SLED_SCAN           = 1,
+    TERMINAL_SCAN       = 2,
+    SCAN_NOTIFICATION   = 3,
+    NO_ACTION           = 4,
+} SRFID_NEW_ENUM_KEYLAYOUT_TYPE;
+
+/// To set the trigger configuration from sdk.
+/// @param upper Upper trigger value
+/// @param lower Lower trigger value
+- (SRFID_RESULT)setTriggerConfigurationUpperTrigger:(SRFID_NEW_ENUM_KEYLAYOUT_TYPE)upper andLowerTrigger:(SRFID_NEW_ENUM_KEYLAYOUT_TYPE)lower{
+    
     SRFID_NEW_ENUM_KEYLAYOUT_TYPE upperTrigger = upper;
     SRFID_NEW_ENUM_KEYLAYOUT_TYPE lowerTrigger = lower;
     
     SRFID_RESULT srfid_result = SRFID_RESULT_FAILURE;
     
-    for(int i = 0; i < 2; i++)
-    {
-        srfid_result = [_apiInstance srfidSetKeylayoutType: connectedRederID upperTrigger:upperTrigger lowerTrigger:lowerTrigger];
-        
+    for(int i = ZT_TRIGGER_MAPPING_ZERO; i < ZT_MAX_RETRY; i++){
+        srfid_result = [m_RfidSdkApi srfidSetKeylayoutType:[m_ActiveReader getReaderID] upperTrigger:upperTrigger lowerTrigger:lowerTrigger];
         if ((srfid_result != SRFID_RESULT_RESPONSE_TIMEOUT) && (srfid_result != SRFID_RESULT_FAILURE)) {
             break;
         }
     }
-    
-    if (srfid_result == SRFID_RESULT_SUCCESS)
-    {
-        NSLog(@"Set Trigger Config Sucess ");
+    if (srfid_result == SRFID_RESULT_SUCCESS){
+         NSLog(@"Trigger Config Sucess”);
     }
-    else if(srfid_result == SRFID_RESULT_RESPONSE_ERROR)
-    {
-        NSLog(@"Set Trigger Config Error ");
+    else if(srfid_result == SRFID_RESULT_RESPONSE_ERROR){
+         NSLog(@"Error”);
+
     }
-    else if(srfid_result == SRFID_RESULT_FAILURE )
-    {
-        NSLog(@"Set Trigger Config Fail ");
+    else if(srfid_result == SRFID_RESULT_FAILURE || srfid_result == SRFID_RESULT_RESPONSE_TIMEOUT){
+        NSLog(@"Fail or Timeout”);
     }
-    else if(srfid_result == SRFID_RESULT_RESPONSE_TIMEOUT)
-    {
-        NSLog(@"Set Trigger Config Time out ");
-    }
-    
     return srfid_result;
 }
 
@@ -2716,53 +2769,56 @@ memoryBank:(SRFID_MEMORYBANK)memoryBank offset:(int)offset length:(int)length pa
 <h3 class="anchor">Get Trigger Key Configuration</h3>
 <p>This “srfidGetTriggerConfig” API will get the trigger key configuration</p>
 <pre class="prettyprint"><code>
-- (SRFID_RESULT)getTriggerConfiguration{
+SRFID_NEW_ENUM_KEYLAYOUT_TYPE Enum
 
+/* Trigger mapping new */
+typedef enum{
+    RFID_SCAN           = 0,
+    SLED_SCAN           = 1,
+    TERMINAL_SCAN       = 2,
+    SCAN_NOTIFICATION   = 3,
+    NO_ACTION           = 4,
+} SRFID_NEW_ENUM_KEYLAYOUT_TYPE;
+
+
+// Trigger Config
+/// To get the trigger configuration from sdk.
+- (SRFID_RESULT)getTriggerConfigurationUpperTrigger{
+
+// Can set SLED_SCAN or SCAN_NOTIFICATION or RFID_SCAN or SLED_SCAN or NO_ACTION for upper or lower trigger. Please refer the enum
     SRFID_NEW_ENUM_KEYLAYOUT_TYPE upperTrigger = RFID_SCAN;
-    SRFID_NEW_ENUM_KEYLAYOUT_TYPE lowerTrigger = TERMINAL_SCAN;
+    SRFID_NEW_ENUM_KEYLAYOUT_TYPE lowerTrigger = TERMINAL_SCAN; 
     
     SRFID_RESULT srfid_result = SRFID_RESULT_FAILURE;
     
-    for(int i = 0; i < 2; i++)
-    {
-		srfid_result = [_apiInstance srfidGetKeylayoutType: connectedRederID upperTrigger: &upperTrigger lowerTrigger: &lowerTrigger];
-           
+    for(int i = ZT_TRIGGER_MAPPING_ZERO; i < ZT_MAX_RETRY; i++){
+        srfid_result = [m_RfidSdkApi srfidGetKeylayoutType:[m_ActiveReader getReaderID] upperTrigger:&upperTrigger lowerTrigger:&lowerTrigger];
+        
         if ((srfid_result != SRFID_RESULT_RESPONSE_TIMEOUT) && (srfid_result != SRFID_RESULT_FAILURE)) {
             break;
         }
     }
     
-    if (srfid_result == SRFID_RESULT_SUCCESS)
-    {
-        NSLog(@"Trigger Config Sucess upper trigger %u", upperTrigger);
-		 NSLog(@"Trigger Config Sucess lower trigger %u", lowerTrigger);
-       [self getTriggerMapping:configuration];
-        
-    }
-    else if(srfid_result == SRFID_RESULT_RESPONSE_ERROR)
-    {
-        NSLog(@"Trigger Config Error ");
-    }
-    else if(srfid_result == SRFID_RESULT_FAILURE)
-    {
-        NSLog(@"Trigger Config Failled ");
-    }
-    else if(srfid_result == SRFID_RESULT_RESPONSE_TIMEOUT)
-    {
-        NSLog(@"Trigger Config Error ");
+    if (srfid_result == SRFID_RESULT_SUCCESS){
+         NSLog(@"Trigger Config Sucess upper trigger %u", upperTrigger);
+         NSLog(@"Trigger Config Sucess lower trigger %u", lowerTrigger);
+
+    }else if(srfid_result == SRFID_RESULT_RESPONSE_ERROR){
+
+           NSLog(@"Response Error”);   
+ 
+    }else if(srfid_result == SRFID_RESULT_FAILURE || srfid_result == SRFID_RESULT_RESPONSE_TIMEOUT){
+        NSLog(@"Response Failure or Timeout”);   
+
     }
     return srfid_result;
 }
 
+		
 </code></pre>
 
 
-<p><strong>NOTES</strong></p>
-<p align="justify">If the option is enabled the SDK will automatically establish communication session with the last active RFID reader that had unexpectedly disappeared once the RFID reader will be recognized as available:
-The RFID reader could be recognized as available automatically by SDK if “Available readers detection” option is enabled.
-The RFID reader could be recognized as available during discovery procedure requested by srfidGetAvailableReadersList API.
-“Session Established” notification will be provided once the communication session is established, if this type of notification is enabled
-</p>
+
 
 <h1 class="anchor">Factory Reset and Reboot</h1>
 <h3 class="anchor">Factory Reset</h3>
