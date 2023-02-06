@@ -1,0 +1,181 @@
+
+
+        <p>Used to enter one or more rules by which to limit USB connections to specific peripherals, automatically launch an app when a particular peripheral or peripheral type is connected, and/or to suppress USB-related pop-up messages. <strong>Rules are applicable when a device is in USB Host Mode</strong>. Allowed peripherals can be categorized by device class (sometimes referred to as device "type"), vendor ID (VID) and/or product ID (PID). </p>
+
+<p>When a device is in USB Host Mode and a Control Rules file is deployed, a given USB peripheral is usable only if there is <em>at least one rule that allows it</em>, and unusable if there are <strong><em>NO</em></strong> rules that allow it. Rules also can be used to "pre-grant" app(s) permission to use the peripheral(s) without a pop-up message seeking permission from the device user. </p>
+
+<p><strong>It's important to understand that <u>more than one rule can apply to the same peripheral</u></strong>. For example, if a rule allowing all printers existed with a rule to allow all devices from Zebra (VID = 0A5F), Zebra printers would remain usable if either of those rules were deleted. </p>
+
+<blockquote>
+  <p><i class="fa fa-exclamation-triangle" aria-hidden="true" style="color:#FFA500;"></i> <strong>All connected USB peripherals NOT explicitly allowed are rendered <i>unusable</i> by apps</strong>. Such peripherals <strong>continue to receive power</strong> (via USB) and in some cases could appear to be enabled, <strong>but are effectively prevented from communicating with apps</strong>. </p>
+</blockquote>
+
+<h3 id="autolaunchingapps" class="anchor"><a class="heading-anchor" href="#autolaunchingapps"><span></span></a>Auto-launching Apps</h3>
+
+<p>USB Manager allows an app to be designated to automatically launch when a particular USB peripheral or peripheral type is connected. For example, this feature can be used to run a payment processing app whenever connection of a credit card reader is detected, all without prompting the user. </p>
+
+<blockquote>
+  <p><i class="fa fa-check-circle" style="color:#27AE60;"></i> <strong><a href="/uhm">Zebra USB Host Manager</a></strong> is an Android app that examines peripherals connected to a device and reports their device class, vendor ID and product ID and can be used to create and export USB Control Rules. <a href="/uhm">Learn more about UHM</a>.</p>
+</blockquote>
+
+<p><strong>Parm value input rules</strong>:</p>
+
+<ul>
+<li>String of 10–5120 characters in XML format (see examples, below)</li>
+
+<li><strong>Use only text-based codes</strong> for USB <strong><a href="#supporteddeviceclasses">device classes</a></strong> (aka "types")</li>
+
+<li><strong>Use only numeric codes</strong> for <strong>VIDs and PIDs</strong></li>
+</ul>
+
+<h3 id="examplerules" class="anchor"><a class="heading-anchor" href="#examplerules"><span></span></a>Example Rules</h3>
+
+<p><strong>To use the Control Rules parameter</strong>, create a file using the format below to <strong>specify the device class(es), vendor(s) and/or product(s) to be <u>allowed</u></strong>. Then <strong><u>paste the file's XML-formatted contents</u> into the Control Rules field</strong> in the relevant StageNow or EMM device-configuration Profile. </p>
+
+<h4 id="enabledigitalpadsjoysticksandonevendorsaudiodevice" class="anchor"><a class="heading-anchor" href="#enabledigitalpadsjoysticksandonevendorsaudiodevice"><span></span></a>Enable digital pads, joysticks and one vendor's audio device:</h4>
+
+<pre class="prettyprint"><code>
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;usbconfig mode="whitelist"&gt;
+  &lt;class&gt;AINPUT_SOURCE_DPAD&lt;/class&gt;
+  &lt;class&gt;AINPUT_SOURCE_JOYSTICK&lt;/class&gt;
+  &lt;class&gt;USB_CLASS_AUDIO&lt;/class&gt;
+    &lt;vid vendorid="1504"&gt;
+    &lt;pid&gt;5889&lt;/pid&gt;
+    &lt;/vid&gt; 
+&lt;/usbconfig&gt;
+</code></pre>
+
+<h4 id="grantpermissionforoneapptoaccessonevendorsperipheralplusmassstorage" class="anchor"><a class="heading-anchor" href="#grantpermissionforoneapptoaccessonevendorsperipheralplusmassstorage"><span></span></a>Grant permission for one app to access one vendor's peripheral plus mass storage:</h4>
+
+<pre class="prettyprint"><code>
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;popupsuppress&gt;
+ &lt;rule&gt;
+   &lt;pkg&gt;com.example.usbpopup&lt;/pkg&gt;
+   &lt;cert&gt;appsigningcertificate&lt;/cert&gt; 
+   &lt;vid vendorid="1008"&gt;
+   &lt;pid&gt;842&lt;/pid&gt;&lt;/vid&gt;
+ &lt;/rule&gt;
+&lt;/popupsuppress&gt;
+
+&lt;usbconfig mode="whitelist"&gt;
+  &lt;class&gt;USB_CLASS_MASS_STORAGE&lt;/class&gt;
+&lt;/usbconfig&gt;
+</code></pre>
+
+<h4 id="setanapptoautolaunchwithaspecificvendorandperipheral" class="anchor"><a class="heading-anchor" href="#setanapptoautolaunchwithaspecificvendorandperipheral"><span></span></a>Set an app to auto-launch with a specific vendor and peripheral</h4>
+
+<pre class="prettyprint"><code>
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;popupsuppress&gt;
+ &lt;rule&gt;
+   &lt;pkg&gt;com.exampleApp.packageName&lt;/pkg&gt;
+   &lt;cert&gt;appsigningcertificate&lt;/cert&gt; 
+   &lt;vid vendorid="1008"&gt;
+   &lt;pid&gt;842&lt;/pid&gt;
+   &lt;/vid&gt;
+   &lt;autoLaunch&gt;true&lt;/autoLaunch&gt;
+ &lt;/rule&gt;
+&lt;/popupsuppress&gt;
+
+&lt;usbconfig mode="whitelist"&gt;
+  &lt;class&gt;USB_CLASS_MASS_STORAGE&lt;/class&gt;
+&lt;/usbconfig&gt;
+</code></pre>
+
+<h3 id="supporteddeviceclasses" class="anchor"><a class="heading-anchor" href="#supporteddeviceclasses"><span></span></a>Supported Device Classes</h3>
+
+<ul>
+<li>AINPUT_SOURCE_DPAD</li>
+
+<li>AINPUT_SOURCE_GAMEPAD</li>
+
+<li>AINPUT_SOURCE_KEYBOARD</li>
+
+<li>AINPUT_SOURCE_MOUSE</li>
+
+<li>AINPUT_SOURCE_MOUSE_RELATIVE</li>
+
+<li>AINPUT_SOURCE_JOYSTICK</li>
+
+<li>AINPUT_SOURCE_ROTARY_ENCODER</li>
+
+<li>AINPUT_SOURCE_STYLUS</li>
+
+<li>AINPUT_SOURCE_TOUCH_NAVIGATION</li>
+
+<li>AINPUT_SOURCE_TOUCHPAD</li>
+
+<li>AINPUT_SOURCE_TOUCHSCREEN</li>
+
+<li>AINPUT_SOURCE_TRACKBALL</li>
+
+<li><strong>USB_CLASS_APP_SPEC</strong>*</li>
+
+<li>USB_CLASS_AUDIO</li>
+
+<li>USB_CLASS_CDC_DATA</li>
+
+<li>USB_CLASS_COMM</li>
+
+<li>USB_CLASS_CONTENT_SEC</li>
+
+<li>USB_CLASS_CSCID</li>
+
+<li><strong>USB_CLASS_HID</strong>*</li>
+
+<li><strong>USB_CLASS_HUB</strong>*</li>
+
+<li>USB_CLASS_MASS_STORAGE</li>
+
+<li><strong>USB_CLASS_MISC</strong>*</li>
+
+<li><strong>USB_CLASS_PER_INTERFACE</strong>*</li>
+
+<li>USB_CLASS_PHYSICA</li>
+
+<li>USB_CLASS_PRINTER</li>
+
+<li>USB_CLASS_STILL_IMAGE</li>
+
+<li><strong>USB_CLASS_VENDOR_SPEC</strong>*</li>
+
+<li>USB_CLASS_VIDEO</li>
+
+<li>USB_CLASS_WIRELESS_CONTROLLER</li>
+</ul>
+
+<p>* <em><strong>Restricted class</strong>; <strong>NOT</strong> effective as a device rule</em>.</p>
+
+<!--
+Rule under tag <popupsuppress> with combination of app package name, signing certificate and peripheral vendor ID, product ID can be specified to pre-grant an application access a peripheral without pop-up. The one application can grant access many peripherals and its vice-versa.
+
+Also in same XML, rule to control USB connection under tag <usbconfig> can be specified.
+
+Same Rule:
+
+  <?xml version="1.0" encoding="UTF-8"?>
+  <popupsuppress>
+   <rule>
+     <pkg>com.example.usbpopup</pkg>
+     <cert>appsigningcertificate</cert> 
+     <vid vendorid="1008">
+     <pid>842</pid></vid>
+   </rule>
+  </popupsuppress>
+
+  <usbconfig mode="whitelist">
+    <class>USB_CLASS_MASS_STORAGE</class>
+  </usbconfig>
+
+Popup suppress attributes:
+
+1) The pkg tag contain package name for application which will going to access the peripheral once installed.
+2) The cert tag contains signature of application which is authenticate the application.
+3) The vid is the vendor id for peripheral which will access by application without popup.
+4) The pid is the product id of peripheral for corresponding vendor id.
+
+-->
+
+
