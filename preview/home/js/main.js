@@ -450,9 +450,21 @@ function selectDoc(prod_id, doc_id) {
             ver = $("#bti-version").val();
             doc = $("#bti-doc").val();
             break;
+        case 'btn-dc':  // DevCentral
+            ver = $("#dc-version").val();
+            doc = $("#dc-doc").val();
+            break;
         case 'btn-dcs':
             ver = "";   // no version
             doc = $("#dcs-doc").val();
+            break;
+        case 'btn-ddt':
+            ver = $("#ddt-version").val();
+            doc = $("#ddt-doc").val();
+            break;
+        case 'btn-dt': // Device Tracker
+            ver = $("#dt-version").val();
+            doc = $("#dt-doc").val();
             break;
         case 'btn-dw':
             ver = $("#dw-version").val();
@@ -461,6 +473,10 @@ function selectDoc(prod_id, doc_id) {
         case 'btn-eb':
             ver = $("#eb-version").val();
             doc = $("#eb-doc").val();
+            break;
+        case 'btn-ehs': // Enterprise Home Screen
+            ver = $("#ehs-version").val();
+            doc = $("#ehs-doc").val();
             break;
         case 'btn-emdk-a':
             ver = $("#emdk-a-version").val();
@@ -474,17 +490,57 @@ function selectDoc(prod_id, doc_id) {
             ver = $("#link-os-version").val();
             doc = $("#link-os-doc").val();
             break;
-        case 'btn-mp':
+        case 'btn-mdna-license': // Mobile Parcel
+            ver = "";   // no version
+            doc = $("#mdna-license-doc").val();
+            break;
+        case 'btn-mp': // Mobile Parcel
             ver = $("#mp-version").val();
             doc = $("#mp-doc").val();
+            break;
+        case 'btn-mx':
+            ver = "";  // no version
+            doc = $("#mx-doc").val();
+            break;
+        case 'btn-oemconfig':
+            ver = $("#oemconfig-version").val();  // no version
+            doc = $("#oemconfig-doc").val();
+            break;
+        case 'btn-oeminfo':
+            ver = "";  // no version
+            doc = $("#oeminfo-doc").val();
             break;
         case 'btn-rfid':
             ver = "";   // no version
             doc = $("#rfid-doc").val();
             break;
+        case 'btn-rxlogger':
+            ver = $("#rxlogger-version").val();
+            doc = $("#rxlogger-doc").val();
+            break;
+        case 'btn-sn':
+            ver = $("#sn-version").val();
+            doc = $("#sn-doc").val();
+            break;
         case 'btn-ssm':
             ver = $("#ssm-version").val();
             doc = $("#ssm-doc").val();
+            break;
+        case 'btn-uhm':
+            ver = $("#uhm-version").val();
+            doc = $("#uhm-doc").val();
+            break;
+        case 'btn-wi':
+            ver = $("#wi-version").val();
+            doc = $("#wi-doc").val();
+            break;
+        case 'btn-zdna':
+            ver = $("#zdna-version").val();
+            doc = $("#zdna-doc").val();
+            break;
+        case 'btn-zds':
+            ver = "";   // no version
+            doc = $("#zds-doc").val();
             break;
         default:
             return false;
@@ -496,9 +552,7 @@ function selectDoc(prod_id, doc_id) {
 function populateDropdown (ddl_ver, ddl_doc) {
     console.log("populateDropdown");
     // differing doc sections
-    // SSM
-    var ssm_1_0_text = ['About', 'Using SSM', 'APIs'];
-    var ssm_1_0_val = ['/guide/about', '/guide/use', '/guide/api'];
+   
     // DataWedge
     var dw_11_2_text = ['About', 'Get Started', 'Profiles', 'Guides', 'Feature Matrix', 'APIs', 'Samples', 'FAQ'];
     var dw_11_2_val = ['/guide/about', '/guide/gettingstarted', '/guide/profiles', '/guide/programmers-guides', '/guide/matrix', '/guide/api', '/guide/samples', '/guide/faq'];
@@ -522,6 +576,30 @@ function populateDropdown (ddl_ver, ddl_doc) {
     var dw_6_2_val = ['/guide/about', '/guide/setup', '/guide/advanced', '/guide/decoders', '/guide/msr', '/guide/ipwedge', '/guide/api', '/guide/demo'];
     var dw_5_0_text = ['About', 'Setup', 'Advanced', 'Decoders', 'IPWedge', 'APIs', 'Demo' ];
     var dw_5_0_val = ['/guide/about', '/guide/setup', '/guide/advanced', '/guide/decoders', '/guide/ipwedge', '/guide/api', '/guide/demo'];
+    // Device Central
+    var dc_2_0_text = ['About', 'User Guide'];
+    var dc_2_0_val = ['/guide/about', '/guide/usage'];
+    var dc_3_0_text = ['About', 'Install', 'User Guide'];
+    var dc_3_0_val = ['/guide/about', '/guide/setup', '/guide/usage'];
+    // Device Diagnostic Tool
+    var ddt_1_1_text = ['About', 'User Guide', 'Configuration', 'Test Criteria'];
+    var ddt_1_1_val = ['/guide/about', '/guide/usage', '/guide/configuration', '/guide/criteria'];
+    var ddt_2_5_text = ['About', 'User Guide', 'Installation', 'Configuration', 'Test Criteria', 'Managed Config'];
+    var ddt_2_5_val = ['/guide/about', '/guide/usage', '/guide/setup', '/guide/configuration', '/guide/criteria', '/guide/managed-config'];
+    // Device Tracker
+    var dt_4_0_text = ['About', 'User Roles', 'Install & Administration', 'License', 'Device Management', 'Device Tracking'];
+    var dt_4_0_val = ['/guide/about', '/guide/roles', '/guide/setup', '/guide/license', '/guide/mgmt', '/guide/use'];
+    var dt_4_1_text = ['About', 'User Roles', 'Install & Setup', 'Configuration', 'License', 'Device Management', 'Device Tracking'];
+    var dt_4_1_val = ['/guide/about', '/guide/roles', '/guide/setup', '/guide/config', '/guide/license', '/guide/mgmt', '/guide/use'];
+    var dt_4_2_text = ['About', 'Licensing', 'Install & Setup', 'Configuration', 'Track Devices'];
+    var dt_4_2_val = ['/guide/about', '/guide/license', '/guide/setup', '/guide/config', '/guide/use'];
+    var dt_5_1_text = ['About', 'Installation', 'Configuration', 'Track Devices', 'Dashboard', 'FAQ'];
+    var dt_5_1_val = ['/guide/about', '/guide/setup', '/guide/config', '/guide/use', '/guide/dashboard', '/guide/faq'];
+    var dt_5_2_text = ['About', 'Get Started', 'Installation', 'Configuration', 'Track Devices', 'Dashboard', 'FAQ'];
+    var dt_5_2_val = ['/guide/about', '/guide/getstarted', '/guide/setup', '/guide/config', '/guide/use', '/guide/dashboard', '/guide/faq'];
+    // Enterprise Home Screen
+    var ehs_2_3_text = ['About', 'Setup', 'Advanced Settings', 'Special Features'];
+    var ehs_2_3_val = ['/guide/about', '/guide/setup', '/guide/settings', '/guide/features'];
     // EMDK for Android
     var emdk_a_4_0_text = ['About', 'Get Started', 'Tutorials', 'Samples', 'Guides', 'Profile Manager', 'APIs'];
     var emdk_a_4_0_val = ['/guide/about', '/guide/gettingstarted', '/tutorial', '/samples', '/guide/programming-guides', '/guide/profile-manager-guides', '/api'];
@@ -545,16 +623,31 @@ function populateDropdown (ddl_ver, ddl_doc) {
     var eb_1_8_val = ['/guide/about', '/guide/gettingstarted', '/tutorial','/guide/samples', '/guide', '/guide/migration', '/guide/configreference', '/api'];
     var eb_2_0_text = ['About', 'Get Started', 'Tutorials', 'Samples', 'Guides', 'License', 'Migrate', 'Config.xml', 'APIs'];
     var eb_2_0_val = ['/guide/about', '/guide/gettingstarted', '/tutorial','/guide/samples','/guide/licensing', '/guide', '/guide/migration', '/guide/configreference', '/api'];
-
+    // OEMConfig
+    var oemconfig_10_5_text = ['About', 'Setup', 'Managed Configurations', 'FAQ'];
+    var oemconfig_10_5_val = ['/about', '/setup', '/mc', '/faq'];
+    // RxLogger
+    var rxlogger_5_4_text = ['About', 'Settings', 'Modules', 'APIs', 'Utility', 'FAQ'];
+    var rxlogger_5_4_val = ['/about', '/settings', '/modules', '/apis', 'utility', '/faq'];
+    // SSM
+    var ssm_1_0_text = ['About', 'Using SSM', 'APIs'];
+    var ssm_1_0_val = ['/guide/about', '/guide/use', '/guide/api'];
+    // StageNow
+    var sn_5_0_text = ['About', 'Get Started', 'Profiles', 'Wizards', 'Settings', 'Setting Types', 'Guides', 'Troubleshoot'];
+    var sn_5_0_val = ['/about', '/gettingstarted', '/stagingprofiles', '/ProfileWizards', '/settingconfig', '/settingtypes', '/stagingguides', '/troubleshooting'];
+    var sn_4_2_text = ['About', 'Get Started', 'Install', 'Profiles', 'Wizards', 'Settings', 'Setting Types', 'Guides', 'Troubleshoot'];
+    var sn_4_2_val = ['/about', '/gettingstarted', '/installing', '/stagingprofiles', '/ProfileWizards', '/settingconfig', '/settingtypes', '/stagingguides', '/troubleshooting'];
+    var sn_2_8_text = ['About', 'Get Started', 'Install', 'Profiles', 'Wizards', 'Settings', 'Setting Types', 'Staging', 'Troubleshoot'];
+    var sn_2_8_val = ['/about', '/gettingstarted', '/installing', '/stagingprofiles', '/ProfileWizards', '/settingconfig', '/settingtypes', '/stageclient', '/troubleshooting'];
+    // Wireless Insights
+    var wi_1_0_text = ['About', 'Setup', 'Licensing', 'Data'];
+    var wi_1_0_val = ['/guide/about', '/guide/setup', '/guide/license', '/guide/data'];
+    // Zebra DNA Cloud
+    var zdna_1_2_text = ['About', 'Setup', 'User Guide', 'Licensing', 'FAQ'];
+    var zdna_1_2_val = ['/about', '/setup', '/usage', '/licensing', '/faq'];
 
     console.log(ddl_ver, ddl_doc, ddl_ver.value);
     switch (ddl_ver.value) {
-        case '/ssm/1-0':
-            ddl_doc.options.length = 0;
-            for (i=0; i < ssm_1_0_text.length; i++) {
-                createOption(ddl_doc, ssm_1_0_text[i], ssm_1_0_val[i]);
-            }
-            break;
         case '/datawedge/5-0':
         case '/datawedge/6-0':
             ddl_doc.options.length = 0;
@@ -635,7 +728,75 @@ function populateDropdown (ddl_ver, ddl_doc) {
                 createOption(ddl_doc, dw_11_2_text[i], dw_11_2_val[i]);
             }
             break;
-        
+        // Device Central
+        case '/devicecentral/2-0':
+        case '/devicecentral/2-1':
+            ddl_doc.options.length = 0;
+            for (i=0; i < dc_2_0_text.length; i++) {
+                createOption(ddl_doc, dc_2_0_text[i], dc_2_0_val[i]);
+            }
+            break;
+        case '/devicecentral/3-0':
+        case '/devicecentral/3-1':
+        case '/devicecentral/3-2':
+        case '/devicecentral/3-3':
+        case '/devicecentral/3-4':
+            ddl_doc.options.length = 0;
+            for (i=0; i < dc_3_0_text.length; i++) {
+                createOption(ddl_doc, dc_3_0_text[i], dc_3_0_val[i]);
+            }
+            break;
+        // Device Diagnostic Tool
+        case '/ddt/1-1':
+        case '/ddt/2-1':
+        case '/ddt/2-2':
+        case '/ddt/2-3':
+        case '/ddt/2-4':
+            ddl_doc.options.length = 0;
+            for (i=0; i < ddt_1_1_text.length; i++) {
+                createOption(ddl_doc, ddt_1_1_text[i], ddt_1_1_val[i]);
+            }
+            break;
+        case '/ddt/2-5':
+        case '/ddt/2-6':
+        case '/ddt/2-7':
+            ddl_doc.options.length = 0;
+            for (i=0; i < ddt_2_5_text.length; i++) {
+                createOption(ddl_doc, ddt_2_5_text[i], ddt_2_5_val[i]);
+            }
+            break;
+        // Device Tracker
+        case '/devicetracker/4-0':
+            ddl_doc.options.length = 0;
+            for (i=0; i < dt_4_0_text.length; i++) {
+                createOption(ddl_doc, dt_4_0_text[i], dt_4_0_val[i]);
+            }
+            break;
+        case '/devicetracker/4-1':
+            ddl_doc.options.length = 0;
+            for (i=0; i < dt_4_1_text.length; i++) {
+                createOption(ddl_doc, dt_4_1_text[i], dt_4_1_val[i]);
+            }
+            break;
+        case '/devicetracker/4-2':
+        case '/devicetracker/5-0':
+            ddl_doc.options.length = 0;
+            for (i=0; i < dt_4_2_text.length; i++) {
+                createOption(ddl_doc, dt_4_2_text[i], dt_4_2_val[i]);
+            }
+            break;
+        case '/devicetracker/5-1':
+            ddl_doc.options.length = 0;
+            for (i=0; i < dt_5_1_text.length; i++) {
+                createOption(ddl_doc, dt_5_1_text[i], dt_5_1_val[i]);
+            }
+            break;
+        case '/devicetracker/5-2':
+            ddl_doc.options.length = 0;
+            for (i=0; i < dt_5_2_text.length; i++) {
+                createOption(ddl_doc, dt_5_2_text[i], dt_5_2_val[i]);
+            }
+            break;
         // EMDK for Android
         case '/emdk-for-android/4-0':
         case '/emdk-for-android/4-2':
@@ -726,6 +887,111 @@ function populateDropdown (ddl_ver, ddl_doc) {
                 createOption(ddl_doc, eb_2_0_text[i], eb_2_0_val[i]);
             }
             break;
+        // Enterprise Home Screen
+        case '/ehs/2-3':
+        case '/ehs/2-4':
+        case '/ehs/2-5':
+        case '/ehs/2-6':
+        case '/ehs/2-7':
+        case '/ehs/2-8':
+        case '/ehs/3-0':
+        case '/ehs/3-1':
+        case '/ehs/3-2':
+        case '/ehs/4-0':
+        case '/ehs/4-1':
+        case '/ehs/4-2':
+        case '/ehs/5-0':
+            ddl_doc.options.length = 0;
+            for (i=0; i < ehs_2_3_text.length; i++) {
+                createOption(ddl_doc, ehs_2_3_text[i], ehs_2_3_val[i]);
+            }
+            break;
+        // OEMConfig
+        case '/oemconfig/10-5':
+        case '/oemconfig/11-1':
+        case '/oemconfig/11-2':
+        case '/oemconfig/11-3':
+        case '/oemconfig/11-4':
+        case '/oemconfig/11-5':
+            ddl_doc.options.length = 0;
+            for (i=0; i < oemconfig_10_5_text.length; i++) {
+                createOption(ddl_doc, oemconfig_10_5_text[i], oemconfig_10_5_val[i]);
+            }
+            break;
+        // RxLogger
+        case '/rxlogger/5-4':
+        case '/rxlogger/6-0':
+        case '/rxlogger/7-0':
+            ddl_doc.options.length = 0;
+            for (i=0; i < rxlogger_5_4_text.length; i++) {
+                createOption(ddl_doc, rxlogger_5_4_text[i], rxlogger_5_4_val[i]);
+            }
+            break;
+        
+        // Secure Storage Manager
+        case '/ssm/1-0':
+            ddl_doc.options.length = 0;
+            for (i=0; i < ssm_1_0_text.length; i++) {
+                createOption(ddl_doc, ssm_1_0_text[i], ssm_1_0_val[i]);
+            }
+            break;
+        // StageNow
+        case '/stagenow/2-8':
+        case '/stagenow/2-9':
+        case '/stagenow/2-10':
+        case '/stagenow/3-0':
+        case '/stagenow/3-1':
+        case '/stagenow/3-2':
+        case '/stagenow/3-3':
+        case '/stagenow/3-4':
+        case '/stagenow/4-0':
+        case '/stagenow/4-1':
+            ddl_doc.options.length = 0;
+            for (i=0; i < sn_2_8_text.length; i++) {
+                createOption(ddl_doc, sn_2_8_text[i], sn_2_8_val[i]);
+            }
+            break;
+        case '/stagenow/4-2':
+        case '/stagenow/4-3':
+            ddl_doc.options.length = 0;
+            for (i=0; i < sn_4_2_text.length; i++) {
+                createOption(ddl_doc, sn_4_2_text[i], sn_4_2_val[i]);
+            }
+            break;
+        case '/stagenow/5-0':
+        case '/stagenow/5-1':
+        case '/stagenow/5-2':
+        case '/stagenow/5-3':
+        case '/stagenow/5-4':
+        case '/stagenow/5-5':
+        case '/stagenow/5-6':
+        case '/stagenow/5-7':
+        case '/stagenow/5-8':
+            ddl_doc.options.length = 0;
+            for (i=0; i < sn_5_0_text.length; i++) {
+                createOption(ddl_doc, sn_5_0_text[i], sn_5_0_val[i]);
+            }
+            break;
+        // Wireless Insights
+        case '/wireless-insights/1-0':
+            ddl_doc.options.length = 0;
+            for (i=0; i < wi_1_0_text.length; i++) {
+                createOption(ddl_doc, wi_1_0_text[i], wi_1_0_val[i]);
+            }
+            break;
+        // Zebra DNA Cloud
+        case '/zebradna/1-2':
+        case '/zebradna/2-0':
+        case '/zebradna/2-1':
+        case '/zebradna/2-2':
+        case '/zebradna/2-3':
+        case '/zebradna/2-4':
+        case '/zebradna/2-5':
+            ddl_doc.options.length = 0;
+            for (i=0; i < zdna_1_2_text.length; i++) {
+                createOption(ddl_doc, zdna_1_2_text[i], zdna_1_2_val[i]);
+            }
+        break;
         default:
             break;
 
