@@ -462,6 +462,10 @@ function selectDoc(prod_id, doc_id) {
             ver = $("#ddt-version").val();
             doc = $("#ddt-doc").val();
             break;
+        case 'btn-dex':
+            ver = $("#dex-version").val();
+            doc = $("#dex-doc").val();
+            break;
         case 'btn-dt': // Device Tracker
             ver = $("#dt-version").val();
             doc = $("#dt-doc").val();
@@ -477,6 +481,14 @@ function selectDoc(prod_id, doc_id) {
         case 'btn-ehs': // Enterprise Home Screen
             ver = $("#ehs-version").val();
             doc = $("#ehs-doc").val();
+            break;
+        case 'btn-ekb': // Enterprise Keyboard
+            ver = $("#ekb-version").val();
+            doc = $("#ekb-doc").val();
+            break;
+        case 'btn-ekd': // Enterprise Home Screen
+            ver = $("#ekd-version").val();
+            doc = $("#ekd-doc").val();
             break;
         case 'btn-emdk-a':
             ver = $("#emdk-a-version").val();
@@ -542,6 +554,10 @@ function selectDoc(prod_id, doc_id) {
             ver = "";   // no version
             doc = $("#zds-doc").val();
             break;
+        case 'btn-zwc':
+            ver = $("#zwc-version").val();
+            doc = $("#zwc-doc").val();
+            break;
         default:
             return false;
     }
@@ -597,9 +613,22 @@ function populateDropdown (ddl_ver, ddl_doc) {
     var dt_5_1_val = ['/guide/about', '/guide/setup', '/guide/config', '/guide/use', '/guide/dashboard', '/guide/faq'];
     var dt_5_2_text = ['About', 'Get Started', 'Installation', 'Configuration', 'Track Devices', 'Dashboard', 'FAQ'];
     var dt_5_2_val = ['/guide/about', '/guide/getstarted', '/guide/setup', '/guide/config', '/guide/use', '/guide/dashboard', '/guide/faq'];
+    // Dex Scan & Pair
+    var dex_1_8_text = ['About', 'Installation', 'Configuration'];
+    var dex_1_8_val = ['/guide/about', '/guide/install', '/guide/configuration'];
     // Enterprise Home Screen
     var ehs_2_3_text = ['About', 'Setup', 'Advanced Settings', 'Special Features'];
     var ehs_2_3_val = ['/guide/about', '/guide/setup', '/guide/settings', '/guide/features'];
+    // Enterprise Keyboard 
+    var ekb_1_0_text = ['About', 'Setup', 'Customize'];
+    var ekb_1_0_val = ['/guide/about', '/guide/setup', '/guide/settings'];
+    var ekb_3_2_text = ['About', 'Setup', 'Customize', 'Deploy', 'APIs'];
+    var ekb_3_2_val = ['/guide/about', '/guide/setup', '/guide/settings', '/guide/deploy', '/guide/apis'];
+    // Enterprise Keyboard Designer
+    var ekd_1_2_text = ['About', 'Setup', 'User Guide'];
+    var ekd_1_2_val = ['/guide/about', '/guide/setup', '/guide/usage'];
+    var ekd_1_9_text = ['About', 'Setup', 'User Guide', 'Samples'];
+    var ekd_1_9_val = ['/guide/about', '/guide/setup', '/guide/usage', '/samples'];
     // EMDK for Android
     var emdk_a_4_0_text = ['About', 'Get Started', 'Tutorials', 'Samples', 'Guides', 'Profile Manager', 'APIs'];
     var emdk_a_4_0_val = ['/guide/about', '/guide/gettingstarted', '/tutorial', '/samples', '/guide/programming-guides', '/guide/profile-manager-guides', '/api'];
@@ -645,6 +674,9 @@ function populateDropdown (ddl_ver, ddl_doc) {
     // Zebra DNA Cloud
     var zdna_1_2_text = ['About', 'Setup', 'User Guide', 'Licensing', 'FAQ'];
     var zdna_1_2_val = ['/about', '/setup', '/usage', '/licensing', '/faq'];
+    // Zebra Workstation Connect
+    var zwc_1_2_text = ['About', 'Setup', 'Usage Notes', 'FAQ'];
+    var zwc_1_2_val = ['/about', '/setup', '/usage', '/faq'];
 
     console.log(ddl_ver, ddl_doc, ddl_ver.value);
     switch (ddl_ver.value) {
@@ -797,6 +829,55 @@ function populateDropdown (ddl_ver, ddl_doc) {
                 createOption(ddl_doc, dt_5_2_text[i], dt_5_2_val[i]);
             }
             break;
+        // Dex Scan & Pair
+        case '/dex-scanpair/1-8':
+            ddl_doc.options.length = 0;
+            for (i=0; i < dex_1_8_text.length; i++) {
+                createOption(ddl_doc, dex_1_8_text[i], dex_1_8_val[i]);
+            }
+            break;
+        // Enterprise Keyboard
+        case '/enterprise-keyboard/1-0':
+        case '/enterprise-keyboard/1-1':
+        case '/enterprise-keyboard/1-2':
+        case '/enterprise-keyboard/1-3':
+        case '/enterprise-keyboard/1-4':
+        case '/enterprise-keyboard/1-5':
+        case '/enterprise-keyboard/1-6':
+        case '/enterprise-keyboard/1-7':
+        case '/enterprise-keyboard/1-8':
+        case '/enterprise-keyboard/1-9':
+        case '/enterprise-keyboard/2-0':
+        case '/enterprise-keyboard/2-1':
+            ddl_doc.options.length = 0;
+            for (i=0; i < ekb_1_0_text.length; i++) {
+                createOption(ddl_doc, ekb_1_0_text[i], ekb_1_0_val[i]);
+            }
+            break;
+        case '/enterprise-keyboard/3-2':
+        case '/enterprise-keyboard/3-4':
+        case '/enterprise-keyboard/3-9':
+        case '/enterprise-keyboard/4-0':
+        case '/enterprise-keyboard/4-1':
+            ddl_doc.options.length = 0;
+            for (i=0; i < ekb_3_2_text.length; i++) {
+                createOption(ddl_doc, ekb_3_2_text[i], ekb_3_2_val[i]);
+            }
+            break;
+        // Enterprise Keyboard Designer
+        case '/ekd/1-2':
+        case '/ekd/1-4':
+            ddl_doc.options.length = 0;
+            for (i=0; i < ekd_1_2_text.length; i++) {
+                createOption(ddl_doc, ekd_1_2_text[i], ekd_1_2_val[i]);
+            }
+            break;
+        case '/ekd/1-9':
+            ddl_doc.options.length = 0;
+            for (i=0; i < ekd_1_9_text.length; i++) {
+                createOption(ddl_doc, ekd_1_9_text[i], ekd_1_9_val[i]);
+            }
+            break;
         // EMDK for Android
         case '/emdk-for-android/4-0':
         case '/emdk-for-android/4-2':
@@ -905,7 +986,7 @@ function populateDropdown (ddl_ver, ddl_doc) {
             for (i=0; i < ehs_2_3_text.length; i++) {
                 createOption(ddl_doc, ehs_2_3_text[i], ehs_2_3_val[i]);
             }
-            break;
+            break;        
         // OEMConfig
         case '/oemconfig/10-5':
         case '/oemconfig/11-1':
@@ -990,6 +1071,17 @@ function populateDropdown (ddl_ver, ddl_doc) {
             ddl_doc.options.length = 0;
             for (i=0; i < zdna_1_2_text.length; i++) {
                 createOption(ddl_doc, zdna_1_2_text[i], zdna_1_2_val[i]);
+            }
+        break;
+        // Zebra Workstation Connect
+        case '/zwc/1-2':
+        case '/zwc/1-3':
+        case '/zwc/1-4':
+        case '/zwc/1-5':
+        case '/zwc/1-6':
+            ddl_doc.options.length = 0;
+            for (i=0; i < zwc_1_2_text.length; i++) {
+                createOption(ddl_doc, zwc_1_2_text[i], zwc_1_2_val[i]);
             }
         break;
         default:
