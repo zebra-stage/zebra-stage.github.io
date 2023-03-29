@@ -498,6 +498,10 @@ function selectDoc(prod_id, doc_id) {
             ver = $("#emdk-x-version").val();
             doc = $("#emdk-x-doc").val();
             break;
+        case 'btn-lifeguard':
+            ver = "";   // no version
+            doc = $("#lifeguard-doc").val();
+            break;
         case 'btn-link-os':
             ver = $("#link-os-version").val();
             doc = $("#link-os-doc").val();
