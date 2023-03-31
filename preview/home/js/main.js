@@ -78,24 +78,7 @@ jQuery(function($) {'use strict';
 
 	 	$(this).closest('.panel-heading').toggleClass('active');
 	});
-
     
-    // dropdown selector // Cathy
-  /*  $("#btn-dw").on('click', function() {
-        console.log("start select")
-        var ver = $("#dw-version").val();
-        var doc = $("#dw-section").val();
-        console.log(ver, doc)
-        var url = ver+doc;
-        window.location=url; 
-    });*/
-    //$("#versionSelect a").on('click', function(e) {
-     //   console.log("begin click");
-      //  e.preventDefault();   // cancel the link behaviour
-      //  var selVersion = $(this).text();
-      //  console.log(selVersion);
-    //});
-
 	//Slider
 	$(document).ready(function() {
 		// make all images use img-responsove class from bootstrap
@@ -439,7 +422,7 @@ jQuery(function($) {'use strict';
 
 });
 
-// Select doc section // Cathy
+// Select doc section 
 function selectDoc(prod_id, doc_id) {
     console.log(prod_id);
     var ver = "";
@@ -657,6 +640,8 @@ function populateDropdown (ddl_ver, ddl_doc) {
     var eb_2_0_text = ['About', 'Get Started', 'Tutorials', 'Samples', 'Guides', 'License', 'Migrate', 'Config.xml', 'APIs'];
     var eb_2_0_val = ['/guide/about', '/guide/gettingstarted', '/tutorial','/guide/samples','/guide/licensing', '/guide', '/guide/migration', '/guide/configreference', '/api'];
     // OEMConfig
+    var oemconfig_11_5_text = ['About', 'Setup', 'Managed Configs for A11-', 'Managed Configs for A11+', 'FAQ'];
+    var oemconfig_11_5_val = ['/about', '/setup', '/mc', '/mc2', '/faq'];
     var oemconfig_10_5_text = ['About', 'Setup', 'Managed Configurations', 'FAQ'];
     var oemconfig_10_5_val = ['/about', '/setup', '/mc', '/faq'];
     // RxLogger
@@ -992,6 +977,12 @@ function populateDropdown (ddl_ver, ddl_doc) {
             }
             break;        
         // OEMConfig
+        case '/oemconfig/11-5':
+            ddl_doc.options.length = 0;
+            for (i=0; i < oemconfig_11_5_text.length; i++) {
+                createOption(ddl_doc, oemconfig_11_5_text[i], oemconfig_11_5_val[i]);
+            }
+            break;
         case '/oemconfig/10-5':
         case '/oemconfig/11-1':
         case '/oemconfig/11-2':
