@@ -619,13 +619,13 @@ function populateDropdown (ddl_ver, ddl_doc) {
     // EMDK for Android
     var emdk_a_4_0_text = ['About', 'Get Started', 'Tutorials', 'Samples', 'Guides', 'Profile Manager', 'APIs'];
     var emdk_a_4_0_val = ['/guide/about', '/guide/gettingstarted', '/tutorial', '/samples', '/guide/programming-guides', '/guide/profile-manager-guides', '/api'];
-    var emdk_a_7_3_text = ['About', 'Get Started', 'Tutorials', 'Samples', 'Guides', 'Profile Manager', 'FAQ', 'APIs'];
-    var emdk_a_7_3_val = ['/guide/about', '/guide/gettingstarted', '/tutorial', '/samples', '/guide/programming-guides', '/guide/profile-manager-guides', '/faq', '/apimenu'];
-    var emdk_a_9_0_text = ['About', 'Set Up', 'Tutorials', 'Samples', 'Guides', 'Profile Manager', 'FAQ', 'APIs'];
-    var emdk_a_9_0_val = ['/guide/about', '/guide/gettingstarted', '/tutorial', '/samples', '/guide/programming-guides', '/guide/profile-manager-guides', '/faq', '/apimenu'];
+    var emdk_a_7_3_text = ['About', 'Get Started', 'Tutorials', 'Samples', 'Guides', 'Profile Manager', 'APIs', 'FAQ'];
+    var emdk_a_7_3_val = ['/guide/about', '/guide/gettingstarted', '/tutorial', '/samples', '/guide/programming-guides', '/guide/profile-manager-guides', '/apimenu', '/faq'];
+    var emdk_a_9_0_text = ['About', 'Set Up', 'Tutorials', 'Samples', 'Guides', 'Profile Manager', 'APIs', 'FAQ'];
+    var emdk_a_9_0_val = ['/guide/about', '/guide/gettingstarted', '/tutorial', '/samples', '/guide/programming-guides', '/guide/profile-manager-guides', '/apimenu', '/faq'];
     // EMDK for Xamarin
-    var emdk_x_4_0_text = ['About', 'Get Started', 'Tutorials', 'Samples', 'Guides', 'Profile Manager', 'FAQ', 'APIs'];
-    var emdk_x_4_0_val = ['/guide/about', '/guide/gettingstarted', '/tutorial', '/samples', '/guide/programming-guides', '/guide/profile-manager-guides', '/faq', '/api'];
+    var emdk_x_4_0_text = ['About', 'Get Started', 'Tutorials', 'Samples', 'Guides', 'Profile Manager', 'APIs', 'FAQ'];
+    var emdk_x_4_0_val = ['/guide/about', '/guide/gettingstarted', '/tutorial', '/samples', '/guide/programming-guides', '/guide/profile-manager-guides', '/api', '/faq'];
     var emdk_x_2_1_text = ['About', 'Get Started', 'Tutorials', 'Samples', 'Guides', 'Profile Manager', 'APIs'];
     var emdk_x_2_1_val = ['/guide/about', '/guide/gettingstarted', '/tutorial', '/samples', '/guide/programming-guides', '/guide/profile-manager-guides', '/api'];
     var emdk_x_1_0_text = ['About', 'Get Started', 'Tutorials', 'Samples', 'Profile Manager', 'APIs'];
@@ -645,8 +645,8 @@ function populateDropdown (ddl_ver, ddl_doc) {
     var oemconfig_10_5_text = ['About', 'Setup', 'Managed Configurations', 'FAQ'];
     var oemconfig_10_5_val = ['/about', '/setup', '/mc', '/faq'];
     // RxLogger
-    var rxlogger_5_4_text = ['About', 'Settings', 'Modules', 'APIs', 'Utility', 'FAQ'];
-    var rxlogger_5_4_val = ['/about', '/settings', '/modules', '/apis', 'utility', '/faq'];
+    var rxlogger_5_4_text = ['About', 'Settings', 'Modules', 'APIs', 'Utility'];
+    var rxlogger_5_4_val = ['/guide/about', '/guide/settings', '/guide/modules', '/guide/apis', '/guide/utility'];
     // SSM
     var ssm_1_0_text = ['About', 'Using SSM', 'APIs'];
     var ssm_1_0_val = ['/guide/about', '/guide/use', '/guide/api'];
@@ -1223,7 +1223,6 @@ $("#back-to-top-btn").click(function(){
 
 // Reset version dropdown selection
 $(document).ready(function () {
-    console.log("in document ready");
     window.setTimeout(function(){
         $(".version-select").each(function () {
             $(this).prop('selectedIndex', 0);
