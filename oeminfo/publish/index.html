@@ -233,8 +233,74 @@
 <p>The Zebra Data Provider Interface (ZDPI) is a mechanism through which device data is published by an app for consumption by other apps. ZDPI is based on the <a href="https://developer.android.com/guide/topics/providers/content-providers">Android content provider framework</a>, a public specification that allows sets of device data to be made available to apps using URI-based queries. </p>
 
 <blockquote>
-  <p><strong>NOTE: Only Zebra apps are authorized to publish data through OEMinfo at this time</strong>. </p>
+  <p><i class="fa fa-exclamation-circle" style="color:#FF0000;"></i> <strong>Only Zebra apps are authorized to publish data through OEMinfo at this time</strong>. </p>
 </blockquote>
+
+<!-- 
+4/13/23- REMOVED from "Comsume" guide per eng. This is "partial publishing code"
+
+### More Sample Code
+
+
+        :::java
+        //imports from the library included
+        import com.symbol.dataanalytics.provider_registration.KeyValue;
+        import com.symbol.dataanalytics.provider_registration.RegisterPublishData;
+        import com.symbol.dataanalytics.provider_registration.RegistrationCompleted;
+        import com.symbol.dataanalytics.provider_registration.mapper.ContentValueMapper;
+
+        //Keys required
+        public static final String DEVICE_NAME = "device_name";
+        public static final String DEVICE_MAC_ADDRESS = "device_mac_address";
+        public static final String DEVICE_BATTERY_LEVEL = "device_battery_level";
+        public static final String DEVICE_DETAILS = "device_details";
+
+        public void updateDeviceInfo(){
+
+        List<KeyValue> keyValueList = new ArrayList<>();
+        JSONArray deviceDetailArray = new JSONArray();
+        JSONObject deviceDetail;
+        SharedPreferences settings;
+        BluetoothAdapter bluetoothAdapter = new ;
+
+            if (bluetoothAdapter == null) {
+                bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+            }
+
+            //retrieve all bonded peripherals
+            Set<BluetoothDevice> bondedDevices = bluetoothAdapter.getBondedDevices();
+
+            if(bondedDevices.size() > 0){
+                for (BluetoothDevice device : bondedDevices) {
+                    // Initialize the values and update
+                    deviceDetail = new JSONObject();
+                    settings = getApplicationContext().getSharedPreferences(device.getAddress(), 0);
+                    try {
+                        deviceDetail.put(DEVICE_NAME, device.getName());
+                        deviceDetail.put(DEVICE_MAC_ADDRESS, device.getAddress());
+                        deviceDetail.put(DEVICE_BATTERY_LEVEL,settings.getString(Constants.batteryLevelPercentKey, "0"));
+
+                        //insert individual peripheral data to the JSONArray
+                        deviceDetailArray.put(deviceDetail);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+                //add data to the KeyValueList by converting the JSONArray
+                keyValueList.add(new KeyValue(DEVICE_DETAILS, deviceDetailArray.toString()));
+                //publish the data
+                insertPublisherData(keyValueList, getApplicationContext());
+            } else {
+                //add data to the KeyValueList by converting the JSONArray
+                keyValueList.add(new KeyValue(DEVICE_DETAILS, deviceDetailArray.toString()));
+                //publish the data
+              insertPublisherData(keyValueList, getApplicationContext());
+            }
+        }
+
+ -->
+
+<hr>
 
 <!-- 
 Data publishers and consumers follow the content-provider client model to insert (put) and retrieve (get) data. Together, the OEMinfo Content Provider and Publisher and Consumers apps offer a reliable model to handle sharing of OEM-specific, proprietary, non-proprietary static and semi-static data on Zebra devices. The OEMinfo Content Provider manages access to the central repository using a standard authority.
