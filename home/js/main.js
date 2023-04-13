@@ -640,7 +640,7 @@ function populateDropdown (ddl_ver, ddl_doc) {
     var eb_2_0_text = ['About', 'Get Started', 'Tutorials', 'Samples', 'Guides', 'License', 'Migrate', 'Config.xml', 'APIs'];
     var eb_2_0_val = ['/guide/about', '/guide/gettingstarted', '/tutorial','/guide/samples','/guide/licensing', '/guide', '/guide/migration', '/guide/configreference', '/api'];
     // OEMConfig
-    var oemconfig_11_5_text = ['About', 'Setup', 'Managed Configs for A11-', 'Managed Configs for A11+', 'FAQ'];
+    var oemconfig_11_5_text = ['About', 'Setup', 'Managed Configs (Legacy)', 'Managed Configs (A11+)', 'FAQ'];
     var oemconfig_11_5_val = ['/about', '/setup', '/mc', '/mc2', '/faq'];
     var oemconfig_10_5_text = ['About', 'Setup', 'Managed Configurations', 'FAQ'];
     var oemconfig_10_5_val = ['/about', '/setup', '/mc', '/faq'];
@@ -744,6 +744,7 @@ function populateDropdown (ddl_ver, ddl_doc) {
         case '/datawedge/11-2':
         case '/datawedge/11-3':
         case '/datawedge/11-4':
+        case '/datawedge/13-0':
             ddl_doc.options.length = 0;
             for (i=0; i < dw_11_2_text.length; i++) {
                 createOption(ddl_doc, dw_11_2_text[i], dw_11_2_val[i]);
