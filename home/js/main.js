@@ -429,6 +429,10 @@ function selectDoc(prod_id, doc_id) {
     var doc = "";
     
     switch (prod_id) {
+        case 'btn-migration':
+            ver = "";   // no version
+            doc = $("#migration-doc").val();
+            break;
         case 'btn-bti':
             ver = $("#bti-version").val();
             doc = $("#bti-doc").val();
