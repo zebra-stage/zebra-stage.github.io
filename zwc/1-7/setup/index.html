@@ -371,11 +371,21 @@ _Click to enlarge; ESC to exit._
 
 <h3 id="disablescreenshots" class="anchor"><a class="heading-anchor" href="#disablescreenshots"><span></span></a>Disable Screenshots</h3>
 
-<p>Many apps require the display of personal or sensitive information on the screen. Capturing a screen image, a capability built into every Android device and enabled by default, could allow this information to be compromised. <strong>To help prevent this security threat, disable the screen capture feature on devices that could be used to display sensitive information</strong>. Use the process below (and NOT the EMM's process, if any) to ensure proper ZWC operation. </p>
+<p>Many apps require the display of personal or sensitive information on the screen. Capturing a screen image, a capability built into every Android device and enabled by default, could allow this information to be compromised. <strong>To help prevent this security threat, disable the screen capture feature on devices that could be used to display sensitive information</strong>. Use the process below to ensure proper ZWC operation. </p>
 
-<p>To disable screenshots on primary or secondary screens without impacting Workstation Connect operations, use <a href="/stagenow">Zebra StageNow</a> with <a href="/stagenow/latest/csp/display">Display Manager</a> and its "<a href="/stagenow/latest/csp/display/#screen-shot-enabledisable">ScreenShotUsage</a>" parameter to disable screenshots. </p>
+<p><i class="fa fa-exclamation-circle" style="color:#FF0000;"></i> <strong>Disabling screenshots by ANY OTHER MEANS than that described below could interfere with ZWC operations</strong>.  </p>
 
-<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>Disabling screen capture might cause other unwanted behaviors</strong>; the screenshot feature remains disabled on the device until the setting is reversed. See <a href="../usage/#administrationemm">Administrative/EMM section</a> of the Usage Notes for more information. </p>
+<p><strong>To disable screenshots without impacting Workstation Connect operations</strong>: </p>
+
+<ol>
+<li>Create a Profile with <a href="/stagenow">Zebra StageNow</a>. </li>
+
+<li>Add <a href="/stagenow/latest/csp/display">Display Manager</a> to the Profile. </li>
+
+<li>Configure the "<a href="/stagenow/latest/csp/display/#screen-shot-enabledisable">ScreenShotUsage</a>" parameter to disable screenshots. Until this setting is reversed, the screenshot feature remains disabled on the device.</li>
+</ol>
+
+<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>Disabling screen capture might cause unwanted behaviors</strong>. <br>See <a href="../usage/#administrationemm">Administrative/EMM section</a> of the Usage Notes for more information. </p>
 
 <hr>
 
@@ -519,6 +529,61 @@ private final class DockReceiver extends BroadcastReceiver{
     }
   }
 }
+</code></pre>
+
+<hr>
+
+<h3 id="optimizedisplayforscreen" class="anchor"><a class="heading-anchor" href="#optimizedisplayforscreen"><span></span></a>Optimize Display for Screen</h3>
+
+<p>An app's UI should adapt to the screen size to optimize the user experience. The code below shows how to modify an app to allow the user to select which display the app is running on.  </p>
+
+<h4 id="addthislinetothemanifest" class="anchor"><a class="heading-anchor" href="#addthislinetothemanifest"><span></span></a>Add this line to the manifest:</h4>
+
+<pre class="prettyprint"><code>
+android:configChanges="orientation|keyboardHidden|screenSize|smallestScreenSize|screenLayout|density|uiMode"
+</code></pre>
+
+<h4 id="addthisjavatotheapp" class="anchor"><a class="heading-anchor" href="#addthisjavatotheapp"><span></span></a>Add this Java to the app:</h4>
+
+<pre class="prettyprint"><code>            
+            @Override
+            public void onConfigurationChanged(@NonNull Configuration newConfig)
+
+    {       super.onConfigurationChanged(newConfig);         
+    /*Handling the movement of the application between displays*/         
+            showUiLayout();     
+    }
+     ** 
+            showUiLayout(); method -
+     ** 
+            private void showUiLayout() 
+{
+    /* Get the display ID of where the app is running */
+            displayId = getDisplayId();
+            if (displayId == 0)
+
+    {             
+    /*Primary screen - set the device-side layout */             
+
+            setContentView(R.layout.activity_main);         
+    }
+            else
+
+    {             
+    /* Desktop screen - set the desktop-side layout */             
+    /* This may happen for other displays such as remote view */
+
+            setContentView(R.layout.activity_second);         
+    }
+}
+    /* Get display ID */ 
+
+            private int getDisplayId()
+
+    {       Display mDisp = this.getDisplay(); 
+            if (mDisp != null) displayId = mDisp.getDisplayId();         
+            return displayId;     
+    }
 </code></pre>
 
 <!-- 8/6/21- replaced with above, per eng
