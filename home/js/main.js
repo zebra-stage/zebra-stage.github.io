@@ -905,6 +905,7 @@ function populateDropdown (ddl_ver, ddl_doc) {
         case '/emdk-for-android/9-0':
         case '/emdk-for-android/9-1':
         case '/emdk-for-android/11-0':
+        case '/emdk-for-android/13-0':
             ddl_doc.options.length = 0;
             for (i=0; i < emdk_a_9_0_text.length; i++) {
                 createOption(ddl_doc, emdk_a_9_0_text[i], emdk_a_9_0_val[i]);
@@ -1048,6 +1049,7 @@ function populateDropdown (ddl_ver, ddl_doc) {
         case '/stagenow/5-6':
         case '/stagenow/5-7':
         case '/stagenow/5-8':
+        case '/stagenow/5-9':
             ddl_doc.options.length = 0;
             for (i=0; i < sn_5_0_text.length; i++) {
                 createOption(ddl_doc, sn_5_0_text[i], sn_5_0_val[i]);
@@ -1079,6 +1081,7 @@ function populateDropdown (ddl_ver, ddl_doc) {
         case '/zwc/1-4':
         case '/zwc/1-5':
         case '/zwc/1-6':
+        case '/zwc/1-7':
             ddl_doc.options.length = 0;
             for (i=0; i < zwc_1_2_text.length; i++) {
                 createOption(ddl_doc, zwc_1_2_text[i], zwc_1_2_val[i]);
