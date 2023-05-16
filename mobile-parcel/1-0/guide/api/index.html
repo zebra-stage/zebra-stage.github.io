@@ -274,33 +274,77 @@ The following state diagram for the Mobile Parcel Dimensioning client explains t
 
 <h3 id="1definethepackagename" class="anchor"><a class="heading-anchor" href="#1definethepackagename"><span></span></a>1. Define the package name</h3>
 
-<p>Add the <code>&lt;queries&gt;</code> tag in the AndroidManifest.xml of the LOB app to define the Dimensioning service package name. This is required to allow the Mobile Parcel API to communicate with the app.</p>
+<p>Add the <code>&lt;queries&gt;</code> tag in the AndroidManifest.xml of the LOB app to define two package names for Mobile Dimensioning. This is required to allow the Mobile Parcel API to communicate with the app.</p>
 
 <pre class="prettyprint"><code>&lt;queries&gt;
     &lt;package android:name="com.zebra.dimensioning"/&gt;
+    &lt;package android:name="com.zebra.devicemanager"/&gt;
 &lt;/queries&gt;
 </code></pre>
 
-<h3 id="2generateapitoken" class="anchor"><a class="heading-anchor" href="#2generateapitoken"><span></span></a>2. Generate API token</h3>
+<h3 id="2specifypermission" class="anchor"><a class="heading-anchor" href="#2specifypermission"><span></span></a>2. Specify permission</h3>
+
+<p>Add the following read permission to AndroidManifest.xml:</p>
+
+<pre class="prettyprint"><code>&lt;uses-permission android:name="com.zebra.devicemanager.provider.READ_PERMISSION" /&gt;
+</code></pre>
+
+<h3 id="3generateapitoken" class="anchor"><a class="heading-anchor" href="#3generateapitoken"><span></span></a>3. Generate API token</h3>
 
 <p>The API token is one of the parameters that must be sent with each API request for authentication. <em>The API token expires after 24 hours and must be regenerated.</em></p>
 
 <p>To generate the API token:</p>
 
-<ol>
-<li><p>Add the .AAR library file (download <a href="https://github.com/ZebraDevs/Mobile_Dimensioning_Samples/blob/main/Java/ParcelMDClientSampleApp/app/libs/broadcastprotection-1.6.aar">here</a>) to the <em>libs</em> folder of the application project.
-<img alt="" style="height:100px" src="libs-folder.png"></p></li>
+<pre class="prettyprint"><code>private String token = "";
+private Instant tokenExpiration;
+public static final String SERVICE_IDENTIFIER = "delegation-zebra-com.zebra.mobiledimensioning-Enable";
 
-<li><p>Add the the .AAR library to the build.gradle file:</p>
+private void generateToken()
+{
+    Uri ZDM_AUTHORITY_URI = Uri.parse("content://com.zebra.devicemanager.zdmcontentprovider");
+    Uri ACQUIRE_TOKEN_URI = Uri.withAppendedPath(ZDM_AUTHORITY_URI, "AcquireToken");
 
-<pre class="prettyprint"><code>dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.aar'])
+    try
+    {
+        Cursor cursor = this.getContentResolver().query(ACQUIRE_TOKEN_URI, (String[]) null,
+                "delegation_scope=?", new String[]{SERVICE_IDENTIFIER}, (String) null);
+        if (cursor != null &amp;&amp; cursor.getCount() &gt; 0)
+        {
+            cursor.moveToFirst();
+            int columnIndex = cursor.getColumnIndex("query_result");
+            if (columnIndex &gt;= 0)
+            {
+                token = cursor.getString(columnIndex);
+            }
+            cursor.close();
+        }
+    }
+    catch (Exception e)
+    {
+        e.printStackTrace();
+    }
+
+    if (token != null &amp;&amp; !token.isEmpty())
+    {
+        tokenExpiration = Instant.now().plus(24, ChronoUnit.HOURS);
+        // Communicate with Service
+    }
 }
-</code></pre></li>
+</code></pre>
 
-<li><p>Use BroadCastAuthenticator class to generate the token:</p>
+<!-- 
+1.  Add the .AAR library file (download <a href="https://github.com/ZebraDevs/Mobile_Dimensioning_Samples/blob/main/Java/ParcelMDClientSampleApp/app/libs/broadcastprotection-1.6.aar">here</a>) to the _libs_ folder of the application project.
+    <img alt="" style="height:100px"  src="libs-folder.png" />
+2.  Add the the .AAR library to the build.gradle file:
 
-<pre class="prettify prettyprint"><code>
+        dependencies {
+            implementation fileTree(dir: 'libs', include: ['*.aar'])
+        }
+
+3.  Use BroadCastAuthenticator class to generate the token:
+
+ <pre class="prettify">
+ <code>
     private final BroadCastAuthenticator vIntentprotect = new BroadCastAuthenticator();
     private String token = "";
     private Instant tokenExpiration;
@@ -326,7 +370,7 @@ The following state diagram for the Mobile Parcel Dimensioning client explains t
                 {
                     e.printStackTrace();
                 }
-                if (token != null &amp;&amp; !token.isEmpty())
+                if (token != null && !token.isEmpty())
                 {
                     tokenExpiration = Instant.now().plus(24, ChronoUnit.HOURS);
                     // Communicate with Service
@@ -335,10 +379,10 @@ The following state diagram for the Mobile Parcel Dimensioning client explains t
         });
     }
 </code>
-</pre></li>
-</ol>
+</pre>
+-->
 
-<h3 id="3addyourapptotheallowlist" class="anchor"><a class="heading-anchor" href="#3addyourapptotheallowlist"><span></span></a>3. Add your app to the allow list</h3>
+<h3 id="4addyourapptotheallowlist" class="anchor"><a class="heading-anchor" href="#4addyourapptotheallowlist"><span></span></a>4. Add your app to the allow list</h3>
 
 <p>Zebra requires developers use an access control method through <a href="/mx/accessmgr/">MX Access Manager</a> to ensure that only trusted applications communicate with the Mobile Parcel API. To allow the LOB application package to be placed on the allow list, perform the following procedure:</p>
 
@@ -985,7 +1029,7 @@ where <em>[filename.apk]</em> is the full path and file name of the LOB app APK 
 <ul>
 <li><strong>Application life cycle -</strong> Enable dimensioning when the app activity is active and disable it when inactive to ensure the resources are freed when not in use.</li>
 
-<li><strong>Asynchronous errors -</strong> When camera errors are encountered, multiple responses may be received to enable the API. If this occurs, try re-enabling the Dimensioning Framework.</li>
+<li><strong>Asynchronous errors -</strong> When asynchronous camera errors are encountered, a second failure response may be received from the ENABLE_DIMENSION API after the initial success response. If this occurs, try re-enabling the Dimensioning Framework.</li>
 </ul>
 
 <hr>
@@ -1251,7 +1295,7 @@ where <em>[filename.apk]</em> is the full path and file name of the LOB app APK 
             <div class="container-fluid">
                 <div class="row">
                     <div class="col-sm-10">
-                        ZEBRA and the stylized Zebra head are trademarks of Zebra Technologies Corp., registered in many jurisdictions worldwide. All other trademarks are the property of their respective owners. ©2022 Zebra Technologies Corp. and/or its affiliates.<br> <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal.html">Legal</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/compliance/information-privacy/terms-of-use.html">Terms of Use</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal/privacy-statement.html">Privacy Policy</a> 
+                        ZEBRA and the stylized Zebra head are trademarks of Zebra Technologies Corp., registered in many jurisdictions worldwide. All other trademarks are the property of their respective owners. ©2023 Zebra Technologies Corp. and/or its affiliates.<br> <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal.html">Legal</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/compliance/information-privacy/terms-of-use.html">Terms of Use</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal/privacy-statement.html">Privacy Policy</a> 
                     </div>
                      <!--
                      <div class="col-sm-2">
