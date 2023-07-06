@@ -91,11 +91,6 @@
                             </a>
                         </li>
                         <li>
-                            <a href="/nfc-vas/1-0/guide/operation">
-                                    Operation
-                            </a>
-                        </li>
-                        <li>
                             <a href="/nfc-vas/1-0/guide/api">
                                     API
                             </a>
@@ -246,12 +241,108 @@
 <p>At a minimum, the following information is required to read an Apple VAS pass:</p>
 
 <ul>
-<li>Pass Type ID - a reverse order dotted domain description of the pass owner (e.g. com.zebra.testpass)</li>
+<li><strong>Pass Type ID -</strong> a reverse order dotted domain description of the pass owner (e.g. com.zebra.testpass)</li>
 
-<li>Private Key - if the pass is to be decrypted automatically by the SDK, then the private key must be provided. If it is not provided the payload returned will be encrypted.</li>
+<li><strong>Private Key -</strong> if the pass is to be decrypted automatically by the SDK, then the private key must be provided. If it is not provided the payload returned will be encrypted.</li>
 </ul>
 
 <p><strong>Note:</strong> The MerchantId cannot be set, but can be read from the AppleVasConfig object. The MerchantId is simply the SHA256 of the PassTypeID.</p>
+
+<hr>
+
+<h2 id="nfcpass" class="anchor"><a class="heading-anchor" href="#nfcpass"><span></span></a>NFC Pass</h2>
+
+<!-- An NFC enabled pass will appear in the user’s Apple Wallet. This pass will look similar to any other pass in the wallet, but will have an NFC indicator in the lower right corner of the pass. From the deployment perspective, an NFC pass is created in a similar manner to any other Apple Wallet pass. There is only a small additional component to identify an NFC enabled pass. This is the NFC top-level key in the pass description. This key contains the message and an encryption public key (optional). All other elements in the pass are the same as for non-NFC passes. -->
+
+<p>The information associated with an NFC pass are:</p>
+
+<ul>
+<li><strong>Pass Type Identifier -</strong> a string of the recommended form "pass.com.developer.appname". This is used to search for passes in a user’s Apple Wallet. A reader specifies one or more Pass Type Identifiers and only passes that match to be retrieved.</li>
+
+<li><strong>MerchantID -</strong> the merchant ID is SHA256 hash value calculated from the Pass Type Identifier. There is a one-to-one correspondence between the Pass Type Identifier and the MerchantID. Because of this one-to-one correspondence, supplying the Pass Type Identifier is sufficient when working with the VAS SDK. </li>
+
+<li><strong>Private Key -</strong> the NFC message on the Apple iPhone or iWatch is encrypted prior to being communicated to the reader terminal. The key used to encrypt the message is the encryption public key, provided in the json description for the pass. To decrypt the pass, the Zebra NFC VAS SDK needs the associated Private Key. This private key is obtained at the time of pass creation, either by the developer with the permissions from Apple for creating the pass, or from the company that issued the NFC enabled pass. If no private key is provided to the Zebra SDK, the SDK returns the encrypted message and it is up to the developer to decrypt it. This might include for example, sending the encrypted pass to a back-end server to be decrypted and processed.</li>
+
+<li><strong>Merchant URL -</strong> (OPTIONAL) passes are often used as loyalty cards. In a case where a customer is not yet a loyalty member, the user could tap the reader and the Merchant URL could be communicated to the user’s device and direct the user to a sign-up page. There are specific server APIs and processes required to support this. These specifics are beyond the scope of this document.</li>
+
+<li><strong>Filter -</strong> (OPTIONAL) a company might issue passes for many different reasons and or uses. The filter provides a component to allow a company to issue many similar passes, with identifiable differences. An example use case might be a season of tickets to a sporting event. The same company issues all the tickets - each ticket could look the same with the only difference being the date that access should be allowed. The filter could be used to identify any combination of dates. For example, if there were 4 possible games, the developer could assign each game one bit in the filter. The Zebra NFC VAS SDK can support up to all 4 games, based on which bit was set. The reader would then specify a filter with one bit set for the current game, and also specify that the filter should be treated as a bit-mask. Any pass that had the bit set for the current date would be read. Any pass that did not have the bit set would be skipped.</li>
+</ul>
+
+<hr>
+
+<h2 id="objects" class="anchor"><a class="heading-anchor" href="#objects"><span></span></a>Objects</h2>
+
+<p>There is one main component of the SDK, ZebraNfcVAS, the VAS configuration object. The ZebraNfcVas object handles all the communication with the passes, the configuration of the NFC system and pass decryption. The Pass contains the payload of the pass along with additional meta data about the pass.</p>
+
+<p><font size="5" color="red">Add description for Configuration &amp; Pass Objects, check for flow of information and ensure content is understandable and easy to understand</font></p>
+
+<h3 id="configurationobjects" class="anchor"><a class="heading-anchor" href="#configurationobjects"><span></span></a>Configuration Objects</h3>
+
+<p>A configuration object must contain at least one Pass Type ID, but may contain multiple Pass Type IDs. This identifies which pass types should be returned. A configuration object may contain a private key. The private key should be associated with the Pass Type IDs in the configuration object. It is the key that is used to decrypt data from the pass that matches one of the associated Pass Type IDs. It is also acceptable to have multiple configuration objects. Each configuration object is used to query the Apple device for a pass.</p>
+
+<p>Example:</p>
+
+<ul>
+<li>Configuration Object #1 
+
+
+<ul>
+<li>PassTypeId:
+
+
+<ul>
+<li>pass.com.zebra.customer_loyalty</li>
+
+<li>pass.com.zebra.cafe_loyalty</li></ul>
+</li>
+
+<li>Private Key: private key that decrypts either of the two above pass types.</li></ul>
+</li>
+
+<li>Configuration Object #2 
+
+
+<ul>
+<li>PassTypeId:
+
+
+<ul>
+<li>pass.com.zebra.special_holiday_event_pass </li></ul>
+</li>
+
+<li>PrivateKey: private key that decrypts the data from the pass</li></ul>
+</li>
+</ul>
+
+<p>The application developer could specify either one or both of the above configuration objects when attempting to read passes. The SDK iterates through each Pass Type Id in each configuration object. In the above example, assuming both configuration objects were provided, the read sequence is:</p>
+
+<ol>
+<li>pass.com.zebra.customer_loyalty</li>
+
+<li>pass.com.zebra.cafe_loyalty</li>
+
+<li>pass.com.zebra.special_holiday_event_pass</li>
+</ol>
+
+<h3 id="zebranfcvasobject" class="anchor"><a class="heading-anchor" href="#zebranfcvasobject"><span></span></a>ZebraNfcVas Object</h3>
+
+<p>The ZebraNfcVas Object connects with the Zebra NFC VAS service, sets up the configuration for the NFC polling and handles reading of the passes from a mobile wallet. Once the pass has been read, ZebraNfcVas decrypts the pass data (if all information is provided and correct) and returns the Pass object to the caller.</p>
+
+<h3 id="passobject" class="anchor"><a class="heading-anchor" href="#passobject"><span></span></a>Pass Object</h3>
+
+<p>The pass object encapsulates the information about the pass read. This includes:</p>
+
+<ul>
+<li>pass payload (decrypted if possible)</li>
+
+<li>pass type (Apple VAS)</li>
+
+<li>payload date (date and time pass was read)</li>
+
+<li>Pass Type Id / MerchantID associated with the pass</li>
+</ul>
+
+<p>This allows a developer to validate that a pass is the correct type and that it is not a replay (the date and time is within 10 seconds of the actual date and time) as per Apple requirements.</p>
 
 <hr>
 

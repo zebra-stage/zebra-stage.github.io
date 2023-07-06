@@ -91,11 +91,6 @@
                             </a>
                         </li>
                         <li>
-                            <a href="/nfc-vas/1-0/guide/operation">
-                                    Operation
-                            </a>
-                        </li>
-                        <li>
                             <a href="/nfc-vas/1-0/guide/api">
                                     API
                             </a>
@@ -562,6 +557,99 @@ d34da9a55d40bf6bd05b8120db9281d90ffe5f3857cfbd717a1ac24adce78f1d887b1993e05b92c
 1f8dcc5657963ff3645c2edd727c18aa35e755a3c2eaa4d63
 </code></pre></li>
 </ul>
+
+<hr>
+
+<h2 id="samplecode" class="anchor"><a class="heading-anchor" href="#samplecode"><span></span></a>Sample Code</h2>
+
+<p><font size="5" color="red">Need description of what this code is doing</font></p>
+
+<pre class="prettyprint"><code>    onCreate(){
+        // Create a config object
+    }
+    AppleVasConfig cfg = new AppleVasConfig();
+
+    //-- example of setting a filter and then clearing the filter
+    cfg.setFilter(new byte[]{(byte) 0xaa, 0x55, (byte) 0xaa, 0x55}, AppleVasConfig.FilterType.ExactMatch);
+    cfg.setFilterNone();
+
+    //-- example of setting a URL and then clearing the URL
+    cfg.setMerchantURL("https://www.zebra.com/vas-signup");
+    cfg.setMerchantURL(null);
+
+    //-- example of setting the private key and the Pass Type ID
+    cfg.setPrivateKey(ZebraPrivateKeyStr);
+    cfg.setPassTypeIds(new String[] {"pass.com.pronto.zebra-wallet-pass.demo"});
+
+    //-- create the main object and specify the current Activity as the Activity and the Response
+
+    //  also specifies the above VasConfig object as the config object to be used.
+    vasSDK = new ZebraNfcVas(this, this, cfg);
+
+    //-- examples of modifying the cfg object
+    vasSDK.setVasConfig(cfg);
+    vasSDK.clearConfigs();
+    vasSDK.setVasConfig(cfg);
+
+    // there are now TWO identical cfgs set
+    // clear out all configuration objects
+    // set the SINGLE cfg we're interested in
+
+    //-- activate the connection to the NfcAdapter
+    vasSDK.connectToReader();
+    onResume(){
+        /* configure the NFC adapter for reader mode only */
+        vasSDK.enableReadPassMode();
+    }
+    onPause(){
+        /* return the NFC adapter to standard polling */
+        vasSDK.disableReadPassMode();
+    }
+
+    /* This method will be called when a pass is detected and read during polling */
+    public void onPassDetected(Pass pass) 
+    {
+        if(pass.getPassType() == Pass.Type.AppleVas) {
+            if(pass.getResultCode() == Pass.Result.Success) {
+                // Decrypted Pass
+                DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                format.setTimeZone(TimeZone.getTimeZone("Etc/UTC"));
+                String formatted = format.format(pass.getPayloadDate()) + "Z";
+                Log.v(TAG, "--- PASS Received and Decrypted ---");
+                Log.v(TAG, "Pass Date: " + formatted);
+                Log.v(TAG, "Payload as HEX: " + ByteArrayToHexString(pass.getPayloadMessage()));
+                Log.v(TAG, "Payload as ASCII: " + new String(pass.getPayloadMessage(), StandardCharsets.UTF_8));
+                Log.v(TAG, "Payload is from pass with Pass Type Id: " + pass.getPassTypeId());
+                Log.v(TAG, "This Pass Type Id corresponds to merchantId: " +
+        ByteArrayToHexString(pass.getMerchantId()));
+            }
+
+            else if(pass.getResultCode() == Pass.Result.IncorrectPrivateKey) {
+                // Encrypted Pass
+                Log.v(TAG, "--- PASS Received but Wrong Private Key or No Private Key provided for Decryption ---");
+                Log.v(TAG, "Encrypted pass payload as HEX: " + ByteArrayToHexString(pass.getPayloadMessage()));
+                Log.v(TAG, "Payload is from pass with Pass Type Id: " + pass.getPassTypeId());
+                Log.v(TAG, "This Pass Type Id corresponds to merchantId: " +
+        ByteArrayToHexString(pass.getMerchantId()));
+            }
+
+            else if(pass.getResultCode() == Pass.Result.DecryptionFailure) {
+                // Encrypted Pass
+                Log.v(TAG, "--- PASS Received but Decryption Failure ---");
+                Log.v(TAG, "Encrypted pass payload as HEX: " + ByteArrayToHexString(pass.getPayloadMessage()));
+                Log.v(TAG, "Payload is from pass with Pass Type Id: " + pass.getPassTypeId());
+                Log.v(TAG, "This Pass Type Id corresponds to merchantId: " +
+        ByteArrayToHexString(pass.getMerchantId()));
+            }
+
+            else if(pass.getResultCode() == Pass.Result.Failure) {
+                // No Pass
+                Log.v(TAG, "--- Pass Not Read for some reason - see the Status Word ---");
+                Log.v(TAG, "Returned Status Word is: " + ByteArrayToHexString(pass.getPayloadMessage()));
+            } 
+        }
+    }
+</code></pre>
 
 <!-- 
 **VasConfig -** base class object used to provide an interface for storing and accessing merchant parameters required to access a VAS pass
