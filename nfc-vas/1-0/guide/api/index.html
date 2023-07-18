@@ -231,15 +231,7 @@
 
 <p>Zebra Apple VAS SDK is an Android library built on top of the existing Android NFC APIs and Apple VAS protocol. It offers streamlined configuration and management of the necessary procedures involved in accessing and processing data from the NFC pass stored in the Apple Wallet. This section discusses the contents of the NFC pass, offers guidance on developing an application to read the NFC pass, and presents the available APIs within the Zebra Apple VAS SDK. </p>
 
-<hr>
-
-<h2 id="requirements" class="anchor"><a class="heading-anchor" href="#requirements"><span></span></a>Requirements</h2>
-
-<ul>
-<li><strong><a href="../about/#requirements">Certified Zebra mobile computers</a></strong></li>
-
-<li><strong>Zebra Apple VAS SDK -</strong> download the SDK from the Zebra support portal and import the Android .AAR file into the "libs" folder of the Android application project</li>
-</ul>
+<p>Download the SDK from the Zebra support portal and import the Android .AAR file into the "libs" folder of the Android application project.</p>
 
 <hr>
 
@@ -349,130 +341,154 @@
 
 <h2 id="developerguide" class="anchor"><a class="heading-anchor" href="#developerguide"><span></span></a>Developer Guide</h2>
 
-<p><font size="5" color="red">Needs to be updated. Include description and corresponding source code for each step.</font></p>
+<p><img src="flow-diagram.jpg" alt="" style="height:450px"></p>
+
+<p><font size="5" color="red">Add description for diagram</font></p>
 
 <p>The following serves as a guide to develop an application that reads an NFC pass from Apple Wallet:</p>
 
 <ol>
-<li><p><strong>Implement <code>IZebraServiceConnection</code> Interface -</strong> It is required to implement <code>IZebraServiceConnection</code> Interface to get a callback for the NFC pass object and service connection. </p>
+<li><p><strong>Implement IZebraServiceConnection Interface -</strong> It is required to implement IZebraServiceConnection Interface to get a callback from the Zebra VAS service on the service connection/disconnection and NFC pass object.  </p>
 
-<pre class="prettyprint"><code>public class AppleVASActivity extends AppCompatActivity implements IZebraServiceConnection {
-
-}
+<pre class="prettyprint"><code>public class AppleVASActivity extends AppCompatActivity implements IZebraServiceConnection { 
+} 
 </code></pre>
 
-<p>Replace "AppleVASActivity" based on the name of the class implemented in your application </p></li>
+<p>Replace "AppleVASActivity" with the name of the class implemented within your application.</p></li>
 
-<li><p><strong>Create a ZebraNFCVAS object -</strong>  ZebraNfcVas object should be declared and initialized during onCreate(). </p></li>
+<li><p><strong>Create a ZebraNFCVAS object and intialize the object -</strong> ZebraNfcVas object should be declared in onCreate() and initialized by calling init().  </p>
 
-<li><p><strong>Create an AppleVasConfig object -</strong> This is the object that the SDK uses to know how to interact with a presented pass.</p></li>
+<pre class="prettyprint"><code>private ZebraNfcVas vasSDK; 
 
-<li><p><strong>Set the appropriate configuration values into the AppleVasConfig object -</strong></p></li>
-</ol>
+@Override 
+protected void onCreate(Bundle savedInstanceState) { 
+    super.onCreate(savedInstanceState);  
+    setContentView(R.layout.activity_main);  
+    init(); //UI Initialization  
 
-<ul>
-<li>Can do this in the constructor</li>
+<pre><code>vasSdkInit();
+</code></pre>
 
-<li>Can alternatively use individual APIs to set up the configuration object
+} 
 
+private void vasSdkInit() { 
+    Log.e(TAG, "vasSdkInit"); 
+    vasSDK = new ZebraNfcVas(this); 
+    vasSDK.init(); 
+} 
+</code></pre></li>
+
+<li><p><strong>After initialization, a callback to onServiceConnection() is available.</strong> Proceed with the subsequent steps for implementation of this method. </p>
+
+<pre class="prettyprint"><code>@Override 
+public void onServiceConnection() { 
+    Log.e(TAG,"onServiceConnection"); 
+    //Start with the app implemenation 
+} 
+</code></pre>
+
+<p>a. <strong>Create an AppleVasConfig object -</strong> This is the object that the SDK uses to know how to interact with a presented pass.  </p>
+
+<pre class="prettyprint"><code>vasSDK.createAppleVasConfig(); 
+</code></pre>
+
+<p>b. <strong>Set the appropriate configuration values in the AppleVasConfig object</strong> by using the following APIs: </p>
 
 <ul>
 <li>setPassTypeIds() </li>
 
-<li>setPrivateKey()</li></ul>
-</li>
-</ul>
+<li>setPrivateKey() </li>
 
-<ol>
-<li><p>Intro - this was initially from  IZebraServiceConnection Interface and ZebraNFCVAS object</p>
+<li>setFilter() </li>
 
-<pre class="prettyprint"><code>private ZebraNfcVas vasSDK;
+<li>setMerchantURL() </li></ul>
 
-@Override
-protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState); 
-    setContentView(R.layout.activity_main); 
-    init(); //UI Initialization vasSdkInit();
-}
+<p>c. <strong>Create the ZebraNFCVAS object.</strong>  </p>
 
-private void vasSdkInit() {
-    Log.e(TAG, "vasSdkInit");
-    vasSDK = new ZebraNfcVas(this);
-    vasSDK.init();
-}
+<pre class="prettyprint"><code>vasSDK.createZebraNfcVasConfig();   
 </code></pre>
 
-<p>After initialization, a callback to serviceconnection will be available, then proceed with rest of the implementation. <font size="5" color="red">This is unclear</font></p>
+<p>d. <strong>Set the AppleVasConfig object into the ZebraNFCVAS object -</strong> This informs the SDK about the configuration data to use when reading the pass.</p>
 
-<pre class="prettyprint"><code>@Override
-public void onServiceConnection() {
-    Log.e(TAG,"onServiceConnection");
-    //Start with the app implemenation
-}
+<pre class="prettyprint"><code>vasSDK.setVasConfig(); 
+</code></pre>
+
+<p>e. <strong>Call connectToReader() -</strong> This establishes the connection with the NFC reader. </p>
+
+<pre class="prettyprint"><code>vasSDK.connectToReader(); 
+</code></pre>
+
+<p>f. <strong>Call enableReadPassMode() -</strong> This turns off the card emulation and peer-to-peer functionality in the polling. <font size="4" color="red">Check with Marek what these are, not previously mentioned.</font>  It also configures the polling to read Type A and Type B cards. </p>
+
+<pre class="prettyprint"><code>vasSDK.enableReadPassMode(); 
+</code></pre>
+
+<p>g. <strong>When an NFC pass is read, onPassDetected() is called -</strong> This method receives the Pass object when a pass is read. Process the data read from the pass based on business needs. </p>
+
+<pre class="prettyprint"><code>public void onPassDetected(Pass pass) {  
+    Log.v(TAG, "&gt;&gt;&gt; PASS DETECTED &lt;&lt;&lt;"); 
+    // Process data read from the pass 
+} 
+</code></pre>
+
+<p>h. <strong>Call disableReadPassMode() before the app goes to the background or when the activity ends -</strong> This returns the polling to the standard configuration. <font size="4" color="red">Check with Marek</font></p>
+
+<pre class="prettyprint"><code>@Override 
+public void onPause() { 
+    super.onPause(); 
+    Log.i(TAG, "onPause called &amp; Reader Mode Deactivated ....."); 
+    vasSDK.disableReadPassMode(); 
+} 
 </code></pre></li>
-
-<li><p><strong>Set the AppleVasConfig object into the ZebraNFCVAS object.</strong> This tells the SDK what configuration data to use during the pass reading process</p></li>
-
-<li><p><strong>Call connectToReader() -</strong> this establishes the connection with the NFC subsystem</p></li>
-
-<li><p><strong>Call enableReadPassMode().</strong> This turns off the card emulation and peer-to-peer functionality in the polling. It also configures the polling to only read the technology type we need.</p></li>
-
-<li><p><strong>Wait for onPassDetected() to be called -</strong> This method receives the Pass object when a pass is read.</p>
-
-<p></p><ul>
-<li>Process the data read from the pass based on business need.</li></ul><p></p></li>
-
-<li><p><strong>Call disableReadPassMode() before going in to the background or ending the activity.</strong> This returns the polling loop to the standard configuration.</p></li>
 </ol>
-
-<p><img src="flow-diagram.jpg" alt="" style="height:450px"></p>
-
-<p><font size="5" color="red">Add description for diagram</font></p>
 
 <hr>
 
 <h2 id="apis" class="anchor"><a class="heading-anchor" href="#apis"><span></span></a>APIs</h2>
 
-<p><font size="5" color="red">setPrivateKey(), setPassIDs() and setFilter() Missing</font><br>
-<font size="5" color="red">Order APIs in the order they should be used</font></p>
-
 <p>APIs available:</p>
 
 <ul>
-<li><a href="#init">init()</a></li>
+<li><a href="#init">init</a></li>
 
-<li><a href="#onserviceconnected">onServiceConnected()</a></li>
+<li><a href="#onserviceconnected">onServiceConnected</a></li>
 
-<li><a href="#onservicedisconnected">onServiceDisconnected()</a></li>
+<li><a href="#onservicedisconnected">onServiceDisconnected</a></li>
 
-<li><a href="#createapplevasconfig">createAppleVasConfig()</a></li>
+<li><a href="#createapplevasconfig">createAppleVasConfig</a></li>
 
-<li><a href="#createzebravasconfig">createZebraVasConfig()</a></li>
+<li><a href="#setprivatekey">setPrivateKey</a></li>
 
-<li><a href="#setprivatekey">setPrivateKey()</a></li>
+<li><a href="#setpasstypeids">setPassTypeIds</a></li>
 
-<li><a href="#gettype">getType()</a></li>
+<li><a href="#setfilter">setFilter</a></li>
 
-<li><a href="#setvasconfig">setVasConfig()</a></li>
+<li><a href="#setmerchanturl">setMerchantURL</a></li>
 
-<li><a href="#clearconfigs">clearConfigs()</a></li>
+<li><a href="#setvasconfig">setVasConfig</a></li>
 
-<li><a href="#getmerchanturl">getMerchantUrl()</a></li>
+<li><a href="#clearconfigs">clearConfigs</a></li>
 
-<li><a href="#getterminalmode">getTerminalMode()</a></li>
+<li><a href="#createzebravasconfig">createZebraVasConfig</a></li>
 
-<li><a href="#connecttoreader">connectToReader()</a></li>
+<li><a href="#connecttoreader">connectToReader</a></li>
 
-<li><a href="#enablereadpassmode">enableReadPassMode()</a></li>
+<li><a href="#enablereadpassmode">enableReadPassMode</a></li>
 
-<li><a href="#disablereadpassmode">disableReadPassMode()</a></li>
+<li><a href="#disablereadpassmode">disableReadPassMode</a></li>
 
-<li><a href="#onpassdetected">onPassDetected()</a></li>
+<li><a href="#gettype">getType</a></li>
 
-<li><a href="#getsdkversion">getSdkVersion()</a></li>
+<li><a href="#getmerchanturl">getMerchantUrl</a></li>
+
+<li><a href="#getterminalmode">getTerminalMode</a></li>
+
+<li><a href="#onpassdetected">onPassDetected</a></li>
+
+<li><a href="#getsdkversion">getSdkVersion</a></li>
 </ul>
 
-<h3 id="init" class="anchor"><a class="heading-anchor" href="#init"><span></span></a>init()</h3>
+<h3 id="init" class="anchor"><a class="heading-anchor" href="#init"><span></span></a>init</h3>
 
 <pre class="prettyprint"><code>    public void init() 
 </code></pre>
@@ -485,15 +501,15 @@ public void onServiceConnection() {
 
 <p><strong>Throws:</strong> <code>RuntimeException</code> if the Service is not available or the security/signature does not match.</p>
 
-<h3 id="onserviceconnected" class="anchor"><a class="heading-anchor" href="#onserviceconnected"><span></span></a>onServiceConnected()</h3>
+<h3 id="onserviceconnected" class="anchor"><a class="heading-anchor" href="#onserviceconnected"><span></span></a>onServiceConnected</h3>
 
 <p>Implements IZebraServiceConnection interface with callback method onServiceConnected(). Callback is received when init() serviceConnection is successful. <font size="5" color="red">Check description. Should this be onServiceConnected()?</font></p>
 
-<h3 id="onservicedisconnected" class="anchor"><a class="heading-anchor" href="#onservicedisconnected"><span></span></a>onServiceDisconnected()</h3>
+<h3 id="onservicedisconnected" class="anchor"><a class="heading-anchor" href="#onservicedisconnected"><span></span></a>onServiceDisconnected</h3>
 
 <p>Implements <code>IZebraServiceConnection</code> interface with callback method onServiceConnected(). Callback is received when init() ServiceDisconnected is successful.  <font size="5" color="red">Check description. Should this be onServiceDisconnected()?</font></p>
 
-<h3 id="createapplevasconfig" class="anchor"><a class="heading-anchor" href="#createapplevasconfig"><span></span></a>createAppleVasConfig()</h3>
+<h3 id="createapplevasconfig" class="anchor"><a class="heading-anchor" href="#createapplevasconfig"><span></span></a>createAppleVasConfig</h3>
 
 <pre class="prettyprint"><code>    public void createAppleVasConfig() 
 </code></pre>
@@ -504,24 +520,12 @@ public void onServiceConnection() {
 
 <p><strong>Return value:</strong> None</p>
 
-<h3 id="createzebravasconfig" class="anchor"><a class="heading-anchor" href="#createzebravasconfig"><span></span></a>createZebraVasConfig()</h3>
-
-<p>Creates the ZebraConfig object and holds the instance of a VasConfig object for pass detection
-operation.</p>
-
-<pre class="prettyprint"><code>    public void createZebraVasConfig() 
-</code></pre>
-
-<p><strong>Parameter:</strong> None</p>
-
-<p><strong>Return:</strong> None</p>
-
-<h3 id="setprivatekey" class="anchor"><a class="heading-anchor" href="#setprivatekey"><span></span></a>setPrivateKey()</h3>
+<h3 id="setprivatekey" class="anchor"><a class="heading-anchor" href="#setprivatekey"><span></span></a>setPrivateKey</h3>
 
 <pre class="prettyprint"><code>    public void setPrivateKey(String key) 
 </code></pre>
 
-<p>Sets PEM formatted private key used to decrypt the selected pass object. It overwrites any pre-existing value. </p>
+<p>Sets PEM formatted private key used to decrypt the pass object. It overwrites any pre-existing value. </p>
 
 <p><strong>Parameter:</strong> String key </p>
 
@@ -539,18 +543,72 @@ operation.</p>
 
 <p><strong>Return value:</strong> None</p>
 
-<p>Throws: <code>InvalidParameterException</code> if the key is null, empty, or incorrectly formatted.</p>
+<p><strong>Throws:</strong> <code>InvalidParameterException</code> if the key is null, empty, or incorrectly formatted.</p>
 
-<h3 id="gettype" class="anchor"><a class="heading-anchor" href="#gettype"><span></span></a>getType()</h3>
+<h3 id="setpasstypeids" class="anchor"><a class="heading-anchor" href="#setpasstypeids"><span></span></a>setPassTypeIds</h3>
 
-<pre class="prettyprint"><code>    public String getType() 
+<pre class="prettyprint"><code>    public void setPassTypeIds(String[] passTypeIds)
 </code></pre>
 
-<p>Returns the type of the object. </p>
+<p>Sets the Pass Type IDs, the primary values used to match a VAS pass on the Apple device. The pass on the Apple device contains a matching PassTypeID. These are identifiers of the form 'com.zebra.pass.x' or other similar reverse domain string. There is no requirement that it must be a reverse domain string, the only requirement is that it must be a unique string. Only passes that match the passTypeIDs specified are accepted. This overwrites any existing values.</p>
 
-<p><strong>Return value:</strong> Static string: ‘APPLE_VAS’ </p>
+<p><strong>Parameter:</strong> String[] passTypeIds <br>
+This is an array of one or more Pass Type IDs. A Pass Type ID is generally of the form {“pass.com.zebra”} or {“pass.com.zebra”, “pass.com.xyz.somethingspecific”}. When attempting to read a pass, the pass is checked against each Pass Type ID in the array. Consequently, a pass that matches any of the specified Pass Type IDs is retrieved.</p>
 
-<h3 id="setvasconfig" class="anchor"><a class="heading-anchor" href="#setvasconfig"><span></span></a>setVasConfig()</h3>
+<p><strong>Return value:</strong> None</p>
+
+<p><strong>Throws:</strong></p>
+
+<ul>
+<li><code>InvalidParameterException</code> if there are null or empty strings in the array, invalid characters, or the aray is empty in any of the Pass Type IDs.</li>
+
+<li><code>UnsupportedEncodingException</code> if the UTF-8 conversion encoding is not available. <font size="5" color="red">What do you mean by 'not available'? Isn't SHA256 used, not UTF8?</font> This is required to
+convert the PassTypeID string into byte encoding for the MerchantID calculation.  </li>
+
+<li><code>NoSuchAlgorithmException</code> if the SHA256 algorithm is not available. <font size="5" color="red">What do you mean by 'not available'? If not, how is it made available?</font> This is required to automatically convert the PassTypeID to the equivalent MerchantID.</li>
+</ul>
+
+<h3 id="setfilter" class="anchor"><a class="heading-anchor" href="#setfilter"><span></span></a>setFilter</h3>
+
+<pre class="prettyprint"><code>    public void setFilter(byte[] filter, FilterType type)
+</code></pre>
+
+<p>Sets the filter information for the VAS pass to read. This overwrites any pre-existing value.</p>
+
+<p><strong>Parameter:</strong> </p>
+
+<ul>
+<li><strong>byte[] filter -</strong> This is a 4-byte array that is the filter value used during the pass retrieval process. It is used according to the filter type specified in parameter one.<font size="5" color="red">parameter one?</font></li>
+
+<li><strong>FilterType type -</strong> This is one of two constants: 
+
+
+<ul>
+<li>FILTER_TYPE_EXACT_MATCH - If the specified filter value exactly matches the merchant pass filter value, the match is successful.</li>
+
+<li>FILTER_TYPE_BIT_MASK - If the specified filter value is bitwise ANDed with the merchant pass filter value and the result equals the merchant pass filter value, the match is successful.</li></ul>
+</li>
+</ul>
+
+<p><strong>Return value:</strong> None</p>
+
+<p><strong>Throws:</strong> <code>InvalidParameterException</code> if the filter value is not exactly 4 bytes in size.</p>
+
+<h3 id="setmerchanturl" class="anchor"><a class="heading-anchor" href="#setmerchanturl"><span></span></a>setMerchantURL</h3>
+
+<pre class="prettyprint"><code>    public void setMerchantURL(String url)
+</code></pre>
+
+<p>Sets the VAS Merchant URL where the Apple device should be directed if no pass is currently available on the device. This overwrites any existing value.</p>
+
+<p><strong>Parameter:</strong> String url <br>
+This is the merchant URL string for the associated pass, which is generally used to sign-up for a pass. It MUST use include "https://". The maximum string length is 64 bytes.</p>
+
+<p><strong>Return value:</strong> None</p>
+
+<p><strong>Throws:</strong> <code>InvalidParameterException</code> if the length is too long or does not contain a valid "https://" header.</p>
+
+<h3 id="setvasconfig" class="anchor"><a class="heading-anchor" href="#setvasconfig"><span></span></a>setVasConfig</h3>
 
 <pre class="prettyprint"><code>    public void setVASConfig() 
 </code></pre>
@@ -563,12 +621,12 @@ operation.</p>
 
 <p><strong>Throws:</strong> <code>InvalidParameterException</code> or <code>RuntimeException</code> if VasConfig object is null. </p>
 
-<h3 id="clearconfigs" class="anchor"><a class="heading-anchor" href="#clearconfigs"><span></span></a>clearConfigs()</h3>
+<h3 id="clearconfigs" class="anchor"><a class="heading-anchor" href="#clearconfigs"><span></span></a>clearConfigs</h3>
 
 <pre class="prettyprint"><code>    public void clearConfigs() 
 </code></pre>
 
-<p>Clears the VASConfig object that is used for interacting with passes.</p>
+<p>Clears the VASConfig object that is used for interacting with passes. After clearing the object, data from the NFC passes cannot be retrieved until calling: setPrivateKey(), setFilter(), setPassIds(), and setVasConfig(). </p>
 
 <p><strong>Parameter:</strong> None</p>
 
@@ -576,39 +634,21 @@ operation.</p>
 
 <p>Throws: <code>RuntimeException</code> if VasConfig object is null.</p>
 
-<h3 id="getmerchanturl" class="anchor"><a class="heading-anchor" href="#getmerchanturl"><span></span></a>getMerchantUrl()</h3>
+<h3 id="createzebravasconfig" class="anchor"><a class="heading-anchor" href="#createzebravasconfig"><span></span></a>createZebraVasConfig</h3>
 
-<pre class="prettyprint"><code>    public String getMerchantURL() 
+<p>Creates the ZebraConfig object and holds the instance of a VasConfig object for pass detection
+operation.</p>
+
+<pre class="prettyprint"><code>    public void createZebraVasConfig() 
 </code></pre>
-
-<p>Get the Merchant URL string </p>
 
 <p><strong>Parameter:</strong> None</p>
 
-<p><strong>Return value:</strong> </p>
+<p><strong>Return:</strong> None</p>
 
-<ul>
-<li>If successful, returns the string of the merchant URL.</li>
+<h3 id="connecttoreader" class="anchor"><a class="heading-anchor" href="#connecttoreader"><span></span></a>connectToReader</h3>
 
-<li>If unsuccessful and no merchant URL has been set, returns null.</li>
-</ul>
-
-<h3 id="getterminalmode" class="anchor"><a class="heading-anchor" href="#getterminalmode"><span></span></a>getTerminalMode()</h3>
-
-<pre class="prettyprint"><code>    public AppleVasConfig.TerminalMode getTerminalMode() 
-</code></pre>
-
-<p>Gets the current operating mode for the reader.</p>
-
-<p><strong>Parameter:</strong> None</p>
-
-<p><strong>Return value:</strong> AppleVAS.TerminalMode - TerminalMode.VasOnly <font size="5" color="red">Check return value</font></p>
-
-<p><strong>Throws:</strong> <code>RuntimeException</code></p>
-
-<h3 id="connecttoreader" class="anchor"><a class="heading-anchor" href="#connecttoreader"><span></span></a>connectToReader()</h3>
-
-<pre class="prettyprint"><code>    pubilc void connectToReader () 
+<pre class="prettyprint"><code>    pubilc void connectToReader() 
 </code></pre>
 
 <p>Obtains a connection to the NFC adapter. </p>
@@ -625,12 +665,12 @@ operation.</p>
 <li><code>ERROR_SUCCESS</code> - connection is successful</li>
 </ul>
 
-<h3 id="enablereadpassmode" class="anchor"><a class="heading-anchor" href="#enablereadpassmode"><span></span></a>enableReadPassMode()</h3>
+<h3 id="enablereadpassmode" class="anchor"><a class="heading-anchor" href="#enablereadpassmode"><span></span></a>enableReadPassMode</h3>
 
 <pre class="prettyprint"><code>    pubilc void enableReadPassMode() 
 </code></pre>
 
-<p>Configures polling for the Zebra NFC reader for Tech Type A and Tech Type B cards. <font size="5" color="red">Add link</font></p>
+<p>Configures polling for the Zebra NFC reader to read Tech Type A and Tech Type B cards. <font size="5" color="red">Add link for reference, check with Marek</font></p>
 
 <p><strong>Parameter:</strong> None</p>
 
@@ -640,23 +680,62 @@ operation.</p>
   <p>Since the NFC resources are fully allocated, no other application (running on the foreground or background) can request for NFC resources.</p>
 </blockquote>
 
-<h3 id="disablereadpassmode" class="anchor"><a class="heading-anchor" href="#disablereadpassmode"><span></span></a>disableReadPassMode()</h3>
+<h3 id="disablereadpassmode" class="anchor"><a class="heading-anchor" href="#disablereadpassmode"><span></span></a>disableReadPassMode</h3>
 
 <pre class="prettyprint"><code>    public void disableReadPassMode() 
 </code></pre>
 
-<p>Return to default polling configuration. </p>
+<p>Return to default polling configuration, which does not detect any Tech Type (A or B) cards. This method should be called whenever the app moves to the background or when the activity is terminated. <font size="5" color="red">Check with Marek – standard or default polling; does it detect Type A and B?</font></p>
 
 <p><strong>Parameter:</strong> None</p>
 
 <p><strong>Return value:</strong> None</p>
+
+<h3 id="gettype" class="anchor"><a class="heading-anchor" href="#gettype"><span></span></a>getType</h3>
+
+<pre class="prettyprint"><code>    public String getType() 
+</code></pre>
+
+<p>Returns the type of the object. </p>
+
+<p><strong>Return value:</strong> Static string: ‘APPLE_VAS’ </p>
+
+<h3 id="getmerchanturl" class="anchor"><a class="heading-anchor" href="#getmerchanturl"><span></span></a>getMerchantUrl</h3>
+
+<pre class="prettyprint"><code>    public String getMerchantURL() 
+</code></pre>
+
+<p>Get the Merchant URL string </p>
+
+<p><strong>Parameter:</strong> None</p>
+
+<p><strong>Return value:</strong> </p>
+
+<ul>
+<li>If successful, returns the string of the merchant URL.</li>
+
+<li>If unsuccessful and no merchant URL has been set, returns null.</li>
+</ul>
+
+<h3 id="getterminalmode" class="anchor"><a class="heading-anchor" href="#getterminalmode"><span></span></a>getTerminalMode</h3>
+
+<pre class="prettyprint"><code>    public AppleVasConfig.TerminalMode getTerminalMode() 
+</code></pre>
+
+<p>Gets the current operating mode for the reader.</p>
+
+<p><strong>Parameter:</strong> None</p>
+
+<p><strong>Return value:</strong> TerminalMode.VasOnly </p>
+
+<p><strong>Throws:</strong> <code>RuntimeException</code> when the Zebra VAS service is not connected</p>
 
 <h3 id="onpassdetected" class="anchor"><a class="heading-anchor" href="#onpassdetected"><span></span></a>onPassDetected()</h3>
 
 <pre class="prettyprint"><code>    public void onPassDetected(Pass pass) 
 </code></pre>
 
-<p>The interface method onPassDetected() is a callback method called when an AppleVAS NFC pass is read. The SDK passes the VAS pass and identifies whether the pass is encrypted or decrypted (APPLEVAS-DECRYPT or APPLEVAS) <font size="5" color="red">Reword: (APPLEVAS-DECRYPT or APPLEVAS)</font></p>
+<p>The interface method onPassDetected() is a callback method called when an AppleVAS NFC pass is read. The SDK passes the VAS pass and identifies whether the pass is encrypted or decrypted (APPLEVAS-DECRYPT or APPLEVAS) <font size="5" color="red">Reword: (APPLEVAS-DECRYPT or APPLEVAS) check with Marek</font></p>
 
 <p><strong>Parameter:</strong> Pass object </p>
 
