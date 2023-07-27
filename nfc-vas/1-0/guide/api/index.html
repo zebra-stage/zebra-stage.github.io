@@ -227,36 +227,15 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p><font size="5" color="red">Review all content in the page for accuracy and completeness.</font></p>
-
 <p><strong>Zebra VAS SDK</strong> is an Android library built on top of the existing Android NFC APIs and Apple VAS protocol. It offers streamlined configuration and management of the necessary procedures involved in accessing and processing data from the Apple VAS NFC pass stored in the Apple Wallet. For simplicity, "Apple VAS NFC pass" will be referred to as "NFC pass" in this document.</p>
 
 <p>This section discusses the contents of the NFC pass, offers guidance on developing an application to read the NFC pass, and presents the available APIs within the Zebra VAS SDK.</p>
 
 <h3 id="installsdk" class="anchor"><a class="heading-anchor" href="#installsdk"><span></span></a>Install SDK</h3>
 
-<p>Download the SDK from the Zebra support portal and import the Android .AAR file into the "libs" folder of the Android application project.</p>
+<p>Download the SDK from the <a href="https://www.zebra.com/us/en/support-downloads.html">Zebra Support Portal</a> and import the Android .AAR file into the "libs" folder of the Android application project.</p>
 
 <hr>
-
-<!--
-## Pass Information
-
-Information stored within an NFC pass include:
-
-* **Pass Type Identifier -** The provided string is used to search for passes within an Apple Wallet. It is recommended to use the format "pass.com.developer.appname". When an NFC reader specifies one or more Pass Type Identifiers, only passes that match those identifiers are retrieved.
-* **MerchantID -** The merchant ID is derived from the Pass Type Identifier as a SHA256 hash value. Each Pass Type Identifier has a corresponding MerchantID, establishing a direct relationship between them. Consequently, when using the Zebra VAS SDK, supplying the Pass Type Identifier alone is sufficient. The MerchantID can be read from the AppleVasConfig object.
-* **Private Key -** The NFC pass on the iPhone or Apple Watch is encrypted prior to being communicated to the Zebra mobile computer. The key used to encrypt the message is the encryption public key, provided in the json description for the pass. To decrypt the pass, the Zebra VAS SDK SDK needs the associated private key. The private key is acquired during pass creation, either by the developer with Apple's permission to create the pass or from the company that issued the NFC-enabled pass. If a private key is _not_ provided to the Zebra VAS SDK, the SDK returns the message encrypted and it is the developer's responsibility to decrypt it. For example, this may include sending the encrypted pass to a backend server to be decrypted and processed.
-* **Merchant URL -** (Optional) Passes are often used as loyalty cards. In situations where a customer is not yet a loyalty member, the user could simply tap the reader, and the Merchant URL can be transmitted to the device, guiding the user to a sign-up page. This implementation requires specific server APIs and processes that are beyond the scope of this document.
-* **Filter -** (Optional) A company may issue passes for different reasons and/or uses. The filter offers the ability to issue numerous similar passes with distinguiahsable variations.
-    * A sample use case could involve a company issuing a season of tickets to a sporting event. In this case, all the tickets originate from the same company, with each ticket sharing similarities except for access date, which serves as the sole distinguishing factor. This distinguishing factor is used as the filter to identify any combination of dates. For example, consider a scenario where there are 4 games taking place on different dates. The developer could assign each game a specific within the date filter. The Zebra VAS SDK SDK can support all 4 games by determining which bit is set. When using the NFC reader, a filter can be specified with one bit set for the current game, and it can be designated as a bit-mask. By doing so, any pass with the corresponding bit set for the present date can be read, while passes without the bit set can be skipped.
-
-At a minimum, the following information is required to read an Apple VAS pass:
-* Pass Type Identifier
-* Private Key
-
------
--->
 
 <h2 id="sdkobjects" class="anchor"><a class="heading-anchor" href="#sdkobjects"><span></span></a>SDK Objects</h2>
 
@@ -270,19 +249,37 @@ At a minimum, the following information is required to read an Apple VAS pass:
 <li><strong>Pass -</strong> an object representing the received NFC pass</li>
 </ol>
 
-<p><img src="flow-diagram.jpg" alt="" style="height:450px"></p>
+<!--  **REMOVE UNTIL DESCRIPTION IS AVAILABLE**
+<img src="flow-diagram.jpg" alt="" style="height:450px" />
 
-<p><font size="5" color="red">Marek - Add description for diagram</font></p>
+<font size="5" color="red">Marek - Add description for diagram</font> -->
 
 <h3 id="zebranfcvas" class="anchor"><a class="heading-anchor" href="#zebranfcvas"><span></span></a>ZebraNfcVas</h3>
 
-<p><strong>ZebraNfcVAS object</strong> is the main component of the SDK which establishes a connection with the Zebra NFC VAS service, handles all the communication with the NFC passes, configures the NFC reader, and reads the pass from the Apple wallet. This object must be explicitly created and initialized. After the pass is successfully read, ZebraNfcVas decrypts the data (given that a private key is provided and all information is correct and intact) and returns the Pass object back to the caller.</p>
+<p><strong>ZebraNfcVAS object</strong> is the main component of the SDK that establishes a connection with the Zebra NFC VAS service, handles all the communication with the NFC passes, configures the NFC reader, and reads the pass from the Apple wallet. This object must be explicitly created and initialized. After the pass is successfully read, ZebraNfcVas decrypts the data (given that a private key is provided and all information is correct and intact) and returns the Pass object back to the caller. If a private key is not provided, the SDK returns the encrypted data. </p>
 
 <h3 id="vasconfig" class="anchor"><a class="heading-anchor" href="#vasconfig"><span></span></a>VasConfig</h3>
 
 <p><strong>VasConfig</strong> is a configuration object automatically generated by calling createAppleVasConfig method from the SDK. It contains configuration for the NFC pass, including pass type identifier, private key, etc. Only one configuration object can be created at a time. The configuration object contains one or more Pass Type Identifier(s), which identifies the pass to be returned, and may contain an associated private key, used to decrypt data from the pass.</p>
 
-<p>Example 1 of a configuration object:</p>
+<p>Example 1 of a configuration object with one pass type identifier:</p>
+
+<ul>
+<li>Pass Type Identifier:
+
+
+<ul>
+<li>pass.com.zebra.special_holiday_event_pass</li></ul>
+</li>
+
+<li>Private Key: decrypts the data from the pass</li>
+
+<li>Filter (optional)</li>
+
+<li>Merchant URL (optional)</li>
+</ul>
+
+<p>Example 2 of a configuration object with 2 pass type identifiers:</p>
 
 <ul>
 <li>Pass Type Identifier:
@@ -301,26 +298,9 @@ At a minimum, the following information is required to read an Apple VAS pass:
 <li>Merchant URL (optional)</li>
 </ul>
 
-<p>Example 2 of a configuration object:</p>
-
-<ul>
-<li>Pass Type Identifier:
-
-
-<ul>
-<li>pass.com.zebra.special_holiday_event_pass</li></ul>
-</li>
-
-<li>Private Key: decrypts the data from the pass</li>
-
-<li>Filter (optional)</li>
-
-<li>Merchant URL (optional)</li>
-</ul>
-
 <h3 id="pass" class="anchor"><a class="heading-anchor" href="#pass"><span></span></a>Pass</h3>
 
-<p>The <strong>Pass object</strong> encapsulates the information about the NFC pass that is read, including the payload data and supplementary metadata. The Pass object enables developers to validate the pass type and ensure that it is not a replay attack (i.e. the date and time is within 10 seconds of the actual date and time), adhering to Apple requirements. <font size="4" color="red">Check with Marek - validate if accurate</font></p>
+<p>The <strong>Pass object</strong> encapsulates the information about the NFC pass that is read, including the payload data and supplementary metadata. The Pass object enables developers to validate the pass type and ensure that it is not a replay attack (i.e. the date and time is within 10 seconds of the actual date and time), adhering to Apple requirements.</p>
 
 <hr>
 
@@ -413,7 +393,7 @@ public void onServiceConnection() {
 }
 </code></pre>
 
-<p>h. <strong>Call disableReadPassMode before the app goes to the background or when the activity ends -</strong> This returns the device to the default polling mode. </p>
+<p>h. <strong>Call disableReadPassMode before the app goes to the background or when the activity ends -</strong> This returns the device to the default NFC Forum Poll Mode. </p>
 
 <pre class="prettyprint"><code>@Override
 public void onPause() {
@@ -507,7 +487,7 @@ public void onPause() {
 <pre class="prettyprint"><code>    public void setPassTypeIds(String[] passTypeIds)
 </code></pre>
 
-<p>Sets one or more Pass Type Identifiers in the app prior to reading the NFC pass. The Pass Type Identifiers are provided by either Apple or the NFC card vendor. This overwrites any existing values. The app uses these unique string values as identifiers to ensure that when it reads the NFC pass in the Apple Wallet, it can verify whether the pass type identifier matches the one that was used during the NFC pass creation process. These identifiers are typically in the form 'pass.com.companyname' or other similar reverse domain string. When an NFC reader specifies one or more Pass Type Identifiers, only passes that match those identifiers are retrieved. </p>
+<p>Sets one or more Pass Type Identifiers in the app prior to reading the NFC pass. The Pass Type Identifier is provided by either the issuer of the NFC pass or Apple. This overwrites any existing values. The app uses these unique string values as identifiers to ensure that when it reads the NFC pass in the Apple Wallet, it can verify whether the pass type identifier matches the one that was used during the NFC pass creation process. These identifiers are typically in the form 'pass.com.companyname' or other similar reverse domain string. When an NFC reader specifies one or more Pass Type Identifiers, only passes that match those identifiers are retrieved. </p>
 
 <p><strong>Parameter:</strong> String[] passTypeIds <br>
 This is an array of one or more Pass Type IDs. For example, {“pass.com.pronto.zebra-wallet-pass.demo”} or {“pass.com.zebra”, “pass.com.xyz.somethingspecific”}. When attempting to read a pass, the pass being read is checked against each Pass Type ID in the array.</p>
@@ -521,7 +501,7 @@ This is an array of one or more Pass Type IDs. For example, {“pass.com.pronto.
 
 <li><code>UnsupportedEncodingException</code> when a conversion encoding error occurs. </li>
 
-<li><code>NoSuchAlgorithmException</code> when a SHA256 conversion error occurs. <font size="5" color="red">Check with Marek to fine tune.</font> </li>
+<li><code>NoSuchAlgorithmException</code> when a SHA256 conversion error occurs. </li>
 </ul>
 
 <h3 id="setprivatekey" class="anchor"><a class="heading-anchor" href="#setprivatekey"><span></span></a>setPrivateKey</h3>
@@ -554,7 +534,7 @@ This is an array of one or more Pass Type IDs. For example, {“pass.com.pronto.
 <pre class="prettyprint"><code>    public void setFilter(byte[] filter, FilterType type)
 </code></pre>
 
-<p>(Optional) Sets the filter information to be read for the NFC pass. The filter is supplied by the merchant of the NFC pass. This overwrites any pre-existing value. A company may issue passes for different reasons and/or uses. The filter offers the ability to issue numerous similar passes with distinguiahsable variations. <font size="5" color="red">Check with Marek</font></p>
+<p>(Optional) Sets the filter information to be read for the NFC pass. The filter is supplied by the merchant of the NFC pass. This overwrites any pre-existing value. A company may issue passes for different reasons and/or uses. The filter offers the ability to issue numerous similar passes with distinguiahsable variations. </p>
 
 <p>A sample use case could involve a company issuing a season of tickets to a sporting event. In this case, all the tickets originate from the same company, with each ticket sharing similarities except for access date, which serves as the sole distinguishing factor. This distinguishing factor is used as the filter to identify any combination of dates. For example, consider a scenario where there are 4 games taking place on different dates. The developer could assign each game a specific within the date filter. The Zebra VAS SDK SDK can support all 4 games by determining which bit is set. When using the NFC reader, a filter can be specified with one bit set for the current game, and it can be designated as a bit-mask. By doing so, any pass with the corresponding bit set for the present date can be read, while passes without the bit set can be skipped.</p>
 
@@ -654,7 +634,7 @@ This is the merchant URL string for the associated pass, which is generally used
 <pre class="prettyprint"><code>    pubilc void enableReadPassMode()
 </code></pre>
 
-<p>Reader/writer capabilities are enabled and polling is configured for the Zebra NFC reader to read NFC Tech Type A and Type B cards. Card emulation mode is disabled. <font size="5" color="red">Check with Marek – fine tune</font></p>
+<p>Enables read/write capabilities in the Android Reader. In this case, polling is configured for the Zebra NFC reader to read NFC Type A and Type B cards. Card emulation is disabled.</p>
 
 <blockquote>
   <p>Since the NFC resources are fully allocated, no other application (running on the foreground or background) can request for NFC resources.</p>
@@ -669,7 +649,7 @@ This is the merchant URL string for the associated pass, which is generally used
 <pre class="prettyprint"><code>    public void disableReadPassMode()
 </code></pre>
 
-<p>Returns to default polling mode (all NFC card technologies are enabled). This method should be called whenever the app moves to the background or when the activity is terminated. <font size="5" color="red">Check with Marek – fine tune</font></p>
+<p>Returns to default NFC Forum Poll Mode. This method should be called whenever the app moves to the background or when the activity is terminated. </p>
 
 <p><strong>Parameter:</strong> None</p>
 
@@ -719,7 +699,7 @@ This is the merchant URL string for the associated pass, which is generally used
 <pre class="prettyprint"><code>    public void onPassDetected(Pass pass)
 </code></pre>
 
-<p>The interface method onPassDetected is a callback that gets invoked when a NFC pass is read. The SDK passes the NFC pass and identifies whether the pass is encrypted or decrypted. <strong>Pass</strong> is a class where all Pass data can be accessed via getter methods:</p>
+<p>The interface method onPassDetected is a callback that gets invoked when an NFC pass is read. The SDK passes the NFC pass and identifies whether the pass is encrypted or decrypted. <strong>Pass</strong> is a class where all Pass data can be accessed via getter methods:</p>
 
 <ul>
 <li><code>public String getStatusWord()</code> – Returns the StatusWord of the NFC pass detected</li>
@@ -780,616 +760,14 @@ This is the merchant URL string for the associated pass, which is generally used
     1f8dcc5657963ff3645c2edd727c18aa35e755a3c2eaa4d63
 </code></pre>
 
-<!--
-**VasConfig -** base class object used to provide an interface for storing and accessing merchant parameters required to access a VAS pass
-* VasConfig() - constructor
-* getType() - return the specific type of the VAS object
-* setPrivateKey() - set the private key
-* getPrivateKey() - return the current private key in the config object
+<hr>
 
-**AppleVASConfig -** a VASConfig object that contains the Apple VAS specific parameters for accessing and processing an Apple VAS pass
-* appleVasConfig constructor - create a new VAS Config object, with initialization, that contains details specific to Apple VAS interactions
-* setPassTypeIds() - Mandatory - specify an array of PassTypeIds needed to read an Apple VAS pass
-* setFilter() - Optional - configure the filter used to read an Apple VAS pass
-* setFilterNone() - clear the filter parameter so it won’t be used
-* setMerchantUrl() - specify the merchant URL needed to read an Apple VAS pass
-* getPassTypeIds() - return the array of pass type IDs
-* getMerchantIds() - get the calculated Merchant ID
-* getFilter() - return the current filter configuration
-* getMerchantUrl() - get the current merchant URL
-* getTerminalMode() - get the current terminal operating mode
-* getProtocol() - get the current VAS Protocol
+<h2 id="bestpractices" class="anchor"><a class="heading-anchor" href="#bestpractices"><span></span></a>Best Practices</h2>
 
-**ZebraNfcVas -** class that receives tag notifications, determines if it’s a valid pass and if so, processes the pass, providing either a decrypted pass if the correct PrivateKey was set or an encrypted pass (if no PrivateKey, or the wrong PrivateKey was set).
-* ZebraNfcVas constructor - provide the current activity and the object that implements the response interface
-* connectToReader() - attach to the NFC system and register the caller to receive the notifications
-* getVersionString - get the version of the API as a string (Major Minor Build Revision)
-* getVersion() - get the version of the API as a byte array
-* getName() - get the name of the API
-* setVasConfig() - add one VasConfig object to the internal list of config objects that should be used
-* setVasConfgs() - add an array of VasConfig objects to the internal list
-* clearConfigs() - clear the internal list of configurations
-* enableReadPassMode() - configure the polling to only read for the types of cards in which passes are stored
-* disabelReadPassMode() - return the polling to it’s original configuration
-* Interface: onPassDetected() - interface function that will provide the final pass contents as well as the merchantId that matched the pass that was read.
+<p>For optimal performance of the Apple VAS solution, set the <strong>Card Detection Mode</strong> (polling mode) to <strong>Standard</strong> in the <strong>Enterprise NFC Settings.</strong> To access these settings, go to device Settings &gt; Connected Devices. For more information, refer to the product documentation posted on the <a href="https://www.zebra.com/us/en/support-downloads.html">Zebra support portal</a>.</p>
 
----
-
-## VasConfig
-
-VasConfig for a configuration object. It will contain the specific configuration information for accessing and interpreting a VAS pass. This is a base class (interface) and shall not be instantiated by itself.
-
-VasConfig() - constructor
-
-### getType()
-
-
-<pre class="prettify">
-    <code>
-public VasType getType()
-    </code>
-</pre>
-
-
-Returns the type of the VASConfig object
-
-**Return values:**
-VasType will always return VasType.APPLE_VAS
-
-### setPrivateKey()
-
-
-<pre class="prettify">
-    <code>
-public void setPrivateKey(String key)
-    </code>
-</pre>
-
-Sets the private key in PEM format.
-
-**Parameters:**
-<code>String key</code>
-
-PEM formatted EC Private key. This must not be null and the string must not be empty. It must also be correctly formatted or decryption to succeed. Example:
-
-     -----BEGIN EC PARAMETERS-----\n
-     alkidnklde==\n
-     -----END EC PARAMETERS-----\n
-     -----BEGIN EC PRIVATE KEY——\n
-     aslkdflaksdfjfkk328klxld...\n
-     ak7ujvbn9b8o3bv9hae98fn2...\n
-     9asjh90fuh34n2uh33==\n
-     -----END EC PRIVATE KEY-----\n
-
-**Return values:**
-None
-
-**Throws:**
-<code>InvalidParameterException</code> if there the parameter is null or the empty string.
-
-### getPrivateKey()
-
-
-<pre class="prettify">
-<code>public String getPrivateKey()</code>
-</pre>
-
-
-Get the currently configured private key
-
-**Return values:**
-String - PEM formatted private key value that was provided to the VasConfig
-
----
-
-## AppleVASConfig
-
-This is the configuration class object for Apple VAS passes. This is setting information used to select passes that will be read. The passes that will be read must match the configuration provided by the AppleVASConfig object. AppleVasConfig Implements VasConfig.
-
-### AppleVasConfig()
-
-
-<pre class="prettify">
-<code>public void AppleVasConfig()</code>
-</pre>
-
-
-Constructor that creates an empty AppleVasConfig object with initialization, that contains details specific to Apple VAS interactions
-
-### setPassTypeIds()
-
-
-<pre class="prettify">
-<code>public void setPassTypeIds(String[] passTypeIds)</code>
-</pre>
-
-
-Sets the Pass Type IDs that should match the VAS pass to read. This is a list of zero or more Pass Type IDs as strings. This will OVERWRITE any existing values.
-
-**Parameters:**
-<code>String[] passTypeIds</code>
-
-This is an array of one or more Pass Type IDs. A Pass Type ID is generally of the form: {“pass.com.zebra”} or {“pass.com.zebra”, “pass.com.xyz.somethingspecific”}
-
-When attempting to read a pass, each Pass Type ID in the array will be used to attempt to read the pass. This means that a pass that matches any of the specified Pass Type IDs will be returned.
-
-**Return values:**
-None
-
-**Throws:**
-<code>InvalidParameterException</code> if there are null or empty strings in the array, if there are invalid characters in any of the pass Type Ids, or if the array is empty.
-
-### setFilter()
-
-
-<pre class="prettify">
-<code>public void setFilter(byte[] filter, FilterType type)</code>
-</pre>
-
-
-Set the filter information for the VAS pass to read. This will OVERWRITE any existing value
-
-**Parameters:**
-
-<code>byte[] filter</code>
-
-This is a 4-byte array that is the filter value that will be used during the pass retrieval process. It will be used according to the filter type specified in parameter one.
-
-<code>FilterType type</code>
-
-This is one of two constants: `FILTER_TYPE_EXACT_MATCH` or `FILTER_TYPE_BIT_MASK`
-
-Exact Match will exactly match the filter value to the value specified in the pass.
-
-Bit Mask will match the specified filter value bit-wise ANDed with the merchant pass filter value. If the result is equal to the merchant pass filter value, then the match is a success.
-Zebra VAS SDK SDK User’s Guide v1.0.0.1 10
-
-**Return values:**
-None
-
-**Throws:**
-`InvalidParameterException` if the filter value is not exactly 4 bytes in size
-
-### setFilterNone()
-
-
-<pre class="prettify">
-<code>public void setFilterNone()</code>
-</pre>
-
-
-Clear the Filter. This means that any filter value in a pass (including no filter value) will be accepted.
-
-### setMerchantUrl()
-
-
-<pre class="prettify">
-<code>public void setMerchantURL(String url)</code>
-</pre>
-
-
-Set the merchant’s URL information for the VAS pass to read. This will OVERWRITE any existing value
-
-**Parameters:**
-<code>String url</code>
-
-This is the merchant URL string for the associated pass. This is the URL generally used to sign up for a pass. It MUST use the https:// format and must include the https://
-
-Maximum length is 64 bytes
-
-**Return values:**
-None
-
-**Throws:**
-`InvalidParameterException` if too long or does not contain a valid https:// header
-
-### setPassTypeIds()
-
-
-<pre class="prettify">
-<code>public String[] getPassTypeIds()</code>
-</pre>
-
-
-Get the list of currently configured Pass Type IDs. This contains a list of zero or more Pass Type IDs as Strings
-
-**Parameters:**
-None
-
-**Return values:**
-`String[]` of Pass Type Ids.
-`null` if no passTypeIds have been set.
-
-### getMerchantIds()
-
-
-<pre class="prettify">
-<code>public byte[][] getMerchantIds()</code>
-</pre>
-
-
-Get the list of currently configured Merchant IDs. This contains a list of zero or more Merchant IDs as byte arrays. The merchant ID is the SHA256 of the Pass Type ID.
-
-**Parameters:**
-None
-
-**Return values:**
-`byte[][]` of Merchant Ids.
-`null` if no passTypeIds have been set.
-
-### getFilter()
-
-
-<pre class="prettify">
-<code>public byte[] getFilter()</code>
-</pre>
-
-
-Get the currently configured filter
-
-**Parameters:**
-None
-
-**Return values:**
-`byte[]` of the filter. This will always be exactly 5 bytes, or `null` if no filter has been set
-The `filter[5]` will contain the filter type (0x01 is exact match, 0x02 is bit_mask).
-
-### getMerchantURL()
-
-
-<pre class="prettify">
-<code>public String getMerchantURL()</code>
-</pre>
-
-
-Get the Merchant URL string
-
-**Parameters:**
-None
-
-**Return values:**
-`String` of Merchant URL
-`null` if no Merchant URL has been set
-
-### getTerminalMode()
-
-
-<pre class="prettify">
-<code>public String getMerchantURL()</code>
-</pre>
-
-
-Return the private key currently configured. It will be in PEM format
-
-**Parameters:**
-None
-
-**Return values:**
-Will always return `TerminalMode.VasOnly`
-
-### getProtocol()
-
-
-<pre class="prettify">
-<code>public AppleVasConfig.VasProtocol getProtocol()</code>
-</pre>
-
-
-Return the private key currently configured. It will be in PEM format
-
-**Parameters:**
-None
-
-**Return values:**
-will always return `VasProtocol.FullVASProtocol`
-
----
-
-## ZebraNfcVas
-
-This is the top interface for the Zebra NFC VAS SDK. It manages the tag process and interaction. ZebraNfcVas implements NfcAdapter.ReaderCallback
-
-### ZebraNfcVas()
-
-
-<pre class="prettify">
-<code>public void ZebraNfcVas(Activity activity, Response resp)</code>
-</pre>
-
-
-constructor, connects the library to the desired activity. Must also provide the Response interface implementation which will receive the Pass read.
-
-**Parameters:**
-`Activity activity` - this is the activity that has registered for the NFC intent
-Response resp - this is the class that has implemented the Response interface and will receive the pass data
-
-**Return values:**
-None
-
-**Throws:**
-`InvalidParameterException` if either parameter is NULL
-
-
-<pre class="prettify">
-<code>public void ZebraNfcVas(Activity activity, Response resp, VasConfig cfg)</code>
-</pre>
-
-
-constructor, connects the library to the desired activity. Must also provide the Response interface implementation which will receive the Pass read. This constructor allows for creating the object and specifying the desired configuration objects at the same time
-
-**Parameters:**
-`Activity activity` - this is the activity that has registered for the NFC intent
-`Response resp` - this is the class that has implemented the Response interface and will receive the pass data `VasConfig cfg` - the configuration object that will be used for retrieving and reading a pass
-
-**Return values:**
-None
-
-**Throws:**
-`InvalidParameterException` if either parameter is NULL
-
-### connectToReader()
-
-
-<pre class="prettify">
-<code>public int connectToReader()</code>
-</pre>
-
-
-Attach the ZebraNfcVas object to the NfcAdapter.
-
-**Parameters:** None
-
-**Return values:** int - result value:
-* 0 - success
-* -1 - the current hardware does not have NFC support
-* -2 - the NFC hardware is currently disabled
-
-### getVersionString()
-
-
-<pre class="prettify">
-<code>public String getVersionString()</code>
-</pre>
-
-
-Return the version of the ZebraNFCVAS SDK formatted as MAJ.MIN.BLD.REV
-
-**Parameters:** None
-
-**Return values:**
-* `String` - the SDK version in MAJOR.MINOR.BUILD.REVISION format
-    * Major - change in the API that is no longer compatible with previous version
-    * Minor - improvements in performance or additional APIs that are still compatible with previous versions
-    * Build - Build number
-    * Revision - Revision of the current version and build
-
-### getVersion()
-
-
-<pre class="prettify">
-<code>public byte[] getVersion()</code>
-</pre>
-
-
-Return the version of the ZebraNFCVAS SDK in a 4-byte byte[]
-
-**Parameters:** None
-
-**Return values:**
-* `byte[]` - the SDK version in MAJOR.MINOR.BUILD.REVISION format:
-    * Major - change in the API that is no longer  compatible with previous version
-    * Minor - improvements in performance or additional APIs that are still compatible with previous versions
-    * Build - Build number
-    * Revision - Revision of the current version and build
-
-### getName()
-
-
-<pre class="prettify">
-<code>public String getName()</code>
-</pre>
-
-
-Return the version of the name of the ZebraNFCVAS SDK
-
-**Parameters:** None
-
-**Return values:**  `String` - the name of the SDK
-
-### setVasConfig()
-
-
-<pre class="prettify">
-<code>public void setVasConfig(VasConfig cfg)</code>
-</pre>
-
-
-Specify the VasConfig object that should be used for interacting with passes. This will add to the array of current config object(s)
-
-**Parameters:** `VasConfig` - a VasConfig object
-
-**Return values:** None
-
-**Throws:** `InvalidParameterException` if cfg is `null`.
-
-### setVasConfig()
-
-
-<pre class="prettify">
-<code>public void setVasConfig(VasConfig[] cfgs)</code>
-</pre>
-
-
-Specify the VasConfig object or objects that should be used for interacting with passes. This can have one or more VasConfig objects. This will add to the array of current config object(s)
-
-**Parameters:** `VasConfig[]` - an array of one or more VasConfig objects.
-
-**Return values:** None
-
-**Throws:** `InvalidParameterException` if cfg is `null` or if there are more than one of a single VasConfig type.
-
-### clearConfigs()
-
-
-<pre class="prettify">
-<code>public void clearConfigs()</code>
-</pre>
-
-
-Removes all VasConfig objects from the SDK.
-
-**Parameters:** None
-
-**Return values:** None
-
-### enableReadPassMode()
-
-
-<pre class="prettify">
-<code>public void enableReadPassMode()</code>
-</pre>
-
-
-Configure polling for reader mode only and only for Tech TypeA and Tech TypeB
-
-**Parameters:** None
-
-**Return values:** None
-
-### disableReadPassMode()
-
-
-<pre class="prettify">
-<code>public void disableReadPassMode()
-</code>
-</pre>
-
-
-Return to default polling configuration
-
-**Parameters:** None
-
-**Return values:** None
-
-### onPassDetected()
-
-
-<pre class="prettify">
-<code>public void onPassDetected(Pass pass)
-</code>
-</pre>
-
-
-This interface must be implemented in the calling application. The interface method onPassDetected() will be called when an AppleVAS NFC token is read. The ZebraNFCVAS SDK will provide the Pass that was read. The Pass object will have the decrypted payload (if possible) and meta data about the pass
-
-**Parameters:** Pass pass - a Pass object containing information about the pass that was read.
-
-**Return values:** None
-
-## Pass
-
-This an object that contains information and the payload of the pass read from the user’s mobile device.
-
-### getPassType()
-
-
-<pre class="prettify">
-<code>public Pass.Type getPassType()
-</code>
-</pre>
-
-
-Returns the type of the Pass
-
-**Parameters:** None
-
-**Return values:** `Pass.Type.AppleVas`
-
-### getPayloadDate()
-
-
-<pre class="prettify">
-<code>public Date getPayloadDate()
-</code>
-</pre>
-
-
-Returns the Date of the pass. This corresponds to the time when the pass NFC message was generated by an Apple device. The date should be examined and the pass should be rejected if the time is more than 10 sec older than the current time on the reading device. This is to prevent recording and replay attacks. The Date should be within 10 sec of the current date and time
-
-**Parameters:** None
-
-**Return values:** `Date` date
-
-### getPayloadMessage()
-
-
-<pre class="prettify">
-<code>public byte[] getPayloadMessage()
-</code>
-</pre>
-
-
-Returns the content of the NFC message received from the Apple device. If the Private Key was provided and the decryption is successful, this will be the decrypted payload of the NFC message. Otherwise, this will be the encrypted payload.
-
-**Parameters:** None
-
-**Return values:** `byte[]` payload
-
-### getPassTypeId()
-
-
-<pre class="prettify">
-<code>public String getPassTypeId()
-</code>
-</pre>
-
-
-Returns the Pass Type Id that matches the pass that was read.
-
-**Parameters:** None
-
-**Return values:** `String` Pass Type Id
-
-### getMerchantId()
-
-
-<pre class="prettify">
-<code>public byte[] getMerchantId()
-</code>
-</pre>
-
-
-Returns the MerchantId that matches the pass that was read. This is the SHA256 of the Pass Type Id.
-
-**Parameters:** None
-
-**Return values:** `byte[]` MerchantId
-
-### getResultCode()
-
-
-<pre class="prettify">
-<code>public Pass.Result getResultCode()
-</code>
-</pre>
-
-
-Returns the result code for receiving the pass.
-
-**Parameters:** None
-
-**Return values:**
-* `Pass.Result.Success` - pass was successfully read and decrypted
-* `Pass.Result.Failure` - there was a failure attempting to read the pass. The payload is not valid
-* `Pass.Result.NotVas` - a tag was detected but it was not an Apple VAS pass and was not read
-* `Pass.Result.IncorrectPrivateKey` - the private key provided does not correspond to the public key used to encrypt the pass. As a result, the pass could not be decrypted and the payload is encrypted
-* `Pass.Result.VasNotActive` - the Apple device did not have an active Apple VAS pass. This could be for a number of reasons, including, but not limited to:
-    * The user manually selected a pass that does not have an NFC enablement
-    * The user’s device requires authentication (FaceID or pass code) before the NFC pass can be read • The user’s device is locked
-* `Pass.Result.DecryptionFailure` - the attempt to decrypt the pass failed
-
----
--->
+<p><img src="demo-sample-info.gif" alt="" style="height:350px">
+<em>Card Detection Mode in Enterprise NFC Settings</em></p>
 
 <hr>
 
