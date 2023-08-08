@@ -1116,6 +1116,8 @@ public void disableScanner(View view) {
 </code>
 </pre>
 
+                                                    <hr>
+
                                                     <h2 id="scanner-list" class="anchor"><a class="heading-anchor" href="#scanner-list"><span></span></a>Get Currently Connected Scanner and Paired Devices</h2>
 
                                                     <p>All the paired Bluetooth devices can be obtained using the API call 'dcssdkGetAvailableScannersList'.</p>
@@ -1302,6 +1304,427 @@ public void onConnectingToLastConnectedScanner(BluetoothDevice device) {
 public void onScannerDisconnect() {
 
 }
+</code>
+</pre>
+
+                                                    <hr>
+
+                                                    <h2 id="sms-android" class="anchor"><a class="heading-anchor" href="#sms-android"><span></span></a>Remote Management Support (SMS)</h2>
+
+                                                    <p>SMS Packages are used for updating the firmware on the scanners and at the same time the configurations on the scanners could be modified with the configuration files which resides inside the SMS packages.</p>
+
+                                                    <p>These files are created with the 123Scan configuration utility and the file extension is as <strong>.smspkg</strong>. Go through this doc on SMS package generation from <a href="https://www.zebra.com/us/en/support-downloads/software/utilities/123scan-utility.html" target="_blank">123Scan Configuration Utility</a>.</p>
+
+                                                    <p>Scanner SDK for Android provides an API for SMS execution using the above .smspkg files and following content will provide the necessary implementation guide on how to implement the basic SMS functionality.</p>
+
+                                                    <p>First, permissions must be included in the Manifest file for the device to access SMS Package files in the storage.</p>
+
+<pre class="prettyprint">
+<code>
+&lt;uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+&lt;uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+&lt;uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
+&lt;uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+&lt;uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+&lt;uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" tools:ignore="CoarseFineLocation" />
+&lt;uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+&lt;uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+</code>
+</pre>
+
+                                                    <p>Secondly, the class 'IDcsSdkApiDelegate' must be implemented.</p>
+
+<pre class="prettyprint">
+<code>
+public class MainActivity extends AppCompatActivity implements IDcsSdkApiDelegate {
+    public static SDKHandler sdkHandler;
+    private ArrayList&lt;DCSScannerInfo> scannerInfoList = new ArrayList&lt;DCSScannerInfo>();
+    int scannerId;
+}
+</code>
+</pre>
+
+<p>With the implementation of 'IDcsSdkApiDelegate' interface the following methods will be implemented as well.</p>
+
+<pre class="prettyprint">
+<code>
+@Override
+public void dcssdkEventScannerAppeared(DCSScannerInfo dcsScannerInfo) {
+
+}
+
+@Override
+public void dcssdkEventScannerDisappeared(int i) {
+
+}
+
+@Override
+public void dcssdkEventCommunicationSessionEstablished(DCSScannerInfo dcsScannerInfo) {
+
+}
+
+@Override
+public void dcssdkEventCommunicationSessionTerminated(int i) {
+
+}
+
+@Override
+public void dcssdkEventBarcode(byte[] bytes, int i, int i1) {
+
+}
+
+@Override
+public void dcssdkEventImage(byte[] bytes, int i) {
+
+}
+
+@Override
+public void dcssdkEventVideo(byte[] bytes, int i) {
+
+}
+
+@Override
+public void dcssdkEventBinaryData(byte[] bytes, int i) {
+
+}
+
+@Override
+public void dcssdkEventFirmwareUpdate(FirmwareUpdateEvent firmwareUpdateEvent) {
+
+}
+
+@Override
+public void dcssdkEventAuxScannerAppeared(DCSScannerInfo dcsScannerInfo, DCSScannerInfo dcsScannerInfo1) {
+
+}
+
+@Override
+public void dcssdkEventConfigurationUpdate(ConfigurationUpdateEvent configurationUpdateEvent) {
+
+}                                                            
+</code>
+</pre>
+
+                                                    <p>After connecting to the scanner, user needs to provide the folder access permissions.</p>
+
+<pre class="prettyprint">
+<code>
+private static Uri persistedUri;
+private static final int MY_PERMISSIONS_REQUEST_READ_WRITE_URI = 200;
+private static final int MY_PERMISSIONS_REQUEST_WRITE_STORAGE = 100;
+</code>
+</pre>
+
+                                                    <p>Call below method to request the necessary permissions to create the directories if not permission is not already provided.</p>
+
+                                                    <p>If the permission is already provided next check whether the SMS package is there in the specified folder.</p>
+
+<pre class="prettyprint">
+<code>
+//Below method will verify that the .smspkg file is available or not.
+private void displaySmsPackageName() {
+    if (persistedUri != null) {
+        Uri smsPackageUri = getSmsPackageUri(persistedUri);
+        if (smsPackageUri != null && (smsPackageUri.getPath().endsWith(".smspkg") || smsPackageUri.getPath().endsWith(".SMSPKG"))) {
+            String name = getSmsPackageName(persistedUri);
+            tv_pkg.setText(name);
+        } 
+        else {
+            Toast.makeText(MainActivity.this, "SMS Package file not found in the selected folder", Toast.LENGTH_SHORT).show();
+        }
+    } 
+    else {
+        requestRuntimePermissionToCreateDirs(MainActivity.this);
+    }
+}
+</code>
+</pre>
+
+<pre class="prettyprint">
+<code>
+//If .smspkg file is available then below method will return the path
+public Uri getSmsPackageUri(Uri persistentUri) {
+    Uri smsPackageUri = null;
+    DocumentFile[] zebraSmsFiles = DocumentFile.fromTreeUri(this, persistentUri).listFiles();
+    for (DocumentFile documentFile : zebraSmsFiles) {
+        if (documentFile.getName().toLowerCase().endsWith(".smspkg")) {
+            smsPackageUri = documentFile.getUri();
+        }
+    }
+
+    return smsPackageUri;
+}
+
+//If .smspkg file is available then below method will return the file name
+public String getSmsPackageName(Uri persistentUri) {
+    String smsPackageName = null;
+    DocumentFile[] zebraSmsFiles = DocumentFile.fromTreeUri(this, persistentUri).listFiles();
+    for (DocumentFile documentFile : zebraSmsFiles) {
+        if (documentFile.getName().toLowerCase().endsWith(".smspkg")) {
+            smsPackageName = documentFile.getName();
+        }
+    }
+
+    return smsPackageName;
+}
+</code>
+</pre>
+
+<pre class="prettyprint">
+<code>
+//Read and Write permission is required to extract the SMS package file.
+private void requestRuntimePermissionToCreateDirs(Context context) {
+    if (Build.VERSION.SDK_INT &lt; Build.VERSION_CODES.TIRAMISU && ContextCompat.checkSelfPermission(context, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.shouldShowRequestPermissionRationale((Activity) context, android.Manifest.permission.READ_EXTERNAL_STORAGE)) {
+        } 
+        else {
+            ActivityCompat.requestPermissions((Activity) context, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, MY_PERMISSIONS_REQUEST_WRITE_STORAGE);
+        }
+    } 
+    else {
+        if (createDirectoryStructure(MainActivity.this)) {
+            requestPersistentUriPermissions();
+        }
+    }
+}
+</code>
+</pre>
+
+                                                    <p>SMS Package file will be placed under Downloads/ZebraSMS folder and the folder can be created by using below code. Folder can be customized as per user needs.</p>
+
+<pre class="prettyprint">
+<code>
+//Passing the folder name to create a directory
+private boolean createDirectoryStructure(Context context) {
+    if (createDirectory("/ZebraSMS")) {
+        return true;
+    }
+    Toast.makeText(context, "Error occurred during directory structure creation...", Toast.LENGTH_SHORT).show();
+
+    return false;
+}
+</code>
+</pre>
+
+<pre class="prettyprint">
+<code>
+//Creating a folder inside Downloads Public Directory
+private boolean createDirectory(String filePath) {
+    String toLocation = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath() + filePath;
+    File directory = new File(toLocation);
+    if (!directory.exists()) {
+        return (directory.mkdir());
+    } 
+    else {
+        return true;
+    }
+}
+</code>
+</pre>
+
+                                                    <p>To access SMS Package file inside Download/ZebraSMS folder requires Run Time folder access permissions. User can customize the folder or give any public directory path for folder access permissions.</p>
+
+<pre class="prettyprint">
+<code>
+//Asking user to get the access of the specified folder
+public void requestPersistentUriPermissions()  {
+    if (!getContentResolver().getPersistedUriPermissions().isEmpty()) {
+        List&lt;UriPermission> permissions = getContentResolver().getPersistedUriPermissions();
+        Collections.sort(permissions, new Comparator&lt;UriPermission>() {
+            public int compare(UriPermission o1, UriPermission o2) {
+                return (String.valueOf(o2.getPersistedTime())).compareTo(String.valueOf(o1.getPersistedTime()));
+            }
+        });
+
+        UriPermission p = permissions.get(0);
+
+        if (p.getUri().toString().contains("ZebraSMS")) {
+            this.persistedUri = p.getUri();
+            displaySmsPackageName();
+        } 
+        else {
+            startActivityForResult((new Intent("android.intent.action.OPEN_DOCUMENT_TREE")).putExtra("android.provider.extra.INITIAL_URI", DocumentsContract.buildDocumentUri("com.android.externalstorage.documents", "primary:Download/ZebraSMS")), MY_PERMISSIONS_REQUEST_READ_WRITE_URI);
+        }
+    } 
+    else {
+        startActivityForResult((new Intent("android.intent.action.OPEN_DOCUMENT_TREE")).putExtra("android.provider.extra.INITIAL_URI", DocumentsContract.buildDocumentUri("com.android.externalstorage.documents", "primary:Download/ZebraSMS")), MY_PERMISSIONS_REQUEST_READ_WRITE_URI);
+    }
+}
+
+//Based on user response for Read/Write Permission, onRequestPermissionResult will be called
+@Override
+public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    switch (requestCode) {
+        case MY_PERMISSIONS_REQUEST_WRITE_STORAGE:
+            if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
+                Toast.makeText(MainActivity.this, "You denied storage permission which is needed to create directory structure..", Toast.LENGTH_SHORT).show();
+            } 
+            else if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (createDirectoryStructure(MainActivity.this)) {
+                    requestPersistentUriPermissions();
+                }
+            }
+            break;
+        default:
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+}
+
+//Based on user response for folder access permission, onActivityResult will be called
+@Override
+public void onActivityResult(int paramInt1, int paramInt2, Intent paramIntent) {
+    super.onActivityResult(paramInt1, paramInt2, paramIntent);
+    if (paramInt1 == MY_PERMISSIONS_REQUEST_READ_WRITE_URI && paramInt2 == -1) {
+        this.persistedUri = paramIntent.getData();
+        this.getContentResolver().takePersistableUriPermission(paramIntent.getData(), Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        displaySmsPackageName();
+    }
+}
+</code>
+</pre>
+
+                                                    <p>To start SMS execution you may invoke 'executeSMS' method below. Note that the location of the sms package file is given in the 'inXml' String. The 'SmsExecuteAsyncTask' gets executed as the next statement fulfilling requested task.</p>
+
+<pre class="prettyprint">
+<code>
+//Creating inXML for sms package execution
+public void executeSms() {
+    if(persistedUri != null){
+        Uri smsPackageUri = getSmsPackageUri(persistedUri);
+        if (smsPackageUri != null && (smsPackageUri.getPath().endsWith(".smspkg") || smsPackageUri.getPath().endsWith(".SMSPKG"))) {
+            String in_xml = "&lt;inArgs>&lt;cmdArgs>&lt;arg-string>" + smsPackageUri + "&lt;/arg-string>&lt;/cmdArgs>&lt;/inArgs>";
+            SmsExecuteAsyncTask cmdExecTask = new SmsExecuteAsyncTask(scannerId,
+                    DCSSDKDefs.DCSSDK_COMMAND_OPCODE.DCSSDK_EXECUTE_SMS_PACKAGE, null);
+            cmdExecTask.execute(new String[]{in_xml});
+        } 
+        else{
+            Toast.makeText(MainActivity.this, "SMS Package Directory not selected", Toast.LENGTH_SHORT).show();
+            requestPersistentUriPermissions();
+        }
+    }
+}
+</code>
+</pre>
+
+                                                    <p>Finally, 'dcssdkExecuteCommandOpCodeInXMLForScanner' is called when the 'scannerId','opcode', 'outXml' and the SMS package file path are all set.</p>
+
+<pre class="prettyprint">
+<code>
+//Asynctask to start the SMS Package Execution.
+private class SmsExecuteAsyncTask extends AsyncTask<String, Integer, Boolean> {
+    int scannerId;
+    StringBuilder outXML;
+    DCSSDKDefs.DCSSDK_COMMAND_OPCODE opcode;
+
+    public SmsExecuteAsyncTask(int scannerId, DCSSDKDefs.DCSSDK_COMMAND_OPCODE opcode, StringBuilder outXML) {
+        this.scannerId = scannerId;
+        this.opcode = opcode;
+        this.outXML = outXML;
+    }
+
+    @Override
+    protected void onPreExecute() {
+        super.onPreExecute();
+    }
+    
+    @Override
+    protected Boolean doInBackground(String... strings) {
+        try{
+            if (sdkHandler != null) {
+                if (outXML == null) {
+                    outXML = new StringBuilder();
+                }
+                DCSSDKDefs.DCSSDK_RESULT result = sdkHandler.dcssdkExecuteCommandOpCodeInXMLForScanner(opcode, strings[0], outXML, scannerId);
+                if (result == DCSSDKDefs.DCSSDK_RESULT.DCSSDK_RESULT_SUCCESS)
+                {
+                    return true;
+                }
+                else if (result == DCSSDKDefs.DCSSDK_RESULT.DCSSDK_RESULT_FAILURE)
+                {
+                    return false;
+                }
+            }
+            return false;
+        }
+        catch (Exception e) {
+            Log.i(TAG,"ERRRRR: "+e.getLocalizedMessage());
+            return false;
+        }
+    }
+    
+    @Override
+    protected void onPostExecute(Boolean execCommandStatus) {
+        super.onPostExecute(execCommandStatus);
+        if (!execCommandStatus) {
+            Toast.makeText(MainActivity.this, "SMS package execution failed..!", Toast.LENGTH_SHORT).show();
+        } 
+        else {
+            Toast.makeText(MainActivity.this, "SMS package execution successful!", Toast.LENGTH_SHORT).show();
+        }
+    }
+}
+</code>
+</pre>
+
+                                                    <p>Once a firmware update has started, user can be notified of the firmware update events inside the 'dcssdkEventFirmwareUpdate(FirmwareUpdateEvent firmwareUpdateEvent)' method where 'firmwareUpdateEvent.getEventType()' provides the status of the firmware update.</p>
+
+<pre class="prettyprint">
+<code>
+//Status of Firmware Update Events
+switch(firmwareUpdateEvent.getEventType()) {
+    case SCANNER_UF_SESS_START:
+        Log.i(TAG,"Firmware update started...");
+        break;
+    case SCANNER_UF_DL_START:
+        Log.i(TAG,"Firmware downloading...");
+        break;
+    case SCANNER_UF_DL_PROGRESS:
+        Log.i(TAG, "SCANNER_UF_DL_PROGRESS");
+        break;
+    case SCANNER_UF_DL_END:
+        Log.i(TAG, "Firmware downloaded");
+        break;
+    case SCANNER_UF_SESS_END:
+        Log.i(TAG, "Firmware updated successfully...");
+        onRebootStarted();
+        break;
+    case SCANNER_UF_STATUS:
+        Log.i(TAG, firmwareUpdateEvent.getStatus().toString());
+        break;
+}
+</code>
+</pre>
+
+                                                    <p>If the scanner is not connected after reboot with the Firmware Update, try to do it using pairing barcode and call the below method to trigger the configuration update process.</p>
+
+<pre class="prettyprint">
+<code>
+SmsPackageUpdateManager.getInstance().onScannerConnected();
+</code>
+</pre>
+
+                                                    <p>Once a Configuration update has started, user can be notified of the configuration update events inside the 'dcssdkEventConfigurationUpdate(ConfigurationUpdateEvent configurationUpdateEvent)' method where 'configurationUpdateEvent.getEventType()' provides the status of the configuration update.</p>
+
+<pre class="prettyprint">
+<code>
+//Status of Configuration Update Events
+switch (configurationUpdateEvent.getEventType()) {
+    case SCANNER_UC_SESS_START:
+        Log.i(TAG, "Configuration updated started...");
+        break;
+    case SCANNER_UC_PROGRESS:
+        Log.i(TAG, "Configuration update in progress");
+        break;
+    case SCANNER_UC_SESS_END:
+        Log.i(TAG, "Configuration update completed...");
+        isRebootSuccess = false;
+        break;
+    case SCANNER_UC_STATUS:
+        Log.i(TAG,"Configuration update failed...");
+        persistedUri = null;
+        isRebootSuccess = false;
+        break;
+}                                                            
 </code>
 </pre>
                                                 </div>
