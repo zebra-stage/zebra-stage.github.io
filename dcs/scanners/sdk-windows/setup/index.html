@@ -390,11 +390,11 @@
 </code>
 </pre>
 
-                                                    <h3 id="simulatedhidkeyboardoutput" class="anchor"><a class="heading-anchor" href="#simulatedhidkeyboardoutput"><span></span></a>Simulated HID Keyboard Output</h3>
+                                                    <h3 id="simulated-hid-keyboard-configuration" class="anchor"><a class="heading-anchor" href="#simulated-hid-keyboard-configuration"><span></span></a>Simulated HID Keyboard Configuration</h3>
 
-                                                    <p>The Zebra Scanner SDK is capable of configuring a scanner to send simulated HID keyboard output (also known as HIDKB pump, or HIDKB emulation mode) while in USB SNAPI, USB IBM Hand-held, USB IBM Table-top, SSI, or RS-232 Nixdorf Mode B communication modes. This simulated HID keyboard output functionality can be configured by changing the XML elements in the <HID_KB_PUMP_SETTINGS> section of the config.xml file.</p>
+                                                    <p>The Zebra Scanner SDK is capable of configuring a scanner to send simulated HID keyboard output (also known as HIDKB pump, or HIDKB emulation mode) while in USB SNAPI, USB IBM Hand-held, USB IBM Table-top, SSI, or RS-232 Nixdorf Mode B communication modes. This simulated HID keyboard output functionality can be configured by changing the XML elements in the simulated HID KB setting section of the config.xml file.</p>
 
-                                                    <p>By default, the language locale of the simulated keyboard output is English. Only the English and French languages are currently supported.</p>
+                                                    <p>As of language locale, English, French and Italian languages are supported by the CoreScanner Driver.</p>
 
                                                     <p><em><strong>Table 3</strong> Config.xml File Elements</p></em>
                                                     <table class="hovertable" id="#table3">
@@ -410,8 +410,14 @@
                                                         </tr>
                                                         <tr>
                                                             <td>&lt;LOCALE></td>
-                                                            <td>0, 1</td>
-                                                            <td>0 - English (default)<br />1 - French</td>
+                                                            <td>0 - 3</td>
+                                                            <td>
+                                                                0 - Automatic (default)<br />
+                                                                1 - French<br />
+                                                                2 - English<br />
+                                                                3 - Italian<br />
+                                                                <p>Default mode will setup the HIDKB from region and language.</p>
+                                                            </td>
                                                         </tr>
                                                         <tr>
                                                             <td>&lt;FUNCTION_KEY_MAPPING></td>
@@ -423,22 +429,40 @@
                                                             <td>0, >0</td>
                                                             <td>Character transmission delay interval in milliseconds. The default value of zero transmits keystrokes as they are decoded. If > 0, latency is introduced into key transmission so that any receiving application can adjust to the rate of transmission.</td>
                                                         </tr>
-                                                    </table>
+                                                        <tr>
+                                                            <td><KEY_CODE_SETTING><sup>2</sup></td>
+                                                            <td>0 - 2</td>
+                                                            <td>
+                                                                <p>Define which key code type Simulated HID KB is configured.</p>
+                                                                0 - Virtual Keys only (default)<br />
+                                                                1 - Scan Code only<sup>*</sup><br />
+                                                                2 - Virtual Keys & Scan Code<br /> 
+                                                                <p><sup>*</sup> This mode only transmits the scan codes. The system keyboard driver translates the scan codes into virtual-key codes.</p>
+                                                            </td>
+                                                        </tr>
+                                                    </table><br />
+                                                    <p><sup>2</sup> Features & options are available only in config file version 2.</p>
 
-                                                    <h4 id="samplehidkbpumpsettings" class="anchor"><a class="heading-anchor" href="#samplehidkbpumpsettings"><span></span></a>Sample &lt;HID_KB_PUMP_SETTINGS> definition in config.xml:</h4>
+                                                    <h4 id="simulated-hidkb-settings" class="anchor"><a class="heading-anchor" href="#simulated-hidkb-settings"><span></span></a>Sample &lt;SIMULATED_HID_KB_SETTINGS> definition in config.xml:</h4>
 
 <pre class="prettyprint">
 <code>
-&lt;HID_KB_PUMP_SETTINGS>
+&lt;SIMULATED_HID_KB_SETTINGS>
+    &lt;!-- Default=0, French=1, English=2, Italian=3 -->
     &lt;LOCALE>0&lt;/LOCALE>
-    &lt;!-- ENGLISH=0, FRENCH=1 -->
-
+    
+    &lt;!-- Enabled=1, Disabled=0 -->
     &lt;ENABLE>0&lt;/ENABLE>
-    &lt;!-- ENABLED=1, DISABLED=0 -->
 
     &lt;FUNCTION_KEY_MAPPING>1&lt;/FUNCTION_KEY_MAPPING>
+    
     &lt;INTER_KEY_DELAY>0&lt;/INTER_KEY_DELAY>
-&lt;/HID_KB_PUMP_SETTINGS>                
+    
+    &lt;ADF_PATH>&lt;/ADF_PATH>
+    
+    &lt;!-- Virtual Key only =0, ScanCode only =1, Virtual Key & Scan Code =2-->
+    &lt;KEY_CODE_SETTING>0&lt;/KEY_CODE_SETTING>
+&lt;/SIMULATED_HID_KB_SETTINGS>                
 </code>
 </pre>
 
@@ -447,9 +471,86 @@
                                                     <ul>
                                                         <li>Refer to the specific scanner Product Reference Guide for supported serial port parameter settings.</li>
                                                         <li>Simulated HID Keyboard Output settings can be temporarily changed by an application using the CoreScanner API commands KEYBOARD_EMULATOR_ENABLE and KEYBOARD_EMULATOR_SET_LOCALE. To make permanent changes to these settings that remain persistent over a reboot of the host machine, the Config.xml file must be manually edited. Changes to Config.xml take effect only after the CoreScanner service is restarted.</li>
-                                                        <li>When using the language locale with Simulated HID Keyboard Output, the user may need to change the input language of the application receiving keyboard input to match the language specified in Config.xml.</li>
-                                                        <li>Simulated HID Keyboard functionality becomes unavailable if you use Windows’ Switch User functionality to switch the user on your PC. Manually restart the CoreScanner, RSM Driver Provider, and Symbol Scanner Management services, or reboot the host PC to ensure correct operation.</li>
+                                                        <li>When using the language locale with Simulated HID Keyboard Output, the user may need to change the input language of the application receiving keyboard input to match the language specified in config.xml.</li>
+                                                        <li>Simulated HID Keyboard functionality becomes unavailable if you use Windows' Switch User functionality to switch the user on your PC. Manually restart the CoreScanner, RSM Driver Provider, and Symbol Scanner Management services, or reboot the host PC to ensure correct operation.</li>
                                                     </ul>
+
+                                                    <h3 id="dirver-data-formatting" class="anchor"><a class="heading-anchor" href="#dirver-data-formatting"><span></span></a>Driver Data Formatting (DDF)</h3>
+
+                                                    <p>DDF enables the formatting of scanned bar code data with prefix and suffix labels through the CoreScanner driver and available from CoreScanner version 3.07.0037. DDF is available while the scanner is in USB SNAPI, USB IBM Hand-held, USB IBM Table-top, SSI, or RS-232 Nixdorf Mode B communication mode1. Unlike Advanced Data Formatting (ADF), DDF does not permit modifying the scanned bar code data itself with any rule-based method. The prefix/suffix labels are composed of one or more ASCII characters (1-255). There can be one or more prefix/suffix labels, and they are defined in the config.xml file in the section using the &lt;DDFTAGDEF> tag. The DDF description is composed of a &lt;DDFMETA> section, and a &lt;DDFSELECT> section. The &lt;DDFMETA> section defines the prefix/suffix labels used in DDF, and how they are combined in various ways to compose one or more DDF format definitions in the form of &lt;DDFDEF> tags.</p>
+
+                                                    <p>Following features are introduced along with DDF.</p>
+
+                                                    <ul>
+                                                        <li>Ability to include ALT + &lt;Key> as a prefix. (ALT key sequence can only be included as a prefix and ALT will only be followed with 1 character).</li>
+                                                        <li>Define the ALT sequence key's ASCII value as under &lt;ALT1> tag.</li>
+                                                        <li>Backward compatibility to older data formatting (i.e., SDF).</li>
+                                                    </ul>
+
+                                                    <h4 id="sample-ddf-definition" class="anchor"><a class="heading-anchor" href="#sample-ddf-definition"><span></span></a>Sample &lt;DDF> definition in config.xml:</h4>
+
+                                                    <p>This Driver Data Formatting functionality can be configured by changing the XML elements in the section of the config.xml file located in %Program Files%\Zebra Technologies\Barcode Scanners\Common.</p>
+
+<pre class="prettyprint">
+<code>
+&lt;DDF>
+    &lt;DDFMETA>
+        &lt;DDFTAGDEF>SUFFIX1.SUFFIX2.PREFIX1.ALT1&lt;/DDFTAGDEF>
+        &lt;SUFFIX1>13.13&lt;/SUFFIX1>
+        &lt;SUFFIX2>13.13&lt;/SUFFIX2>
+        &lt;PREFIX1>13.13&lt;/PREFIX1>
+        &lt;ALT1>91&lt;/ALT1>
+        &lt;!-- Key value for ALT Sequence : ASCII value of Key that need to press with the ALT Key. (Support only for single key in v1)  -->
+        &lt;!-- ALT sequence only works as the first prefix. All other formats will be not supported in v1 -->
+        &lt;DDFDEF DdfCode='0' DdfFormat='DATA'/>
+        &lt;DDFDEF DdfCode='1' DdfFormat='ALT1.DATA.SUFFIX1'/>
+        &lt;DDFDEF DdfCode='2' DdfFormat='DATA.SUFFIX2'/>
+        &lt;DDFDEF DdfCode='3' DdfFormat='DATA.SUFFIX1.SUFFIX2'/>
+        &lt;DDFDEF DdfCode='4' DdfFormat='PREFIX1.DATA'/>
+        &lt;DDFDEF DdfCode='5' DdfFormat='PREFIX1.DATA.SUFFIX1'/>
+        &lt;DDFDEF DdfCode='6' DdfFormat='PREFIX1.DATA.SUFFIX2'/>
+        &lt;DDFDEF DdfCode='7' DdfFormat='PREFIX1.DATA.SUFFIX1.SUFFIX2'/>
+    &lt;/DDFMETA>
+    &lt;DDFSELECT>0&lt;/DDFSELECT>
+&lt;/DDF>                                                            
+</code>
+</pre>
+
+                                                    <p>Four DDF prefix/suffix/ALT labels are defined as: SUFFIX1, SUFFIX2, PREFIX1, and ALT1. The values in these tags are delimited by a '.' character in the XML. Each of these labels is defined as shown below with the decimal ASCII character sequence that they represent:</p>
+
+<code>
+SUFFIX1 = ascii(13), ascii(10) = CR, LF<br />
+SUFFIX2 = ascii(35), ascii(36) = #, $<br />
+ALT1 = ascii(91) = [<br />
+PREFIX1 = ascii(37), ascii(38) = %, &
+</code>
+
+                                                    <p>Formats are also delimited by a '.' character in the XML. There can be one or more format definitions that use the above defined labels.</p>
+
+                                                    <p>This format definition is identified by the keyword DDFCode and the format is represented by the keyword DDFFormat. Note that "DATA" is an intrinsic that means "Insert the Scanned Bar Code Here". The format definition to be executed is based on DDFCode and is specified in the &lt;DDFSELECT> tag. </p>
+
+<code>
+&lt;DDFDEF DDFCode='6' DDFFormat='PREFIX1.DATA.SUFFIX2' />
+</code>
+
+                                                    <p>The XML clause above would transmit the bar code data as:</p>
+
+<code>
+%&BarcodeData#$<br />
+
+Or <br />
+
+&lt;DDFDEF DDFCode='1' DDFFormat='ALT1.DATA.SUFFIX2' />
+</code>
+
+                                                    <p>The XML clause above would transmit the bar code data as:</p>
+
+<code>
+ALT+[ BarcodeData #$
+</code>
+
+                                                    <!-- NOTE: SDF is supporting in CoreScanner but not advertising. Hence the following content hidden on PI 2.23. -->
+                                                    <!--
 
                                                     <h3 id="simpledataformatting" class="anchor"><a class="heading-anchor" href="#simpledataformatting"><span></span></a>Simple Data Formatting (SDF)</h3>
 
@@ -506,7 +607,6 @@
                                                     <p>You can perform a basic inspection on your system process list to verify a successful installation of the Zebra Scanner SDK.</p>
 
                                                     <p><strong>NOTE</strong> This is simple verification of the operation of the Zebra Scanner SDK. See How to Verify Scanner SDK Functionality on page 4-7 for more advanced SDK testing.</p>
-                                                    <!--TODO: page 36, link how to verify scanner sdk functionality-->
 
                                                     <p>The following instructions guide you through a simple check of the Scanner SDK's operation.</p>
 
@@ -527,6 +627,8 @@
                                                         </li>
                                                         <li>The appearance of "CoreScanner.exe" in the Processes list indicates a successful installation.</li>
                                                     </ol>
+
+                                                    -->
 
                                                     <hr>
 
