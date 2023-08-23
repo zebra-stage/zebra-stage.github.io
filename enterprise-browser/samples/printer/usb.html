@@ -1,0 +1,371 @@
+
+
+        
+
+
+        <!DOCTYPE html>
+<html><head>
+	<title>Printer Test</title>
+	<script type="text/javascript" charset="utf-8" src="ebapi-modules.js"></script>
+	<script type="text/javascript" charset="utf-8" src="elements.js"></script>
+	<script type="text/javascript">	
+		var printers_array = [];
+		var finalPrinterarray = [];
+		var supportedProprty = "";
+		var selectedPrinterIndex = "";
+		var printerSelectedFlag = false;
+	
+		
+		
+		function hide() {
+			document.getElementById('connectRow').style.visibility = 'hidden';
+			document.getElementById('connectRowMesg').style.visibility = 'hidden';
+			document.getElementById('printDataRow').style.visibility = 'hidden';
+			document.getElementById('printDataRowMesg').style.visibility = 'hidden';
+			document.getElementById('printImageRow').style.visibility = 'hidden';
+			document.getElementById('printImageRowMesg').style.visibility = 'hidden';
+			document.getElementById('getPropertyRow').style.visibility = 'hidden';
+			document.getElementById('getPropertyRowMesg').style.visibility = 'hidden';
+			document.getElementById('getPropertyRow0').style.visibility = 'hidden';
+			document.getElementById('getPropertyRow1').style.visibility = 'hidden';
+			document.getElementById('getPropertyRow2').style.visibility = 'hidden';
+			document.getElementById('getPropertyRow3').style.visibility = 'hidden';
+			document.getElementById('getPropertyRow4').style.visibility = 'hidden';
+			document.getElementById('getPropertyRow5').style.visibility = 'hidden';
+			document.getElementById('getPropertyRow6').style.visibility = 'hidden';
+			document.getElementById('quitRow').style.visibility = 'hidden';
+			document.getElementById('quitRowMesg').style.visibility = 'hidden';
+			document.getElementById('resetApp').style.visibility = 'hidden';
+			document.getElementById('messageDiv').style.visibility = 'hidden';
+			
+		}
+		function printCallBack(cb)
+		{
+			//doing nothing
+		}	
+		function myconnectcallback(arg)
+		{
+			document.getElementById('printDataRow').style.visibility = 'visible';
+			document.getElementById('printDataRowMesg').style.visibility = 'visible';
+			document.getElementById('printImageRow').style.visibility = 'visible';
+			document.getElementById('printImageRowMesg').style.visibility = 'visible';
+			document.getElementById('getPropertyRow').style.visibility = 'visible';
+			document.getElementById('getPropertyRowMesg').style.visibility = 'visible';
+			document.getElementById('getPropertyRow0').style.visibility = 'visible';
+			document.getElementById('getPropertyRow1').style.visibility = 'visible';
+			document.getElementById('getPropertyRow2').style.visibility = 'visible';
+			document.getElementById('getPropertyRow3').style.visibility = 'visible';
+			document.getElementById('getPropertyRow4').style.visibility = 'visible';
+			document.getElementById('getPropertyRow5').style.visibility = 'visible';
+			document.getElementById('getPropertyRow6').style.visibility = 'visible';
+			document.getElementById('quitRow').style.visibility = 'visible';
+			document.getElementById('quitRowMesg').style.visibility = 'visible';
+			document.getElementById('resetApp').style.visibility = 'visible';
+			hourglass.visibility = 'hidden';
+		}
+		function mycallbackSearch(cb)
+		{	
+	    	
+			if(cb.status == 'PRINTER_STATUS_SUCCESS' && cb.printerID != undefined)
+			{
+				printers_array.push(cb.printerID);
+				if(cb.status == 'PRINTER_STATUS_SUCCESS')
+				{
+					document.getElementById('connectRow').style.visibility = 'visible';
+					hourglass.visibility = 'hidden';
+					getID() ;
+				}
+			}
+			
+			if(printerSelectedFlag == false){
+				document.getElementById("radio_home").innerHTML = "";
+				updatePrinterList(printers_array);
+			}
+		}
+		function getID() 
+		{
+			for (var i = 0; i < printers_array.length; i++) 
+			{
+				finalPrinterarray[i] = EB.PrinterZebra.getPrinterByID(printers_array[i]);	
+			}					
+		}
+		
+		function searchUSBPrinting() 
+		{
+			 printers_array = [];
+			 finalPrinterarray = [];
+			 supportedProprty = "";
+			 selectedPrinterIndex = "";
+			 printerSelectedFlag = false;
+			 document.getElementById("radio_home").innerHTML = "";
+			document.getElementById('connectRow').style.visibility = 'visible';
+			 hourglass.visibility = 'visible';
+			 
+			EB.PrinterZebra.searchPrinters({"deviceAddress":"LPT1:","connectionType":EB.Printer.CONNECTION_TYPE_USB},mycallbackSearch);
+			document.getElementById("searchPrinterDiv").innerHTML = "EB.PrinterZebra.searchPrinters()";
+			
+		}
+		
+		function connect()
+		{
+			checkSelectedPrinter();
+			var printerStatus = selectedPrinterIndex;
+			printerStatus = selectedPrinterIndex.toString();
+			if(printerStatus == ""){
+				document.getElementById('messageDiv').style.visibility = 'visible';
+				document.getElementById("messageDiv").innerHTML = "Note :- Please Select at least one printer from list";
+				
+			}else{
+				 hourglass.visibility = 'visible';
+				finalPrinterarray[selectedPrinterIndex].connect(myconnectcallback);
+				document.getElementById('connectRowMesg').style.visibility = 'visible';
+				document.getElementById("connectDiv").innerHTML = "EB.PrinterZebra.connect()";
+				document.getElementById('messageDiv').style.visibility = 'hidden';
+			}
+		
+		}
+		
+		
+		function printData()
+		{
+			finalPrinterarray[selectedPrinterIndex].printRawString('^XA^FO50,50^ADN,36,20^FD Printing Generic ZPL^FS^XZ',{},printCallBack);
+			
+			document.getElementById('printDataRowMesg').style.visibility = 'visible';
+			document.getElementById("printDataDiv").innerHTML = "EB.PrinterZebra.printRawString()";
+		}
+		function printImage()
+		{
+			
+			finalPrinterarray[selectedPrinterIndex].printFile("/sdcard/Pictures/image.png",{},printCallBack);
+			document.getElementById('printImageRowMesg').style.visibility = 'visible';	
+			document.getElementById("printImageDiv").innerHTML = "EB.PrinterZebra.printFile()";
+		}
+		
+		function getAllProperties(){
+		
+				supportedProprty =	finalPrinterarray[selectedPrinterIndex].getAllProperties();
+				document.getElementById('getPropertyRowMesg').style.visibility = 'visible';	
+				document.getElementById("getAllPropertiesDiv").innerHTML = "EB.PrinterZebra.getAllProperties()";
+
+				var str_array = JSON.stringify(supportedProprty).split(',');
+				
+
+				for(var i = 0; i < str_array.length; i++) {
+					document.getElementById("getPropertyRow"+i).style.visibility = "visible";
+					document.getElementById("getAllPropertiesDiv"+i).innerHTML = "" + str_array[i];
+				}
+		}
+
+		function quit() 
+		{
+		  var printerProperty  = EB.Application.quit();
+		  	document.getElementById('quitRowMesg').style.visibility = 'visible';
+		  document.getElementById("quitDiv").innerHTML = "EB.Application.quit()";		  
+		}			
+		
+		
+		function updatePrinterList(printers_array) {
+			for (var i = 0; i < printers_array.length; i++) {
+			var printerInstance = EB.PrinterZebra.getPrinterByID(printers_array[i]);
+			var printerType = printerInstance.printerType.replace('PRINTER_TYPE_', '');
+			var connType = printerInstance.connectionType.replace('CONNECTION_TYPE_', '');
+			var devName = printerType + '-' + connType + '@' + printerInstance.deviceAddress;
+			var pid = printerInstance.connectionType + '|' + printerInstance.deviceAddress + '|' + printerInstance.devicePort + '|' + printers_array[i];
+			
+			var yes_button = makeRadioButton(devName,i);
+			radio_home.appendChild(yes_button); 
+			}
+		}
+		
+		
+	function makeRadioButton(name,count) {
+
+		var label = document.createElement("label");
+		var radio= document.createElement("input");
+		var br = document.createElement("br");
+		radio.onclick = radioBtn_Click;
+		radio.type = "radio";
+		radio.name = "printer";
+		radio.id= "b"+count;
+		radio.value = name;
+		label.appendChild(radio);
+		label.appendChild(document.createTextNode(name));
+		label.appendChild(br);
+		return label;
+  } 
+  
+  function checkSelectedPrinter(){
+	for (var i = 0; i < printers_array.length; i++) {
+		if (document.getElementById("b"+i).checked == true) { 
+			selectedPrinterIndex = i;
+	}
+	}
+  }
+  
+  function radioBtn_Click(){
+	printerSelectedFlag = true;
+  } 
+  function reset(){
+	window.location.reload();
+  }		
+	</script>
+	
+	
+<style>
+
+body {
+    border: 2px solid black;
+}
+button{
+width:80%;
+}
+td{
+text-align:center;
+}
+button{
+padding: 8px 8px;
+}
+.propertyRow{
+    text-align: left;
+}
+table, td, th {   
+	width:100%;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+th {
+    height: 50px;
+}
+td {
+    padding-top: .5em;
+    padding-bottom: .5em;
+}
+#radio_home{
+    text-align: left;
+}
+
+</style>	
+
+</head>
+<body onload="hide()">
+<h3 align="center" id="zebra-usb-common-printer-api-demo-application" class="anchor"><a class="heading-anchor" href="#zebra-usb-common-printer-api-demo-application"><span></span></a><a class="heading-anchor" href="#zebra-usb-common-printer-api-demo-application"><span></span></a>Zebra USB Common Printer API Demo Application</h3>
+<table border="1">
+	<tbody><tr id="searchRow">
+		<td colspan="2">
+			<div id="radio_home"></div>
+		</td>
+	</tr>
+	<tr>
+		<td>
+			<button onclick="searchUSBPrinting()">Search USB Printer</button>
+			<div id="searchPrinterDiv"></div>
+		</td>
+	</tr>
+	<tr id="connectRow">
+		<td colspan="2">
+			<button type="button" onclick="connect()">Connect Printer</button>
+		</td>
+	</tr>
+	<tr id="connectRowMesg">
+	<td>
+		<div id="connectDiv">
+			</div>
+		</td>
+	</tr>
+	<tr id="printDataRow">
+		<td colspan="2">
+			<button type="button" onclick="printData()">Print Text</button>
+		</td>
+	</tr>
+	<tr id="printDataRowMesg">
+	<td>
+		<div id="printDataDiv">
+			</div>
+		</td>
+	</tr>
+	<tr id="printImageRow">
+		<td colspan="2">
+			<button type="button" onclick="printImage()">Print Image</button>
+		</td>
+	</tr>
+	<tr id="printImageRowMesg">
+	<td>
+		<div id="printImageDiv">
+			</div>
+		</td>
+	</tr>
+	
+	<tr id="getPropertyRow">
+		<td colspan="2">
+			<button type="button" onclick="getAllProperties()">Printer property</button>
+		</td>
+	</tr>
+	<tr id="getPropertyRowMesg">
+	<td>
+		<div id="getAllPropertiesDiv">
+			</div>
+		</td>
+	</tr>
+</tbody></table>
+
+<table align="left" border="0"> 
+	
+	<tbody><tr id="getPropertyRow0">	
+		<td><div class="propertyRow" id="getAllPropertiesDiv0"></div></td>
+	</tr>
+	<tr id="getPropertyRow1">	
+		<td><div class="propertyRow" id="getAllPropertiesDiv1"></div></td>
+	</tr>
+	<tr id="getPropertyRow2">	
+		<td><div class="propertyRow" id="getAllPropertiesDiv2"></div></td>
+	</tr>
+	<tr id="getPropertyRow3">	
+		<td><div class="propertyRow" id="getAllPropertiesDiv3"></div></td>
+	</tr>	
+	<tr id="getPropertyRow4">
+		<td><div class="propertyRow" id="getAllPropertiesDiv4"></div></td>
+	</tr>	
+	<tr id="getPropertyRow5">
+		<td><div class="propertyRow" id="getAllPropertiesDiv5"></div></td>
+	</tr>
+	<tr id="getPropertyRow6">
+		<td><div class="propertyRow" id="getAllPropertiesDiv6"></div></td>
+	</tr>
+</tbody></table>
+<table border="1">
+
+	<tbody><tr id="quitRow">
+		<td colspan="2">
+			<button type="button" onclick="quit()">Quit Application</button>
+		</td>
+	</tr>
+	<tr id="quitRowMesg">
+	<td>
+		<div id="quitDiv">
+		</div>
+		</td>
+	</tr>
+</tbody></table>
+<table border="1">
+
+	<tbody><tr id="resetApp">
+		<td>
+			<button onclick="reset()">Reset Application</button>
+		</td>
+	</tr>
+</tbody></table>
+
+<div id="messageDiv"></div>
+		
+
+	
+
+
+
+
+
+
+</body></html>
