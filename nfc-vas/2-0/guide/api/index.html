@@ -227,12 +227,12 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p><strong>Zebra VAS SDK</strong> is an Android library built on top of the existing Android NFC APIs and Apple/Google VAS protocol. It offers streamlined configuration and management of the necessary procedures involved in accessing and processing data from the Apple or Google VAS NFC pass stored in the Wallet. For simplicity, "VAS NFC pass" is referred to as "VAS pass" in this document.</p>
+<p><strong>Zebra VAS SDK</strong> is an Android library built on top of the existing Android NFC APIs and the third party VAS protocol, such as Apple VAS or Google Smart Tap. It offers streamlined configuration and management of the necessary procedures involved in accessing and processing data from an NFC pass stored in a mobile wallet. For simplicity, "VAS NFC pass" is referred to as "VAS pass" in this document.</p>
 
 <p>The main SDK components are:</p>
 
 <ol>
-<li><strong>ZebraNfcVas -</strong> operational core</li>
+<li><strong>ZebraNfcVas -</strong> The main component that manages all interaction with VAS passes, configures the NFC reader, and reads the pass data from the mobile wallet.</li>
 
 <li><strong>VasConfig -</strong> A base class object used to provide an interface for storing and accessing merchant parameters required to access a VAS pass. Two types of configuration objects are automatically generated when creating a VasConfig object:
 
@@ -242,9 +242,9 @@
 
 <li><strong><a href="#smarttapvasconfig">SmartTapVasConfig</a> -</strong> A VASConfig object that contains information specific to Google Smart Tap, used for accessing and processing passes from Google Wallet.</li></ul>
 </li>
-</ol>
 
-<p>The <strong>Pass object</strong> encapsulates the information about the VAS pass that is read, including the payload data and supplementary metadata. The Pass object enables developers to validate the pass type and ensure that it is not a replay attack (i.e. the date and time is within 10 seconds of the actual date and time), adhering to Apple requirements.</p>
+<li><strong>Pass object -</strong> Encapsulates the information about the VAS pass that is read, including the payload data and supplementary metadata. The Pass object enables developers to validate the pass type and ensure that it is not a replay attack (i.e. the date and time is within 10 seconds of the actual date and time), adhering to Apple requirements.</li>
+</ol>
 
 <p>This section offers guidance on developing an application to read the VAS pass, and presents the available APIs within the Zebra VAS SDK. A single application can be built to access and read VAS passes from either Apple Wallet or Google Wallet.</p>
 
@@ -260,6 +260,211 @@
 <li>Import the Android .AAR file into the "libs" folder of the Android application project.</li>
 
 <li>Install the Zebra VAS Service .APK on the supported Zebra mobile computer. This is required to establish communication between the SDK and the Zebra device via the Zebra VAS Service.</li>
+</ol>
+
+<hr>
+
+<h2 id="developerguide" class="anchor"><a class="heading-anchor" href="#developerguide"><span></span></a>Developer Guide</h2>
+
+<h3 id="applevas" class="anchor"><a class="heading-anchor" href="#applevas"><span></span></a>Apple VAS</h3>
+
+<p>The following serves as a guide to develop an application that reads an VAS pass from Apple Wallet:</p>
+
+<ol>
+<li><p><strong>Implement IZebraServiceConnection Interface -</strong> It is required to implement IZebraServiceConnection Interface to receive callback methods from the Zebra NFC VAS service on the service connection/disconnection and VAS pass object. The 3 callback methods are: onServiceConnected, onServiceDisconnected, and onPassDetected.</p>
+
+<pre class="prettyprint"><code>public class AppleVASActivity extends AppCompatActivity implements IZebraServiceConnection {
+    ...
+}
+</code></pre>
+
+<p>Replace "AppleVASActivity" with the name of the class implemented within your application.</p></li>
+
+<li><p><strong>Create a ZebraNFCVAS object and intialize the object -</strong> ZebraNfcVas object should be declared in onCreate() and initialized by calling init().</p>
+
+<pre class="prettyprint"><code>private ZebraNfcVas vasSDK;
+
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+    init(); //UI Initialization
+
+<pre><code>vasSdkInit();
+</code></pre>
+
+}
+
+private void vasSdkInit() {
+    Log.e(TAG, "vasSdkInit");
+    vasSDK = new ZebraNfcVas(this);
+    vasSDK.init();
+}
+</code></pre></li>
+
+<li><p><strong>After initialization, a callback to onServiceConnection is available.</strong> Proceed with the subsequent steps for implementation of this method.</p>
+
+<pre class="prettyprint"><code>@Override
+public void onServiceConnection() {
+    Log.e(TAG,"onServiceConnection");
+    //Start with the app implemenation
+}
+</code></pre>
+
+<p>a. <strong>Create an AppleVasConfig object -</strong> This is the object that the SDK uses to know how to interact with a presented VAS pass.</p>
+
+<pre class="prettyprint"><code>vasSDK.createAppleVasConfig();
+</code></pre>
+
+<p>b. <strong>Set the appropriate configuration values in the AppleVasConfig object</strong> by using the following APIs:</p>
+
+<ul>
+<li>setPassTypeIds</li>
+
+<li>setPrivateKey</li>
+
+<li>setFilter</li>
+
+<li>setMerchantURL</li></ul>
+
+<p>c. <strong>Create the ZebraNFCVAS object.</strong> This holds the instance of a VasConfig object for pass detection operation.</p>
+
+<pre class="prettyprint"><code>vasSDK.createZebraNfcVasConfig();
+</code></pre>
+
+<p>d. <strong>Set the AppleVasConfig object into the ZebraNFCVAS object -</strong> This informs the SDK about the configuration data to use when reading the VAS pass.</p>
+
+<pre class="prettyprint"><code>vasSDK.setVasConfig();
+</code></pre>
+
+<p>e. <strong>Call connectToReader -</strong> This establishes the connection with the NFC reader.</p>
+
+<pre class="prettyprint"><code>vasSDK.connectToReader();
+</code></pre>
+
+<p>f. <strong>Call enableReadPassMode -</strong> Only reader/writer capabilities are enabled and polling is configure to read Type A and Type B cards.</p>
+
+<pre class="prettyprint"><code>vasSDK.enableReadPassMode();
+</code></pre>
+
+<p>g. <strong>When an VAS pass is read, onPassDetected() is called -</strong> This method receives the Pass object when a pass is read. Process the data read from the pass based on business needs.</p>
+
+<pre class="prettyprint"><code>public void onPassDetected(Pass pass) {
+    Log.v(TAG, "&gt;&gt;&gt; PASS DETECTED &lt;&lt;&lt;");
+    // Process data read from the pass
+}
+</code></pre>
+
+<p>h. <strong>Call disableReadPassMode before the app goes to the background or when the activity ends -</strong> This returns the device to the default NFC Forum polling mode.</p>
+
+<pre class="prettyprint"><code>@Override
+public void onPause() {
+    super.onPause();
+    Log.i(TAG, "onPause called &amp; Reader Mode Deactivated .....");
+    vasSDK.disableReadPassMode();
+}
+</code></pre></li>
+</ol>
+
+<h3 id="googlesmarttap" class="anchor"><a class="heading-anchor" href="#googlesmarttap"><span></span></a>Google Smart Tap</h3>
+
+<p><font size="4" color="red">Replace with Google Smart Tap specific info</font>
+The following serves as a guide to develop an application that reads a VAS pass from Google Wallet:</p>
+
+<ol>
+<li><p><strong>Implement IZebraServiceConnection Interface -</strong> It is required to implement IZebraServiceConnection Interface to receive callback methods from the Zebra NFC VAS service on the service connection/disconnection and VAS pass object. The 3 callback methods are: onServiceConnected, onServiceDisconnected, and onPassDetected.</p>
+
+<pre class="prettyprint"><code>public class AppleVASActivity extends AppCompatActivity implements IZebraServiceConnection {
+    ...
+}
+</code></pre>
+
+<p>Replace "AppleVASActivity" with the name of the class implemented within your application.</p></li>
+
+<li><p><strong>Create a ZebraNFCVAS object and intialize the object -</strong> ZebraNfcVas object should be declared in onCreate() and initialized by calling init().</p>
+
+<pre class="prettyprint"><code>private ZebraNfcVas vasSDK;
+
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+    init(); //UI Initialization
+
+<pre><code>vasSdkInit();
+</code></pre>
+
+}
+
+private void vasSdkInit() {
+    Log.e(TAG, "vasSdkInit");
+    vasSDK = new ZebraNfcVas(this);
+    vasSDK.init();
+}
+</code></pre></li>
+
+<li><p><strong>After initialization, a callback to onServiceConnection is available.</strong> Proceed with the subsequent steps for implementation of this method.</p>
+
+<pre class="prettyprint"><code>@Override
+public void onServiceConnection() {
+    Log.e(TAG,"onServiceConnection");
+    //Start with the app implemenation
+}
+</code></pre>
+
+<p>a. <strong>Create an AppleVasConfig object -</strong> This is the object that the SDK uses to know how to interact with a presented VAS pass.</p>
+
+<pre class="prettyprint"><code>vasSDK.createAppleVasConfig();
+</code></pre>
+
+<p>b. <strong>Set the appropriate configuration values in the AppleVasConfig object</strong> by using the following APIs:</p>
+
+<ul>
+<li>setPassTypeIds</li>
+
+<li>setPrivateKey</li>
+
+<li>setFilter</li>
+
+<li>setMerchantURL</li></ul>
+
+<p>c. <strong>Create the ZebraNFCVAS object.</strong> This holds the instance of a VasConfig object for pass detection operation.</p>
+
+<pre class="prettyprint"><code>vasSDK.createZebraNfcVasConfig();
+</code></pre>
+
+<p>d. <strong>Set the AppleVasConfig object into the ZebraNFCVAS object -</strong> This informs the SDK about the configuration data to use when reading the VAS pass.</p>
+
+<pre class="prettyprint"><code>vasSDK.setVasConfig();
+</code></pre>
+
+<p>e. <strong>Call connectToReader -</strong> This establishes the connection with the NFC reader.</p>
+
+<pre class="prettyprint"><code>vasSDK.connectToReader();
+</code></pre>
+
+<p>f. <strong>Call enableReadPassMode -</strong> Only reader/writer capabilities are enabled and polling is configure to read Type A and Type B cards.</p>
+
+<pre class="prettyprint"><code>vasSDK.enableReadPassMode();
+</code></pre>
+
+<p>g. <strong>When an VAS pass is read, onPassDetected() is called -</strong> This method receives the Pass object when a pass is read. Process the data read from the pass based on business needs.</p>
+
+<pre class="prettyprint"><code>public void onPassDetected(Pass pass) {
+    Log.v(TAG, "&gt;&gt;&gt; PASS DETECTED &lt;&lt;&lt;");
+    // Process data read from the pass
+}
+</code></pre>
+
+<p>h. <strong>Call disableReadPassMode before the app goes to the background or when the activity ends -</strong> This returns the device to the default NFC Forum polling mode.</p>
+
+<pre class="prettyprint"><code>@Override
+public void onPause() {
+    super.onPause();
+    Log.i(TAG, "onPause called &amp; Reader Mode Deactivated .....");
+    vasSDK.disableReadPassMode();
+}
+</code></pre></li>
 </ol>
 
 <hr>
@@ -436,9 +641,7 @@
 
 <p>Limits the NFC controller to reader mode, disabling card emulation. Polling is configured for the Zebra NFC reader to read NFC Type A and Type B cards. </p>
 
-<blockquote>
-  <p><strong>IMPORTANT NOTE:</strong> Since the NFC resources are fully allocated, no other application (running on the foreground or background) can request for NFC resources.</p>
-</blockquote>
+<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i>  <strong>IMPORTANT NOTE:</strong> Since the NFC resources are fully allocated, no other application (running on the foreground or background) can request for NFC resources.</p>
 
 <p><strong>Parameter:</strong> None</p>
 
@@ -499,45 +702,9 @@
 
 <h2 id="vasconfig" class="anchor"><a class="heading-anchor" href="#vasconfig"><span></span></a>VasConfig</h2>
 
-<p>This is the abstract base class (interface) for a VAS configuration object and is not instantiated by itself. It contains information for accessing and interpreting a VAS pass.&nbsp;</p>
+<p>This is the abstract base class (interface) for a VAS configuration object and is not instantiated by itself. It contains information for accessing and interpreting a VAS pass.&nbsp;The configuration object contains one or more Pass Type Identifier(s), which identifies the pass to be returned, and may contain an associated private key, used to decrypt data from the pass.</p>
 
-<p>Only one configuration object can be created at a time. The configuration object contains one or more Pass Type Identifier(s), which identifies the pass to be returned, and may contain an associated private key, used to decrypt data from the pass.</p>
-
-<p><strong>Example 1 - Configuration object with one pass type identifier:</strong></p>
-
-<ul>
-<li>Pass Type Identifier:
-
-
-<ul>
-<li>pass.com.zebra.special_holiday_event_pass</li></ul>
-</li>
-
-<li>Private Key: decrypts the data from the pass</li>
-
-<li>Filter (optional)</li>
-
-<li>Merchant URL (optional)</li>
-</ul>
-
-<p><strong>Example 2 - Configuration object with 2 pass type identifiers:</strong></p>
-
-<ul>
-<li>Pass Type Identifier:
-
-
-<ul>
-<li>pass.com.zebra.customer_loyalty</li>
-
-<li>pass.com.zebra.cafe_loyalty</li></ul>
-</li>
-
-<li>Private Key: decrypts data from either of the two above pass types</li>
-
-<li>Filter (optional)</li>
-
-<li>Merchant URL (optional)</li>
-</ul>
+<p><i class="fa fa-check-circle" style="color:rgb(82, 216, 139);"></i><b>NOTE:</b> Google Smart Tap supports only 1 configuration object. Apple VAS supports 1 or more configuration objects.</p>
 
 <h3 id="enumvastype" class="anchor"><a class="heading-anchor" href="#enumvastype"><span></span></a>enum VasType&nbsp;</h3>
 
@@ -546,7 +713,9 @@
 <ul>
 <li><code>APPLE_VAS</code> - Apple VAS configuration object&nbsp;</li>
 
-<li><code>GOOGLE_SMART_TAP</code> - Smart Tap VAS configuration object&nbsp;</li>
+<li><code>GOOGLE_SMART_TAP</code> - Google Smart Tap configuration object&nbsp;</li>
+
+<li><code>UNKNOWN</code> - Other NFC-type configuration object, including ISO or NDEF-formatted </li>
 </ul>
 
 <h3 id="gettype" class="anchor"><a class="heading-anchor" href="#gettype"><span></span></a>getType</h3>
@@ -556,7 +725,15 @@
 
 <p>Returns the type of the VASConfig object. </p>
 
-<p><strong>Return value:</strong>&nbsp;<code>VasType.APPLE_VAS</code> or <code>VasType.GOOGLE_SMART_TAP</code>&nbsp;</p>
+<p><strong>Return value:</strong>&nbsp;One of the following:</p>
+
+<ul>
+<li><code>VasType.APPLE_VAS</code> - Apple VAS configuration object&nbsp;</li>
+
+<li><code>VasType.GOOGLE_SMART_TAP</code>&nbsp;- Google Smart Tap configuration object&nbsp;</li>
+
+<li><code>UNKNOWN</code> - Other NFC-type configuration object, including ISO or NDEF-formatted </li>
+</ul>
 
 <h3 id="setprivatekeyforapplevas" class="anchor"><a class="heading-anchor" href="#setprivatekeyforapplevas"><span></span></a>setPrivateKey (for Apple VAS)</h3>
 
@@ -798,7 +975,7 @@ This is the merchant URL string for the associated pass, which is generally used
 
 <h2 id="smarttapvasconfig" class="anchor"><a class="heading-anchor" href="#smarttapvasconfig"><span></span></a>SmartTapVasConfig</h2>
 
-<p>SmartTapVasConfig is the configuration class object for Google Wallet passes.&nbsp;It is inherited from VASConfig and contains the parameters specific to Google Smart Tap for accessing and processing a Google Wallet passes. This configures the criteria used to choose which passes to access and read. The passes that are read must match the configuration parameters specific by the SmartTapVasConfig object.&nbsp;Class methods:</p>
+<p>SmartTapVasConfig is the configuration class object for Google Wallet passes.&nbsp;It is inherited from VASConfig and contains the parameters specific to Google Smart Tap for accessing and processing a Google Wallet passes. This configures the criteria used to choose which passes to access and read. The passes that are read must match the configuration parameters specific by the SmartTapVasConfig object.&nbsp;See <a href="https://developers.google.com/wallet">Google Wallet</a> documentation for reference. Class methods:</p>
 
 <h3 id="constructor-NaN" class="anchor"><a class="heading-anchor" href="#constructor-NaN"><span></span></a>constructor</h3>
 
@@ -826,7 +1003,7 @@ This is one collectorID.&nbsp; Only one collectorID is allowed</p>
 
 <li><code>UnsupportedEncodingException</code> if the UTF-8 conversion encoding is not available.&nbsp;UTF-8 conversion encoding is required to convert the PassTypeID string into byte encoding for the MerchantID calculation.</li>
 
-<li>`NoSuchAlgorithmException`` if the SHA-256 algorithm is not available.&nbsp; This is required to automatically convert the PassTypeID to the equivalent MerchantID.</li>
+<li><code>NoSuchAlgorithmException</code> if the SHA-256 algorithm is not available.&nbsp; This is required to automatically convert the PassTypeID to the equivalent MerchantID.</li>
 </ul>
 
 <h3 id="setservicetypes" class="anchor"><a class="heading-anchor" href="#setservicetypes"><span></span></a>setServiceTypes</h3>
@@ -845,31 +1022,32 @@ Array of one or more ServiceTypes - may not be null and may not be empty</p>
 
 <p>Sample code:</p>
 
-<p>// Create a GoogleSmartTap Config object
-        SmartTapVasConfig z_cfg = new SmartTapVasConfig(); &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </p>
-
-<pre class="prettyprint"><code>    // Set the service type. This is optional - if not specified, AllExceptPPSE is used (method example for this setServiceTypes)
+<pre class="prettyprint"><code>    // Create a GoogleSmartTap Config object
+    SmartTapVasConfig z_cfg = new SmartTapVasConfig();&nbsp;&nbsp;&nbsp;&nbsp;
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+    // Set the service type. This is optional - if not specified, AllExceptPPSE is used (method example for this setServiceTypes)
     z_cfg.setServiceTypes(new SmartTapVasConfig.ServiceType[]{SmartTapVasConfig.ServiceType.AllExceptPPSE});
 </code></pre>
 
 <h3 id="enumservicetype" class="anchor"><a class="heading-anchor" href="#enumservicetype"><span></span></a>enum ServiceType</h3>
 
-<pre class="prettyprint"><code>    public enum ServiceType{
-        AllServices("All Services", 0x00),
-        AllExceptPPSE("All Excpet PPSE", 0x01),
-        Loyalty("Loyalty", 0x03),
-        Offer("Offer", 0x04),
-        GiftCard("Gift Card", 0x05),
-        PrivateLabelCard("Private Label Card", 0x06),
-        EventTicket("Event Ticket", 0x07),
-        Flight("Flight", 0x08),
-        Transit("Transit", 0x09),
-        CloudBasedWallet("Cloud Based Wallet", 0x10),
-        MobileMarketingPlatform("Mobile Marketing Platform", 0x11),
-        Generic("Generic", 0x12),
-        GenericPrivatePass("Generic Private Pass", 0x13),
-        WalletCustomer("Wallet Customer", 0x40);
-    }
+<pre class="prettyprint"><code>    public enum ServiceType{ 
+        AllServices("All Services", 0x00), 
+        AllExceptPPSE("All Excpet PPSE", 0x01), 
+        Loyalty("Loyalty", 0x03), 
+        Offer("Offer", 0x04), 
+        GiftCard("Gift Card", 0x05), 
+        PrivateLabelCard("Private Label Card", 0x06), 
+        EventTicket("Event Ticket", 0x07), 
+        Flight("Flight", 0x08), 
+        Transit("Transit", 0x09), 
+        CloudBasedWallet("Cloud Based Wallet", 0x10), 
+        MobileMarketingPlatform("Mobile Marketing Platform", 0x11), 
+        Generic("Generic", 0x12), 
+        GenericPrivatePass("Generic Private Pass", 0x13), 
+        WalletCustomer("Wallet Customer", 0x40); 
+
+    } 
 </code></pre>
 
 <h3 id="setposcapabilitiesarray" class="anchor"><a class="heading-anchor" href="#setposcapabilitiesarray"><span></span></a>setPosCapabilitiesArray</h3>
@@ -1160,211 +1338,6 @@ Example 2 of a configuration object with 2 pass type identifiers:
 
 The **Pass object** encapsulates the information about the VAS pass that is read, including the payload data and supplementary metadata. The Pass object enables developers to validate the pass type and ensure that it is not a replay attack (i.e. the date and time is within 10 seconds of the actual date and time), adhering to Apple requirements.
 -->
-
-<hr>
-
-<h2 id="developerguide" class="anchor"><a class="heading-anchor" href="#developerguide"><span></span></a>Developer Guide</h2>
-
-<h3 id="applevas" class="anchor"><a class="heading-anchor" href="#applevas"><span></span></a>Apple VAS</h3>
-
-<p>The following serves as a guide to develop an application that reads an VAS pass from Apple Wallet:</p>
-
-<ol>
-<li><p><strong>Implement IZebraServiceConnection Interface -</strong> It is required to implement IZebraServiceConnection Interface to receive callback methods from the Zebra NFC VAS service on the service connection/disconnection and VAS pass object. The 3 callback methods are: onServiceConnected, onServiceDisconnected, and onPassDetected.</p>
-
-<pre class="prettyprint"><code>public class AppleVASActivity extends AppCompatActivity implements IZebraServiceConnection {
-    ...
-}
-</code></pre>
-
-<p>Replace "AppleVASActivity" with the name of the class implemented within your application.</p></li>
-
-<li><p><strong>Create a ZebraNFCVAS object and intialize the object -</strong> ZebraNfcVas object should be declared in onCreate() and initialized by calling init().</p>
-
-<pre class="prettyprint"><code>private ZebraNfcVas vasSDK;
-
-@Override
-protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    setContentView(R.layout.activity_main);
-    init(); //UI Initialization
-
-<pre><code>vasSdkInit();
-</code></pre>
-
-}
-
-private void vasSdkInit() {
-    Log.e(TAG, "vasSdkInit");
-    vasSDK = new ZebraNfcVas(this);
-    vasSDK.init();
-}
-</code></pre></li>
-
-<li><p><strong>After initialization, a callback to onServiceConnection is available.</strong> Proceed with the subsequent steps for implementation of this method.</p>
-
-<pre class="prettyprint"><code>@Override
-public void onServiceConnection() {
-    Log.e(TAG,"onServiceConnection");
-    //Start with the app implemenation
-}
-</code></pre>
-
-<p>a. <strong>Create an AppleVasConfig object -</strong> This is the object that the SDK uses to know how to interact with a presented VAS pass.</p>
-
-<pre class="prettyprint"><code>vasSDK.createAppleVasConfig();
-</code></pre>
-
-<p>b. <strong>Set the appropriate configuration values in the AppleVasConfig object</strong> by using the following APIs:</p>
-
-<ul>
-<li>setPassTypeIds</li>
-
-<li>setPrivateKey</li>
-
-<li>setFilter</li>
-
-<li>setMerchantURL</li></ul>
-
-<p>c. <strong>Create the ZebraNFCVAS object.</strong> This holds the instance of a VasConfig object for pass detection operation.</p>
-
-<pre class="prettyprint"><code>vasSDK.createZebraNfcVasConfig();
-</code></pre>
-
-<p>d. <strong>Set the AppleVasConfig object into the ZebraNFCVAS object -</strong> This informs the SDK about the configuration data to use when reading the VAS pass.</p>
-
-<pre class="prettyprint"><code>vasSDK.setVasConfig();
-</code></pre>
-
-<p>e. <strong>Call connectToReader -</strong> This establishes the connection with the NFC reader.</p>
-
-<pre class="prettyprint"><code>vasSDK.connectToReader();
-</code></pre>
-
-<p>f. <strong>Call enableReadPassMode -</strong> Only reader/writer capabilities are enabled and polling is configure to read Type A and Type B cards.</p>
-
-<pre class="prettyprint"><code>vasSDK.enableReadPassMode();
-</code></pre>
-
-<p>g. <strong>When an VAS pass is read, onPassDetected() is called -</strong> This method receives the Pass object when a pass is read. Process the data read from the pass based on business needs.</p>
-
-<pre class="prettyprint"><code>public void onPassDetected(Pass pass) {
-    Log.v(TAG, "&gt;&gt;&gt; PASS DETECTED &lt;&lt;&lt;");
-    // Process data read from the pass
-}
-</code></pre>
-
-<p>h. <strong>Call disableReadPassMode before the app goes to the background or when the activity ends -</strong> This returns the device to the default NFC Forum polling mode.</p>
-
-<pre class="prettyprint"><code>@Override
-public void onPause() {
-    super.onPause();
-    Log.i(TAG, "onPause called &amp; Reader Mode Deactivated .....");
-    vasSDK.disableReadPassMode();
-}
-</code></pre></li>
-</ol>
-
-<h3 id="googlesmarttap" class="anchor"><a class="heading-anchor" href="#googlesmarttap"><span></span></a>Google Smart Tap</h3>
-
-<p><font size="4" color="red">Replace with Google Smart Tap specific info</font>
-The following serves as a guide to develop an application that reads an VAS pass from Google Wallet:</p>
-
-<ol>
-<li><p><strong>Implement IZebraServiceConnection Interface -</strong> It is required to implement IZebraServiceConnection Interface to receive callback methods from the Zebra NFC VAS service on the service connection/disconnection and VAS pass object. The 3 callback methods are: onServiceConnected, onServiceDisconnected, and onPassDetected.</p>
-
-<pre class="prettyprint"><code>public class AppleVASActivity extends AppCompatActivity implements IZebraServiceConnection {
-    ...
-}
-</code></pre>
-
-<p>Replace "AppleVASActivity" with the name of the class implemented within your application.</p></li>
-
-<li><p><strong>Create a ZebraNFCVAS object and intialize the object -</strong> ZebraNfcVas object should be declared in onCreate() and initialized by calling init().</p>
-
-<pre class="prettyprint"><code>private ZebraNfcVas vasSDK;
-
-@Override
-protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    setContentView(R.layout.activity_main);
-    init(); //UI Initialization
-
-<pre><code>vasSdkInit();
-</code></pre>
-
-}
-
-private void vasSdkInit() {
-    Log.e(TAG, "vasSdkInit");
-    vasSDK = new ZebraNfcVas(this);
-    vasSDK.init();
-}
-</code></pre></li>
-
-<li><p><strong>After initialization, a callback to onServiceConnection is available.</strong> Proceed with the subsequent steps for implementation of this method.</p>
-
-<pre class="prettyprint"><code>@Override
-public void onServiceConnection() {
-    Log.e(TAG,"onServiceConnection");
-    //Start with the app implemenation
-}
-</code></pre>
-
-<p>a. <strong>Create an AppleVasConfig object -</strong> This is the object that the SDK uses to know how to interact with a presented VAS pass.</p>
-
-<pre class="prettyprint"><code>vasSDK.createAppleVasConfig();
-</code></pre>
-
-<p>b. <strong>Set the appropriate configuration values in the AppleVasConfig object</strong> by using the following APIs:</p>
-
-<ul>
-<li>setPassTypeIds</li>
-
-<li>setPrivateKey</li>
-
-<li>setFilter</li>
-
-<li>setMerchantURL</li></ul>
-
-<p>c. <strong>Create the ZebraNFCVAS object.</strong> This holds the instance of a VasConfig object for pass detection operation.</p>
-
-<pre class="prettyprint"><code>vasSDK.createZebraNfcVasConfig();
-</code></pre>
-
-<p>d. <strong>Set the AppleVasConfig object into the ZebraNFCVAS object -</strong> This informs the SDK about the configuration data to use when reading the VAS pass.</p>
-
-<pre class="prettyprint"><code>vasSDK.setVasConfig();
-</code></pre>
-
-<p>e. <strong>Call connectToReader -</strong> This establishes the connection with the NFC reader.</p>
-
-<pre class="prettyprint"><code>vasSDK.connectToReader();
-</code></pre>
-
-<p>f. <strong>Call enableReadPassMode -</strong> Only reader/writer capabilities are enabled and polling is configure to read Type A and Type B cards.</p>
-
-<pre class="prettyprint"><code>vasSDK.enableReadPassMode();
-</code></pre>
-
-<p>g. <strong>When an VAS pass is read, onPassDetected() is called -</strong> This method receives the Pass object when a pass is read. Process the data read from the pass based on business needs.</p>
-
-<pre class="prettyprint"><code>public void onPassDetected(Pass pass) {
-    Log.v(TAG, "&gt;&gt;&gt; PASS DETECTED &lt;&lt;&lt;");
-    // Process data read from the pass
-}
-</code></pre>
-
-<p>h. <strong>Call disableReadPassMode before the app goes to the background or when the activity ends -</strong> This returns the device to the default NFC Forum polling mode.</p>
-
-<pre class="prettyprint"><code>@Override
-public void onPause() {
-    super.onPause();
-    Log.i(TAG, "onPause called &amp; Reader Mode Deactivated .....");
-    vasSDK.disableReadPassMode();
-}
-</code></pre></li>
-</ol>
 
 <hr>
 
