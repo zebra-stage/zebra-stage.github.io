@@ -1,8 +1,6 @@
 
-
-        
-
-  <title>Enterprise Browser RFID Test APP</title>
+<!-- saved from url=(0068)https://techdocs.zebra.com/enterprise-browser/samples/rfid/RFID.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Enterprise Browser RFID Test APP</title>
 <script type="text/javascript" charset="utf-8" src="ebapi-modules.js"></script>
 <script type="text/javascript" charset="utf-8" src="elements.js"></script>
 <script type="text/javascript">
@@ -10,30 +8,34 @@
 	var displayStr="";
 
 	rfid.statusEvent =  "statusEvent(%json)";
-	rfid.tagEvent = "TagHandler(%json)";
+	//rfid.tagEvent = "TagHandler(%json)";
     
 	function scanReceived(params){
+	alert("hari");
             // No data or no timestamp, scan failed.
             if(params['data']== "" || params['time']==""){
                 document.getElementById('display').innerHTML = "Failed!";
                 return;
             }
             // Data and timestamp exist, barcode successful, show results
+			 var displayStr="";
             var displayStr = "Barcode Data: " + params['data']+"<br>Time: "+params['time'];
             document.getElementById("display").innerHTML = displayStr;
 			
         }
 	function statusEvent(eventInfo)
+
 		{ 
 			//alert("Event Info: \nmethod:"+eventInfo.method+"  \nerrorCode: "+eventInfo.errorCode+"  \nvendorMessage:"+eventInfo.vendorMessage);
 			displayStr="Event Info: method: "+eventInfo.method+"<br>errorCode: "+eventInfo.errorCode+"<br>vendorMessage: "+eventInfo.vendorMessage;
 			document.getElementById("display").innerHTML = displayStr;
-			displayStr="";
+			
 		}
 
 	function TagHandler(tagarray)
 	{	
-		
+//	document.getElementtaById("display").innerHTML = '';
+	
 		for (i=0; i < tagarray.TagData.length; i++)
 		{
 		displayStr = displayStr+"<br>RFID Data: " +tagarray.TagData[i].tagID+"<br>RSSI: "+tagarray.TagData[0].RSSI+"<br>PC: "+tagarray.TagData[0].PC+"<br>tagSeencount: "+tagarray.TagData[0].tagSeenCount;
@@ -45,6 +47,8 @@
 
 	function Enumerate()
 		{ 
+		try{
+		alert("alert in enumerate beginning");
 			var t = document.getElementById("transportSelect");
 			var selectedText = t.options[t.selectedIndex].text;
 		  
@@ -52,11 +56,17 @@
 		  rfid.transport= t.options[t.selectedIndex].text;
 		  rfid.enumRFIDEvent = "EnumRfid(%s);"
 		  //rfid.transport="bluetooth";
-		  rfid.enumerate();    
+		  rfid.enumerate(); 
+}
+catch(err){
+		  
+		  alert("alert in enumerate end"+err);
+		  }
 		}
 	function EnumRfid(rfidArray)
 		{ 
-			//alert("test");
+		try{
+			alert("test"+rfidArray.length);
 			//alert(rfidArray);
 
 			var rfidInfo = "RFID On Device: " + rfidArray.length + "--";  
@@ -68,16 +78,46 @@
 		  }
 		  //alert();
 		  document.getElementById("display").innerHTML = rfidInfo;
+		  }
+		  catch(err){
+		  
+		  alert("alert in enumerate end"+err);
+		  }
+		  
 		}
 		
 	function Connect(){			
 						
 		   var t = document.getElementById("readerSelect");		   
-		   rfid.readerID= t.options[t.selectedIndex].text;		  
+		   rfid.readerID= t.options[t.selectedIndex].text;	
+		   
            rfid.connect();
-			   
+		
+		//rfid.reportUniqueTags=0;
+		rfid.tagEvent = "TagHandler(%json)";
+		  displayStr="";	   
 		   //alert(" connect called");            
         }
+		function setBeepOnRead()
+	{
+		var beepOnRead = document.getElementById("beeponread");
+
+		  if (beepOnRead.checked == true){
+			rfid.beepOnRead=1;
+		  } else {
+			 rfid.beepOnRead=0;
+		  }
+	}
+	function setUniqueTags()
+	{
+		var uniqueTags = document.getElementById("uniquetags");
+
+		  if (uniqueTags.checked == true){
+			rfid.reportUniqueTags=1;
+		  } else {
+			 rfid.reportUniqueTags=0;
+		  }
+	}
 				
 	function DisConnect(){
 			//alert("calling disconnect");
@@ -88,7 +128,9 @@
 	
 		function startInventory(){
 		//alert("calling rfidInventory");
+		
 		displayStr="";
+	//	rfid.reportUniqueTags=0;
 		rfid.tagEvent = "TagHandler(%json)";
         rfid.performInventory();
 		}
@@ -110,6 +152,10 @@
 		EB.Application.quit();
 		
 	}
+	function setDualTrigger(){
+			rfid.lowerTriggerType="RFID_SCAN";	//NO_ACTION
+			rfid.upperTriggerType="NO_ACTION";	//RFID_SCAN					
+        }
 	
 </script>
 <style>
@@ -146,12 +192,9 @@ select{
 </style>
 
 
-<h2 align="center" id="enterprise-browser-asr-api-sample-app" class="anchor"><a class="heading-anchor" href="#enterprise-browser-asr-api-sample-app"><span></span></a>Enterprise Browser ASR API Sample APP</h2>
+</head><body><h2 align="center" id="enterprise-browser-asr-api-sample-app" class="anchor"><a class="heading-anchor" href="https://techdocs.zebra.com/enterprise-browser/samples/rfid/RFID.html#enterprise-browser-asr-api-sample-app"><span></span></a>Enterprise Browser ASR API Sample APP</h2>
 
-<div id="display" style="word-wrap: break-word;">
-        RFID Data: <br>
-        Time: <br>
-</div>
+
 
 <div>
 <br>
@@ -161,7 +204,9 @@ select{
 			<td colspan="2" style="text-align:center;font-size:x-large;"> 
 				Select transport mode:<select id="transportSelect">
 				<option>serial</option>
-				<option>bluetooth</option>
+				<option>bluetooth</option>				
+				<option>usb</option>				
+				<option>all</option>
 				<option>invalid</option>
 				</select>
 			</td>
@@ -213,8 +258,25 @@ select{
 				<button class="col_1" width="100%" onclick="quit();">Quit App</button>
 			</td>
 		</tr>
+		<tr>
+			<td>
+				<label for="beeponread">Beep On read:</label> 			
+				<input type="checkbox" id="beeponread" onclick="setBeepOnRead()">
+			</td>
+			<td colspan="1">
+				<label for="uniquetags">Unique Tags:</label> 
+				<input type="checkbox" id="uniquetags" onclick="setUniqueTags()">
+			</td>
+		</tr>
+		<td>
+		<button onclick="setDualTrigger()">Set Dual Trigger</button>
+		</td>
 		
 	</tbody></table>
+</div>
+<div id="display" style="word-wrap: break-word;">
+        RFID Data: <br>
+        Time: <br>
 </div>
 
 
@@ -223,4 +285,4 @@ select{
 
 
 
-
+</body></html>
