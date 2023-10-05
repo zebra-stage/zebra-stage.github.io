@@ -232,7 +232,7 @@
 <p>The main SDK components are:</p>
 
 <ol>
-<li><strong>ZebraNfcVas -</strong> The main component that manages all interaction with VAS passes, configures the NFC reader, and reads the pass data from the mobile wallet.</li>
+<li><strong>ZebraNfcVas -</strong> The main class that manages all interaction with VAS passes, configures the NFC reader, and reads the pass data from the mobile wallet.</li>
 
 <li><strong>VasConfig -</strong> A base class object used to provide an interface for storing and accessing merchant parameters required to access a VAS pass. Two types of configuration objects are automatically generated when creating a VasConfig object:
 
@@ -246,7 +246,7 @@
 <li><strong>Pass object -</strong> Encapsulates the information about the VAS pass that is read, including the payload data and supplementary metadata. The Pass object enables developers to validate the pass type and ensure that it is not a replay attack (i.e. the date and time is within 10 seconds of the actual date and time), adhering to Apple requirements.</li>
 </ol>
 
-<p>This section offers guidance on developing an application to read the VAS pass, and presents the available APIs within the Zebra VAS SDK. A single application can be built to access and read VAS passes from either Apple Wallet or Google Wallet.</p>
+<p>This section offers guidance on developing an application to read the VAS pass, and presents the available APIs within the Zebra VAS SDK. A single application can be built to access and read VAS passes from Apple Wallet, Google Wallet, or a third party mobile wallet.</p>
 
 <hr>
 
@@ -255,7 +255,7 @@
 <p>Perform the steps below to install the SDK and prepare to run the developed application on the device:</p>
 
 <ol>
-<li>Download VAS SDK from the <a href="https://www.zebra.com/us/en/support-downloads/software/developer-tools/value-added-services-sdk.html">Zebra Support Portal</a> and extract the files from the download.</li>
+<li>Download <strong>Zebra VAS SDK</strong> from the <a href="https://www.zebra.com/us/en/support-downloads/software/developer-tools/value-added-services-sdk.html">Zebra Support Portal</a> and extract the files from the download.</li>
 
 <li>Import the Android .AAR file into the "libs" folder of the Android application project.</li>
 
@@ -266,9 +266,11 @@
 
 <h2 id="developerguide" class="anchor"><a class="heading-anchor" href="#developerguide"><span></span></a>Developer Guide</h2>
 
+<p>Zebra VAS SDK utilizes Apple VAS and Google Smart Tap to read NFC passes from each respective mobile wallet.</p>
+
 <h3 id="applevas" class="anchor"><a class="heading-anchor" href="#applevas"><span></span></a>Apple VAS</h3>
 
-<p>The following serves as a guide to develop an application that reads an VAS pass from Apple Wallet:</p>
+<p>The following provides guidance to develop an application that reads a VAS pass from Apple Wallet:</p>
 
 <ol>
 <li><p><strong>Implement IZebraServiceConnection Interface -</strong> It is required to implement IZebraServiceConnection Interface to receive callback methods from the Zebra NFC VAS service on the service connection/disconnection and VAS pass object. The 3 callback methods are: onServiceConnected, onServiceDisconnected, and onPassDetected.</p>
@@ -311,30 +313,45 @@ public void onServiceConnection() {
 }
 </code></pre>
 
-<p>a. <strong>Create an AppleVasConfig object -</strong> This is the object that the SDK uses to know how to interact with a presented VAS pass.</p>
+<p>a. <strong>Create an AppleVasConfig object -</strong> This is the object that the SDK uses to interact with a presented VAS pass.</p>
 
-<pre class="prettyprint"><code>vasSDK.createAppleVasConfig();
+<pre class="prettyprint"><code>AppleVasConfig av_cfg = new AppleVasConfig();
 </code></pre>
 
 <p>b. <strong>Set the appropriate configuration values in the AppleVasConfig object</strong> by using the following APIs:</p>
 
 <ul>
-<li>setPassTypeIds</li>
+<li>av_cfg.setPassTypeIds(String[] ptis)</li>
 
-<li>setPrivateKey</li>
+<li>az_cfg.setPrivateKey(PrivateKeyStr)</li>
 
-<li>setFilter</li>
+<li>av_cfg.setFilter(byte[] filter, ZebraNfcVas.FilterType)</li>
 
-<li>setMerchantURL</li></ul>
+<li>av_cfg.setMerchantURL(String url)</li></ul>
+
+<p><strong>Sample code</strong> (<strong>Note:</strong> Replace Merchant URL, Pass Type ID, and private key with your specific values):</p>
+
+<pre class="prettyprint"><code>az_cfg.setPrivateKey(ZebraPrivateKeyStr);
+az_cfg.setFilter(new byte[]{(byte) 0xaa, 0x55, (byte) 0xaa, 0x55}, ZebraNfcVas.FilterType.ExactMatch);
+az_cfg.setMerchantURL("https://www.zebra.com/vas-signup");
+az_cfg.setPassTypeIds(new String[]{"pass.com.pronto.zebra-wallet-pass.demo"});
+</code></pre>
 
 <p>c. <strong>Create the ZebraNFCVAS object.</strong> This holds the instance of a VasConfig object for pass detection operation.</p>
 
 <pre class="prettyprint"><code>vasSDK.createZebraNfcVasConfig();
 </code></pre>
 
-<p>d. <strong>Set the AppleVasConfig object into the ZebraNFCVAS object -</strong> This informs the SDK about the configuration data to use when reading the VAS pass.</p>
+<p>d. <strong>Set the AppleVasConfig object into the ZebraNFCVAS object -</strong> This informs the SDK about the configuration data to use when reading the VAS pass. Multiple VasConfigs or a single VasConfig can be provided.</p>
 
-<pre class="prettyprint"><code>vasSDK.setVasConfig();
+<p><strong>Multiple VasConfigs:</strong></p>
+
+<pre class="prettyprint"><code>vasSDK.setVasConfigs(List&lt;VasConfig&gt;);
+</code></pre>
+
+<p><strong>Single VasConfig:</strong></p>
+
+<pre class="prettyprint"><code>vasSDK.setVasConfig(av_cfg);
 </code></pre>
 
 <p>e. <strong>Call connectToReader -</strong> This establishes the connection with the NFC reader.</p>
@@ -368,8 +385,7 @@ public void onPause() {
 
 <h3 id="googlesmarttap" class="anchor"><a class="heading-anchor" href="#googlesmarttap"><span></span></a>Google Smart Tap</h3>
 
-<p><font size="4" color="red">Replace with Google Smart Tap specific info</font>
-The following serves as a guide to develop an application that reads a VAS pass from Google Wallet:</p>
+<p>The following provides guidance to develop an application that reads a VAS pass from Google Wallet:</p>
 
 <ol>
 <li><p><strong>Implement IZebraServiceConnection Interface -</strong> It is required to implement IZebraServiceConnection Interface to receive callback methods from the Zebra NFC VAS service on the service connection/disconnection and VAS pass object. The 3 callback methods are: onServiceConnected, onServiceDisconnected, and onPassDetected.</p>
@@ -412,31 +428,61 @@ public void onServiceConnection() {
 }
 </code></pre>
 
-<p>a. <strong>Create an AppleVasConfig object -</strong> This is the object that the SDK uses to know how to interact with a presented VAS pass.</p>
+<p>a. <strong>Create an SmartTapVasConfig object -</strong> This is the object that the SDK uses to know how to interact with a presented VAS pass.</p>
 
-<pre class="prettyprint"><code>vasSDK.createAppleVasConfig();
+<pre class="prettyprint"><code>SmartTapVasConfig g_cfg = new SmartTapVasConfig();
 </code></pre>
 
 <p>b. <strong>Set the appropriate configuration values in the AppleVasConfig object</strong> by using the following APIs:</p>
 
 <ul>
-<li>setPassTypeIds</li>
+<li>g_cfg.setCollectorID(String collID)</li>
 
-<li>setPrivateKey</li>
+<li>g_cfg.setPrivateKey(String PrivateKeyStr, int PrivateKeyVersion);</li></ul>
 
-<li>setFilter</li>
+<p>Optionally, additional values can be configured:</p>
 
-<li>setMerchantURL</li></ul>
+<ul>
+<li>g_cfg.setMerchantNameNdefRecord(NdefRecord record)</li>
+
+<li>g_cfg.setStoreLocationIdNdefRecord(NdefRecord record)</li>
+
+<li>g_cfg.setServiceTypes(ServiceType[] type)</li></ul>
+
+<p><strong>Sample code</strong> (<strong>Note:</strong> Replace Collector ID, NDEF record, store location ID NDEF record, and private key with your specific values):</p>
+
+<pre class="prettyprint"><code>g_cfg.setCollectorID("12703788");    // decimal value
+g_cfg.setPrivateKey(DemoPrivateKeyStr, DemoPrivateKeyVersion);//smartPrivateKey
+g_cfg.setMerchantNameNdefRecord(rec);
+g_cfg.setStoreLocationIdNdefRecord(rec);
+g_cfg.setServiceTypes(new SmartTapVasConfig.ServiceType[]{SmartTapVasConfig.ServiceType.AllExceptPPSE});
+g_cfg.setPrivateKey(ZebraPrivateKeyStr, ZebraPrivateKeyVersion);
+</code></pre>
 
 <p>c. <strong>Create the ZebraNFCVAS object.</strong> This holds the instance of a VasConfig object for pass detection operation.</p>
 
 <pre class="prettyprint"><code>vasSDK.createZebraNfcVasConfig();
 </code></pre>
 
-<p>d. <strong>Set the AppleVasConfig object into the ZebraNFCVAS object -</strong> This informs the SDK about the configuration data to use when reading the VAS pass.</p>
+<p>d. <strong>Set the AppleVasConfig object into the ZebraNFCVAS object -</strong> This informs the SDK about the configuration data to use when reading the VAS pass. For Google, only a single configuration is supported at a time.</p>
 
-<pre class="prettyprint"><code>vasSDK.setVasConfig();
+<pre class="prettyprint"><code>vasSDK.setVasConfig(VasConfig);
 </code></pre>
+
+<ul>
+<li><p>Sample code to configure only Google Smart Tap:</p>
+
+<p><code>vasSDK.setVasConfig(g_cfg);</code></p></li></ul>
+
+<p>Since Apple supports multiple configurations, the following applies if configuring both Apple VAS and Google Smart Tap at the same time:</p>
+
+<pre class="prettyprint"><code>vasSDK.setVasConfigs(List&lt;VasConfig&gt;);
+</code></pre>
+
+<ul>
+<li><p>Sample code to configure both Apple VAS and Smart Tap configurations at the same time:</p>
+
+<p><code>vasSDK.setVasConfigs(Arrays.asList(new VasConfig[]{az_cfg, g_cfg}));</code></p></li></ul>
 
 <p>e. <strong>Call connectToReader -</strong> This establishes the connection with the NFC reader.</p>
 
@@ -471,7 +517,7 @@ public void onPause() {
 
 <h2 id="zebranfcvas" class="anchor"><a class="heading-anchor" href="#zebranfcvas"><span></span></a>ZebraNfcVAS</h2>
 
-<p>ZebraNfcVAS is the main component of the SDK that establishes a connection with the Zebra NFC VAS service, handles all the communication with the VAS passes, configures the NFC reader, and reads the pass from the Apple wallet. This object must be explicitly created and initialized. After the pass is successfully read, ZebraNfcVas decrypts the data (given that a private key is provided and all information is correct and intact) and returns the Pass object back to the caller. If a private key is not provided, the SDK returns the encrypted data.</p>
+<p>ZebraNfcVAS is the main class of the SDK that establishes a connection with the Zebra NFC VAS service, handles all the communication with the VAS passes, configures the NFC reader, and reads the pass from the mobile wallet. This object must be explicitly created and initialized. After the pass is successfully read, ZebraNfcVas decrypts the data (given that a private key is provided and all information is correct and intact) and returns the Pass object back to the caller. If a private key is not provided, the SDK returns the encrypted data.</p>
 
 <p>APIs that have been updated or removed from VAS SDK v1.0:</p>
 
@@ -639,9 +685,9 @@ public void onPause() {
 <pre class="prettyprint"><code>    pubilc void enableReadPassMode()
 </code></pre>
 
-<p>Limits the NFC controller to reader mode, disabling card emulation. Polling is configured for the Zebra NFC reader to read NFC Type A and Type B cards. </p>
+<p>Limits the NFC controller to reader mode, disabling card emulation. Polling is configured for the Zebra NFC reader to read NFC Type A and Type B cards.</p>
 
-<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i>  <strong>IMPORTANT NOTE:</strong> Since the NFC resources are fully allocated, no other application (running on the foreground or background) can request for NFC resources.</p>
+<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>IMPORTANT NOTE:</strong> Since the NFC resources are fully allocated, no other application (running on the foreground or background) can request for NFC resources.</p>
 
 <p><strong>Parameter:</strong> None</p>
 
@@ -652,7 +698,7 @@ public void onPause() {
 <pre class="prettyprint"><code>    public void disableReadPassMode()
 </code></pre>
 
-<p>Returns to default NFC Forum polling mode. This method should be called whenever the app moves to the background or when the activity is terminated. </p>
+<p>Returns to default NFC Forum polling mode. This method should be called whenever the app moves to the background or when the activity is terminated.</p>
 
 <p><strong>Parameter:</strong> None</p>
 
@@ -704,18 +750,18 @@ public void onPause() {
 
 <p>This is the abstract base class (interface) for a VAS configuration object and is not instantiated by itself. It contains information for accessing and interpreting a VAS pass.&nbsp;The configuration object contains one or more Pass Type Identifier(s), which identifies the pass to be returned, and may contain an associated private key, used to decrypt data from the pass.</p>
 
-<p><i class="fa fa-check-circle" style="color:rgb(82, 216, 139);"></i><b>NOTE:</b> Google Smart Tap supports only 1 configuration object. Apple VAS supports 1 or more configuration objects.</p>
+<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <b>NOTE:</b> Google Smart Tap supports only 1 configuration object. Apple VAS supports 1 or more configuration objects.</p>
 
 <h3 id="enumvastype" class="anchor"><a class="heading-anchor" href="#enumvastype"><span></span></a>enum VasType&nbsp;</h3>
 
 <p>Identifies the type of VasConfig object as one of two possible values:</p>
 
 <ul>
-<li><code>APPLE_VAS</code> - Apple VAS configuration object&nbsp;</li>
+<li><code>APPLE_VAS</code> - Apple VAS configuration object</li>
 
-<li><code>GOOGLE_SMART_TAP</code> - Google Smart Tap configuration object&nbsp;</li>
+<li><code>GOOGLE_SMART_TAP</code> - Google Smart Tap configuration object</li>
 
-<li><code>UNKNOWN</code> - Other NFC-type configuration object, including ISO or NDEF-formatted </li>
+<li><code>UNKNOWN</code> - Other NFC-type configuration object, including ISO or NDEF-formatted</li>
 </ul>
 
 <h3 id="gettype" class="anchor"><a class="heading-anchor" href="#gettype"><span></span></a>getType</h3>
@@ -723,16 +769,16 @@ public void onPause() {
 <pre class="prettyprint"><code>    public VasType getType()&nbsp;
 </code></pre>
 
-<p>Returns the type of the VASConfig object. </p>
+<p>Returns the type of the VASConfig object.</p>
 
 <p><strong>Return value:</strong>&nbsp;One of the following:</p>
 
 <ul>
-<li><code>VasType.APPLE_VAS</code> - Apple VAS configuration object&nbsp;</li>
+<li><code>VasType.APPLE_VAS</code> - Apple VAS configuration object</li>
 
-<li><code>VasType.GOOGLE_SMART_TAP</code>&nbsp;- Google Smart Tap configuration object&nbsp;</li>
+<li><code>VasType.GOOGLE_SMART_TAP</code>&nbsp;- Google Smart Tap configuration object</li>
 
-<li><code>UNKNOWN</code> - Other NFC-type configuration object, including ISO or NDEF-formatted </li>
+<li><code>UNKNOWN</code> - Other NFC-type configuration object, including ISO or NDEF-formatted</li>
 </ul>
 
 <h3 id="setprivatekeyforapplevas" class="anchor"><a class="heading-anchor" href="#setprivatekeyforapplevas"><span></span></a>setPrivateKey (for Apple VAS)</h3>
@@ -740,8 +786,7 @@ public void onPause() {
 <pre class="prettyprint"><code>    public void setPrivateKey(String key)&nbsp;
 </code></pre>
 
-<p><strong><em>This method only applies to Apple VAS.</em></strong> Sets the EC private key in PEM format. The private key must be properly formatted or decrypted and cannot be null or an empty string. For example:&nbsp;
-&nbsp;</p>
+<p><strong><em>This method only applies to Apple VAS.</em></strong> Sets the EC private key in PEM format. The private key must be properly formatted or decrypted and cannot be null or an empty string. For example:</p>
 
 <pre class="prettyprint"><code>    -----BEGIN EC PARAMETERS-----\n&nbsp;
     alkidnklde==\n&nbsp;
@@ -753,21 +798,20 @@ public void onPause() {
     -----END EC PRIVATE KEY-----\n&nbsp;
 </code></pre>
 
-<p><strong>Parameters:</strong>&nbsp;String key&nbsp;</p>
+<p><strong>Parameters:</strong>&nbsp;String key</p>
 
-<p><strong>Return values:</strong>&nbsp;None&nbsp;</p>
+<p><strong>Return values:</strong>&nbsp;None</p>
 
-<p><strong>Throws:</strong>&nbsp;<code>InvalidParameterException</code>&nbsp;if the parameter is null or the string is empty.&nbsp;
-&nbsp;
-<br></p>
+<p><strong>Throws:</strong>&nbsp;<code>InvalidParameterException</code>&nbsp;if the parameter is null or the string is empty.</p>
+
+<p><br></p>
 
 <h3 id="setprivatekeyforgooglesmarttap" class="anchor"><a class="heading-anchor" href="#setprivatekeyforgooglesmarttap"><span></span></a>setPrivateKey (for Google Smart Tap)</h3>
 
 <pre class="prettyprint"><code>     public void setPrivateKey(String key, int Version)&nbsp;
 </code></pre>
 
-<p><strong><em>This method only applies to Google Smart Tap.</em></strong> Sets the EC private key in PEM format. The private key must be properly formatted or decrypted and cannot be null or an empty string. For example:&nbsp;
-&nbsp;</p>
+<p><strong><em>This method only applies to Google Smart Tap.</em></strong> Sets the EC private key in PEM format. The private key must be properly formatted or decrypted and cannot be null or an empty string. For example:</p>
 
 <pre class="prettyprint"><code>    -----BEGIN EC PARAMETERS-----\n&nbsp;
     alkidnklde==\n&nbsp;
@@ -779,19 +823,18 @@ public void onPause() {
     -----END EC PRIVATE KEY-----\n&nbsp;
 </code></pre>
 
-<p>&nbsp;
-<strong>Parameters:</strong>&nbsp;</p>
+<p><strong>Parameters:</strong></p>
 
 <ul>
-<li>String key&nbsp;</li>
+<li>String key</li>
 
 <li>Int Version&nbsp;
 <br></li>
 </ul>
 
-<p><strong>Return values:</strong>&nbsp;None&nbsp;</p>
+<p><strong>Return values:</strong>&nbsp;None</p>
 
-<p><strong>Throws:</strong>&nbsp;<code>InvalidParameterException</code> if the parameter is null or the empty string.&nbsp;</p>
+<p><strong>Throws:</strong>&nbsp;<code>InvalidParameterException</code> if the parameter is null or the empty string.</p>
 
 <hr>
 
@@ -799,7 +842,7 @@ public void onPause() {
 
 <p>AppleVASConfig is the configuration class object for Apple VAS passes.&nbsp;It is inherited from VasConfig and contains parameters specific to Apple VAS for accessing and processing Apple Wallet passes. This configures the criteria used to choose which passes to access and read. The passes that are read must match the configuration parameters specified by the AppleVASConfig object. Class methods:</p>
 
-<p><b></b></p><p style="font-size:24px;"><b>constructor</b></p>  <!-- "constructor" as a heading here causes a build error--><p></p>
+<p><b></b></p><p style="font-size:24px;"><b>constructor</b></p> <!-- "constructor" as a heading here causes a build error--><p></p>
 
 <pre class="prettyprint"><code>    public void AppleVASConfig()
 </code></pre>
@@ -833,7 +876,7 @@ This is an array of one or more Pass Type IDs. For example, {“pass.com.zebra�
 <pre class="prettyprint"><code>    public void setFilter(byte[] filter, FilterType type)
 </code></pre>
 
-<p><em>(Optional)</em> Sets the filter information to be read for the VAS pass. The filter is supplied by the merchant of the VAS pass. This overwrites any pre-existing value. A company may issue passes for different reasons and/or uses. The filter offers the ability to issue numerous similar passes with distinguiahsable variations.</p>
+<p><strong><em>Optional:</em></strong> Sets the filter information to be read for the VAS pass. The filter is supplied by the merchant of the VAS pass. This overwrites any pre-existing value. A company may issue passes for different reasons and/or uses. The filter offers the ability to issue numerous similar passes with distinguiahsable variations.</p>
 
 <p>A sample use case could involve a company issuing a season of tickets to a sporting event. In this case, all the tickets originate from the same company, with each ticket sharing similarities except for access date, which serves as the sole distinguishing factor. This distinguishing factor is used as the filter to identify any combination of dates. For example, consider a scenario where there are 4 games taking place on different dates. The developer could assign each game a specific within the date filter. The Zebra VAS SDK SDK can support all 4 games by determining which bit is set. When using the NFC reader, a filter can be specified with one bit set for the current game, and it can be designated as a bit-mask. By doing so, any pass with the corresponding bit set for the present date can be read, while passes without the bit set can be skipped.</p>
 
@@ -868,7 +911,7 @@ This is an array of one or more Pass Type IDs. For example, {“pass.com.zebra�
 <pre class="prettyprint"><code>    public void setMerchantURL(String url)
 </code></pre>
 
-<p><em>(Optional)</em> Sets the VAS Merchant URL where the Apple device should be directed if no pass is currently available on the device. This overwrites any pre-existing value.</p>
+<p><strong><em>Optional:</em></strong> Sets the VAS Merchant URL where the Apple device should be directed if no pass is currently available on the device. This overwrites any pre-existing value.</p>
 
 <p>Passes are often used as loyalty cards. In situations where a customer is not yet a loyalty member, the user could simply tap the reader, and the Merchant URL can be transmitted to the device, guiding the user to a sign-up page. This implementation requires specific server APIs and processes that are beyond the scope of this document.</p>
 
@@ -891,7 +934,7 @@ This is the merchant URL string for the associated pass, which is generally used
 <p><strong>Return values:</strong></p>
 
 <ul>
-<li>String[] of Pass Type Ids. </li>
+<li>String[] of Pass Type Ids.</li>
 
 <li>null, if no passTypeIds have been set.</li>
 </ul>
@@ -905,7 +948,7 @@ This is the merchant URL string for the associated pass, which is generally used
 
 <p><strong>Parameters:</strong> None</p>
 
-<p><strong>Return values:</strong> </p>
+<p><strong>Return values:</strong></p>
 
 <ul>
 <li>byte[][] of Merchant Ids</li>
@@ -930,7 +973,7 @@ This is the merchant URL string for the associated pass, which is generally used
 <li>null, if no filter has been set</li>
 </ul>
 
-<p>The filter[5] contains the filter type (0x01 is exact match, 0x02 is bit_mask). </p>
+<p>The filter[5] contains the filter type (0x01 is exact match, 0x02 is bit_mask).</p>
 
 <h3 id="getmerchanturl" class="anchor"><a class="heading-anchor" href="#getmerchanturl"><span></span></a>getMerchantURL</h3>
 
@@ -958,7 +1001,7 @@ This is the merchant URL string for the associated pass, which is generally used
 
 <p><strong>Parameters:</strong> None</p>
 
-<p><strong>Return values:</strong> This always returns <code>TerminalMode.VasOnly</code> </p>
+<p><strong>Return values:</strong> This always returns <code>TerminalMode.VasOnly</code></p>
 
 <h3 id="getprotocol" class="anchor"><a class="heading-anchor" href="#getprotocol"><span></span></a>getProtocol</h3>
 
@@ -989,14 +1032,14 @@ This is the merchant URL string for the associated pass, which is generally used
 <pre class="prettyprint"><code>    public void setCollectorID(String collId)
 </code></pre>
 
-<p>Specifies the single collectorID associated with the pass(es) to be read.&nbsp;This is <em>mandatory</em> and serves as the primary value that is used to match with a VAS pass on the Android device.&nbsp;The pass on the Android device must contain a matching collectorID. Decimal number identifiers are assigned to each pass issuer for identification purposes. Only passes that match the collectorID specified are accepted. This overwrites any pre-existing values.</p>
+<p>Specifies the single Collector ID associated with the pass(es) to be read.&nbsp;This is <em>mandatory</em> and serves as the primary value that is used to match with a VAS pass on the Android device.&nbsp;The pass on the Android device must contain a matching Collector ID. Decimal number identifiers are assigned to each pass issuer for identification purposes. Only passes that match the Collector ID specified are accepted. This overwrites any pre-existing values.</p>
 
 <p><strong>Parameters:</strong> String collectorId
-This is one collectorID.&nbsp; Only one collectorID is allowed</p>
+This is one Collector ID.&nbsp; Only one Collector ID is allowed</p>
 
 <p><strong>Return values:</strong> None</p>
 
-<p><strong>Throws:</strong> </p>
+<p><strong>Throws:</strong></p>
 
 <ul>
 <li><code>InvalidParameterException</code>&nbsp;if the array is empty, there are null or empty strings in the array, or invalid characters in any of the pass Type Ids.</li>
@@ -1011,10 +1054,10 @@ This is one collectorID.&nbsp; Only one collectorID is allowed</p>
 <pre class="prettyprint"><code>    public void setServiceTypes(ServiceType[] types)
 </code></pre>
 
-<p><em>(Optional)</em> Specifies an array of pass types that shall be accepted.&nbsp;The default value, if one is not explicitly provided, is AllExceptPPSE.&nbsp;One or more types may be specified, for example: Loyalty and/or GiftCard. This overwrites any pre-existing values.</p>
+<p><strong><em>Optional:</em></strong> Specifies an array of pass types that shall be accepted. One or more types may be specified, for example: Loyalty and/or GiftCard. The default value is "AllExceptPPSE".&nbsp;This overwrites any pre-existing values. See <a href="#enumservicetype">enum ServiceType</a> for all possible values.</p>
 
 <p><strong>Parameters:</strong> ServiceType[] types
-Array of one or more ServiceTypes - may not be null and may not be empty</p>
+Array of one or more ServiceTypes. This must not be null and or empty.</p>
 
 <p><strong>Return values:</strong> None</p>
 
@@ -1024,30 +1067,30 @@ Array of one or more ServiceTypes - may not be null and may not be empty</p>
 
 <pre class="prettyprint"><code>    // Create a GoogleSmartTap Config object
     SmartTapVasConfig z_cfg = new SmartTapVasConfig();&nbsp;&nbsp;&nbsp;&nbsp;
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
     // Set the service type. This is optional - if not specified, AllExceptPPSE is used (method example for this setServiceTypes)
     z_cfg.setServiceTypes(new SmartTapVasConfig.ServiceType[]{SmartTapVasConfig.ServiceType.AllExceptPPSE});
 </code></pre>
 
 <h3 id="enumservicetype" class="anchor"><a class="heading-anchor" href="#enumservicetype"><span></span></a>enum ServiceType</h3>
 
-<pre class="prettyprint"><code>    public enum ServiceType{ 
-        AllServices("All Services", 0x00), 
-        AllExceptPPSE("All Excpet PPSE", 0x01), 
-        Loyalty("Loyalty", 0x03), 
-        Offer("Offer", 0x04), 
-        GiftCard("Gift Card", 0x05), 
-        PrivateLabelCard("Private Label Card", 0x06), 
-        EventTicket("Event Ticket", 0x07), 
-        Flight("Flight", 0x08), 
-        Transit("Transit", 0x09), 
-        CloudBasedWallet("Cloud Based Wallet", 0x10), 
-        MobileMarketingPlatform("Mobile Marketing Platform", 0x11), 
-        Generic("Generic", 0x12), 
-        GenericPrivatePass("Generic Private Pass", 0x13), 
-        WalletCustomer("Wallet Customer", 0x40); 
+<pre class="prettyprint"><code>    public enum ServiceType{
+        AllServices("All Services", 0x00),
+        AllExceptPPSE("All Excpet PPSE", 0x01),
+        Loyalty("Loyalty", 0x03),
+        Offer("Offer", 0x04),
+        GiftCard("Gift Card", 0x05),
+        PrivateLabelCard("Private Label Card", 0x06),
+        EventTicket("Event Ticket", 0x07),
+        Flight("Flight", 0x08),
+        Transit("Transit", 0x09),
+        CloudBasedWallet("Cloud Based Wallet", 0x10),
+        MobileMarketingPlatform("Mobile Marketing Platform", 0x11),
+        Generic("Generic", 0x12),
+        GenericPrivatePass("Generic Private Pass", 0x13),
+        WalletCustomer("Wallet Customer", 0x40);
 
-    } 
+    }
 </code></pre>
 
 <h3 id="setposcapabilitiesarray" class="anchor"><a class="heading-anchor" href="#setposcapabilitiesarray"><span></span></a>setPosCapabilitiesArray</h3>
@@ -1055,7 +1098,7 @@ Array of one or more ServiceTypes - may not be null and may not be empty</p>
 <pre class="prettyprint"><code>    public void setPosCapabilitiesArray(byte[] posCapabilities)
 </code></pre>
 
-<p><em>(Optional)</em> Specifies a 5-byte array that indicates the POS capabilities as specified in the Google documentation. If this is not called, then the POS capabilities are not sent. The developer must ensure the information is correct since there is no validation performed on the individual bytes. This overwrites any pre-existing values.</p>
+<p><strong><em>Optional:</em></strong> Specifies a 5-byte array that indicates the POS capabilities. If this is not called, then the POS capabilities are not sent. The developer must ensure the information is correct since there is no validation performed on the individual bytes. This overwrites any pre-existing values.</p>
 
 <p><strong>Parameters:</strong> byte[] posCapabilities (must be 5 bytes)</p>
 
@@ -1068,8 +1111,7 @@ Array of one or more ServiceTypes - may not be null and may not be empty</p>
 <pre class="prettyprint"><code>    public void setStoreLocationIdNdefRecord(NdefRecord storeLocationIdRecord)
 </code></pre>
 
-<p><em>(Optional)</em> - specify the store location ID NDEF record
-OPTIONAL - Specifies the store location ID NDEF record to be placed into the Merchant data in the getData message as specified in the Google documentation <font size="4" color="red">Where?.</font>. If this is not called, then this record is not sent. The developer must ensure the information is correct since there is no validation on the NDEF record data. This overwrites any pre-existing values.</p>
+<p><strong><em>Optional:</em></strong> - Specifies the store location ID NDEF record to be placed into the Merchant data in the getData message as specified in the Google documentation <font size="4" color="red">Where?.</font>. If this is not called, then this record is not sent. The developer must ensure the information is correct since there is no validation on the NDEF record data. This overwrites any pre-existing values.</p>
 
 <p><strong>Parameters:</strong> NdefRecord storeLocationIdRecord</p>
 
@@ -1083,7 +1125,7 @@ OPTIONAL - Specifies the store location ID NDEF record to be placed into the Mer
     SmartTapVasConfig z_cfg = new SmartTapVasConfig();
     z_cfg.setCollectorID("95011179");
 
-    // EXAMPLE - OPTIONAL FIELD - create an NDEF Record for the location ID in the Merchant NDEF Record 
+    // EXAMPLE - OPTIONAL FIELD - create an NDEF Record for the location ID in the Merchant NDEF Record
     ByteBuffer bb = ByteBuffer.allocate(4);
     byte [] locId = bb.putInt(12345).array();
     rec = new NdefRecord(NdefRecord.TNF_EXTERNAL_TYPE, new byte[]{(byte) 0x6c, (byte) 0x69, (byte) 0x64}, // 'lid' in byte form
@@ -1097,7 +1139,7 @@ OPTIONAL - Specifies the store location ID NDEF record to be placed into the Mer
 <pre class="prettyprint"><code>    public void setTerminalIdNdefRecord(NdefRecord terminalIdRecord)
 </code></pre>
 
-<p><em>(Optional)</em> - Specifies the NDEF record that to be placed into the Merchant data in the getData message as specified in the Google documentation <font size="4" color="red">Where?.</font>.&nbsp; If this is not called, then this record is not sent. The developer must ensure the information is correct since there is no validation performed on the NDEF record data. This overwrites any pre-existing values.</p>
+<p><strong><em>Optional:</em></strong> - Specifies the terminal ID NDEF record to be placed into the Merchant data in the getData message as specified in the Google documentation <font size="4" color="red">Where?.</font>.&nbsp;If this is not called, then this record is not sent. The developer must ensure the information is correct since there is no validation performed on the NDEF record data. This overwrites any pre-existing values.</p>
 
 <p><strong>Parameters:</strong> NdefRecord terminalIdRecord</p>
 
@@ -1110,7 +1152,7 @@ OPTIONAL - Specifies the store location ID NDEF record to be placed into the Mer
 <pre class="prettyprint"><code>    public void setMerchantNameNdefRecord(NdefRecord merchantNameRecord)
 </code></pre>
 
-<p><em>(Optional)</em> Specifies the NDEF record to be placed into the Merchant data in the getData message as specified in the Google documentation.<font size="4" color="red">Where?.</font>&nbsp; If this is not called, then this record is not sent. The developer must ensure the information is correct since there is no validation performed on the NDEF record data.&nbsp;This overwrites any pre-existing values.</p>
+<p><strong><em>Optional:</em></strong> Specifies the merchant name NDEF record to be placed into the Merchant data in the getData message as specified in the Google documentation.<font size="4" color="red">Where?.</font>&nbsp; If this is not called, then this record is not sent. The developer must ensure the information is correct since there is no validation performed on the NDEF record data.&nbsp;This overwrites any pre-existing values.</p>
 
 <p><strong>Parameters:</strong> NdefRecord merchantNameRecord</p>
 
@@ -1124,7 +1166,7 @@ OPTIONAL - Specifies the store location ID NDEF record to be placed into the Mer
     SmartTapVasConfig z_cfg = new SmartTapVasConfig();
     z_cfg.setCollectorID("95011179");
 
-    // EXAMPLE - OPTIONAL FIELD - create an NDEF Record for the Merchant name in the Merchant NDEF Record 
+    // EXAMPLE - OPTIONAL FIELD - create an NDEF Record for the Merchant name in the Merchant NDEF Record
     byte[] name = new String("Sample Merchant").getBytes(StandardCharsets.UTF_8);
     byte[] strHeader = new byte[] {(byte) 0x02, (byte) 0x65, (byte) 0x6E};
     NdefRecord rec = new NdefRecord(NdefRecord.TNF_WELL_KNOWN, NdefRecord.RTD_TEXT, new byte[]{(byte) 0x6d,(byte) 0x6e, (byte) 0x72}, // 'mnr' in byte form
@@ -1137,7 +1179,7 @@ OPTIONAL - Specifies the store location ID NDEF record to be placed into the Mer
 <pre class="prettyprint"><code>    public void setMerchantCategoryIdNdefRecord(NdefRecord merchantCategoryRecord)
 </code></pre>
 
-<p><em>(Optional)</em> Specifies the NDEF record to be placed into the Merchant data in the getData message as specified in the Google documentation.&nbsp;<font size="4" color="red">Where?.</font>&nbsp; If this is not called, then this record is not sent.&nbsp;The developer must ensure the information is correct since there is no validation performed on the NDEF record data.&nbsp;This overwrites any pre-existing values.</p>
+<p><strong><em>Optional:</em></strong> Specifies the merchant category NDEF record to be placed into the Merchant data in the getData message as specified in the Google documentation.&nbsp;<font size="4" color="red">Where?.</font>&nbsp; If this is not called, then this record is not sent.&nbsp;The developer must ensure the information is correct since there is no validation performed on the NDEF record data.&nbsp;This overwrites any pre-existing values.</p>
 
 <p><strong>Parameters:</strong> NdefRecord merchantCategoryRecord
 <strong>Return values:</strong> None
@@ -1148,16 +1190,16 @@ OPTIONAL - Specifies the store location ID NDEF record to be placed into the Mer
 <pre class="prettyprint"><code>    public String getCollectorIDHexStr()
 </code></pre>
 
-<p>Returns the collectorID as a string in hex format.</p>
+<p>Returns the Collector ID as a string in hex format.</p>
 
 <p><strong>Parameters:</strong> None</p>
 
-<p><strong>Return values:</strong> </p>
+<p><strong>Return values:</strong></p>
 
 <ul>
-<li>String collector ID as a hex string. </li>
+<li>String collectorID as a hex string.</li>
 
-<li>null if no collectorIDs have been set.</li>
+<li>null, if no Collector IDs have been set.</li>
 </ul>
 
 <h3 id="getcollectoridint" class="anchor"><a class="heading-anchor" href="#getcollectoridint"><span></span></a>getCollectorIDInt</h3>
@@ -1165,18 +1207,18 @@ OPTIONAL - Specifies the store location ID NDEF record to be placed into the Mer
 <pre class="prettyprint"><code>    public int getCollectorIDInt()
 </code></pre>
 
-<p>Returns the collectorID in integer format.</p>
+<p>Returns the Collector ID in integer format.</p>
 
 <p><strong>Parameters:</strong> None</p>
 
-<p><strong>Return values:</strong> Integer format of collectorID. Null if no collectorIDs have been set.</p>
+<p><strong>Return values:</strong> Integer format of Collector ID. Null if no Collector IDs have been set.</p>
 
 <h3 id="getposcapabilitiesarray" class="anchor"><a class="heading-anchor" href="#getposcapabilitiesarray"><span></span></a>getPosCapabilitiesArray</h3>
 
 <pre class="prettyprint"><code>    public byte[] getPosCapabilitiesArray()
 </code></pre>
 
-<p><em>(Optional)</em> Returns the 5-byte array to be placed into the POS capabilities as specified in the Google documentation. <font size="4" color="red">?</font>&nbsp;</p>
+<p><strong><em>Optional:</em></strong> Returns the 5-byte array to place into the POS capabilities as specified in the Google documentation. <font size="4" color="red">?</font></p>
 
 <p><strong>Parameters:</strong> none</p>
 
@@ -1187,7 +1229,7 @@ OPTIONAL - Specifies the store location ID NDEF record to be placed into the Mer
 <pre class="prettyprint"><code>    public NdefRecord setStoreLocationIdNdefRecord()
 </code></pre>
 
-<p><em>(Optional)</em> Returns the store location ID NDEF record to be placed into the Merchant data in the getData message as specified in the Google documentation. <font size="4" color="red">?</font>&nbsp;</p>
+<p><strong><em>Optional:</em></strong> Returns the store location ID NDEF record to be placed into the Merchant data in the getData message as specified in the Google documentation. <font size="4" color="red">?</font></p>
 
 <p><strong>Parameters:</strong> none</p>
 
@@ -1198,7 +1240,7 @@ OPTIONAL - Specifies the store location ID NDEF record to be placed into the Mer
 <pre class="prettyprint"><code>    public void setTerminalIdNdefRecord()
 </code></pre>
 
-<p><em>(Optional)</em> Returns the terminal ID NDEF record to be placed into the Merchant data in the getData message as specified in the Google documentation. <font size="4" color="red">?</font>&nbsp;</p>
+<p><strong><em>Optional:</em></strong> Returns the terminal ID NDEF record to be placed into the Merchant data in the getData message as specified in the Google documentation. <font size="4" color="red">?</font></p>
 
 <p><strong>Parameters:</strong> none</p>
 
@@ -1209,7 +1251,7 @@ OPTIONAL - Specifies the store location ID NDEF record to be placed into the Mer
 <pre class="prettyprint"><code>    public void setMerchantNameNdefRecord()
 </code></pre>
 
-<p><em>(Optional)</em> Returns the merchant name NDEF record to be placed into the Merchant data in the getData message as specified in the Google documentation. <font size="4" color="red">?</font>&nbsp;</p>
+<p><strong><em>Optional:</em></strong> Returns the merchant name NDEF record to be placed into the Merchant data in the getData message as specified in the Google documentation. <font size="4" color="red">?</font></p>
 
 <p><strong>Parameters:</strong> none</p>
 
@@ -1220,390 +1262,13 @@ OPTIONAL - Specifies the store location ID NDEF record to be placed into the Mer
 <pre class="prettyprint"><code>    public void setMerchantCategoryIdNdefRecord()
 </code></pre>
 
-<p><em>(Optional)</em> - Returns the merchant category NDEF record to be placed into the Merchant data in the getData message as specified in the Google documentation. <font size="4" color="red">?</font>&nbsp;</p>
+<p><strong><em>Optional:</em></strong> - Returns the merchant category NDEF record to be placed into the Merchant data in the getData message as specified in the Google documentation. <font size="4" color="red">?</font></p>
 
 <p><strong>Parameters:</strong> none</p>
 
 <p><strong>Return values:</strong> NdefRecord merchantCategoryRecord</p>
 
-<!-- 
----
-
-## Objects
-
-The main SDK components are:
-
-1. **ZebraNfcVas -** operational core
-2. **VasConfig -** configuration object
-    - **[AppleVasConfig](#applevasconfig) -** contain data specific to Apple VAS passes
-    - **[SmartTapVasConfig](#smarttapvasconfig) -** contain data specific to Google Smart Tap passes
-3. **Pass -** an object representing the received VAS pass-->
-
-<!--  **REMOVE UNTIL DESCRIPTION IS AVAILABLE**
-<img src="flow-diagram.jpg" alt="" style="height:450px" />
-
-<font size="5" color="red">Marek - Add description for diagram</font> -->
-
-<!--
-### ZebraNfcVas
-
-**ZebraNfcVAS object** is the main component of the SDK that establishes a connection with the Zebra NFC VAS service, handles all the communication with the VAS passes, configures the NFC reader, and reads the pass from the Apple wallet. This object must be explicitly created and initialized. After the pass is successfully read, ZebraNfcVas decrypts the data (given that a private key is provided and all information is correct and intact) and returns the Pass object back to the caller. If a private key is not provided, the SDK returns the encrypted data.
-
-### VasConfig 
-
-Abstract VasConfig is the base class (interface) for a VAS configuration object and is not instantiated by itself. It contains information for accessing and interpreting a VAS pass. Class methods:
-<br />
-
-#### getType
-
-        public VasType getType() 
-
-Returns the type of the VASConfig object. 
-
-**Return value:** `VasType.APPLE_VAS` or `VasType.GOOGLE_SMART_TAP` 
-
-#### setPrivateKey (for Apple VAS)
-
-        public void setPrivateKey(String key) 
-
-**_This method only applies to Apple VAS._** Sets the EC private key in PEM format. The private key must be properly formatted or decrypted and cannot be null or an empty string. For example: 
- 
-
-        -----BEGIN EC PARAMETERS-----\n 
-        alkidnklde==\n 
-        -----END EC PARAMETERS-----\n 
-        -----BEGIN EC PRIVATE KEY——\n 
-        aslkdflaksdfjfkk328klxld…\n 
-        ak7ujvbn9b8o3bv9hae98fn2…\n 
-        9asjh90fuh34n2uh33==\n 
-        -----END EC PRIVATE KEY-----\n 
-
-**Parameters:** String key 
-
-**Return values:** None 
-
-**Throws:** `InvalidParameterException` if the parameter is null or the string is empty. 
- 
-<br />
-
-#### setPrivateKey (for Google Smart Tap)
-
-         public void setPrivateKey(String key, int Version) 
-
-**_This method only applies to Google Smart Tap._** Sets the EC private key in PEM format. The private key must be properly formatted or decrypted and cannot be null or an empty string. For example: 
- 
-
-        -----BEGIN EC PARAMETERS-----\n 
-        alkidnklde==\n 
-        -----END EC PARAMETERS-----\n 
-        -----BEGIN EC PRIVATE KEY——\n 
-        aslkdflaksdfjfkk328klxld…\n 
-        ak7ujvbn9b8o3bv9hae98fn2…\n 
-        9asjh90fuh34n2uh33==\n 
-        -----END EC PRIVATE KEY-----\n 
- 
-**Parameters:** 
-- String key 
-- Int Version 
-<br />
-
-**Return values:** None 
-
-**Throws:** `InvalidParameterException` if the parameter is null or the empty string. 
-
-There are two types of configuration objects automatically generated when creating a VasConfig object:
-- **[AppleVasConfig](#applevasconfig) -** contain data specific to Apple VAS passes
-- **[SmartTapVasConfig](#smarttapvasconfig) -** contain data specific to Google Smart Tap passes
-
-Only one configuration object can be created at a time. The configuration object contains one or more Pass Type Identifier(s) <font size="4" color="red">Is this applicable to Google Smart Tap??</font> , which identifies the pass to be returned, and may contain an associated private key, used to decrypt data from the pass.
-
-Example 1 of a configuration object with one pass type identifier:
-
-- Pass Type Identifier:
-  - pass.com.zebra.special_holiday_event_pass
-- Private Key: decrypts the data from the pass
-- Filter (optional)
-- Merchant URL (optional)
-
-Example 2 of a configuration object with 2 pass type identifiers:
-
-- Pass Type Identifier:
-  - pass.com.zebra.customer_loyalty
-  - pass.com.zebra.cafe_loyalty
-- Private Key: decrypts data from either of the two above pass types
-- Filter (optional)
-- Merchant URL (optional)
-
-### Pass
-
-The **Pass object** encapsulates the information about the VAS pass that is read, including the payload data and supplementary metadata. The Pass object enables developers to validate the pass type and ensure that it is not a replay attack (i.e. the date and time is within 10 seconds of the actual date and time), adhering to Apple requirements.
--->
-
 <hr>
-
-<!-- 
-## APIs
-
-APIs available:
-
-- [init](#init)
-- [onServiceConnected](#onserviceconnected)
-- [onServiceDisconnected](#onservicedisconnected)
-- [createAppleVasConfig](#createapplevasconfig)
-- [setPassTypeIds](#setpasstypeids)
-- [setPrivateKey](#setprivatekey)
-- [setFilter](#setfilter)
-- [setMerchantURL](#setmerchanturl)
-- [setVasConfig](#setvasconfig)
-- [clearConfigs](#clearconfigs)
-- [createZebraVasConfig](#createzebravasconfig)
-- [connectToReader](#connecttoreader)
-- [enableReadPassMode](#enablereadpassmode)
-- [disableReadPassMode](#disablereadpassmode)
-- [getType](#gettype)
-- [getMerchantUrl](#getmerchanturl)
-- [getTerminalMode](#getterminalmode)
-- [onPassDetected](#onpassdetected)
-- [getSdkVersion](#getsdkversion)
-
-### init
-
-        public void init()
-
-Initializes and binds to the Zebra NFC VAS Service.
-
-**Parameter:** None
-
-**Return value:** None
-
-**Throws:** `RuntimeException` if the service is not available or the security/signature does not match.
-
-### onServiceConnected
-
-This is a callback method invoked when Zebra NFC VAS service is connected. IZebraServiceConnection interface must be implemented. When init() is called, it tries to connect to the Zebra NFC VAS service. If successful, it calls onServiceConnected.
-
-### onServiceDisconnected
-
-This is a callback method invoked when Zebra NFC VAS service is disconnected. IZebraServiceConnection interface must be implemented. When init() is called, it tries to connect to the Zebra NFC VAS service. If unsuccessful, it calls onServiceDisconnected.
-
-### createAppleVasConfig
-
-        public void createAppleVasConfig()
-
-Creates the VASConfig object and specific instance of a VasConfig object. This can only be called once.
-
-**Parameter:** None
-
-**Return value:** None
-
-### setPassTypeIds
-
-        public void setPassTypeIds(String[] passTypeIds)
-
-Sets one or more Pass Type Identifiers in the app prior to reading the NFC pass. The Pass Type Identifier is provided by either the issuer of the NFC pass or Apple. This overwrites any existing values. The app uses these unique string values as identifiers to ensure that when it reads the NFC pass in the Apple Wallet, it can verify whether the pass type identifier matches the one that was used during the NFC pass creation process. These identifiers are typically in the form 'pass.com.companyname' or other similar reverse domain string. When an NFC reader specifies one or more Pass Type Identifiers, only passes that match those identifiers are retrieved.
-
-**Parameter:** String[] passTypeIds <br />
-This is an array of one or more Pass Type IDs. For example, {“pass.com.pronto.zebra-wallet-pass.demo”} or {“pass.com.zebra”, “pass.com.xyz.somethingspecific”}. When attempting to read a pass, the pass being read is checked against each Pass Type ID in the array.
-
-**Return value:** None
-
-**Throws:**
-
-- `InvalidParameterException` when there are null or empty strings in the array, invalid characters, or the array is empty in any of the Pass Type IDs.
-- `UnsupportedEncodingException` when a conversion encoding error occurs.
-- `NoSuchAlgorithmException` when a SHA256 conversion error occurs.
-
-### setPrivateKey
-
-        public void setPrivateKey(String key)
-
-Sets the PEM-formatted private key used to decrypt the pass object. It overwrites any pre-existing value. The NFC pass on the Apple Wallet is encrypted prior to being communicated to the Zebra mobile computer. To decrypt the pass, the Zebra VAS SDK needs the associated private key. The private key is acquired during pass creation, either by the developer with Apple's permission to create the pass or from the company that issued the NFC-enabled pass. If a private key is _not_ provided to the SDK, the SDK returns the message encrypted and it is the developer's responsibility to decrypt it. For example, this may include sending the encrypted pass to a backend server to be decrypted and processed.
-
-**Parameter:** String key
-
-Example:
-
-        -----BEGIN EC PARAMETERS-----\n
-        alkidnklde==\n
-        -----END EC PARAMETERS-----\n
-        -----BEGIN EC PRIVATE KEY——\n
-        Aslkdflhksdfjfkk728klxld...\n
-        ak7hjvgn9b8o3bv9hae98fn2...\
-        n 9asjh90fuh34n2uh33==\n
-        -----END EC PRIVATE KEY-----\n
-
-**Return value:** None
-
-**Throws:** `InvalidParameterException` if the key is null, empty, or incorrectly formatted.
-
-### setFilter
-
-        public void setFilter(byte[] filter, FilterType type)
-
-(Optional) Sets the filter information to be read for the NFC pass. The filter is supplied by the merchant of the NFC pass. This overwrites any pre-existing value. A company may issue passes for different reasons and/or uses. The filter offers the ability to issue numerous similar passes with distinguiahsable variations.
-
-A sample use case could involve a company issuing a season of tickets to a sporting event. In this case, all the tickets originate from the same company, with each ticket sharing similarities except for access date, which serves as the sole distinguishing factor. This distinguishing factor is used as the filter to identify any combination of dates. For example, consider a scenario where there are 4 games taking place on different dates. The developer could assign each game a specific within the date filter. The Zebra VAS SDK SDK can support all 4 games by determining which bit is set. When using the NFC reader, a filter can be specified with one bit set for the current game, and it can be designated as a bit-mask. By doing so, any pass with the corresponding bit set for the present date can be read, while passes without the bit set can be skipped.
-
-**Parameter:**
-
-- **byte[] filter -** This is a 4-byte array that is the filter value used during the pass retrieval process.
-- **FilterType type -** This is one of two constants:
-  - FILTER_TYPE_EXACT_MATCH - If the specified filter value exactly matches the merchant pass filter value, the match is successful.
-  - FILTER_TYPE_BIT_MASK - If the specified filter value is bitwise ANDed with the merchant pass filter value and the result equals the merchant pass filter value, the match is successful.
-
-**Return value:** None
-
-**Throws:** `InvalidParameterException` if the filter value is not exactly 4 bytes in size.
-
-### setMerchantURL
-
-        public void setMerchantURL(String url)
-
-(Optional) Sets the VAS Merchant URL where the Apple device should be directed if no pass is currently available on the device. This overwrites any pre-existing value.
-
-Passes are often used as loyalty cards. In situations where a customer is not yet a loyalty member, the user could simply tap the reader, and the Merchant URL can be transmitted to the device, guiding the user to a sign-up page. This implementation requires specific server APIs and processes that are beyond the scope of this document.
-
-**Parameter:** String url <br />
-This is the merchant URL string for the associated pass, which is generally used to sign-up for a pass. It _must_ include "https://". The maximum string length is 64 bytes.
-
-**Return value:** None
-
-**Throws:** `InvalidParameterException` if the length is too long or does not contain a valid "https://" header.
-
-### setVasConfig
-
-        public void setVASConfig()
-
-Specifies the VASConfig object to be used for interacting with the passes. Prior to using this method,createAppleVasConfig() must be called to create the VasConfig object. To retrieve or pass data, call createZebraVasConfig().
-
-**Parameter:** None
-
-**Return value:** None
-
-**Throws:** `InvalidParameterException` or `RuntimeException` if VasConfig object is null.
-
-### clearConfigs
-
-        public void clearConfigs()
-
-Clears the VASConfig object that is used for interacting with passes. After clearing the object, data from the NFC passes cannot be retrieved until calling: setPrivateKey(), setFilter(), setPassIds(), and setVasConfig().
-
-**Parameter:** None
-
-**Return value:** None
-
-Throws: `RuntimeException` if VasConfig object is null.
-
-### createZebraVasConfig
-
-        public void createZebraVasConfig()
-
-Creates the ZebraConfig object and holds the instance of a VasConfig object for pass detection operation.
-
-**Parameter:** None
-
-**Return:** None
-
-### connectToReader
-
-        pubilc void connectToReader()
-
-Obtains a connection to the NFC adapter.
-
-**Parameter:** None
-
-**Return value:** Returns error code indicating success or failure:
-
-- `ERROR_NFC_IS_DISABLED` - the NFC adapter is disabled
-- `ERROR_NO_NFC_SUPPORT` - the hardware does not have NFC support
-- `ERROR_SUCCESS` - connection is successful
-
-### enableReadPassMode
-
-        pubilc void enableReadPassMode()
-
-Limits the NFC controller to reader mode, disabling card emulation. Polling is configured for the Zebra NFC reader to read NFC Type A and Type B cards.
-
-> Since the NFC resources are fully allocated, no other application (running on the foreground or background) can request for NFC resources.
-
-**Parameter:** None
-
-**Return value:** None
-
-### disableReadPassMode
-
-        public void disableReadPassMode()
-
-Returns to default NFC Forum polling mode. This method should be called whenever the app moves to the background or when the activity is terminated.
-
-**Parameter:** None
-
-**Return value:** None
-
-### getType
-
-        public String getType()
-
-Returns the type of the object.
-
-**Return value:** Static string: ‘APPLE_VAS’
-
-### getMerchantURL
-
-        public String getMerchantURL()
-
-Gets the Merchant URL string which the Apple device should be directed if no pass is currently available on the device. Generally this is provided for the user to sign-up for a pass.
-
-**Parameter:** None
-
-**Return value:**
-
-- If successful, returns the string of the merchant URL.
-- If unsuccessful and no merchant URL has been set, returns null.
-
-### getTerminalMode
-
-        public AppleVasConfig.TerminalMode getTerminalMode()
-
-Gets the current operating mode for the reader.
-
-**Parameter:** None
-
-**Return value:** TerminalMode.VasOnly
-
-**Throws:** `RuntimeException` when the Zebra NFC VAS service is not connected
-
-### onPassDetected()
-
-        public void onPassDetected(Pass pass)
-
-The interface method onPassDetected is a callback that gets invoked when an NFC pass is read. The SDK passes the NFC pass and identifies whether the pass is encrypted or decrypted. **Pass** is a class where all Pass data can be accessed via getter methods:
-
-- <code>public String getStatusWord()</code> – Returns the StatusWord of the NFC pass detected
-- <code>public Result getResultCode()</code> - Returns the ResultCode of the NFC pass detected
-- <code>public byte[] getMerchantId()</code> - Returns the MerchantID (Pass Type Identifier converted to SHA256) of the NFC pass detected
-- <code>public String getPassTypeId()</code> - Returns the PassTypeID of the NFC pass detected
-- <code>public Type getPassType()</code> - Returns the PassType of the NFC pass detected
-- <code>public byte[] getPayloadMessage()</code> - Returns the PayloadMessage of the NFC pass detected
-- <code>public Date getPayloadDate()</code> - Returns the PayloadDate of the NFC pass detected
-- <code>public boolean isDecrypted()</code> – Returns the status of the payload message: decrypted or encrypted
-
-**Parameter:** Pass object
-
-**Return value:** None
-
-### getSdkVersion()
-
-        public String getSdkVersion()
-
-Returns the version of the SDK formatted as MAJ.MIN.BUG.
-
-**Parameter:** <code>Activity activity</code> - This is the activity that registered for the NFC intent Response resp, the class that has implemented the response interface and receives the pass data.
-
-**Return value:** String - the SDK version in MAJOR.MINOR.BUG_FIX format.
-
----
--->
 
 <h2 id="security" class="anchor"><a class="heading-anchor" href="#security"><span></span></a>Security</h2>
 
