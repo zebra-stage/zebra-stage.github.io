@@ -227,7 +227,7 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p><strong>Zebra VAS SDK</strong> is an Android library built on top of the existing Android NFC APIs and the third party VAS protocol, such as Apple VAS or Google Smart Tap. It offers streamlined configuration and management of the necessary procedures involved in accessing and processing data from an NFC pass, whether or not it is stored in a mobile wallet.</p>
+<p><strong>Zebra VAS SDK</strong> is an Android library built on top of the existing Android NFC APIs and the third party VAS protocol, such as Apple VAS or Google Smart Tap. It offers streamlined configuration and management of the necessary procedures involved in accessing and processing data from an NFC pass.</p>
 
 <p>The main SDK components are:</p>
 
@@ -246,7 +246,7 @@
 <li><strong>Pass object -</strong> Encapsulates the information about the NFC pass that is read, including the payload data and supplementary metadata. The Pass object enables developers to validate the pass type and ensure that it is not a replay attack (i.e. the date and time is within 10 seconds of the actual date and time), adhering to Apple requirements.</li>
 </ol>
 
-<p>This section offers guidance on developing an application to read the NFC pass and presents the available APIs within the Zebra VAS SDK. A single application can be built to access and read standard NFC passes or passes from Apple Wallet or Google Wallet.</p>
+<p>This section offers guidance on developing an application to read NFC passes using the Zebra VAS SDK. A single application can be built to access and read Apple Wallet, Google Wallet, or other NFC passes.</p>
 
 <hr>
 
@@ -262,9 +262,7 @@
 <li><strong>Install the Zebra VAS Service .APK</strong> on the supported Zebra mobile computer. This is required to establish communication between the SDK and the Zebra device via the Zebra VAS Service.</li>
 </ol>
 
-<hr>
-
-<h2 id="upgradingfromprevioussdk" class="anchor"><a class="heading-anchor" href="#upgradingfromprevioussdk"><span></span></a>Upgrading from Previous SDK</h2>
+<h3 id="upgradefromprevioussdk" class="anchor"><a class="heading-anchor" href="#upgradefromprevioussdk"><span></span></a>Upgrade from Previous SDK</h3>
 
 <p>For apps developed with prior version VAS SDK v1.0, there are some APIs that have been updated or removed. Refer to the changes in the table below:</p>
 
@@ -337,18 +335,29 @@
 
 </tbody></table>
 
+<h3 id="xamarinsupport" class="anchor"><a class="heading-anchor" href="#xamarinsupport"><span></span></a>Xamarin Support</h3>
+
+<p><strong>To use Zebra VAS SDK in Xamarin,</strong> convert "zebranfcvas-release.aar" to a .DLL file. Refer to instructions from Microsoft to <a href="https://learn.microsoft.com/en-us/xamarin/android/platform/binding-java-library/binding-an-aar">bind an .AAR</a>. If .DLL creation fails with errors during the build, resolve the issue by removing TerminalMode with the following change to Metadata.xml, then binding the library:</p>
+
+<pre class="prettyprint"><code>    &lt;remove-node
+        path="/api/package[@name='com.zebra.nfcvas']/class[@name='ZebraNfcVas.TerminalMode']"&gt;
+    &lt;/remove-node&gt;
+</code></pre>
+
+<p>Terminal Mode is reserved for further implementation and future expansion. Removing it does not cause any harm. Zebra mobile computers are VAS_Only terminals; payment is not supported.</p>
+
 <hr>
 
 <h2 id="developerguide" class="anchor"><a class="heading-anchor" href="#developerguide"><span></span></a>Developer Guide</h2>
 
-<p>Zebra VAS SDK utilizes Apple VAS and Google Smart Tap to read NFC passes from each respective mobile wallet.</p>
+<p>Zebra VAS SDK is capable of reading Apple Wallet passes, which utilize Apple VAS technology, and Google Wallet passes, which utilizes Google Smart Tap technology. This section provide guidance for developers to build apps based on the type of pass being read. Refer to the sample <a href="../demo/">demo app</a> and corresponding source code.</p>
 
 <h3 id="applevas" class="anchor"><a class="heading-anchor" href="#applevas"><span></span></a>Apple VAS</h3>
 
 <!--
 <i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> For applications originally developed using VAS SDK 1.0 and are upgrading to VAS SDK 2.0, see [Apple VAS - SDK Upgrade](#applevassdkupgrade). -->
 
-<p>The following provides guidance to develop an application that reads a NFC pass from Apple Wallet:</p>
+<p>The following provides guidance to develop an application that reads an Apple Wallet NFC pass:</p>
 
 <ol>
 <li><p><strong>Implement IZebraServiceConnection Interface -</strong> It is required to implement IZebraServiceConnection Interface to receive callback methods from the Zebra NFC VAS service on the service connection/disconnection and NFC pass object. The 3 callback methods are: onServiceConnected, onServiceDisconnected, and onPassDetected.</p>
@@ -437,10 +446,28 @@ az_cfg.setPassTypeIds(new String[]{"pass.com.pronto.zebra-wallet-pass.demo"});
 <pre class="prettyprint"><code>vasSDK.connectToReader();
 </code></pre>
 
-<p>f. <strong>Call enableReadPassMode -</strong> Only reader/writer capabilities are enabled and polling is configure to read Type A and Type B cards.</p>
+<p>f. Check the <a href="#enumvastype">VasType</a> of the NFC pass. Perform one of the following based on the type of pass being read to allow read/write capabilities:</p>
+
+<ul>
+<li><p><strong>If the VasType is <code>APPLE_VAS</code>,</strong> call enableReadPassMode():</p>
 
 <pre class="prettyprint"><code>vasSDK.enableReadPassMode();
-</code></pre>
+</code></pre></li>
+
+<li><p><strong>If the VasType is <code>UNKNOWN</code>, check the type of tag technology:</strong></p>
+
+<ul>
+<li><p><strong>If the tag technology is NfcA, NfcB, or NfcV,</strong> call enableReadPassMode():</p>
+
+<p><code>vasSDK.enableReadPassMode();</code></p></li>
+
+<li><p><strong>If the tag technology is NfcF or NDEF,</strong> call enableReadPassMode() 
+with parameters:</p>
+
+<p><code>enableReadPassMode(boolean doSkipNdef, boolean doEnableNFC_F)</code></p>
+
+<p><strong>For NfcF tags,</strong> set "doEnableNFC_F" to "true." <br>
+<strong>For NDEF tags,</strong> set "doSkipNdef" to "false." <strong>Note:</strong> Performance could be affected since an NDEF check is performed along with additional checks from the OS after initialzing the tag communication. This affects the processing time of the NFC pass. The advantage of this is the OS reads the NDEF message and it is be enumerated in the Tag object, which can be easily be accessed. </p></li></ul></li></ul>
 
 <p>g. <strong>When an NFC pass is read, onPassDetected() is called -</strong> This method receives the Pass object when a pass is read. Process the data read from the pass based on business needs.</p>
 
@@ -527,7 +554,7 @@ vasSDK.setVasConfigs(Arrays.asList(new VasConfig[]{az_cfg, z_cfg}));
 
 <h3 id="googlesmarttap" class="anchor"><a class="heading-anchor" href="#googlesmarttap"><span></span></a>Google Smart Tap</h3>
 
-<p>The following provides guidance to develop an application that reads a NFC pass from Google Wallet:</p>
+<p>The following provides guidance to develop an application that reads a Google Wallet NFC pass:</p>
 
 <ol>
 <li><p><strong>Implement IZebraServiceConnection Interface -</strong> It is required to implement IZebraServiceConnection Interface to receive callback methods from the Zebra NFC VAS service on the service connection/disconnection and NFC pass object. The 3 callback methods are: onServiceConnected, onServiceDisconnected, and onPassDetected.</p>
@@ -631,10 +658,28 @@ g_cfg.setPrivateKey(ZebraPrivateKeyStr, ZebraPrivateKeyVersion);
 <pre class="prettyprint"><code>vasSDK.connectToReader();
 </code></pre>
 
-<p>f. <strong>Call enableReadPassMode -</strong> Only reader/writer capabilities are enabled and polling is configure to read Type A and Type B cards.</p>
+<p>f. Check the <a href="#enumvastype">VasType</a> of the NFC pass. Perform one of the following based on the type of pass being read to allow read/write capabilities:</p>
+
+<ul>
+<li><p><strong>If the VasType is <code>GOOGLE_SMART_TAP</code>,</strong> call enableReadPassMode():</p>
 
 <pre class="prettyprint"><code>vasSDK.enableReadPassMode();
-</code></pre>
+</code></pre></li>
+
+<li><p><strong>If the VasType is <code>UNKNOWN</code>, check the type of tag technology:</strong></p>
+
+<ul>
+<li><p><strong>If the tag technology is NfcA, NfcB, or NfcV,</strong> call enableReadPassMode():</p>
+
+<p><code>vasSDK.enableReadPassMode();</code></p></li>
+
+<li><p><strong>If the tag technology is NfcF or NDEF,</strong> call enableReadPassMode() 
+with parameters:</p>
+
+<p><code>enableReadPassMode(boolean doSkipNdef, boolean doEnableNFC_F)</code></p>
+
+<p><strong>For NfcF tags,</strong> set "doEnableNFC_F" to "true." <br>
+<strong>For NDEF tags,</strong> set "doSkipNdef" to "false." <strong>Note:</strong> Performance could be affected since an NDEF check is performed along with additional checks from the OS after initialzing the tag communication. This affects the processing time of the NFC pass. The advantage of this is the OS reads the NDEF message and it is be enumerated in the Tag object, which can be easily be accessed. </p></li></ul></li></ul>
 
 <p>g. <strong>When an NFC pass is read, onPassDetected() is called -</strong> This method receives the Pass object when a pass is read. Process the data read from the pass based on business needs.</p>
 
