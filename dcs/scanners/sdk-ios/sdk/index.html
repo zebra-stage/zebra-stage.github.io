@@ -149,7 +149,7 @@ NSString *version = [apiInstance sbtGetVersion]; NSLog(@"Zebra SDK version: %@\n
 
                                                     <h2 id="sdk-events-handling" class="anchor"><a class="heading-anchor" href="#sdk-events-handling"><span></span></a>Event Handling</h2>
 
-                                                    <p>The SDK supports a set of asynchronous notifications to inform the application about scanner related events. This includes connectivity related events (i.e., appearance of a scanner), and scanner action events (i.e., received bar code data). All supported callbacks are defined by the <strong>ISbtSdkApiDelegate</strong> Objective-C protocol.</p>
+                                                    <p>The SDK supports a set of asynchronous notifications to inform the application about scanner related events. This includes connectivity related events (i.e., the appearance of a scanner) and scanner action events (i.e., received barcode data). All supported callbacks are defined by the <strong>ISbtSdkApiDelegate</strong> Objective-C protocol.</p>
 
                                                     <p>In order to receive asynchronous notifications from the SDK, the application performs the following steps:</p>
 
@@ -189,8 +189,6 @@ EventReceiver *eventListener = [[EventReceiver alloc] init];
 
                                                             <ul>
                                                                 <li>SBT_EVENT_BARCODE</li>
-                                                                <li>SBT_EVENT_IMAGE</li>
-                                                                <li>SBT_EVENT_VIDEO</li>
                                                                 <li>SBT_EVENT_SCANNER_APPEARANCE</li>
                                                                 <li>SBT_EVENT_SCANNER_DISAPPEARANCE</li>
                                                                 <li>SBT_EVENT_SESSION_ESTABLISHMENT</li>
@@ -201,9 +199,8 @@ EventReceiver *eventListener = [[EventReceiver alloc] init];
                                                             <!-- code segment -->
 <pre class="prettyprint">
 <code>
-// Subscribe to scanner appearance/disappearance, session establishment/termination,
-// barcode, and image & video event notifications.
-[apiInstance sbtSubsribeForEvents:SBT_EVENT_SCANNER_APPEARANCE | SBT_EVENT_SCANNER_DISAPPEARANCE | SBT_EVENT_SESSION_ESTABLISHMENT | SBT_EVENT_SESSION_TERMINATION | SBT_EVENT_BARCODE | SBT_EVENT_IMAGE | SBT_EVENT_VIDEO];
+// Subscribe to scanner appearance/disappearance, session establishment/termination and barcode event notifications.
+[apiInstance sbtSubsribeForEvents:SBT_EVENT_SCANNER_APPEARANCE | SBT_EVENT_SCANNER_DISAPPEARANCE | SBT_EVENT_SESSION_ESTABLISHMENT | SBT_EVENT_SESSION_TERMINATION | SBT_EVENT_BARCODE];    
 </code>
 </pre>
                                                         </li>
@@ -278,32 +275,6 @@ EventReceiver *eventListener = [[EventReceiver alloc] init];
 </code>
 </pre>
 
-                                                    <h4 id="sdk-events-image" class="anchor"><a class="heading-anchor" href="#sdk-events-image"><span></span></a>Image Data Received Event</h4>
-                                                    
-                                                    <p>This event occurs when image data is received.</p>
-
-                                                    <!-- code segment -->
-<pre class="prettyprint">
-<code>
-- (void) sbtEventImage:(NSData*)imageData fromScanner:(int)scannerID {
-    // TODO: Handle event
-}
-</code>
-</pre>
-
-                                                    <h4 id="sdk-events-video" class="anchor"><a class="heading-anchor" href="#sdk-events-video"><span></span></a>Video Data Received Event</h4>
-
-                                                    <p>This event occurs when video data is received.</p>
-
-                                                    <!-- code segment -->
-<pre class="prettyprint">
-<code>
-- (void) sbtEventVideo:(NSData*)videoFrame fromScanner:(int)scannerID {
-    // TODO: Handle event
-}
-</code>
-</pre>
-
                                                     <h4 id="sdk-events-firmware-update" class="anchor"><a class="heading-anchor" href="#sdk-events-firmware-update"><span></span></a>Firmware Update Event</h4>
 
                                                     <p>This event occurs when firmware update is in progress. You don't need to specifically subscribe to this event. You just have to implement this delegate method.</p>
@@ -369,27 +340,27 @@ EventReceiver *eventListener = [[EventReceiver alloc] init];
                                                     <!-- code segment -->
 <pre class="prettyprint">
 <code>
-// Allocate an array for storage of a list of available scanners 
+// Allocate an array to store the list of available scanners. 
 NSMutableArray *availableScanners = [[NSMutableArray alloc] init];
 
-// Allocate an array for storage of a list of active scanners 
+// Allocate an array to store the list of active scanners. 
 NSMutableArray *activeScanners = [[NSMutableArray alloc] init];
 
-// Retrieve a list of available scanners.
+// Retrieve the list of currently available scanners.
 [apiInstance sbtGetAvailableScannersList:&availableScanners];
 
-// Retrieve a list of active scanners.
+// Retrieve the list of currently active scanners.
 [apiInstance sbtGetActiveScannersList:&activeScanners];
 
-// Merge the available and active scanners into a single list 
+// Merge the available and active scanners into a single list. 
 NSMutableArray *allScanners = [[NSMutableArray alloc] init]; 
 [allScanners addObjectsFromArray:availableScanners]; 
 [allScanners addObjectsFromArray:activeScanners];
 
-// Print information for each available and active scanner 
+// Print information for each available and active scanner. 
 for (SbtScannerInfo *info in allScanners) {
     NSLog(@"Scanner is %@: ID = %d name = %@", (([info isActive] == YES) ? @"active" : @"available"), [info getScannerId], [info getScannerName]);
-}
+}    
 </code>
 </pre>
 
@@ -806,16 +777,22 @@ else {
                                                     <!-- code segment -->
 <pre class="prettyprint">
 <code>
-@import "RMDAttributes.h"
+#import "RMDAttributes.h"
 
-// Specify the ID of the scanner to control int scannerID = 1;
+// Specify the scanner ID and attribute value of the beeper command in the XML.
+NSString *inXML = [NSString stringWithFormat:@"&lt;inArgs>&lt;scannerID>%d&lt;/scannerID>&lt;cmdArgs>&lt;arg-int>%d&lt;/arg-int>&lt;/cmdArgs>&lt;/inArgs>", scannerID, RMD_ATTR_VALUE_ACTION_HIGH_SHORT_BEEP_1];
 
-// Specify the scanner ID and attribute value of the beeper command in the XML NSString *inXML = [NSString
-stringWithFormat:@"&lt;inArgs>&lt;scannerID>%d&lt;/scannerID>&lt;cmdArgs>&lt;arg-int>%d&lt;/arg-int
->&lt;/cmdArgs>&lt;/inArgs>", scannerID, RMD_ATTR_VALUE_ACTION_HIGH_SHORT_BEEP_1];
+// Issue the beep command.
+SBT_RESULT result = [apiInstance sbtExecuteCommand:SBT_SET_ACTION aInXML:inXML aOutXML:nil forScanner:scannerID];
 
-// Issue the beep command
-[scannerSdkApi sbtExecuteCommand:SBT_SET_ACTION aInXML:inXML aOutXML:nil forScanner:scannerID];
+if (result == SBT_RESULT_SUCCESS) {
+    // TODO: Process successful operation.
+    NSLog(@"Successfully performed the beeper action on the scanner ID %d: %@",scannerId);
+}
+else {
+    // TODO: Process error.
+    NSLog(@"Failed to perform the beeper action on the scanner ID %d",scannerId);
+}    
 </code>
 </pre>
 
@@ -862,13 +839,20 @@ stringWithFormat:@"&lt;inArgs>&lt;scannerID>%d&lt;/scannerID>&lt;cmdArgs>&lt;arg
 <code>
 #import "RMDAttributes.h"
 
-// Specify the ID of the scanner to control int scannerID = 1;
-
 // Specify the scanner ID and attribute value the LED command in the XML 
 NSString *inXML = [NSString stringWithFormat:@"&lt;inArgs>&lt;scannerID>%d&lt;/scannerID>&lt;cmdArgs>&lt;arg-int>%d&lt;/arg-int>&lt;/cmdArgs>&lt;/inArgs>", scannerID, RMD_ATTR_VALUE_ACTION_LED_GREEN_ON];
 
 // Issue the LED command
-[scannerSdkApi sbtExecuteCommand:SBT_SET_ACTION aInXML:inXML aOutXML:nil forScanner:scannerID];
+SBT_RESULT result = [apiInstance sbtExecuteCommand:SBT_SET_ACTION aInXML:inXML aOutXML:nil forScanner:scannerID];
+
+if (result == SBT_RESULT_SUCCESS) {
+    // TODO: Process successful operation.
+    NSLog(@"Successfully turned on the green LED on the scanner ID %d: %@",scannerId);
+}
+else {
+    // TODO: Process error.
+    NSLog(@"Failed to turn on the green LED on the scanner ID %d",scannerId);
+}    
 </code>
 </pre>
 
@@ -1005,6 +989,78 @@ else {
                                                         <tr>
                                                             <td>PDF</td>
                                                             <td>RMD_ATTR_SYM_PDF</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>ISBT 128</td>
+                                                            <td>RMD_ATTR_SYM_ISBT_128</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>UCCCouponExtendedCode</td>
+                                                            <td>RMD_ATTR_UCC_COUPEN_EXTENDED_CODE</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>US Postnet</td>
+                                                            <td>RMD_ATTR_SYM_US_Postnet</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>US Planet</td>
+                                                            <td>RMD_ATTR_SYM_US_Planet</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>UKPost</td>
+                                                            <td>RMD_ATTR_SYM_UK_POST</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>USPostal Check Digit</td>
+                                                            <td>RMD_ATTR_SYM_US_POSTAL_CHECK_DIGIT</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>UKPostal Check Digit</td>
+                                                            <td>RMD_ATTR_SYM_UK_POSTAL_CHECK_DIGIT</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>JapanPost</td>
+                                                            <td>RMD_ATTR_SYM_JAPAN_POST</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>AusPost</td>
+                                                            <td>RMD_ATTR_SYM_AUS_POST</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>GS1DataBar14</td>
+                                                            <td>RMD_ATTR_SYM_GS1_DATABAR_14</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>GS1DataBarLimited</td>
+                                                            <td>RMD_ATTR_SYM_GS1_DATABAR_LIMITED</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>GS1DataBarExpanded</td>
+                                                            <td>RMD_ATTR_SYM_GS1_DATABAR_EXPANDED</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>MicroPDF</td>
+                                                            <td>RMD_ATTR_SYM_MICRO_PDF</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>MaxiCode</td>
+                                                            <td>RMD_ATTR_SYM_MAXI_CODE</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>ISSN EAN</td>
+                                                            <td>RMD_ATTR_ISSN_EAN</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Matrix 2 of 5</td>
+                                                            <td>RMD_ATTR_MATRIX_2_OF_5</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Korean 3 of 5</td>
+                                                            <td>RMD_ATTR_KOREAN_3_OF_5</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>QR Code</td>
+                                                            <td>RMD_ATTR_QR_CODE</td>
                                                         </tr>
                                                     </table><br />
                                                     
@@ -1194,17 +1250,17 @@ else {
 // Create XML string to command scanner ID 3 to activate page motor. 
 NSString *xmlInput = [NSString stringWithFormat:@"&lt;inArgs>&lt;scannerID>%d&lt;/scannerID>&lt;/inArgs>",scannerId];
 
-// Command scanner ID 3 to pull the page motor SBT_RESULT result = [apiInstance
-sbtExecuteCommand:SBT_DEVICE_VIBRATION_FEEDBACK aInXML:xmlInput aOutXML:nil forScanner:3];
+// Command for scanner ID 3 to pull the page motor. 
+SBT_RESULT result = [apiInstance sbtExecuteCommand:SBT_DEVICE_VIBRATION_FEEDBACK aInXML:xmlInput aOutXML:nil forScanner: scannerId];
 
 if (result == SBT_RESULT_SUCCESS) {
-    // TODO: Process successful operation
+    // TODO: Process successful operation.
     NSLog(@"Successfully activated page motor scanner ID %d: %@",scannerId);
 }
 else {
-    // TODO: Process error
+    // TODO: Process error.
     NSLog(@"Failed to activate page motor on scanner ID %d",scannerId);
-}
+}    
 </code>
 </pre>
 
@@ -1240,21 +1296,21 @@ else {
                                                     <!-- code segment -->
 <pre class="prettyprint">
 <code>
-// Create XML string to command scanner ID 3 to update firmware by plugin
-// selectedFWFilePath = absolute path of the plugin file 
+// Create XML string to command scanner ID 3 to update firmware by plugin.
+// selectedFWFilePath = absolute path of the plugin file. 
 NSString *in_xml = [NSString stringWithFormat:@"&lt;inArgs>&lt;scannerID>%d&lt;/scannerID>&lt;cmdArgs>&lt;arg-string>%@&lt;/arg- string>&lt;/cmdArgs>&lt;/inArgs>", m_ScannerID, selectedFWFilePath];
 
-// Command scanner ID 3 to update firmware SBT_RESULT result = [apiInstance sbtExecuteCommand:
-SBT_UPDATE_FIRMWARE_FROM_PLUGIN aInXML:xmlInput aOutXML:nil forScanner:3];
+// Command for scanner ID 3 to update firmware.
+SBT_RESULT result = [apiInstance sbtExecuteCommand:SBT_UPDATE_FIRMWARE_FROM_PLUGIN aInXML:xmlInput aOutXML:nil forScanner: scannerId];
 
 if (result == SBT_RESULT_SUCCESS) {
-    // TODO: Process successful operation
-    NSLog(@"Successfully updated firmware on scanner ID %d: %@",scannerId);
+    // TODO: Process successful operation.
+    NSLog(@"Successfully updated the firmware on scanner ID %d: %@",scannerId);
 }
 else {
-    // TODO: Process error
-    NSLog(@"Failed to update firmware on scanner ID %d",scannerId);
-}
+    // TODO: Process error.
+    NSLog(@"Failed to update the firmware on scanner ID %d",scannerId);
+}    
 </code>
 </pre>
 
@@ -1265,19 +1321,50 @@ else {
                                                     <!-- code segment -->
 <pre class="prettyprint">
 <code>
-// Create XML string to command scanner ID 3 to update abort fw update
-NSString *in_xml = [NSString stringWithFormat:@"&lt;inArgs>&lt;scannerID>%d&lt;/scannerID>&lt;/inArgs>", m_ScannerID];
+// Create XML string to command scanner ID 3 to abort the firmware update.
+NSString *in_xml = [NSString stringWithFormat:@"&lt;inArgs>&lt;scannerID>%d&lt;/scannerID>&lt;/inArgs>", scannerId];
 
-SBT_RESULT res = [[zt_ScannerAppEngine sharedAppEngine] executeCommand:SBT_DEVICE_ABORT_UPDATE_FIRMWARE aInXML:in_xml aOutXML:nil forScanner:m_ScannerID];
+SBT_RESULT res = [apiInstance executeCommand:SBT_DEVICE_ABORT_UPDATE_FIRMWARE aInXML:in_xml aOutXML:nil forScanner:scannerId];
 
 if (result == SBT_RESULT_SUCCESS) {
-    // TODO: Process successful operation
-    NSLog(@"Successfully aborted firmware on scanner ID %d: %@",scannerId);
+    // TODO: Process successful operation.
+    NSLog(@"Successfully aborted the firmware update on scanner ID %d: %@",scannerId);
 }
 else {
-    // TODO: Process error
-    NSLog(@"Failed to abort firmware on scanner ID %d",scannerId);
+    // TODO: Process error.
+    NSLog(@"Failed to abort the firmware update on scanner ID %d",scannerId);
+}    
+</code>
+</pre>
+
+                                                    <h3 id="sdk-operations-virtual-tether" class="anchor"><a class="heading-anchor" href="#sdk-operations-virtual-tether"><span></span></a>Virtual Tether</h3>
+
+                                                    <p>Virtual tether is designed to alert users when a device is taken out of range. It includes an audible, visual (includes the LEDs and illumination) and haptic alarm on the scanner if the Bluetooth connection is broken. Virtual tether alarm is disabled by default.</p>
+
+                                                    <p>It is required to disable virtual tether alarm before performing a firmware update.</p>
+
+                                                    <p>The store attribute command (SBT_RSM_ATTR_STORE) is used to store the value of the relevant attribute id for enabling or disabling the virtual tether alarm.</p>
+
+                                                    <p>The following code example demonstrates how to enable the virtual tether alarm on the scanner.</p>
+
+<pre class="prettyprint">
+<code>
+int attributeId = 2053;
+
+// Create XML string to set the value of attribute id (2053) to 1 of scanner ID 3. 
+NSString *xmlInput = [NSString stringWithFormat:@"&lt;inArgs>&lt;scannerID>%d&lt;/scannerID>&lt;cmdArgs>&lt;arg-xml>&lt;attrib_list>&lt;attribute>&lt;id>%d&lt;/id>&lt;datatype>B&lt;/datatype>&lt;value>%@&lt;/value>&lt;/attribute>&lt;/attrib_list>&lt;/arg-xml>&lt;/cmdArgs>&lt;/inArgs>",scannerId, attributeId,"1"];
+
+// Store the value to enable the virtual tether alarm on the scanner id 3.
+SBT_RESULT result = [apiInstance sbtExecuteCommand:SBT_RSM_ATTR_STORE aInXML:xmlInput aOutXML:nil forScanner: scannerId];
+
+if (result == SBT_RESULT_SUCCESS) {
+// TODO: Process successful operation
+NSLog(@"Successfully enabled the virtual tether alarm on scanner ID %d:%@",scannerId);
 }
+else {
+// TODO: Process error
+NSLog(@"Failed to enabled the virtual tether alarm on scanner ID %d",scannerId);
+}                                                            
 </code>
 </pre>
                                                 </div>
