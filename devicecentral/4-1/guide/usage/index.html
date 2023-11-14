@@ -543,100 +543,78 @@ The Firmware Update screen appears.
 
 <hr>
 
-<h2 id="retrievebatteryinformation" class="anchor"><a class="heading-anchor" href="#retrievebatteryinformation"><span></span></a>Retrieve Battery Information</h2>
+<!-- ** PLACED IN OEMINFO
+## Retrieve Battery Information
 
-<p>This section provides a method to retrieve battery information from Bluetooth peripherals connected to Zebra mobile computers. <a href="/oeminfo/about/">OEMInfo Content Provider</a> framework allows developers to retrieve battery related information as a single JSON string and then query the string based on application requirements. Battery information is provided only on peripherals connected to the mobile computer at the moment in time the query is made. (Information on Paired and Disconnected peripherals are not available.) </p>
+This section provides a method to retrieve battery information from Bluetooth peripherals connected to Zebra mobile computers. [OEMInfo Content Provider](/oeminfo/about/) framework allows developers to retrieve battery related information as a single JSON string and then query the string based on application requirements. Battery information is provided only on peripherals connected to the mobile computer at the moment in time the query is made. (Information on Paired and Disconnected peripherals are not available.) 
 
-<p>The process of retrieving data through OEMInfo is the same as querying any Android Content Provider. Similarly, OEMinfo employs content URIs to identify certain battery data available from a provider. The content URI is:</p>
+The process of retrieving data through OEMInfo is the same as querying any Android Content Provider. Similarly, OEMinfo employs content URIs to identify certain battery data available from a provider. The content URI is:
 
-<pre class="prettyprint"><code>    content://com.symbol.devicecentral.provider/peripheral_info/battery_info
-</code></pre>
+        content://com.symbol.devicecentral.provider/peripheral_info/battery_info
 
-<p>Zebra recommends to query the keys available inside a JSON structure to access the set of battery properties based on the support availability for each connected peripheral:</p>
+Zebra recommends to query the keys available inside a JSON structure to access the set of battery properties based on the support availability for each connected peripheral:
+* accessory_name
+* battery_level
+* battery_health_status
+* battery_serial_number
+* battery_model_number
 
-<ul>
-<li>accessory_name</li>
+Battery information can be retrieved for the following Zebra devices Bluetooth scanners and HS3100 headset:
+* RS507 (Bluetooth scanner)
+* RS5100 (Bluetooth scanner)
+* RS6000 (Bluetooth scanner)
+* RS6100 (Bluetooth scanner)
+* DS2278 (Bluetooth scanner)
+* DS3678 (Bluetooth scanner)
+* DS8178 (Bluetooth scanner)
+* LI3678 (Bluetooth scanner)
+* HS3100 (Bluetooth headset)
 
-<li>battery_level</li>
+To retrieve battery information from the connected peripheral using OEMInfo, app developers should perform the following in their app:
 
-<li>battery_health_status</li>
+1. **Request read permission for the Content Provider.** Add the following statement to the application's AndroidManifest.xml file:
 
-<li>battery_serial_number</li>
+         <uses-permission android:name=”com.zebra.provider.READ”>
 
-<li>battery_model_number</li>
-</ul>
+2. **Grant app authorization.** The Zebra Data Provider Interfaces included in the OEMInfo Content Provider framework uses Zebra Access Manager to grant or deny app access to data published by the framework. See OEMInfo's [Authorization Mechanism](../oeminfo/consume/#authorizationmechanism) to grant your app access to the battery data from OEMInfo.
+3. **Declare the content URI that identifies the data in the provider.** In your application code, declare the following:
 
-<p>Battery information can be retrieved for the following Zebra devices Bluetooth scanners and HS3100 headset:</p>
+        String BATTERY_INFO_URI = "content://com.symbol.devicecentral.provider/peripheral_info/battery_info";
 
-<ul>
-<li>RS507 (Bluetooth scanner)</li>
+4. **Get the peripheral battery information data by parsing the JSON string** using Android cursor query methods implemented in the following Java code:
 
-<li>RS5100 (Bluetooth scanner)</li>
+        // Prepare the URI
+        public void getData() {
+            
+            final Uri myUri = Uri.parse(BATTERY_INFO_URI);
+            new UpdateAsync().execute(myUri.toString());
+        }
+         
+        // Always query for data in Async task or background thread
+        class UpdateAsync extends AsyncTask<String,Void,Cursor> {
+           
+            private String myUri;
+         
+            @Override
+            protected Cursor doInBackground(String... args) {
+                myUri = args[0];
+                JSONObject batteryDetails;
+             
+                // Query the content provider
+                ContentResolver cr = getApplicationContext.getContentResolver();
+                Cursor cursor = cr.query(Uri.parse(myUri), null, null, null, null);
+                 
+                // Read the cursor
+                cursor.moveToFirst();
+                batteryDetails = new JSONObject(cursor.getString(0));
+                Log.i(TAG, "Peripheral Battery Information : ” + batteryDetails);            
+                return cursor;
+            }
+        }
 
-<li>RS6000 (Bluetooth scanner)</li>
 
-<li>RS6100 (Bluetooth scanner)</li>
-
-<li>DS2278 (Bluetooth scanner)</li>
-
-<li>DS3678 (Bluetooth scanner)</li>
-
-<li>DS8178 (Bluetooth scanner)</li>
-
-<li>LI3678 (Bluetooth scanner)</li>
-
-<li>HS3100 (Bluetooth headset)</li>
-</ul>
-
-<p>To retrieve battery information from the connected peripheral using OEMInfo, app developers should perform the following in their app:</p>
-
-<ol>
-<li><p><strong>Request read permission for the Content Provider.</strong> Add the following statement to the application's AndroidManifest.xml file:</p>
-
-<pre class="prettyprint"><code>&nbsp;&lt;uses-permission android:name=”com.zebra.provider.READ”&gt;
-</code></pre></li>
-
-<li><p><strong>Grant app authorization.</strong> The Zebra Data Provider Interfaces included in the OEMInfo Content Provider framework uses Zebra Access Manager to grant or deny app access to data published by the framework. See OEMInfo's <a href="../oeminfo/consume/#authorizationmechanism">Authorization Mechanism</a> to grant your app access to the battery data from OEMInfo.</p></li>
-
-<li><p><strong>Declare the content URI that identifies the data in the provider.</strong> In your application code, declare the following:</p>
-
-<pre class="prettyprint"><code>String BATTERY_INFO_URI = "content://com.symbol.devicecentral.provider/peripheral_info/battery_info";
-</code></pre></li>
-
-<li><p><strong>Get the peripheral battery information data by parsing the JSON string</strong> using Android cursor query methods implemented in the following Java code:</p>
-
-<pre class="prettyprint"><code>// Prepare the URI
-public void getData() {
-&nbsp;&nbsp;&nbsp; 
-    final Uri myUri = Uri.parse(BATTERY_INFO_URI);
-&nbsp;&nbsp;&nbsp; new UpdateAsync().execute(myUri.toString());
-}
-&nbsp;
-// Always query for data in Async task or background thread
-class UpdateAsync extends AsyncTask&lt;String,Void,Cursor&gt; {
-&nbsp;&nbsp;&nbsp;
-    private String myUri;
-&nbsp;
-    @Override
-    protected Cursor doInBackground(String... args) {
-    &nbsp;&nbsp;&nbsp; myUri = args[0];
-    &nbsp;&nbsp;&nbsp; JSONObject batteryDetails;
-    &nbsp;
-        // Query the content provider
-        ContentResolver cr = getApplicationContext.getContentResolver();
-        Cursor cursor = cr.query(Uri.parse(myUri), null, null, null, null);
-        &nbsp;
-        // Read the cursor
-        cursor.moveToFirst();
-        batteryDetails = new JSONObject(cursor.getString(0));
-        Log.i(TAG, "Peripheral Battery Information : ” + batteryDetails);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
-        return cursor;
-    }
-}
-</code></pre></li>
-</ol>
-
-<hr>
+---
+-->
 
 <h2 id="usagenotes" class="anchor"><a class="heading-anchor" href="#usagenotes"><span></span></a>Usage Notes</h2>
 
