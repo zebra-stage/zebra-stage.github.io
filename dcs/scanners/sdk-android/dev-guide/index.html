@@ -194,24 +194,220 @@ implementation "androidx.lifecycle:lifecycle-process:2.5.1"
 
                                                     <p>The noteworthy difference between the two barcodes is that, Scan-To-Connect doesn't require setting up the connection manually with the Android device. Unlike 'SSI BT Classic (discoverable)', a one scan of the Scan-To-Connect barcode establishes a connection with both the device and the app in one go.</p>
 
-                                                    <h3 id="sdkinstallation" class="anchor">SDK Installation</h3>
+                                                    <h3 id="android-sdk-installation" class="anchor">SDK Initialization</h3>
 
                                                     <p>Inside the 'onCreate' method SDK must be initialized. Out of the several available operational modes (such as <strong>DCSSDK_MODE.DCSSDK_OPMODE_SNAPI, DCSSDK_MODE.DCSSDK_OPMODE_BTLE</strong>), Operational Mode of the Scanner must be set to <strong>DCSSDK_OPMODE_BT_NORMAL</strong>. Even though other operational modes are present, this guide is mainly focused on making a connection via <strong>DCSSDK_OPMODE_BT_NORMAL</strong> and carrying out the functions. Along with the initialization of the SDK an ArrayList to contain scanner information must be created.</p>
 
 <pre class="prettyprint">
 <code>
 public static SDKHandler sdkHandler;
-private ArrayList<DCSScannerInfo> scannerInfoList = new ArrayList<DCSScannerInfo>();
-int scannerId;
 
-@Override
-protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    setContentView(R.layout.activity_main);
+private void initializeDcsSdk() {
+    // Initializing sdk handler.
+    if (sdkHandler == null) {
+        sdkHandler = new SDKHandler(this, true);
+    }
 
-    sdkHandler = new SDKHandler(this);
-    DCSSDKDefs.DCSSDK_RESULT result = sdkHandler.dcssdkSetOperationalMode(DCSSDK_OPMODE_BT_NORMAL);
+    sdkHandler.dcssdkSetDelegate(this);
+    sdkHandler.dcssdkEnableAvailableScannersDetection(true);
+
+    // Bluetooth low energy mode.
+    sdkHandler.dcssdkSetOperationalMode(DCSSDKDefs.DCSSDK_MODE.DCSSDK_OPMODE_BT_LE);
+
+    // Bluetooth classic mode.
+    sdkHandler.dcssdkSetOperationalMode(DCSSDKDefs.DCSSDK_MODE.DCSSDK_OPMODE_BT_NORMAL);
+
+    // SNAPI mode.
+    sdkHandler.dcssdkSetOperationalMode(DCSSDKDefs.DCSSDK_MODE.DCSSDK_OPMODE_SNAPI);
+
+    int notifications_mask = 0;
+
+    // We would like to subscribe to all scanner available/not-available events.
+    notifications_mask |= DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SCANNER_APPEARANCE.value | DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SCANNER_DISAPPEARANCE.value;
+
+    // We would like to subscribe to all scanner connection events.
+    notifications_mask |= DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SESSION_ESTABLISHMENT.value | DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SESSION_TERMINATION.value;
+
+    // We would like to subscribe to all barcode events.
+    notifications_mask |= DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_BARCODE.value;
+
+    // Subscribe to events set in notification mask.
+    sdkHandler.dcssdkSubsribeForEvents(notifications_mask);
+}    
+</code>
+</pre>
+
+                                                    <h4 id="runtime-permission" class="anchor">Request Runtime Permission</h4>
+
+                                                    <p>Before Initializing the sdk in onCreate() method, runtime permissions must be requested to connect scanner by Bluetooth.</p>
+
+<pre class="prettyprint">
+<code>
+private static final String[] BLE_PERMISSIONS = new String[]{
+    android.Manifest.permission.ACCESS_COARSE_LOCATION,
+    android.Manifest.permission.ACCESS_FINE_LOCATION,
+};
+
+private static final String[] ANDROID_13_BLE_PERMISSIONS = new String[]{
+    android.Manifest.permission.BLUETOOTH_SCAN,
+    android.Manifest.permission.BLUETOOTH_CONNECT,
+    android.Manifest.permission.BLUETOOTH_ADVERTISE,
+    android.Manifest.permission.ACCESS_FINE_LOCATION,
+};
+
+private static final String[] ANDROID_12_BLE_PERMISSIONS = new String[]{
+    android.Manifest.permission.BLUETOOTH_SCAN,
+    android.Manifest.permission.BLUETOOTH_CONNECT,
+    android.Manifest.permission.BLUETOOTH_ADVERTISE,
+    Manifest.permission.ACCESS_FINE_LOCATION,
+};
+
+/**
+* Requesting runtime permission.
+*/
+private void requestPermission(){
+    permissionsList = new ArrayList&lt;>();
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        permissionsList.addAll(Arrays.asList(ANDROID_13_BLE_PERMISSIONS));
+    } 
+    else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        permissionsList.addAll(Arrays.asList(ANDROID_12_BLE_PERMISSIONS));
+    }
+    else {
+        permissionsList.addAll(Arrays.asList(BLE_PERMISSIONS));
+    }
+    askForPermissions(permissionsList);
 }
+
+/**
+* Method to request required permissions with the permission launcher.
+* @param permissionsList list of permissions.
+*/
+private void askForPermissions(ArrayList&lt;String> permissionsList) {
+    String[] newPermissionStr = new String[permissionsList.size()];
+    for (int i = 0; i &lt; newPermissionStr.length; i++) {
+        newPermissionStr[i] = permissionsList.get(i);
+    }
+
+    if (newPermissionStr.length > 0) {
+        permissionsLauncher.launch(newPermissionStr);
+    } 
+    else {
+        showPermissionDialog();
+    }
+}
+
+
+ActivityResultLauncher&lt;String[]> permissionsLauncher =
+    registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(),
+        new ActivityResultCallback&lt;Map&lt;String, Boolean>>() {
+            @RequiresApi(api = Build.VERSION_CODES.M)
+            @Override
+            public void onActivityResult(Map&lt;String,Boolean> result) {
+                ArrayList&lt;Boolean> list = new ArrayList&lt;>(result.values());
+                permissionsList = new ArrayList&lt;>();
+                permissionsCount = 0;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    for (int i = 0; i &lt; list.size(); i++) {
+                        if (shouldShowRequestPermissionRationale(ANDROID_13_BLE_PERMISSIONS[i])) {
+                            permissionsList.add(ANDROID_13_BLE_PERMISSIONS[i]);
+                        }
+                        else if (!hasPermission(MainActivity.this, ANDROID_13_BLE_PERMISSIONS[i])) {
+                            permissionsCount++;
+                        }
+                    }
+                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
+                    for (int i = 0; i &lt; list.size(); i++) {
+                        if (shouldShowRequestPermissionRationale(ANDROID_12_BLE_PERMISSIONS[i])) {
+                            permissionsList.add(ANDROID_12_BLE_PERMISSIONS[i]);
+                        }
+                        else if (!hasPermission(MainActivity.this, ANDROID_12_BLE_PERMISSIONS[i])){
+                            permissionsCount++;
+                        }
+                    }
+                } else {
+                    for (int i = 0; i &lt; list.size(); i++) {
+                        if (shouldShowRequestPermissionRationale(BLE_PERMISSIONS[i])) {
+                            permissionsList.add(BLE_PERMISSIONS[i]);
+                        }
+                        else if (!hasPermission(MainActivity.this, BLE_PERMISSIONS[i])){
+                            permissionsCount++;
+                        }
+                    }
+                }
+                if (permissionsList.size() > 0) {
+                    //Some permissions are denied and can be asked again.
+                    askForPermissions(permissionsList);
+                } 
+                else if (permissionsCount > 0) {
+                    //Show alert dialog
+                    showPermissionDialog();
+                } 
+                else {
+                    //after all the required permissions are granted, the SDK should be initialized
+                    initializeDcsSdk();
+                }
+            }
+        });
+
+/**
+* Method to show dialog.
+* To redirect to application settings if user denies the permissions.
+*/
+private void showPermissionDialog() {
+    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Permission required")
+            .setCancelable(false)
+            .setMessage("Some permissions need to be allowed for the seamless operation of the App.")
+            .setPositiveButton("Settings", (dialog, which) -> {
+                openAppSettings();
+                dialog.dismiss();
+        });
+    if (alertDialog == null) {
+        alertDialog = builder.create();
+        if (!alertDialog.isShowing()) {
+            alertDialog.show();
+        }
+    }
+}
+
+/**
+* Method to check permissions granted status.
+* @param context
+* @param permissionStr
+* @return true if permission granted otherwise false.
+*/
+private boolean hasPermission(Context context, String permissionStr) {
+    return ContextCompat.checkSelfPermission(context, permissionStr) == PackageManager.PERMISSION_GRANTED;
+}
+
+/**
+* Method to open application settings.
+* User can grant the permission on the settings page as well.
+*/
+public void openAppSettings() {
+    Intent intent = new Intent();
+    intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+    Uri uri = Uri.fromParts("package", MainActivity.this.getPackageName(), null);
+    intent.setData(uri);
+    MainActivity.this.startActivity(intent);
+}                                                        
+</code>
+</pre>
+
+                                                    <h4 id="enable-device-bluetooth" class="anchor">Enable Device Bluetooth</h4>
+
+                                                    <p>Once all permissions are granted, device Bluetooth enabling should be done prior to SDK initialization within the onCreate() method.</p>
+
+<pre class="prettyprint">
+<code>
+mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
+// Device bluetooth enable if it is disabled.
+if (!mBluetoothAdapter.isEnabled()) {
+    Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+    startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+}                                                            
 </code>
 </pre>
 
@@ -774,98 +970,310 @@ public void dcssdkEventCommunicationSessionEstablished(DCSScannerInfo activeScan
 
                                                     <h2 id="stc-barcode" class="anchor"><a class="heading-anchor" href="#stc-barcode"><span></span></a>Connect Scanner Using Scan-To-Connect (STC) Barcode</h2>
 
-                                                    <p>Preliminary environment setting has been described in previous sections. First it is ensured that the <strong>ACCESS_COARSE_LOCATION</strong> permission is given, if not, permission is set inside the 'onCreate' method along with the execution of the 'initializeDcsSdk' method where initializations take place.</p>
+                                                    <p>Within the onCreate() method, UI elements should be initialized. Then the user will be requested to grant the permissions that are required to use the application. Details on this can be found in <a href="#runtime-permission">Request runtime permission</a> section. After runtime permissions are granted, SDK initialization should be done. More on this is described in <a href="#android-sdk-installation">SDK Initialization</a> section.</p>
 
 <pre class="prettyprint">
 <code>
-public class MainActivity extends AppCompatActivity  {
+public class MainActivity extends AppCompatActivity implements IDcsScannerEventsOnReLaunch,IDcsSdkApiDelegate
+public static SDKHandler sdkHandler;
+AlertDialog alertDialog;
 
+ArrayList&lt;String> permissionsList;
+int permissionsCount = 0;
+private FrameLayout barcodeDisplayArea;
+private RelativeLayout stcLayout;
+private Button btnDisconnect;
+private TextView txtBluetoothMode;
+int currentConnectedScannerID;
+BluetoothAdapter mBluetoothAdapter;
+private final static int REQUEST_ENABLE_BT = 1;
+
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+
+    // Initialization of UI components.
+    barcodeDisplayArea = (FrameLayout) findViewById(R.id.scan_to_connect_barcode);
+    btnDisconnect = (Button) findViewById(R.id.btn_disconnect);
+    stcLayout = (RelativeLayout) findViewById(R.id.stc_layout);
+    txtBluetoothMode = (TextView) findViewById(R.id.bluetooth_mode);
+
+    // Change visibility on connection state change. Initially display the barcode.
+    stcLayout.setVisibility(View.VISIBLE);
+    btnDisconnect.setVisibility(View.GONE);
+
+    btnDisconnect.setOnClickListener(new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            // Disconnect scanner on button click.
+        disconnectScanner();
+        }
+    });
+
+    requestPermission();
+}    
+</code>
+</pre>
+
+<pre class="prettyprint">
+<code>
+/**
+* Initial method that gets called to display the barcode based on the android version of the device.
+*/
+private void generatePairingBarcode() {
+    LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(-1, -1);
+    BarCodeView barCodeView;
+
+    // Check the selected bluetooth protocol and generate barcode.
+    if(btProtocol==DCSSDKDefs.DCSSDK_BT_PROTOCOL.SSI_BT_LE) {
+    // Bluetooth Low Energy Mode.
+        barCodeView = sdkHandler.dcssdkGetPairingBarcode(btProtocol, DCSSDKDefs.DCSSDK_BT_SCANNER_CONFIG.SET_FACTORY_DEFAULTS);
+        if (barCodeView != null) {
+            updateBarcodeView(layoutParams, barCodeView);
+        }
+    } 
+    else {
+        // SDK was not able to determine Bluetooth MAC. So call the dcssdkGetPairingBarcode with BT Address.
+        // Bluetooth Classic Mode.
+        String btAddress = getDeviceBTAddress(MainActivity.this);
+        if (btAddress.equals("")) {
+            barcodeDisplayArea.removeAllViews();
+        } 
+        else {
+            sdkHandler.dcssdkSetBTAddress(btAddress);
+            barCodeView = sdkHandler.dcssdkGetPairingBarcode(btProtocol, DCSSDKDefs.DCSSDK_BT_SCANNER_CONFIG.SET_FACTORY_DEFAULTS, btAddress);
+            if (barCodeView != null) {
+                updateBarcodeView(layoutParams, barCodeView);
+            }    
+        }
+    }
+}
+
+/**
+* Once the correct bluetooth address is received, this method proceed. To display the barcode in the given frame layout.
+* @param layoutParams
+* @param barCodeView
+*/
+private void updateBarcodeView(LinearLayout.LayoutParams layoutParams, BarCodeView barCodeView) {
+    Display display = getWindowManager().getDefaultDisplay();
+    Point size = new Point();
+    display.getSize(size);
+    int width = size.x;
+
+    int orientation = this.getResources().getConfiguration().orientation;
+    int x = width * 9 / 10;
+    int y = x / 3;
+
+    if (getDeviceScreenSize() > 6) { // TODO: Check 6 is ok or not
+        if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            x = width / 2;
+        } 
+        else {
+            x = width * 2 / 3;
+        }
+        y = x / 3;
+    }
+    barCodeView.setSize(x, y);
+    barcodeDisplayArea.addView(barCodeView, layoutParams);
+}
+
+/**
+* Get display size to utilize the UI.
+* @return double
+*/
+private double getDeviceScreenSize() {
+    double screenInches = 0;
+    WindowManager windowManager = getWindowManager();
+    Display display = windowManager.getDefaultDisplay();
+
+    int mWidthPixels;
+    int mHeightPixels;
+
+    try {
+        Point realSize = new Point();
+        Display.class.getMethod("getRealSize", Point.class).invoke(display, realSize);
+        mWidthPixels = realSize.x;
+        mHeightPixels = realSize.y;
+        DisplayMetrics dm = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(dm);
+        double x = Math.pow(mWidthPixels / dm.xdpi, 2);
+        double y = Math.pow(mHeightPixels / dm.ydpi, 2);
+        screenInches = Math.sqrt(x + y);
+    } 
+    catch (Exception e) {
+        e.printStackTrace();
+    }
+    return screenInches;
+}   
+</code>
+</pre>
+
+                                                    <h4 id="connect-scanner-in-snapi" class="anchor">Connect Scanner SNAPI Mode</h4>
+
+<pre class="prettyprint">
+<code>
+public class MainActivity extends AppCompatActivity implements IDcsSdkApiDelegate {
     public static SDKHandler sdkHandler;
-    public static ArrayList&lt;DCSScannerInfo> scannerInfoList = new ArrayList&lt;DCSScannerInfo>();
-
-    int scannerId;
-    static String bluetoothAddress;
     private FrameLayout barcodeDisplayArea;
-    private EditText deviceBluetoothAddress;
+    private RelativeLayout snapiLayout;
+    private RelativeLayout brcodeLayout;
+    RecyclerView recyclerView;
 
-    private static final int PERMISSIONS_ACCESS_COARSE_LOCATION = 10;
-    private Dialog dialog ;
+    int currentConnectedScannerID;
+    static AvailableScanner curAvailableScanner = null;
 
+    private static ArrayList&lt;DCSScannerInfo> mSNAPIList = new ArrayList&lt;DCSScannerInfo>();
+    private static ArrayList&lt;DCSScannerInfo> mScannerInfoList;
+
+    ArrayList&lt;Barcode> listScannedBarcodes;
+    BarcodeListAdapter barcodeListAdapter;
+
+    static ConnectAsyncTask cmdExecTask = null;
+
+    public static CustomProgressDialog progressDialog;
+
+    /**
+    * The method that initializes the SDK.
+    */
+    @SuppressLint("MissingPermission")
+    private void initializeDcsSdk() {
+        // Initializing sdk handler.
+        if (sdkHandler == null) {
+            sdkHandler = new SDKHandler(this, true);
+        }
+
+        sdkHandler.dcssdkSetDelegate(this);
+        sdkHandler.dcssdkEnableAvailableScannersDetection(true);
+        sdkHandler.dcssdkSetOperationalMode(DCSSDKDefs.DCSSDK_MODE.DCSSDK_OPMODE_SNAPI);
+
+        int notifications_mask = 0;
+
+        // We would like to subscribe to all scanner available/not-available events.
+        notifications_mask |= DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SCANNER_APPEARANCE.value | DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SCANNER_DISAPPEARANCE.value;
+
+        // We would like to subscribe to all scanner connection events.
+        notifications_mask |= DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SESSION_ESTABLISHMENT.value | DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SESSION_TERMINATION.value;
+
+        // We would like to subscribe to all barcode events.
+        notifications_mask |= DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_BARCODE.value;
+
+        // Subscribe to events set in notification mask.
+        sdkHandler.dcssdkSubsribeForEvents(notifications_mask);
+
+        // Connect to scanner.
+        connectToScanner();
+    }
+
+    /**
+    * Get available scanner and connect.
+    */
+    private void connectToScanner(){
+        mScannerInfoList = new ArrayList&lt;>();
+        mSNAPIList.clear();
+        updateScannersList();
+        for (DCSScannerInfo device : mScannerInfoList) {
+            if (device.getConnectionType() == DCSSDKDefs.DCSSDK_CONN_TYPES.DCSSDK_CONNTYPE_USB_SNAPI) {
+                mSNAPIList.add(device);
+            }
+        }
+
+        if (mSNAPIList.isEmpty()) {
+            // No SNAPI Scanners.
+            getSnapiBarcode();
+        } 
+        else if (mSNAPIList.size() &lt;= 1) {
+            // Only one SNAPI scanner available.
+            if (mSNAPIList.get(0).isActive()) {
+                // Available scanner is active. Navigate to active scanner.
+                currentConnectedScannerID = mSNAPIList.get(0).getScannerID();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        // Change UI on connection.    
+                    }
+                });
+                
+            } 
+            else {
+                // Try to connect available scanner.
+                cmdExecTask = new ConnectAsyncTask(mSNAPIList.get(0));
+                cmdExecTask.execute();
+            }
+        }
+    }
+
+    @SuppressLint({"MissingInflatedId", "MissingPermission"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Initialization of UI components.
         barcodeDisplayArea = (FrameLayout) findViewById(R.id.scan_to_connect_barcode);
+        snapiLayout = (RelativeLayout) findViewById(R.id.snapi_layout);
 
-        dialog = new Dialog(this);
-        dialog.setContentView(R.layout.enter_bluetooth_address);
-        deviceBluetoothAddress = (EditText) dialog.findViewById(R.id.device_bluetooth_address);
-        sdkHandler = new SDKHandler(this);
-        DCSSDKDefs.DCSSDK_RESULT result = sdkHandler.dcssdkSetOperationalMode(DCSSDK_OPMODE_BT_LE);
+        // Change visibility on connection state change. Initially display the barcode.
+        snapiLayout.setVisibility(View.VISIBLE);
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // If permission has not been set previously , permission can be requested from the below code
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, PERMISSIONS_ACCESS_COARSE_LOCATION);
-        }
-        else {
-            initializeDcsSdk();
-        }
+        initializeDcsSdk();
     }
-}
-</code>
-</pre>
 
-<pre class="prettyprint">
-<code>
-//The method that initializes the SDK
-private void initializeDcsSdk() {
-    sdkHandler.dcssdkEnableAvailableScannersDetection(true);
-    sdkHandler.dcssdkSetOperationalMode(DCSSDKDefs.DCSSDK_MODE.DCSSDK_OPMODE_BT_LE);
-    generatePairingBarcode();
-}
-</code>
-</pre>
-
-                                                    <p>Inside the 'initializeDcsSdk' method, Bluetooth operational mode is set and a call is made to 'generatePairingBarcode'.</p>
-
-<pre class="prettyprint">
-<code>
-@Override
-public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
-    switch (requestCode) {
-        case PERMISSIONS_ACCESS_COARSE_LOCATION: {
-            // If request is cancelled, the result arrays are empty.
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                initializeDcsSdk();
+    /**
+    * Initial method that gets called to display the barcode.
+    * once scan the barcode Scanner change the protocol to SNAPI mode.
+    */
+    private void getSnapiBarcode() {
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(-1, -1);
+        BarCodeView barCodeView = sdkHandler.dcssdkGetUSBSNAPIWithImagingBarcode();
+        Display display = getWindowManager().getDefaultDisplay();
+        Point size = new Point();
+        display.getSize(size);
+        int width = size.x;
+        int orientation = this.getResources().getConfiguration().orientation;
+        int x = width * 9 / 10;
+        int y = x / 3;
+        if (getDeviceScreenSize() > 6) { // TODO: Check 6 is ok or not
+            if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                x = width / 2;
+                y = x / 3;
             } 
             else {
-                finish();
+                x = width * 2 / 3;
+                y = x / 3;
             }
-            return;
         }
+        barCodeView.setSize(x, y);
+        barcodeDisplayArea.addView(barCodeView, layoutParams);
     }
-}
-</code>
-</pre>
 
-<pre class="prettyprint">
-<code>
-//Initial method that gets called to display the barcode based on the android version of the device
-private void generatePairingBarcode() {
-    LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(-1, -1);
+    /**
+    * Get display size to utilize the UI.
+    * @return double.
+    */
+    private double getDeviceScreenSize() {
+        double screenInches = 0;
+        WindowManager windowManager = getWindowManager();
+        Display display = windowManager.getDefaultDisplay();
 
-    BarCodeView barCodeView = sdkHandler.dcssdkGetPairingBarcode(DCSSDKDefs.DCSSDK_BT_PROTOCOL.SSI_BT_LE, DCSSDKDefs.DCSSDK_BT_SCANNER_CONFIG.SET_FACTORY_DEFAULTS);
+        int mWidthPixels;
+        int mHeightPixels;
 
-    //For Android versions  7 and below  bluetooth address of the device will be taken by the SDK automatically. But for versions
-    //above that barcodeView will be null , as bluetooth address cannot be retrieved via the SDK due to security measures.
-    if(barCodeView!=null) {
-        updateBarcodeView(layoutParams, barCodeView);
-    }
-    else {
-        //when the barcodeView is null, a popup window will be visible where the bluetooth address of the device has to be entered
-        // in order for the STC barcode to be visible.
-        dialog.show();
+        try {
+            Point realSize = new Point();
+            Display.class.getMethod("getRealSize", Point.class).invoke(display, realSize);
+            mWidthPixels = realSize.x;
+            mHeightPixels = realSize.y;
+            DisplayMetrics dm = new DisplayMetrics();
+            getWindowManager().getDefaultDisplay().getMetrics(dm);
+            double x = Math.pow(mWidthPixels / dm.xdpi, 2);
+            double y = Math.pow(mHeightPixels / dm.ydpi, 2);
+            screenInches = Math.sqrt(x + y);
+        } 
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+        return screenInches;
     }
 }
 </code>
@@ -1048,11 +1456,111 @@ public static enum DCSSDK_BT_SCANNER_CONFIG {
 
                                                     <p>Note that the operational mode set using the method, 'sdkHandler.dcssdkSetOperationalMode(DCSSDK_OPMODE_BT_LE)' should be compatible with the Bluetooth protocol used. For instance, if 'DCSSDK_OPMODE_BT_NORMAL' is used as the operational mode, then the Bluetooth protocol to be used is the 'SSI_BT_CRADLE_HOST'.</p>
 
+                                                    <h4 id="virtual-tether" class="anchor"><a class="heading-anchor" href="#virtual-tether"><span></span></a>Virtual Tether</h4>
+
+                                                    <p>Virtual Tether is used to alert the user when the scanner is interrupted or taken out of the range of the host device. The attribute command <strong>DCSSDKDefs.DCSSDK_COMMAND_OPCODE.DCSSDK_RSM_ATTR_STORE</strong> is used to store the value for enabling or disabling the virtual tether alarm.</p>
+
+                                                    <p>The below xml string attribute is used for Enabling the Virtual Tether feature.</p>
+
+<pre class="prettyprint">
+<code>
+// Example: Scanner ID is 1 and RMD_ATTR_VIRTUAL_TETHER_ALARM_STATUS is 2053, and RMD_ATTR_VALUE_VIRTUAL_TETHER_ALARM_ENABLE is 1 to enable the virtual tether or RMD_ATTR_VALUE_VIRTUAL_TETHER_ALARM_ENABLE is 0 to disable the virtual tether.
+
+String inXML = 
+    "&lt;inArgs>
+        &lt;scannerID>" + scannerID + "&lt;/scannerID>
+        &lt;cmdArgs>
+            &lt;arg-xml>
+                &lt;attrib_list>
+                    &lt;attribute>
+                        &lt;id>" + RMD_ATTR_VIRTUAL_TETHER_ALARM_STATUS + "&lt;/id>
+                        &lt;datatype>B&lt;/datatype>
+                        &lt;value>" + RMD_ATTR_VALUE_VIRTUAL_TETHER_ALARM_ENABLE + "&lt;/value>
+                    &lt;/attribute>
+                &lt;/attrib_list>
+            &lt;/arg-xml>
+        &lt;/cmdArgs>
+    &lt;/inArgs>";
+</code>
+</pre>
+
+                                                    <p>Pass the above string to async task to execute the command and get the results.</p>
+
+<pre class="prettyprint">
+<code>
+VirtualTetherAsyncTask vtAsyncTask = new VirtualTetherAsyncTask(scannerID, DCSSDKDefs.DCSSDK_COMMAND_OPCODE.DCSSDK_RSM_ATTR_STORE);
+vtAsyncTask.execute(in_xml);
+</code>
+</pre>
+
+                                                    <p>Below is an AsyncTask code to enable or disable the virtual tethering.</p>
+
+<pre class="prettyprint">
+<code>
+private class VirtualTetherAsyncTask extends AsyncTask<String, Integer, Boolean> {
+    int scannerId;
+    DCSSDKDefs.DCSSDK_COMMAND_OPCODE opcode;
+
+    public VirtualTetherAsyncTask(int scannerId, DCSSDKDefs.DCSSDK_COMMAND_OPCODE opcode) {
+        this.scannerId = scannerId;
+        this.opcode = opcode;
+    }
+
+    @Override
+    protected void onPreExecute() {
+        super.onPreExecute();
+    }
+
+    @Override
+    protected Boolean doInBackground(String... strings) {
+        StringBuilder outXML = new StringBuilder();
+        DCSSDKDefs.DCSSDK_RESULT result = Application.sdkHandler.dcssdkExecuteCommandOpCodeInXMLForScanner(opCode, strings[0], outXML, scannerID);
+        if (result == DCSSDKDefs.DCSSDK_RESULT.DCSSDK_RESULT_SUCCESS) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    @Override
+    protected void onPostExecute(Boolean b) {
+        super.onPostExecute(b);
+        if(b) {
+            // Virtual Tether Update Success.
+        }
+        else {
+            // Virtual Tether Update Failed.
+        }
+    }
+}                                                            
+</code>
+</pre>
+
+                                                    <p>Below given code can be used to simulate virtual tether audio, led, haptics and illumination alarms. In here, the command attribute <strong>DCSSDKDefs.DCSSDK_COMMAND_OPCODE.DCSSDK_SET_ACTION</strong> is used.</p>
+
+<pre class="prettyprint">
+<code>
+// Example: ScannerID is 1 and ACTION_COMMAND_VIRTUAL_TETHER_START_SIMULATION is 232
+
+String in_XML_Simulation = 
+    "&lt;inArgs>
+        &lt;scannerID>" + scannerID + "&lt;/scannerID>
+        &lt;cmdArgs>
+            &lt;arg-int>" + ACTION_COMMAND_VIRTUAL_TETHER_START_SIMULATION + "&lt;/arg-int>
+        &lt;/cmdArgs>
+    &lt;/inArgs>";
+
+VirtualTetherAsyncTask vtAsyncTask = new VirtualTetherAsyncTask(scannerID, DCSSDKDefs.DCSSDK_COMMAND_OPCODE.DCSSDK_SET_ACTION);
+vtAsyncTask.execute(in_xml_for_simulation);
+</code>
+</pre>
+
                                                     <h3 id="scanner-connect-event" class="anchor"><a class="heading-anchor" href="#scanner-connect-event"><span></span></a>Scanner Connect Event</h3>
 
                                                     <p>Once the STC barcode is available on the screen, the connection can be established by scanning the barcode with the Bluetooth scanner. The beep tone of the scanner confirms that the scanner has paired with the device as well as with the App. </p>
 
-                                                    <h3 id="scanner-disconnect-event" class="anchor"><a class="heading-anchor" href="#scanner-disconnect-event"><span></span></a>Scanner Connect Event</h3>
+                                                    <h3 id="scanner-disconnect-event" class="anchor"><a class="heading-anchor" href="#scanner-disconnect-event"><span></span></a>Scanner Disconnect Event</h3>
 
                                                     <p>If the user wishes to disconnect the scanner from the App as well as from the device, it can be achieved by pressing the 'Disconnect' button in the UI. Here the 'scannerId' is obtained from the 'scannerInfoList' and the method, 'dcssdkTerminateCommunicationSession(scannerId)' is provided with the obtained 'scannerId' to terminate the connection. </p>
 

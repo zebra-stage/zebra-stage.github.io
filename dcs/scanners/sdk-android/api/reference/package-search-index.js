@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"com.zebra.barcode.sdk.sms"},{"l":"com.zebra.scannercontrol"}];updateSearchResults();
