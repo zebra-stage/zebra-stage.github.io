@@ -1062,8 +1062,223 @@ prob");
 }
 
  </code></pre>
+ 
+ <h2 id="Regulatory Configuration(Region)" class="anchor"><a class="heading-anchor" href="#Regulatory Configuration(Region)"><span></span></a>Regulatory Configuration(Region)</h2>  
+ <p>The SDK supports managing of regulatory related parameters of a particular active RFID reader. Regulatory configuration includes the following:
+- Code of selected region
+- Hopping
+- Set of enabled channels.
+A set of enabled channels shall include only such channels that are supported in the selected region. If hopping configuration is not allowed for the selected regions a set of enabled channels shall not be specified.
+Regulatory parameters could be retrieved and set via srfidGetRegulatoryConfig and srfidSetRegulatoryConfig API functions accordingly. The following example demonstrates retrieving of current regulatory settings and configuring the RFID reader to operate in one of supported regions.
+</p>
 
-  
+<h3 id="srfidGetSupportedRegions" class="anchor"><a class="heading-anchor" href="#srfidGetSupportedRegions"><span></span></a>srfidGetSupportedRegions</h3>
+<p>Request to receive information regarding all supported regions from a particular RFID reader.</p>
+<pre class="prettyprint">
+<code>
+        /// <summary>
+        /// Get supported regions from the connected reader.
+        /// </summary>
+        /// <returns>The Supported regions.</returns>
+        public NSMutableArray RfidGetRegionsList()
+        {
+            string statusMessage = null;
+            NSMutableArray supportRegionsList = new NSMutableArray();
+            IntPtr availableHandle = supportRegionsList.Handle;
+
+            SrfidResult statusSupportRegionList = apiInstance.SrfidGetSupportedRegions(connectedReaderID, out availableHandle, out statusMessage);
+            supportRegionsList = ObjCRuntime.Runtime.GetNSObject<NSMutableArray>(availableHandle);
+
+
+            if (statusSupportRegionList == SrfidResult.Success)
+            {
+                System.Diagnostics.Debug.WriteLine("Native statusSupportRegionList : Success");
+
+                
+                
+
+            }
+            else if (statusSupportRegionList == SrfidResult.ResponseError)
+            {
+
+                System.Diagnostics.Debug.WriteLine("statusSupportRegionList ResponseError");
+
+            }
+            else if (statusSupportRegionList == SrfidResult.Failure || statusSupportRegionList == SrfidResult.ResponseTimeout)
+            {
+
+                System.Diagnostics.Debug.WriteLine("statusSupportRegionList reder prob");
+
+            }
+
+            return supportRegionsList;
+        }
+
+
+</code>
+</pre>
+
+ <h3 id="srfidGetRegionInfo" class="anchor"><a class="heading-anchor" href="#srfidGetRegionInfo"><span></span></a>srfidGetRegionInfo</h3>
+ <p>Request to receive detailed information regarding one of supported regions from a particular RFID reader</p>
+<pre class="prettyprint">
+<code>
+        // <summary>
+        /// Get region infomation from the connected reader.
+        /// </summary>
+        /// <//returns>The region infomation.<//returns>
+        /// <//param name="readerID">Reader identifier.<//param>
+        /// <//param name="regionCode">Region code.<//param>
+        /// <//param name="hoppingConfigurable">If set to <c>true</c> hopping configurable.<//param>
+        public NSMutableArray RfidGetRegionInfo(string regionCode ,bool hoppingConfigurable)
+        {
+     
+            string statusMessage = null;
+            NSMutableArray chanelListForRegion = new NSMutableArray();
+
+            NSMutableArray regionInfo = new NSMutableArray();
+
+            IntPtr availableHandle12 = regionInfo.Handle;
+
+          
+            bool hoppingStatus = hoppingConfigurable;
+
+        
+            int size = Marshal.SizeOf(hoppingStatus); //*settings* is a struct with some data
+            IntPtr pointerHoppingBool = Marshal.AllocHGlobal(size);
+            Marshal.StructureToPtr(hoppingStatus, pointerHoppingBool, true);
+
+            /* use the IntPtr */
+
+            //Marshal.FreeHGlobal(pSettings);
+
+            SrfidResult regionInfoResult = apiInstance.SrfidGetRegionInfo(connectedReaderID, regionCode, out availableHandle12, out pointerHoppingBool, out statusMessage);
+            regionInfo = ObjCRuntime.Runtime.GetNSObject<NSMutableArray>(availableHandle12);
+
+
+            if (regionInfoResult == SrfidResult.Success)
+            {
+                System.Diagnostics.Debug.WriteLine("Native SrfidGetRegionInfo : Success Current : ",regionInfo);
+                object[] enableChannels = new object[regionInfo.Count];
+                if (regionInfo.Count > 0)
+                {
+                    int i = 0;
+                    foreach (NSObject channel in regionInfo)
+                    {
+                        enableChannels[i++] = channel;
+                        chanelListForRegion.Add(channel);
+                    }
+
+                }
+           
+            }
+            else if (regionInfoResult == SrfidResult.ResponseError)
+            {
+
+                System.Diagnostics.Debug.WriteLine("SrfidGetRegionInfo ResponseError");
+
+            }
+            else if (regionInfoResult == SrfidResult.InvalidParams)
+            {
+
+                System.Diagnostics.Debug.WriteLine("SrfidGetRegionInfo Invalid Prams");
+
+            }
+            else if (regionInfoResult == SrfidResult.Failure || regionInfoResult == SrfidResult.ResponseTimeout)
+            {
+
+                System.Diagnostics.Debug.WriteLine("SrfidGetRegionInfo reder prob");
+
+            }
+            return chanelListForRegion;
+
+        }
+`
+</code>
+</pre>
+
+<h3 id="srfidGetRegulatoryConfig" class="anchor"><a class="heading-anchor" href="#srfidGetRegulatoryConfig"><span></span></a>srfidGetRegulatoryConfig</h3>
+<p>Request to receive regulatory parameters from a particular RFID reader.</p>
+<pre class="prettyprint">
+<code>
+        /// <//summary>
+        /// Get the regulatory configuration of the connected reader.
+        /// <//summary>
+        /// <//returns>Regulatory config.<//returns>
+        /// <//param name="readerID">Reader identifier.<//param>
+        public srfidRegulatoryConfig RfidGetRegulatoryConfig()
+        {
+            string statusMessage = null;
+            srfidRegulatoryConfig config = new srfidRegulatoryConfig();
+
+            IntPtr availableHandle = config.Handle;
+            SrfidResult regulatoryConfigResult = apiInstance.SrfidGetRegulatoryConfig(connectedReaderID, out availableHandle, out statusMessage);
+            config = ObjCRuntime.Runtime.GetNSObject<srfidRegulatoryConfig>(availableHandle);
+            if (regulatoryConfigResult == SrfidResult.Success)
+            {
+                System.Diagnostics.Debug.WriteLine("Native statusSupportRegionList : Success  ");
+
+            }
+            else if (regulatoryConfigResult == SrfidResult.ResponseError)
+            {
+
+                System.Diagnostics.Debug.WriteLine("statusSupportRegionList ResponseError");
+
+            }
+            else if (regulatoryConfigResult == SrfidResult.Failure || regulatoryConfigResult == SrfidResult.ResponseTimeout)
+            {
+
+                System.Diagnostics.Debug.WriteLine("statusSupportRegionList reder prob");
+
+            }
+
+            return config;
+        }
+
+
+</code>
+</pre>
+
+<h3 id="srfidSetRegulatoryConfig" class="anchor"><a class="heading-anchor" href="#srfidSetRegulatoryConfig"><span></span></a>srfidSetRegulatoryConfig</h3>
+<p>Request to set regulatory parameters on a particular RFID reader.</p>									
+  <pre class="prettyprint">
+<code>
+        /// <//summary>
+        /// Set the regulatory configuration of the connected reader.
+        /// <//summary>
+        /// <//returns>Regulatory configuration<//returns>
+        /// <//param name="regulatoryConfig">Regulatory config.<//param>
+        public string RfidSetRegulatoryConfig(srfidRegulatoryConfig regulatoryConfig)
+        {
+            string statusMessage = null;
+
+            SrfidResult regulatoryConfigStatus = apiInstance.SrfidSetRegulatoryConfig(connectedReaderID, regulatoryConfig, out statusMessage);
+
+            if (regulatoryConfigStatus == SrfidResult.Success)
+            {
+                System.Diagnostics.Debug.WriteLine("Native statusSupportRegionList : Success Current : ");
+                statusMessage = "Successfully Regulatory Settings Applied!";
+
+            }
+            else if (regulatoryConfigStatus == SrfidResult.ResponseError)
+            {
+
+                System.Diagnostics.Debug.WriteLine("statusSupportRegionList ResponseError");
+                statusMessage = "Response Error";
+
+            }
+            else if (regulatoryConfigStatus == SrfidResult.Failure || regulatoryConfigStatus == SrfidResult.ResponseTimeout)
+            {
+
+                System.Diagnostics.Debug.WriteLine("statusSupportRegionList reder prob");
+                statusMessage = "Reader Problem!";
+
+            }
+            return statusMessage;
+
+        }
+
+</code>
+</pre>
    </div>
                                         </div>
 
