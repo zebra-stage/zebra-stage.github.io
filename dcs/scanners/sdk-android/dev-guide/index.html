@@ -167,6 +167,20 @@ implementation "androidx.lifecycle:lifecycle-process:2.5.1"
 </code>
 </pre>
 
+                                                    <h3 id="discover-scanner" class="anchor">Make Scanner Discoverable</h3>
+
+                                                    <p>User can make a connection between the scanner and the device using either 'SSI BT Classic (discoverable)' Barcode or 'Scan-To-Connect' Barcode.</p>
+
+                                                    <p>Using the 'SSI BT Classic (discoverable)' barcode (This is available in the Program Reference Guide of the Zebra Scanner Product), a Bluetooth connection can be established with the scanner and the device on which the app is running. Scan the barcode and start a Bluetooth scan in your device. Once the scanner is detected, pair with it.</p>
+
+                                                    <img src="../../images/barcode/SSI_BT_CLASSIC.jpg" style="display: block; margin: 0 auto;" alt="SST BT Classic (Discoverable)"><br />
+
+                                                    <p>The noteworthy difference between the two barcodes is that, Scan-To-Connect doesn't require setting up the connection manually with the Android device. Unlike 'SSI BT Classic (discoverable)', a one scan of the Scan-To-Connect barcode establishes a connection with both the device and the app in one go.</p>
+
+                                                    <hr>
+
+                                                    <h2 id="create-android-project" class="anchor"><a class="heading-anchor" href="#create-android-project"><span></span></a>Implement Android Sample Project</h2>
+
                                                     <h3 id="addpermissioninthemanifestfile" class="anchor">Adding Permissions in the Manifest File</h3>
 
                                                     <p>Following permissions should be added in the Manifest File in order for the app to establish a Bluetooth connection with the scanner.</p>
@@ -183,16 +197,6 @@ implementation "androidx.lifecycle:lifecycle-process:2.5.1"
 </pre>
 
                                                     <p>The BLUETOOTH_ADVERTISE, BLUETOOTH_CONNECT, and BLUETOOTH_SCAN permissions are <a href="https://developer.android.com/guide/topics/permissions/overview#runtime" target="_blank">runtime permissions</a>. Therefore <a href="https://developer.android.com/training/permissions/requesting" target="_blank">user approval</a> must be explicitly requested in the app.</p>
-
-                                                    <h3 id="connectingthescannertothedevice" class="anchor">Connecting the Scanner to the Device</h3>
-
-                                                    <p>User can make a connection between the scanner and the device using either 'SSI BT Classic (discoverable)' Barcode or 'Scan-To-Connect' Barcode.</p>
-
-                                                    <p>Using the 'SSI BT Classic (discoverable)' barcode (This is available in the Program Reference Guide of the Zebra Scanner Product), a Bluetooth connection can be established with the scanner and the device on which the app is running. Scan the barcode and start a Bluetooth scan in your device. Once the scanner is detected, pair with it.</p>
-
-                                                    <img src="../../images/barcode/SSI_BT_CLASSIC.jpg" style="display: block; margin: 0 auto;" alt="SST BT Classic (Discoverable)"><br />
-
-                                                    <p>The noteworthy difference between the two barcodes is that, Scan-To-Connect doesn't require setting up the connection manually with the Android device. Unlike 'SSI BT Classic (discoverable)', a one scan of the Scan-To-Connect barcode establishes a connection with both the device and the app in one go.</p>
 
                                                     <h3 id="android-sdk-installation" class="anchor">SDK Initialization</h3>
 
@@ -237,7 +241,7 @@ private void initializeDcsSdk() {
 </code>
 </pre>
 
-                                                    <h4 id="runtime-permission" class="anchor">Request Runtime Permission</h4>
+                                                    <h3 id="runtime-permission" class="anchor">Request Runtime Permission</h3>
 
                                                     <p>Before Initializing the sdk in onCreate() method, runtime permissions must be requested to connect scanner by Bluetooth.</p>
 
@@ -395,7 +399,7 @@ public void openAppSettings() {
 </code>
 </pre>
 
-                                                    <h4 id="enable-device-bluetooth" class="anchor">Enable Device Bluetooth</h4>
+                                                    <h3 id="enable-device-bluetooth" class="anchor">Enable Device Bluetooth</h3>
 
                                                     <p>Once all permissions are granted, device Bluetooth enabling should be done prior to SDK initialization within the onCreate() method.</p>
 
@@ -461,7 +465,632 @@ private class ConnectScanner extends AsyncTask<Void,Integer,Void> {
 </code>
 </pre>
 
-                                                    <h2 id="scannerbeep" class="anchor"><a class="heading-anchor" href="#scannerbeep"><span></span></a>Making the Scanner Beep</h2>
+                                                    <hr>
+
+                                                    <h2 id="connect-scanner" class="anchor"><a class="heading-anchor" href="#connect-scanner"><span></span></a>Connect Scanner </h2>
+
+                                                    <h3 id="stc-barcode" class="anchor"><a class="heading-anchor" href="#stc-barcode"><span></span></a>Scan-To-Connect (STC) Barcode</h3>
+
+                                                    <p>Within the onCreate() method, UI elements should be initialized. Then the user will be requested to grant the permissions that are required to use the application. Details on this can be found in <a href="#runtime-permission">Request runtime permission</a> section. After runtime permissions are granted, SDK initialization should be done. More on this is described in <a href="#android-sdk-installation">SDK Initialization</a> section.</p>
+
+<pre class="prettyprint">
+<code>
+public class MainActivity extends AppCompatActivity implements IDcsScannerEventsOnReLaunch,IDcsSdkApiDelegate
+public static SDKHandler sdkHandler;
+AlertDialog alertDialog;
+
+ArrayList&lt;String> permissionsList;
+int permissionsCount = 0;
+private FrameLayout barcodeDisplayArea;
+private RelativeLayout stcLayout;
+private Button btnDisconnect;
+private TextView txtBluetoothMode;
+int currentConnectedScannerID;
+BluetoothAdapter mBluetoothAdapter;
+private final static int REQUEST_ENABLE_BT = 1;
+
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+
+    // Initialization of UI components.
+    barcodeDisplayArea = (FrameLayout) findViewById(R.id.scan_to_connect_barcode);
+    btnDisconnect = (Button) findViewById(R.id.btn_disconnect);
+    stcLayout = (RelativeLayout) findViewById(R.id.stc_layout);
+    txtBluetoothMode = (TextView) findViewById(R.id.bluetooth_mode);
+
+    // Change visibility on connection state change. Initially display the barcode.
+    stcLayout.setVisibility(View.VISIBLE);
+    btnDisconnect.setVisibility(View.GONE);
+
+    btnDisconnect.setOnClickListener(new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            // Disconnect scanner on button click.
+        disconnectScanner();
+        }
+    });
+
+    requestPermission();
+}    
+</code>
+</pre>
+
+<pre class="prettyprint">
+<code>
+/**
+* Initial method that gets called to display the barcode based on the android version of the device.
+*/
+private void generatePairingBarcode() {
+    LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(-1, -1);
+    BarCodeView barCodeView;
+
+    // Check the selected bluetooth protocol and generate barcode.
+    if(btProtocol==DCSSDKDefs.DCSSDK_BT_PROTOCOL.SSI_BT_LE) {
+    // Bluetooth Low Energy Mode.
+        barCodeView = sdkHandler.dcssdkGetPairingBarcode(btProtocol, DCSSDKDefs.DCSSDK_BT_SCANNER_CONFIG.SET_FACTORY_DEFAULTS);
+        if (barCodeView != null) {
+            updateBarcodeView(layoutParams, barCodeView);
+        }
+    } 
+    else {
+        // SDK was not able to determine Bluetooth MAC. So call the dcssdkGetPairingBarcode with BT Address.
+        // Bluetooth Classic Mode.
+        String btAddress = getDeviceBTAddress(MainActivity.this);
+        if (btAddress.equals("")) {
+            barcodeDisplayArea.removeAllViews();
+        } 
+        else {
+            sdkHandler.dcssdkSetBTAddress(btAddress);
+            barCodeView = sdkHandler.dcssdkGetPairingBarcode(btProtocol, DCSSDKDefs.DCSSDK_BT_SCANNER_CONFIG.SET_FACTORY_DEFAULTS, btAddress);
+            if (barCodeView != null) {
+                updateBarcodeView(layoutParams, barCodeView);
+            }    
+        }
+    }
+}
+
+/**
+* Once the correct bluetooth address is received, this method proceed. To display the barcode in the given frame layout.
+* @param layoutParams
+* @param barCodeView
+*/
+private void updateBarcodeView(LinearLayout.LayoutParams layoutParams, BarCodeView barCodeView) {
+    Display display = getWindowManager().getDefaultDisplay();
+    Point size = new Point();
+    display.getSize(size);
+    int width = size.x;
+
+    int orientation = this.getResources().getConfiguration().orientation;
+    int x = width * 9 / 10;
+    int y = x / 3;
+
+    if (getDeviceScreenSize() > 6) { // TODO: Check 6 is ok or not
+        if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            x = width / 2;
+        } 
+        else {
+            x = width * 2 / 3;
+        }
+        y = x / 3;
+    }
+    barCodeView.setSize(x, y);
+    barcodeDisplayArea.addView(barCodeView, layoutParams);
+}
+
+/**
+* Get display size to utilize the UI.
+* @return double
+*/
+private double getDeviceScreenSize() {
+    double screenInches = 0;
+    WindowManager windowManager = getWindowManager();
+    Display display = windowManager.getDefaultDisplay();
+
+    int mWidthPixels;
+    int mHeightPixels;
+
+    try {
+        Point realSize = new Point();
+        Display.class.getMethod("getRealSize", Point.class).invoke(display, realSize);
+        mWidthPixels = realSize.x;
+        mHeightPixels = realSize.y;
+        DisplayMetrics dm = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(dm);
+        double x = Math.pow(mWidthPixels / dm.xdpi, 2);
+        double y = Math.pow(mHeightPixels / dm.ydpi, 2);
+        screenInches = Math.sqrt(x + y);
+    } 
+    catch (Exception e) {
+        e.printStackTrace();
+    }
+    return screenInches;
+}   
+</code>
+</pre>
+
+                                                    <h3 id="scanner-connect-event" class="anchor"><a class="heading-anchor" href="#scanner-connect-event"><span></span></a>Scanner Connect Event</h3>
+
+                                                    <p>Once the STC barcode is available on the screen, the connection can be established by scanning the barcode with the Bluetooth scanner. The beep tone of the scanner confirms that the scanner has paired with the device as well as with the App. </p>
+
+                                                    <h3 id="scanner-disconnect-event" class="anchor"><a class="heading-anchor" href="#scanner-disconnect-event"><span></span></a>Scanner Disconnect Event</h3>
+
+                                                    <p>If the user wishes to disconnect the scanner from the App as well as from the device, it can be achieved by pressing the 'Disconnect' button in the UI. Here the 'scannerId' is obtained from the 'scannerInfoList' and the method, 'dcssdkTerminateCommunicationSession(scannerId)' is provided with the obtained 'scannerId' to terminate the connection. </p>
+
+<pre class="prettyprint">
+<code>
+//The method that is responsible for disconnecting the scanner
+public void disconnectScanner(View view) {
+    try {
+        //All connected scanners are in ActiveScannersList and the first scanner will be disconnected.
+        sdkHandler.dcssdkGetActiveScannersList(scannerInfoList);
+        scannerId = scannerInfoList.get(0).getScannerID();
+        sdkHandler.dcssdkTerminateCommunicationSession(scannerId);
+    }
+    catch (Exception e){
+        Toast.makeText(getApplicationContext(), e.toString(), Toast.LENGTH_SHORT).show();
+    }
+}
+</code>
+</pre>
+
+                                                    <h3 id="scanner-enable-disable" class="anchor"><a class="heading-anchor" href="#scanner-enable-disable"><span></span></a>Scanner Enable/Disable</h3>
+
+                                                    <p>When the connection between the device and the scanner has been established, enabling and disabling the scanner can be achieved using the following two methods.</p>
+
+                                                    <div style="display: block; margin: 0 auto; text-align: center;">
+                                                        <img src="../../images/android/0011-scanner-sdk-android-sca-sanner-enable-disable.png" style="display: block; margin: 0 auto;"><strong>Figure 5</strong> Scanner Enable/Disable
+                                                    </div><br />
+
+                                                    <p>With the press of the 'ENABLE' button the following method gets called. When the OPCODE is given as 'DCSSDK_DEVICE_SCAN_ENABLE' along with the corresponding inXml, the scanner can be used for barcode scanning purpose.</p>
+
+<pre class="prettyprint">
+<code>
+//This method enables the barcode scanning functionality of the scanner
+public void enableScanner(View view) {
+    //first scanner in the scannerInfoList will get enabled
+    sdkHandler.dcssdkGetActiveScannersList(scannerInfoList);
+    
+    scannerId = MainActivity.scannerInfoList.get(0).getScannerID();
+    StringBuilder outXml = new StringBuilder();
+    String inXml = "&lt;inArgs>&lt;scannerID>" + scannerId + "&lt;/scannerID>&lt;/inArgs>";
+    
+    // As it is not a production level application , an Async task has not been used here. But it is recommended to make use of an Async task
+    sdkHandler.dcssdkExecuteCommandOpCodeInXMLForScanner(DCSSDKDefs.DCSSDK_COMMAND_OPCODE.DCSSDK_DEVICE_SCAN_ENABLE, inXml, outXml);
+}
+</code>
+</pre>
+
+                                                    <p>With the press of the button 'DISABLE' barcode scanning functionality of the scanner will be disabled.</p>
+
+<pre class="prettyprint">
+<code>
+//This method disables the barcode scanning functionality of the scanner
+public void disableScanner(View view) {
+    //first scanner in the scannerInfoList will get disabled
+    sdkHandler.dcssdkGetActiveScannersList(scannerInfoList);
+    
+    scannerId = MainActivity.scannerInfoList.get(0).getScannerID();
+    StringBuilder outXml = new StringBuilder();
+    String inXml = "&lt;inArgs>&lt;scannerID>" + scannerId + "&lt;/scannerID>&lt;/inArgs>";
+    
+    // As it is not a production level application , an Async task has not been used here. But it is recommended to make use of an Async task
+    sdkHandler.dcssdkExecuteCommandOpCodeInXMLForScanner(DCSSDKDefs.DCSSDK_COMMAND_OPCODE.DCSSDK_DEVICE_SCAN_DISABLE, inXml, outXml);
+}
+</code>
+</pre>
+
+                                                    <h3 id="connect-scanner-in-snapi" class="anchor">Wired Connection/SNAPI Mode</h3>
+
+<pre class="prettyprint">
+<code>
+public class MainActivity extends AppCompatActivity implements IDcsSdkApiDelegate {
+    public static SDKHandler sdkHandler;
+    private FrameLayout barcodeDisplayArea;
+    private RelativeLayout snapiLayout;
+    private RelativeLayout brcodeLayout;
+    RecyclerView recyclerView;
+
+    int currentConnectedScannerID;
+    static AvailableScanner curAvailableScanner = null;
+
+    private static ArrayList&lt;DCSScannerInfo> mSNAPIList = new ArrayList&lt;DCSScannerInfo>();
+    private static ArrayList&lt;DCSScannerInfo> mScannerInfoList;
+
+    ArrayList&lt;Barcode> listScannedBarcodes;
+    BarcodeListAdapter barcodeListAdapter;
+
+    static ConnectAsyncTask cmdExecTask = null;
+
+    public static CustomProgressDialog progressDialog;
+
+    /**
+    * The method that initializes the SDK.
+    */
+    @SuppressLint("MissingPermission")
+    private void initializeDcsSdk() {
+        // Initializing sdk handler.
+        if (sdkHandler == null) {
+            sdkHandler = new SDKHandler(this, true);
+        }
+
+        sdkHandler.dcssdkSetDelegate(this);
+        sdkHandler.dcssdkEnableAvailableScannersDetection(true);
+        sdkHandler.dcssdkSetOperationalMode(DCSSDKDefs.DCSSDK_MODE.DCSSDK_OPMODE_SNAPI);
+
+        int notifications_mask = 0;
+
+        // We would like to subscribe to all scanner available/not-available events.
+        notifications_mask |= DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SCANNER_APPEARANCE.value | DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SCANNER_DISAPPEARANCE.value;
+
+        // We would like to subscribe to all scanner connection events.
+        notifications_mask |= DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SESSION_ESTABLISHMENT.value | DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SESSION_TERMINATION.value;
+
+        // We would like to subscribe to all barcode events.
+        notifications_mask |= DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_BARCODE.value;
+
+        // Subscribe to events set in notification mask.
+        sdkHandler.dcssdkSubsribeForEvents(notifications_mask);
+
+        // Connect to scanner.
+        connectToScanner();
+    }
+
+    /**
+    * Get available scanner and connect.
+    */
+    private void connectToScanner(){
+        mScannerInfoList = new ArrayList&lt;>();
+        mSNAPIList.clear();
+        updateScannersList();
+        for (DCSScannerInfo device : mScannerInfoList) {
+            if (device.getConnectionType() == DCSSDKDefs.DCSSDK_CONN_TYPES.DCSSDK_CONNTYPE_USB_SNAPI) {
+                mSNAPIList.add(device);
+            }
+        }
+
+        if (mSNAPIList.isEmpty()) {
+            // No SNAPI Scanners.
+            getSnapiBarcode();
+        } 
+        else if (mSNAPIList.size() &lt;= 1) {
+            // Only one SNAPI scanner available.
+            if (mSNAPIList.get(0).isActive()) {
+                // Available scanner is active. Navigate to active scanner.
+                currentConnectedScannerID = mSNAPIList.get(0).getScannerID();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        // Change UI on connection.    
+                    }
+                });
+                
+            } 
+            else {
+                // Try to connect available scanner.
+                cmdExecTask = new ConnectAsyncTask(mSNAPIList.get(0));
+                cmdExecTask.execute();
+            }
+        }
+    }
+
+    @SuppressLint({"MissingInflatedId", "MissingPermission"})
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        // Initialization of UI components.
+        barcodeDisplayArea = (FrameLayout) findViewById(R.id.scan_to_connect_barcode);
+        snapiLayout = (RelativeLayout) findViewById(R.id.snapi_layout);
+
+        // Change visibility on connection state change. Initially display the barcode.
+        snapiLayout.setVisibility(View.VISIBLE);
+
+        initializeDcsSdk();
+    }
+
+    /**
+    * Initial method that gets called to display the barcode.
+    * once scan the barcode Scanner change the protocol to SNAPI mode.
+    */
+    private void getSnapiBarcode() {
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(-1, -1);
+        BarCodeView barCodeView = sdkHandler.dcssdkGetUSBSNAPIWithImagingBarcode();
+        Display display = getWindowManager().getDefaultDisplay();
+        Point size = new Point();
+        display.getSize(size);
+        int width = size.x;
+        int orientation = this.getResources().getConfiguration().orientation;
+        int x = width * 9 / 10;
+        int y = x / 3;
+        if (getDeviceScreenSize() > 6) { // TODO: Check 6 is ok or not
+            if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                x = width / 2;
+                y = x / 3;
+            } 
+            else {
+                x = width * 2 / 3;
+                y = x / 3;
+            }
+        }
+        barCodeView.setSize(x, y);
+        barcodeDisplayArea.addView(barCodeView, layoutParams);
+    }
+
+    /**
+    * Get display size to utilize the UI.
+    * @return double.
+    */
+    private double getDeviceScreenSize() {
+        double screenInches = 0;
+        WindowManager windowManager = getWindowManager();
+        Display display = windowManager.getDefaultDisplay();
+
+        int mWidthPixels;
+        int mHeightPixels;
+
+        try {
+            Point realSize = new Point();
+            Display.class.getMethod("getRealSize", Point.class).invoke(display, realSize);
+            mWidthPixels = realSize.x;
+            mHeightPixels = realSize.y;
+            DisplayMetrics dm = new DisplayMetrics();
+            getWindowManager().getDefaultDisplay().getMetrics(dm);
+            double x = Math.pow(mWidthPixels / dm.xdpi, 2);
+            double y = Math.pow(mHeightPixels / dm.ydpi, 2);
+            screenInches = Math.sqrt(x + y);
+        } 
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+        return screenInches;
+    }
+}
+</code>
+</pre>
+
+                                                    <p>Inside the 'generatePairingBarcode', value of 'barCodeView' is checked. For devices with Android versions 6.xxx and below, the method 'updateBarcodeView' is called directly and the Bluetooth Address of the device is retrieved automatically rendering the STC barcode across the screen.</p>
+
+                                                    <div style="display: block; margin: 0 auto; text-align: center;">
+                                                        <img src="../../images/android/0007-scanner-sdk-android-dev-guide-sample-app-disconnect.png" style="display: block; margin: 0 auto;"><strong>Figure 6</strong> STC Pairing Barcode 
+                                                    </div><br />
+
+<pre class="prettyprint">
+<code>
+// Once the correct bluetooth address is received this method proceed to display the barcode in the given frame layout
+private void updateBarcodeView(LinearLayout.LayoutParams layoutParams, BarCodeView barcodeView) {
+    Display display = getWindowManager().getDefaultDisplay();
+    Point size = new Point();
+    display.getSize(size);
+    int width = size.x;
+    int height = size.y;
+
+    int orientation =this.getResources().getConfiguration().orientation;
+    int x = width * 9 / 10;
+    int y = x / 3;
+    barcodeView.setSize(x, y);
+    barcodeDisplayArea.addView(barcodeView, layoutParams);
+}
+</code>
+</pre>
+
+                                                    <p>The code snippet given below explains how the SDK manages to obtain the Bluetooth Address of Android 6.xxx and below versions. Please note that this snippet of code is already present in the SDK and doesn't need to be included in any custom application development.</p>
+
+<pre class="prettyprint">
+<code>
+private String btMacAddress;
+private IDCConfig idcConfigObject;
+private final BroadcastReceiver mPnPReceiver = new BroadcastReceiver() {
+    public void onReceive(Context context, Intent intent) {
+        String action = intent.getAction();
+        if (action != null) {
+            if (action.equals("android.bluetooth.device.action.BOND_STATE_CHANGED")) {
+                SDKHandler.this.handleBondStateChange(intent);
+            } 
+            else if (action.equals("android.bluetooth.device.action.FOUND")) {
+                if (!SDKHandler.sessionPairedDevicesOnly) {
+                    SDKHandler.this.handleScannerFound(intent);
+                }
+            } 
+            else if (action.equals("android.bluetooth.device.action.ACL_DISCONNECTED")) {
+                SDKHandler.this.handleScannerDisconnected(intent);
+            } 
+            else if (action.equals("android.hardware.usb.action.USB_DEVICE_ATTACHED")) {
+                SDKHandler.this.handleUSBDeviceAttach(intent);
+            } 
+            else if (action.equals("android.hardware.usb.action.USB_DEVICE_DETACHED")) {
+                SDKHandler.this.handleUSBDeviceDetach(intent);
+            } 
+            else if (action.equals("android.bluetooth.adapter.action.STATE_CHANGED")) {
+                SDKHandler.this.handleBTAdapterStateChange(intent);
+            }
+        }
+
+    }
+};
+
+public SDKHandler(Context context) {
+    this.context = context;
+    this.connMgrUSB = new USBManager(context);
+    this.initializePnP();
+    TAG = this.getClass().getSimpleName();
+    this.bStopConnectionListner = true;
+    this.bStartCOnnectionListner = true;
+    DebugConfig.logAsMessage(DEBUG_TYPE.TYPE_DEBUG, TAG, "Initialized");
+    scannerID = 1;
+    Intent i = new Intent("symbol.intent.BTScannerService.stop");
+    this.context.sendBroadcast(i);
+    this.stopDiscoverySyncToken = new Object();
+    this.pairWait = new Object();
+    String macAddr = Secure.getString(this.context.getContentResolver(), "bluetooth_address");
+
+    if (macAddr != null && !macAddr.endsWith("00:00:00:00:00")) {
+        this.btMacAddress = macAddr;
+    }
+
+    this.idcConfigObject = new IDCConfig();
+    this.pairedDevices = new HashSet();
+}
+</code>
+</pre>
+
+                                                    <p>For Android versions 7.0 and above value of 'barCodeView' will be null and displaying the STC barcode will require the user to manually enter the Bluetooth address of the android device. The following explanation of the UI screenshot is for the easy understanding of users with Android 7 or higher version devices. An EditText is provided in the dialog box for the user to enter the Bluetooth address. Once the Bluetooth Address is entered and the 'OK' button is pressed, the 'displayStc' method gets called after which the STC barcode gets displayed on the screen.</p>
+
+                                                    <div style="display: block; margin: 0 auto; text-align: center;">
+                                                        <img src="../../images/android/0008-scanner-sdk-android-sca-bluetooth-address.png" style="display: block; margin: 0 auto;"><strong>Figure 7</strong> Device Bluetooth Address
+                                                    </div><br />
+
+                                                    <div style="display: block; margin: 0 auto; text-align: center;">
+                                                        <img src="../../images/android/0009-scanner-sdk-android-sca-bluetooth-address-entered.png" style="display: block; margin: 0 auto;"><strong>Figure 8</strong> Device Bluetooth Address
+                                                    </div><br />
+
+                                                    <div style="display: block; margin: 0 auto; text-align: center;">
+                                                        <img src="../../images/android/0010-scanner-sdk-android-sca-stc-pairing-barcode.png" style="display: block; margin: 0 auto;"><strong>Figure 9</strong> STC Pairing Barcode
+                                                    </div><br />
+
+<pre class="prettyprint">
+<code>
+//The method that is responsible for displaying the STC barcode according to the user provided bluetooth address
+public void displayStc(View view) {
+    if(dialog.isShowing()) {
+        dialog.dismiss();
+    }
+
+    LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(-1, -1);
+    bluetoothAddress= deviceBluetoothAddress.getText().toString();
+    Toast.makeText(getApplicationContext(),bluetoothAddress, Toast.LENGTH_SHORT).show();
+    if(bluetoothAddress.equals("")) {
+        barcodeDisplayArea.removeAllViews();
+    }
+    else {
+        BarCodeView barcodeView;
+        // User provided bluetooth address gets set
+        sdkHandler.dcssdkSetBTAddress(bluetoothAddress);
+        // Here a STC barcode corresponding to the bluetooth address provided will be generated
+        barcodeView = sdkHandler.dcssdkGetPairingBarcode(DCSSDKDefs.DCSSDK_BT_PROTOCOL.SSI_BT_LE, DCSSDKDefs.DCSSDK_BT_SCANNER_CONFIG.SET_FACTORY_DEFAULTS, bluetoothAddress);
+        if (barcodeView != null) {
+            updateBarcodeView(layoutParams, barcodeView);
+        }
+    }
+}
+</code>
+</pre>
+
+                                                    <p>Here the barcode is generated based on the Bluetooth Address, Bluetooth Protocol and the Scanner Configuration provided to the method <strong>dcssdkGetPairingBarcode(DCSSDKDefs.DCSSDK_BT_PROTOCOL.SSI_BT_LE, DCSSDKDefs.DCSSDK_BT_SCANNER_CONFIG.SET_FACTORY_DEFAULTS, bluetoothAddress)</strong>.</p>
+
+                                                    <p>Given below is the set of available Bluetooth protocols in the Barcode Scanner SDK.</p>
+
+<pre class="prettyprint">
+<code>
+public static enum DCSSDK_BT_PROTOCOL {
+    SSI_BT_CRADLE_HOST(22),
+    SSI_BT_SSI_SLAVE(13),
+    SSI_BT_LE(23),
+    SSI_BT_MFI(19),
+    CRD_BT(12),
+    CRD_BT_LE(21),
+    HID_BT(17),
+    HID_BT_LE(20),
+    SPP_BT_MASTER(14),
+    SPP_BT_SLAVE(15),
+    LEGACY_B(1);
+
+    public int value;
+
+    private DCSSDK_BT_PROTOCOL(int value) {
+        this.value = value;
+    }
+}
+</code>
+</pre>
+
+                                                    <p>Provided below is the set of supported Bluetooth scanner configurations in Barcode Scanner SDK.</p>
+
+<pre class="prettyprint">
+<code>
+public static enum DCSSDK_BT_SCANNER_CONFIG {
+    KEEP_CURRENT(0),
+    SET_FACTORY_DEFAULTS(1),
+    RESTORE_FACTORY_DEFAULTS(2);
+
+    public int value;
+
+    private DCSSDK_BT_SCANNER_CONFIG(int value) {
+        this.value = value;
+    }
+}
+</code>
+</pre>
+
+                                                    <p>Code snippets extracted from Barcode Scanner SDK are for information purpose only and need not be included in the Java file.</p>
+
+                                                    <p>Note that the operational mode set using the method, 'sdkHandler.dcssdkSetOperationalMode(DCSSDK_OPMODE_BT_LE)' should be compatible with the Bluetooth protocol used. For instance, if 'DCSSDK_OPMODE_BT_NORMAL' is used as the operational mode, then the Bluetooth protocol to be used is the 'SSI_BT_CRADLE_HOST'.</p>
+
+                                                    <hr>
+
+                                                    <h2 id="sdk-features" class="anchor"><a class="heading-anchor" href="#sdk-features"><span></span></a>Implement SDK Features</h2>
+
+                                                    <h3 id="scanner-list" class="anchor"><a class="heading-anchor" href="#scanner-list"><span></span></a>Get Currently Connected Scanner and Paired Devices</h3>
+
+                                                    <p>All the paired Bluetooth devices can be obtained using the API call 'dcssdkGetAvailableScannersList'.</p>
+
+<pre class="prettyprint">
+<code>
+public class MainActivity extends AppCompatActivity {
+    public static SDKHandler sdkHandler;
+    public static ArrayList<DCSScannerInfo> scannerInfoList = new ArrayList<DCSScannerInfo>();
+
+    static String bluetoothAddress;
+    private FrameLayout barcodeDisplayArea;
+    private EditText deviceBluetoothAddress;
+
+    private static final int PERMISSIONS_ACCESS_COARSE_LOCATION = 10;
+    private Dialog dialog ;
+}
+</code>
+</pre>
+
+                                                    <p>First the array list must be initialized inside the class.</p>
+
+<pre class="prettyprint">
+<code>
+// The method that is responsible for giving the list of Available scanners
+public void getAvailableScanners(View view) {
+    sdkHandler.dcssdkGetAvailableScannersList(scannerInfoList);
+    //Out of all the Available scanners, the name of the first scanner will be printed
+    if(scannerInfoList.size()> 0) {
+        Log.i("Available_scanner_01 :", scannerInfoList.get(0).getScannerName().toString());
+    }
+    else {
+        Toast.makeText(getApplicationContext(),"No Available Scanners",Toast.LENGTH_SHORT).show();
+    }
+}
+</code>
+</pre>
+
+                                                    <p>With the API call 'dcssdkGetActiveScannersList', information about the scanner that is paired with the device as well as connected to the app can be obtained. This is accomplished by the 'getActiveScanners' method.</p>
+
+<pre class="prettyprint">
+<code>
+// The method that gives the list of Active scanners
+public void getActiveScanners(View view) {
+    sdkHandler.dcssdkGetActiveScannersList(scannerInfoList);
+    //Out of all the Active scanners, the name of the first scanner will be printed
+    if(scannerInfoList.size()> 0) {
+        Log.i("Active_scanner_01 :", scannerInfoList.get(0).getScannerName().toString());
+    }
+    else {
+        Toast.makeText(getApplicationContext(),"No Active Scanners",Toast.LENGTH_SHORT).show();
+    }
+}
+</code>
+</pre>
+
+                                                    <p><strong>NOTE</strong> Due to a Google security patch, Google CVE-2020-12856, the Android device must notify users of pairing events with a popup message (prevents silent pairing).</p>
+
+                                                    <h3 id="scanner-beep" class="anchor"><a class="heading-anchor" href="#scanner-beep"><span></span></a>Making the Scanner Beep</h3>
 
 <pre class="prettyprint">
 <code>
@@ -571,12 +1200,12 @@ public boolean executeCommand(DCSSDKDefs.DCSSDK_COMMAND_OPCODE opCode, String in
 </code>
 </pre>
 
-                                                    <h2 id="ledonoff" class="anchor"><a class="heading-anchor" href="#ledonoff"><span></span></a>LED On/Off</h2>
+                                                    <h3 id="led-on-off" class="anchor"><a class="heading-anchor" href="#led-on-off"><span></span></a>LED On/Off</h3>
 
                                                     <p>The following UI is used to explain the LED ON/OFF states of the scanner. Code snippets for establishing a Bluetooth connection with the scanner are given above.</p>
 
                                                     <div style="display: block; margin: 0 auto; text-align: center;">
-                                                        <img src="../../images/android/0005-scanner-sdk-android-dev-guide-sample-app-led.png" style="display: block; margin: 0 auto;"><strong>Figure 5</strong> Demo Application
+                                                        <img src="../../images/android/0005-scanner-sdk-android-dev-guide-sample-app-led.png" style="display: block; margin: 0 auto;"><strong>Figure 10</strong> Demo Application
                                                     </div><br />
 
                                                     <p>The method 'redLedOnClicked' gets called with the press of the 'LED ON' button. Similarly, 'redLedOffClicked' gets called with the press of the button 'LED OFF'.</p>
@@ -676,7 +1305,7 @@ public boolean executeCommand(DCSSDKDefs.DCSSDK_COMMAND_OPCODE opCode, String in
 </code>
 </pre>
 
-                                                    <h2 id="firmwareupdate" class="anchor"><a class="heading-anchor" href="#firmwareupdate"><span></span></a>Firmware Update</h2>
+                                                    <h3 id="firmware-update" class="anchor"><a class="heading-anchor" href="#firmware-update"><span></span></a>Firmware Update</h3>
 
                                                     <p>Firmware can be updated using '.SCNPLG' files. These plugins can be obtained using the 123Scan Configuration Utility. Once 123Scan is installed, Plugin files for supported scanners can be found in 'C:\ProgramData\123Scan2\Plug-ins'.</p>
 
@@ -781,7 +1410,7 @@ public void dcssdkEventBinaryData(byte[] binaryData, int fromScannerId) {
                                                     <p>Once the 'Update Firmware' button of the given UI is clicked, the following 'updateFirmware' method gets called. Note that the location of the firmware file is given in the 'inXml' String. The 'UpdatingFirmware' 'AsyncTask' gets executed as the next statement fulfilling requested task.</p>
 
                                                     <div style="display: block; margin: 0 auto; text-align: center;">
-                                                        <img src="../../images/android/0006-scanner-sdk-android-dev-guide-sample-app-firmware.png" style="display: block; margin: 0 auto;"><strong>Figure 6</strong> Demo Application
+                                                        <img src="../../images/android/0006-scanner-sdk-android-dev-guide-sample-app-firmware.png" style="display: block; margin: 0 auto;"><strong>Figure 11</strong> Demo Application
                                                     </div><br />
 
 <pre class="prettyprint">
@@ -966,858 +1595,7 @@ public void dcssdkEventCommunicationSessionEstablished(DCSScannerInfo activeScan
 </code>
 </pre>
 
-                                                    <hr>                                                    
-
-                                                    <h2 id="stc-barcode" class="anchor"><a class="heading-anchor" href="#stc-barcode"><span></span></a>Connect Scanner Using Scan-To-Connect (STC) Barcode</h2>
-
-                                                    <p>Within the onCreate() method, UI elements should be initialized. Then the user will be requested to grant the permissions that are required to use the application. Details on this can be found in <a href="#runtime-permission">Request runtime permission</a> section. After runtime permissions are granted, SDK initialization should be done. More on this is described in <a href="#android-sdk-installation">SDK Initialization</a> section.</p>
-
-<pre class="prettyprint">
-<code>
-public class MainActivity extends AppCompatActivity implements IDcsScannerEventsOnReLaunch,IDcsSdkApiDelegate
-public static SDKHandler sdkHandler;
-AlertDialog alertDialog;
-
-ArrayList&lt;String> permissionsList;
-int permissionsCount = 0;
-private FrameLayout barcodeDisplayArea;
-private RelativeLayout stcLayout;
-private Button btnDisconnect;
-private TextView txtBluetoothMode;
-int currentConnectedScannerID;
-BluetoothAdapter mBluetoothAdapter;
-private final static int REQUEST_ENABLE_BT = 1;
-
-@Override
-protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    setContentView(R.layout.activity_main);
-
-    // Initialization of UI components.
-    barcodeDisplayArea = (FrameLayout) findViewById(R.id.scan_to_connect_barcode);
-    btnDisconnect = (Button) findViewById(R.id.btn_disconnect);
-    stcLayout = (RelativeLayout) findViewById(R.id.stc_layout);
-    txtBluetoothMode = (TextView) findViewById(R.id.bluetooth_mode);
-
-    // Change visibility on connection state change. Initially display the barcode.
-    stcLayout.setVisibility(View.VISIBLE);
-    btnDisconnect.setVisibility(View.GONE);
-
-    btnDisconnect.setOnClickListener(new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            // Disconnect scanner on button click.
-        disconnectScanner();
-        }
-    });
-
-    requestPermission();
-}    
-</code>
-</pre>
-
-<pre class="prettyprint">
-<code>
-/**
-* Initial method that gets called to display the barcode based on the android version of the device.
-*/
-private void generatePairingBarcode() {
-    LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(-1, -1);
-    BarCodeView barCodeView;
-
-    // Check the selected bluetooth protocol and generate barcode.
-    if(btProtocol==DCSSDKDefs.DCSSDK_BT_PROTOCOL.SSI_BT_LE) {
-    // Bluetooth Low Energy Mode.
-        barCodeView = sdkHandler.dcssdkGetPairingBarcode(btProtocol, DCSSDKDefs.DCSSDK_BT_SCANNER_CONFIG.SET_FACTORY_DEFAULTS);
-        if (barCodeView != null) {
-            updateBarcodeView(layoutParams, barCodeView);
-        }
-    } 
-    else {
-        // SDK was not able to determine Bluetooth MAC. So call the dcssdkGetPairingBarcode with BT Address.
-        // Bluetooth Classic Mode.
-        String btAddress = getDeviceBTAddress(MainActivity.this);
-        if (btAddress.equals("")) {
-            barcodeDisplayArea.removeAllViews();
-        } 
-        else {
-            sdkHandler.dcssdkSetBTAddress(btAddress);
-            barCodeView = sdkHandler.dcssdkGetPairingBarcode(btProtocol, DCSSDKDefs.DCSSDK_BT_SCANNER_CONFIG.SET_FACTORY_DEFAULTS, btAddress);
-            if (barCodeView != null) {
-                updateBarcodeView(layoutParams, barCodeView);
-            }    
-        }
-    }
-}
-
-/**
-* Once the correct bluetooth address is received, this method proceed. To display the barcode in the given frame layout.
-* @param layoutParams
-* @param barCodeView
-*/
-private void updateBarcodeView(LinearLayout.LayoutParams layoutParams, BarCodeView barCodeView) {
-    Display display = getWindowManager().getDefaultDisplay();
-    Point size = new Point();
-    display.getSize(size);
-    int width = size.x;
-
-    int orientation = this.getResources().getConfiguration().orientation;
-    int x = width * 9 / 10;
-    int y = x / 3;
-
-    if (getDeviceScreenSize() > 6) { // TODO: Check 6 is ok or not
-        if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            x = width / 2;
-        } 
-        else {
-            x = width * 2 / 3;
-        }
-        y = x / 3;
-    }
-    barCodeView.setSize(x, y);
-    barcodeDisplayArea.addView(barCodeView, layoutParams);
-}
-
-/**
-* Get display size to utilize the UI.
-* @return double
-*/
-private double getDeviceScreenSize() {
-    double screenInches = 0;
-    WindowManager windowManager = getWindowManager();
-    Display display = windowManager.getDefaultDisplay();
-
-    int mWidthPixels;
-    int mHeightPixels;
-
-    try {
-        Point realSize = new Point();
-        Display.class.getMethod("getRealSize", Point.class).invoke(display, realSize);
-        mWidthPixels = realSize.x;
-        mHeightPixels = realSize.y;
-        DisplayMetrics dm = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(dm);
-        double x = Math.pow(mWidthPixels / dm.xdpi, 2);
-        double y = Math.pow(mHeightPixels / dm.ydpi, 2);
-        screenInches = Math.sqrt(x + y);
-    } 
-    catch (Exception e) {
-        e.printStackTrace();
-    }
-    return screenInches;
-}   
-</code>
-</pre>
-
-                                                    <h4 id="connect-scanner-in-snapi" class="anchor">Connect Scanner SNAPI Mode</h4>
-
-<pre class="prettyprint">
-<code>
-public class MainActivity extends AppCompatActivity implements IDcsSdkApiDelegate {
-    public static SDKHandler sdkHandler;
-    private FrameLayout barcodeDisplayArea;
-    private RelativeLayout snapiLayout;
-    private RelativeLayout brcodeLayout;
-    RecyclerView recyclerView;
-
-    int currentConnectedScannerID;
-    static AvailableScanner curAvailableScanner = null;
-
-    private static ArrayList&lt;DCSScannerInfo> mSNAPIList = new ArrayList&lt;DCSScannerInfo>();
-    private static ArrayList&lt;DCSScannerInfo> mScannerInfoList;
-
-    ArrayList&lt;Barcode> listScannedBarcodes;
-    BarcodeListAdapter barcodeListAdapter;
-
-    static ConnectAsyncTask cmdExecTask = null;
-
-    public static CustomProgressDialog progressDialog;
-
-    /**
-    * The method that initializes the SDK.
-    */
-    @SuppressLint("MissingPermission")
-    private void initializeDcsSdk() {
-        // Initializing sdk handler.
-        if (sdkHandler == null) {
-            sdkHandler = new SDKHandler(this, true);
-        }
-
-        sdkHandler.dcssdkSetDelegate(this);
-        sdkHandler.dcssdkEnableAvailableScannersDetection(true);
-        sdkHandler.dcssdkSetOperationalMode(DCSSDKDefs.DCSSDK_MODE.DCSSDK_OPMODE_SNAPI);
-
-        int notifications_mask = 0;
-
-        // We would like to subscribe to all scanner available/not-available events.
-        notifications_mask |= DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SCANNER_APPEARANCE.value | DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SCANNER_DISAPPEARANCE.value;
-
-        // We would like to subscribe to all scanner connection events.
-        notifications_mask |= DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SESSION_ESTABLISHMENT.value | DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SESSION_TERMINATION.value;
-
-        // We would like to subscribe to all barcode events.
-        notifications_mask |= DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_BARCODE.value;
-
-        // Subscribe to events set in notification mask.
-        sdkHandler.dcssdkSubsribeForEvents(notifications_mask);
-
-        // Connect to scanner.
-        connectToScanner();
-    }
-
-    /**
-    * Get available scanner and connect.
-    */
-    private void connectToScanner(){
-        mScannerInfoList = new ArrayList&lt;>();
-        mSNAPIList.clear();
-        updateScannersList();
-        for (DCSScannerInfo device : mScannerInfoList) {
-            if (device.getConnectionType() == DCSSDKDefs.DCSSDK_CONN_TYPES.DCSSDK_CONNTYPE_USB_SNAPI) {
-                mSNAPIList.add(device);
-            }
-        }
-
-        if (mSNAPIList.isEmpty()) {
-            // No SNAPI Scanners.
-            getSnapiBarcode();
-        } 
-        else if (mSNAPIList.size() &lt;= 1) {
-            // Only one SNAPI scanner available.
-            if (mSNAPIList.get(0).isActive()) {
-                // Available scanner is active. Navigate to active scanner.
-                currentConnectedScannerID = mSNAPIList.get(0).getScannerID();
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        // Change UI on connection.    
-                    }
-                });
-                
-            } 
-            else {
-                // Try to connect available scanner.
-                cmdExecTask = new ConnectAsyncTask(mSNAPIList.get(0));
-                cmdExecTask.execute();
-            }
-        }
-    }
-
-    @SuppressLint({"MissingInflatedId", "MissingPermission"})
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        // Initialization of UI components.
-        barcodeDisplayArea = (FrameLayout) findViewById(R.id.scan_to_connect_barcode);
-        snapiLayout = (RelativeLayout) findViewById(R.id.snapi_layout);
-
-        // Change visibility on connection state change. Initially display the barcode.
-        snapiLayout.setVisibility(View.VISIBLE);
-
-        initializeDcsSdk();
-    }
-
-    /**
-    * Initial method that gets called to display the barcode.
-    * once scan the barcode Scanner change the protocol to SNAPI mode.
-    */
-    private void getSnapiBarcode() {
-        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(-1, -1);
-        BarCodeView barCodeView = sdkHandler.dcssdkGetUSBSNAPIWithImagingBarcode();
-        Display display = getWindowManager().getDefaultDisplay();
-        Point size = new Point();
-        display.getSize(size);
-        int width = size.x;
-        int orientation = this.getResources().getConfiguration().orientation;
-        int x = width * 9 / 10;
-        int y = x / 3;
-        if (getDeviceScreenSize() > 6) { // TODO: Check 6 is ok or not
-            if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                x = width / 2;
-                y = x / 3;
-            } 
-            else {
-                x = width * 2 / 3;
-                y = x / 3;
-            }
-        }
-        barCodeView.setSize(x, y);
-        barcodeDisplayArea.addView(barCodeView, layoutParams);
-    }
-
-    /**
-    * Get display size to utilize the UI.
-    * @return double.
-    */
-    private double getDeviceScreenSize() {
-        double screenInches = 0;
-        WindowManager windowManager = getWindowManager();
-        Display display = windowManager.getDefaultDisplay();
-
-        int mWidthPixels;
-        int mHeightPixels;
-
-        try {
-            Point realSize = new Point();
-            Display.class.getMethod("getRealSize", Point.class).invoke(display, realSize);
-            mWidthPixels = realSize.x;
-            mHeightPixels = realSize.y;
-            DisplayMetrics dm = new DisplayMetrics();
-            getWindowManager().getDefaultDisplay().getMetrics(dm);
-            double x = Math.pow(mWidthPixels / dm.xdpi, 2);
-            double y = Math.pow(mHeightPixels / dm.ydpi, 2);
-            screenInches = Math.sqrt(x + y);
-        } 
-        catch (Exception e) {
-            e.printStackTrace();
-        }
-        return screenInches;
-    }
-}
-</code>
-</pre>
-
-                                                    <p>Inside the 'generatePairingBarcode', value of 'barCodeView' is checked. For devices with Android versions 6.xxx and below, the method 'updateBarcodeView' is called directly and the Bluetooth Address of the device is retrieved automatically rendering the STC barcode across the screen.</p>
-
-                                                    <div style="display: block; margin: 0 auto; text-align: center;">
-                                                        <img src="../../images/android/0007-scanner-sdk-android-dev-guide-sample-app-disconnect.png" style="display: block; margin: 0 auto;"><strong>Figure 7</strong> STC Pairing Barcode 
-                                                    </div><br />
-
-<pre class="prettyprint">
-<code>
-// Once the correct bluetooth address is received this method proceed to display the barcode in the given frame layout
-private void updateBarcodeView(LinearLayout.LayoutParams layoutParams, BarCodeView barcodeView) {
-    Display display = getWindowManager().getDefaultDisplay();
-    Point size = new Point();
-    display.getSize(size);
-    int width = size.x;
-    int height = size.y;
-
-    int orientation =this.getResources().getConfiguration().orientation;
-    int x = width * 9 / 10;
-    int y = x / 3;
-    barcodeView.setSize(x, y);
-    barcodeDisplayArea.addView(barcodeView, layoutParams);
-}
-</code>
-</pre>
-
-                                                    <p>The code snippet given below explains how the SDK manages to obtain the Bluetooth Address of Android 6.xxx and below versions. Please note that this snippet of code is already present in the SDK and doesn't need to be included in any custom application development.</p>
-
-<pre class="prettyprint">
-<code>
-private String btMacAddress;
-private IDCConfig idcConfigObject;
-private final BroadcastReceiver mPnPReceiver = new BroadcastReceiver() {
-    public void onReceive(Context context, Intent intent) {
-        String action = intent.getAction();
-        if (action != null) {
-            if (action.equals("android.bluetooth.device.action.BOND_STATE_CHANGED")) {
-                SDKHandler.this.handleBondStateChange(intent);
-            } 
-            else if (action.equals("android.bluetooth.device.action.FOUND")) {
-                if (!SDKHandler.sessionPairedDevicesOnly) {
-                    SDKHandler.this.handleScannerFound(intent);
-                }
-            } 
-            else if (action.equals("android.bluetooth.device.action.ACL_DISCONNECTED")) {
-                SDKHandler.this.handleScannerDisconnected(intent);
-            } 
-            else if (action.equals("android.hardware.usb.action.USB_DEVICE_ATTACHED")) {
-                SDKHandler.this.handleUSBDeviceAttach(intent);
-            } 
-            else if (action.equals("android.hardware.usb.action.USB_DEVICE_DETACHED")) {
-                SDKHandler.this.handleUSBDeviceDetach(intent);
-            } 
-            else if (action.equals("android.bluetooth.adapter.action.STATE_CHANGED")) {
-                SDKHandler.this.handleBTAdapterStateChange(intent);
-            }
-        }
-
-    }
-};
-
-public SDKHandler(Context context) {
-    this.context = context;
-    this.connMgrUSB = new USBManager(context);
-    this.initializePnP();
-    TAG = this.getClass().getSimpleName();
-    this.bStopConnectionListner = true;
-    this.bStartCOnnectionListner = true;
-    DebugConfig.logAsMessage(DEBUG_TYPE.TYPE_DEBUG, TAG, "Initialized");
-    scannerID = 1;
-    Intent i = new Intent("symbol.intent.BTScannerService.stop");
-    this.context.sendBroadcast(i);
-    this.stopDiscoverySyncToken = new Object();
-    this.pairWait = new Object();
-    String macAddr = Secure.getString(this.context.getContentResolver(), "bluetooth_address");
-
-    if (macAddr != null && !macAddr.endsWith("00:00:00:00:00")) {
-        this.btMacAddress = macAddr;
-    }
-
-    this.idcConfigObject = new IDCConfig();
-    this.pairedDevices = new HashSet();
-}
-</code>
-</pre>
-
-                                                    <p>For Android versions 7.0 and above value of 'barCodeView' will be null and displaying the STC barcode will require the user to manually enter the Bluetooth address of the android device. The following explanation of the UI screenshot is for the easy understanding of users with Android 7 or higher version devices. An EditText is provided in the dialog box for the user to enter the Bluetooth address. Once the Bluetooth Address is entered and the 'OK' button is pressed, the 'displayStc' method gets called after which the STC barcode gets displayed on the screen.</p>
-
-                                                    <div style="display: block; margin: 0 auto; text-align: center;">
-                                                        <img src="../../images/android/0008-scanner-sdk-android-sca-bluetooth-address.png" style="display: block; margin: 0 auto;"><strong>Figure 8</strong> Device Bluetooth Address
-                                                    </div><br />
-
-                                                    <div style="display: block; margin: 0 auto; text-align: center;">
-                                                        <img src="../../images/android/0009-scanner-sdk-android-sca-bluetooth-address-entered.png" style="display: block; margin: 0 auto;"><strong>Figure 9</strong> Device Bluetooth Address
-                                                    </div><br />
-
-                                                    <div style="display: block; margin: 0 auto; text-align: center;">
-                                                        <img src="../../images/android/0010-scanner-sdk-android-sca-stc-pairing-barcode.png" style="display: block; margin: 0 auto;"><strong>Figure 10</strong> STC Pairing Barcode
-                                                    </div><br />
-
-<pre class="prettyprint">
-<code>
-//The method that is responsible for displaying the STC barcode according to the user provided bluetooth address
-public void displayStc(View view) {
-    if(dialog.isShowing()) {
-        dialog.dismiss();
-    }
-
-    LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(-1, -1);
-    bluetoothAddress= deviceBluetoothAddress.getText().toString();
-    Toast.makeText(getApplicationContext(),bluetoothAddress, Toast.LENGTH_SHORT).show();
-    if(bluetoothAddress.equals("")) {
-        barcodeDisplayArea.removeAllViews();
-    }
-    else {
-        BarCodeView barcodeView;
-        // User provided bluetooth address gets set
-        sdkHandler.dcssdkSetBTAddress(bluetoothAddress);
-        // Here a STC barcode corresponding to the bluetooth address provided will be generated
-        barcodeView = sdkHandler.dcssdkGetPairingBarcode(DCSSDKDefs.DCSSDK_BT_PROTOCOL.SSI_BT_LE, DCSSDKDefs.DCSSDK_BT_SCANNER_CONFIG.SET_FACTORY_DEFAULTS, bluetoothAddress);
-        if (barcodeView != null) {
-            updateBarcodeView(layoutParams, barcodeView);
-        }
-    }
-}
-</code>
-</pre>
-
-                                                    <p>Here the barcode is generated based on the Bluetooth Address, Bluetooth Protocol and the Scanner Configuration provided to the method <strong>dcssdkGetPairingBarcode(DCSSDKDefs.DCSSDK_BT_PROTOCOL.SSI_BT_LE, DCSSDKDefs.DCSSDK_BT_SCANNER_CONFIG.SET_FACTORY_DEFAULTS, bluetoothAddress)</strong>.</p>
-
-                                                    <p>Given below is the set of available Bluetooth protocols in the Barcode Scanner SDK.</p>
-
-<pre class="prettyprint">
-<code>
-public static enum DCSSDK_BT_PROTOCOL {
-    SSI_BT_CRADLE_HOST(22),
-    SSI_BT_SSI_SLAVE(13),
-    SSI_BT_LE(23),
-    SSI_BT_MFI(19),
-    CRD_BT(12),
-    CRD_BT_LE(21),
-    HID_BT(17),
-    HID_BT_LE(20),
-    SPP_BT_MASTER(14),
-    SPP_BT_SLAVE(15),
-    LEGACY_B(1);
-
-    public int value;
-
-    private DCSSDK_BT_PROTOCOL(int value) {
-        this.value = value;
-    }
-}
-</code>
-</pre>
-
-                                                    <p>Provided below is the set of supported Bluetooth scanner configurations in Barcode Scanner SDK.</p>
-
-<pre class="prettyprint">
-<code>
-public static enum DCSSDK_BT_SCANNER_CONFIG {
-    KEEP_CURRENT(0),
-    SET_FACTORY_DEFAULTS(1),
-    RESTORE_FACTORY_DEFAULTS(2);
-
-    public int value;
-
-    private DCSSDK_BT_SCANNER_CONFIG(int value) {
-        this.value = value;
-    }
-}
-</code>
-</pre>
-
-                                                    <p>Code snippets extracted from Barcode Scanner SDK are for information purpose only and need not be included in the Java file.</p>
-
-                                                    <p>Note that the operational mode set using the method, 'sdkHandler.dcssdkSetOperationalMode(DCSSDK_OPMODE_BT_LE)' should be compatible with the Bluetooth protocol used. For instance, if 'DCSSDK_OPMODE_BT_NORMAL' is used as the operational mode, then the Bluetooth protocol to be used is the 'SSI_BT_CRADLE_HOST'.</p>
-
-                                                    <h4 id="virtual-tether" class="anchor"><a class="heading-anchor" href="#virtual-tether"><span></span></a>Virtual Tether</h4>
-
-                                                    <p>Virtual Tether is used to alert the user when the scanner is interrupted or taken out of the range of the host device. The attribute command <strong>DCSSDKDefs.DCSSDK_COMMAND_OPCODE.DCSSDK_RSM_ATTR_STORE</strong> is used to store the value for enabling or disabling the virtual tether alarm.</p>
-
-                                                    <p>The below xml string attribute is used for Enabling the Virtual Tether feature.</p>
-
-<pre class="prettyprint">
-<code>
-// Example: Scanner ID is 1 and RMD_ATTR_VIRTUAL_TETHER_ALARM_STATUS is 2053, and RMD_ATTR_VALUE_VIRTUAL_TETHER_ALARM_ENABLE is 1 to enable the virtual tether or RMD_ATTR_VALUE_VIRTUAL_TETHER_ALARM_ENABLE is 0 to disable the virtual tether.
-
-String inXML = 
-    "&lt;inArgs>
-        &lt;scannerID>" + scannerID + "&lt;/scannerID>
-        &lt;cmdArgs>
-            &lt;arg-xml>
-                &lt;attrib_list>
-                    &lt;attribute>
-                        &lt;id>" + RMD_ATTR_VIRTUAL_TETHER_ALARM_STATUS + "&lt;/id>
-                        &lt;datatype>B&lt;/datatype>
-                        &lt;value>" + RMD_ATTR_VALUE_VIRTUAL_TETHER_ALARM_ENABLE + "&lt;/value>
-                    &lt;/attribute>
-                &lt;/attrib_list>
-            &lt;/arg-xml>
-        &lt;/cmdArgs>
-    &lt;/inArgs>";
-</code>
-</pre>
-
-                                                    <p>Pass the above string to async task to execute the command and get the results.</p>
-
-<pre class="prettyprint">
-<code>
-VirtualTetherAsyncTask vtAsyncTask = new VirtualTetherAsyncTask(scannerID, DCSSDKDefs.DCSSDK_COMMAND_OPCODE.DCSSDK_RSM_ATTR_STORE);
-vtAsyncTask.execute(in_xml);
-</code>
-</pre>
-
-                                                    <p>Below is an AsyncTask code to enable or disable the virtual tethering.</p>
-
-<pre class="prettyprint">
-<code>
-private class VirtualTetherAsyncTask extends AsyncTask<String, Integer, Boolean> {
-    int scannerId;
-    DCSSDKDefs.DCSSDK_COMMAND_OPCODE opcode;
-
-    public VirtualTetherAsyncTask(int scannerId, DCSSDKDefs.DCSSDK_COMMAND_OPCODE opcode) {
-        this.scannerId = scannerId;
-        this.opcode = opcode;
-    }
-
-    @Override
-    protected void onPreExecute() {
-        super.onPreExecute();
-    }
-
-    @Override
-    protected Boolean doInBackground(String... strings) {
-        StringBuilder outXML = new StringBuilder();
-        DCSSDKDefs.DCSSDK_RESULT result = Application.sdkHandler.dcssdkExecuteCommandOpCodeInXMLForScanner(opCode, strings[0], outXML, scannerID);
-        if (result == DCSSDKDefs.DCSSDK_RESULT.DCSSDK_RESULT_SUCCESS) {
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
-
-    @Override
-    protected void onPostExecute(Boolean b) {
-        super.onPostExecute(b);
-        if(b) {
-            // Virtual Tether Update Success.
-        }
-        else {
-            // Virtual Tether Update Failed.
-        }
-    }
-}                                                            
-</code>
-</pre>
-
-                                                    <p>Below given code can be used to simulate virtual tether audio, led, haptics and illumination alarms. In here, the command attribute <strong>DCSSDKDefs.DCSSDK_COMMAND_OPCODE.DCSSDK_SET_ACTION</strong> is used.</p>
-
-<pre class="prettyprint">
-<code>
-// Example: ScannerID is 1 and ACTION_COMMAND_VIRTUAL_TETHER_START_SIMULATION is 232
-
-String in_XML_Simulation = 
-    "&lt;inArgs>
-        &lt;scannerID>" + scannerID + "&lt;/scannerID>
-        &lt;cmdArgs>
-            &lt;arg-int>" + ACTION_COMMAND_VIRTUAL_TETHER_START_SIMULATION + "&lt;/arg-int>
-        &lt;/cmdArgs>
-    &lt;/inArgs>";
-
-VirtualTetherAsyncTask vtAsyncTask = new VirtualTetherAsyncTask(scannerID, DCSSDKDefs.DCSSDK_COMMAND_OPCODE.DCSSDK_SET_ACTION);
-vtAsyncTask.execute(in_xml_for_simulation);
-</code>
-</pre>
-
-                                                    <h3 id="scanner-connect-event" class="anchor"><a class="heading-anchor" href="#scanner-connect-event"><span></span></a>Scanner Connect Event</h3>
-
-                                                    <p>Once the STC barcode is available on the screen, the connection can be established by scanning the barcode with the Bluetooth scanner. The beep tone of the scanner confirms that the scanner has paired with the device as well as with the App. </p>
-
-                                                    <h3 id="scanner-disconnect-event" class="anchor"><a class="heading-anchor" href="#scanner-disconnect-event"><span></span></a>Scanner Disconnect Event</h3>
-
-                                                    <p>If the user wishes to disconnect the scanner from the App as well as from the device, it can be achieved by pressing the 'Disconnect' button in the UI. Here the 'scannerId' is obtained from the 'scannerInfoList' and the method, 'dcssdkTerminateCommunicationSession(scannerId)' is provided with the obtained 'scannerId' to terminate the connection. </p>
-
-<pre class="prettyprint">
-<code>
-//The method that is responsible for disconnecting the scanner
-public void disconnectScanner(View view) {
-    try {
-        //All connected scanners are in ActiveScannersList and the first scanner will be disconnected.
-        sdkHandler.dcssdkGetActiveScannersList(scannerInfoList);
-        scannerId = scannerInfoList.get(0).getScannerID();
-        sdkHandler.dcssdkTerminateCommunicationSession(scannerId);
-    }
-    catch (Exception e){
-        Toast.makeText(getApplicationContext(), e.toString(), Toast.LENGTH_SHORT).show();
-    }
-}
-</code>
-</pre>
-
-                                                    <h3 id="scanner-enable-disable" class="anchor"><a class="heading-anchor" href="#scanner-enable-disable"><span></span></a>Scanner Enable/Disable</h3>
-
-                                                    <p>When the connection between the device and the scanner has been established, enabling and disabling the scanner can be achieved using the following two methods.</p>
-
-                                                    <div style="display: block; margin: 0 auto; text-align: center;">
-                                                        <img src="../../images/android/0011-scanner-sdk-android-sca-sanner-enable-disable.png" style="display: block; margin: 0 auto;"><strong>Figure 11</strong> Scanner Enable/Disable
-                                                    </div><br />
-
-                                                    <p>With the press of the 'ENABLE' button the following method gets called. When the OPCODE is given as 'DCSSDK_DEVICE_SCAN_ENABLE' along with the corresponding inXml, the scanner can be used for barcode scanning purpose.</p>
-
-<pre class="prettyprint">
-<code>
-//This method enables the barcode scanning functionality of the scanner
-public void enableScanner(View view) {
-    //first scanner in the scannerInfoList will get enabled
-    sdkHandler.dcssdkGetActiveScannersList(scannerInfoList);
-    scannerId = MainActivity.scannerInfoList.get(0).getScannerID();
-    StringBuilder outXml = new StringBuilder();
-    String inXml = "&lt;inArgs>&lt;scannerID>" + scannerId + "&lt;/scannerID>&lt;/inArgs>";
-    // As it is not a production level application , an Async task has not been used here. But it is recommended to make use of an Async task
-    sdkHandler.dcssdkExecuteCommandOpCodeInXMLForScanner(DCSSDKDefs.DCSSDK_COMMAND_OPCODE.DCSSDK_DEVICE_SCAN_ENABLE, inXml, outXml);
-}
-</code>
-</pre>
-
-                                                    <p>With the press of the button 'DISABLE' barcode scanning functionality of the scanner will be disabled.</p>
-
-<pre class="prettyprint">
-<code>
-//This method disables the barcode scanning functionality of the scanner
-public void disableScanner(View view) {
-    //first scanner in the scannerInfoList will get disabled
-    sdkHandler.dcssdkGetActiveScannersList(scannerInfoList);
-    scannerId = MainActivity.scannerInfoList.get(0).getScannerID();
-    StringBuilder outXml = new StringBuilder();
-    String inXml = "&lt;inArgs>&lt;scannerID>" + scannerId + "&lt;/scannerID>&lt;/inArgs>";
-    // As it is not a production level application , an Async task has not been used here. But it is recommended to make use of an Async task
-    sdkHandler.dcssdkExecuteCommandOpCodeInXMLForScanner(DCSSDKDefs.DCSSDK_COMMAND_OPCODE.DCSSDK_DEVICE_SCAN_DISABLE, inXml, outXml);
-}
-
-</code>
-</pre>
-
-                                                    <hr>
-
-                                                    <h2 id="scanner-list" class="anchor"><a class="heading-anchor" href="#scanner-list"><span></span></a>Get Currently Connected Scanner and Paired Devices</h2>
-
-                                                    <p>All the paired Bluetooth devices can be obtained using the API call 'dcssdkGetAvailableScannersList'.</p>
-
-<pre class="prettyprint">
-<code>
-public class MainActivity extends AppCompatActivity {
-    public static SDKHandler sdkHandler;
-    public static ArrayList<DCSScannerInfo> scannerInfoList = new ArrayList<DCSScannerInfo>();
-
-    static String bluetoothAddress;
-    private FrameLayout barcodeDisplayArea;
-    private EditText deviceBluetoothAddress;
-
-    private static final int PERMISSIONS_ACCESS_COARSE_LOCATION = 10;
-    private Dialog dialog ;
-}
-</code>
-</pre>
-
-                                                    <p>First the array list must be initialized inside the class.</p>
-
-<pre class="prettyprint">
-<code>
-// The method that is responsible for giving the list of Available scanners
-public void getAvailableScanners(View view) {
-    sdkHandler.dcssdkGetAvailableScannersList(scannerInfoList);
-    //Out of all the Available scanners, the name of the first scanner will be printed
-    if(scannerInfoList.size()> 0) {
-        Log.i("Available_scanner_01 :", scannerInfoList.get(0).getScannerName().toString());
-    }
-    else {
-        Toast.makeText(getApplicationContext(),"No Available Scanners",Toast.LENGTH_SHORT).show();
-    }
-}
-</code>
-</pre>
-
-                                                    <p>With the API call 'dcssdkGetActiveScannersList', information about the scanner that is paired with the device as well as connected to the app can be obtained. This is accomplished by the 'getActiveScanners' method.</p>
-
-<pre class="prettyprint">
-<code>
-// The method that gives the list of Active scanners
-public void getActiveScanners(View view) {
-    sdkHandler.dcssdkGetActiveScannersList(scannerInfoList);
-    //Out of all the Active scanners, the name of the first scanner will be printed
-    if(scannerInfoList.size()> 0) {
-        Log.i("Active_scanner_01 :", scannerInfoList.get(0).getScannerName().toString());
-    }
-    else {
-        Toast.makeText(getApplicationContext(),"No Active Scanners",Toast.LENGTH_SHORT).show();
-    }
-}
-</code>
-</pre>
-
-                                                    <p><strong>NOTE</strong> Due to a Google security patch, Google CVE-2020-12856, the Android device must notify users of pairing events with a popup message (prevents silent pairing).</p>
-
-                                                    <h3 id="classic-mode-filteration" class="anchor">Classic Mode Filtration</h3>
-
-                                                    <p>If the user wishes to filter only the Zebra devices while using 'DCSSDK_OPMODE_BT_NORMAL' as the operational mode, it can be obtained by enabling filtration. This is achieved by calling 'dcssdkEnableBluetoothClassicFiltration(Boolean)' method with Boolean 'true'.</p>
-
-                                                    <p>When classic mode filtration is turned on, 'dcssdkGetAvailableScannersList' and 'dcssdkGetActiveScannersList'  methods will only return Zebra devices.</p>
-
-<pre class="prettyprint">
-<code>
-@Override
-protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    setContentView(R.layout.activity_main);
-
-    //initialize SDK
-    sdkHandler = new SDKHandler(this);
-
-    //Set operational mode
-    sdkHandler.dcssdkSetOperationalMode(DCSSDK_OPMODE_BT_NORMAL);
-
-    //Set boolean (true/false) for enabling and disabling filtration
-    sdkHandler.dcssdkEnableBluetoothClassicFiltration(true);
-}                                                            
-</code>
-</pre>
-
-                                                    <p>If a Zebra scanner device's friendly name was changed it must be added in to the SDK by calling 'dcssdkAddCustomFriendlyName(String)' with the changed friendly name as the argument.</p>
-
-<pre class="prettyprint">
-<code>
-public void addNewFriendlyName(String friendlyName) {
-
-    //Add friendly name
-    sdkHandler.dcssdkAddCustomFriendlyName(friendlyName);
-}
-</code>
-</pre>
-
-                                                    <h3 id="ble" class="anchor">Scanner Auto Connection on App Relaunch in Bluetooth Low Energy mode</h3>
-
-                                                    <p>If user wishes to auto connect to the last connected scanner on app relaunch in BLE mode, IDcsScannerEventsOnReLaunch will be available to implement as an interface.</p>
-
-<pre class="prettyprint">
-<code>
-/**
-* Should implement the interface to access event last connected scanner on app relaunch
-* Activity implements IDcsScannerEventsOnReLaunch
-* for activate/deactivate functionality and Ui notifications, messages and progress updates
-*/
-public interface IDcsScannerEventsOnReLaunch {
-    /**
-    * onLastConnectedScannerDetect method can be overridden when implementing.
-    * @param device
-    * @return (app setting has permission to connect last connected scanner on app relaunch)? true : false
-    */
-    boolean onLastConnectedScannerDetect(BluetoothDevice device);
-
-    /**
-    * onConnectingToLastConnectedScanner method can be overridden when implementing.
-    * @param device
-    */
-    void onConnectingToLastConnectedScanner(BluetoothDevice device);
-
-    /**
-    * onScannerDisconnect method can be override on Activity.
-    */
-    void onScannerDisconnect();
-}                                                           
-</code>
-</pre>
-
-                                                    <p>App level UI implementation.</p>
-
-<pre class="prettyprint">
-<code>
-public class MainActivity implements IDcsScannerEventsOnReLaunch
-</code>
-</pre>
-
-                                                    <h4 id="las-connected-scanner-detect" class="anchor">Last connected scanner detection</h4>
-
-                                                    <p>Auto connection of last connected scanner on app relaunch can be activated by overriding 'boolean onLastConnectedScannerDetect (BluetoothDevice device)' and returning 'true'. By returning 'false' value, the option will be deactivated. Detected Bluetooth Device will be given as a parameter.</p>
-
-<pre class="prettyprint">
-<code>
-/**
-* callback from BluetoothLEManager to show detected last connected device
-* @param device - BluetoothDevice
-* @return boolean - (application settings scanner connect to last scanner)?true:false
-* if user wish to auto connect last connected device : return true
-* default false
-*/
-@Override
-public boolean onLastConnectedScannerDetect(BluetoothDevice device) {
-    return true;
-}
-</code>
-</pre>
-
-                                                    <h4 id="las-connected-scanner-connect" class="anchor">Connecting to the last connected scanner</h4>
-
-                                                    <p>By overriding 'void onConnectingToLastConnectedScanner (BluetoothDevice device)' user can perform UI updates. BlutoothDevice will be given as a parameter.</p>
-
-<pre class="prettyprint">
-<code>
-/**
-* callback from BluetoothLeManager to show start connecting last connected device
-* @param device
-*/
-@Override
-public void onConnectingToLastConnectedScanner(BluetoothDevice device) {
-
-}
-</code>
-</pre>
-
-                                                    <h4 id="scanner-detection" class="anchor">Scanner disconnection</h4>
-
-                                                    <p>The callback will occur on scanner disconnection via BluetoothLEManager. By overriding 'void onScannerDisconnect()' user can perform UI updates. </p>
-
-<pre class="prettyprint">
-<code>
-/**
-* callback from BluetoothLeManager to show disconnected device
-*/
-@Override
-public void onScannerDisconnect() {
-
-}
-</code>
-</pre>
-
-                                                    <hr>
-
-                                                    <h2 id="sms-android" class="anchor"><a class="heading-anchor" href="#sms-android"><span></span></a>Remote Management Support (SMS)</h2>
+                                                    <h3 id="sms-android" class="anchor"><a class="heading-anchor" href="#sms-android"><span></span></a>Remote Scanner Management Solution (SMS)</h3>
 
                                                     <p>SMS Packages are used for updating the firmware on the scanners and at the same time the configurations on the scanners could be modified with the configuration files which resides inside the SMS packages.</p>
 
@@ -2119,7 +1897,7 @@ public void executeSms() {
 <pre class="prettyprint">
 <code>
 //Asynctask to start the SMS Package Execution.
-private class SmsExecuteAsyncTask extends AsyncTask<String, Integer, Boolean> {
+private class SmsExecuteAsyncTask extends AsyncTask&lt;String, Integer, Boolean> {
     int scannerId;
     StringBuilder outXML;
     DCSSDKDefs.DCSSDK_COMMAND_OPCODE opcode;
@@ -2233,6 +2011,239 @@ switch (configurationUpdateEvent.getEventType()) {
         isRebootSuccess = false;
         break;
 }                                                            
+</code>
+</pre>
+
+                                                    <h3 id="classic-mode-filteration" class="anchor">Classic Mode Filtration</h3>
+
+                                                    <p>If the user wishes to filter only the Zebra devices while using 'DCSSDK_OPMODE_BT_NORMAL' as the operational mode, it can be obtained by enabling filtration. This is achieved by calling 'dcssdkEnableBluetoothClassicFiltration(Boolean)' method with Boolean 'true'.</p>
+
+                                                    <p>When classic mode filtration is turned on, 'dcssdkGetAvailableScannersList' and 'dcssdkGetActiveScannersList'  methods will only return Zebra devices.</p>
+
+<pre class="prettyprint">
+<code>
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+
+    //initialize SDK
+    sdkHandler = new SDKHandler(this);
+
+    //Set operational mode
+    sdkHandler.dcssdkSetOperationalMode(DCSSDK_OPMODE_BT_NORMAL);
+
+    //Set boolean (true/false) for enabling and disabling filtration
+    sdkHandler.dcssdkEnableBluetoothClassicFiltration(true);
+}                                                            
+</code>
+</pre>
+
+                                                    <p>If a Zebra scanner device's friendly name was changed it must be added in to the SDK by calling 'dcssdkAddCustomFriendlyName(String)' with the changed friendly name as the argument.</p>
+
+<pre class="prettyprint">
+<code>
+public void addNewFriendlyName(String friendlyName) {
+
+    //Add friendly name
+    sdkHandler.dcssdkAddCustomFriendlyName(friendlyName);
+}
+</code>
+</pre>
+
+                                                    <h3 id="bluetooth-low-energy" class="anchor">Scanner Auto Connection on App Relaunch in Bluetooth Low Energy mode</h3>
+
+                                                    <p>If user wishes to auto connect to the last connected scanner on app relaunch in BLE mode, IDcsScannerEventsOnReLaunch will be available to implement as an interface.</p>
+
+<pre class="prettyprint">
+<code>
+/**
+* Should implement the interface to access event last connected scanner on app relaunch
+* Activity implements IDcsScannerEventsOnReLaunch
+* for activate/deactivate functionality and Ui notifications, messages and progress updates
+*/
+public interface IDcsScannerEventsOnReLaunch {
+    /**
+    * onLastConnectedScannerDetect method can be overridden when implementing.
+    * @param device
+    * @return (app setting has permission to connect last connected scanner on app relaunch)? true : false
+    */
+    boolean onLastConnectedScannerDetect(BluetoothDevice device);
+
+    /**
+    * onConnectingToLastConnectedScanner method can be overridden when implementing.
+    * @param device
+    */
+    void onConnectingToLastConnectedScanner(BluetoothDevice device);
+
+    /**
+    * onScannerDisconnect method can be override on Activity.
+    */
+    void onScannerDisconnect();
+}                                                           
+</code>
+</pre>
+
+                                                    <p>App level UI implementation.</p>
+
+<pre class="prettyprint">
+<code>
+public class MainActivity implements IDcsScannerEventsOnReLaunch
+</code>
+</pre>
+
+                                                    <h4 id="las-connected-scanner-detect" class="anchor">Last connected scanner detection</h4>
+
+                                                    <p>Auto connection of last connected scanner on app relaunch can be activated by overriding 'boolean onLastConnectedScannerDetect (BluetoothDevice device)' and returning 'true'. By returning 'false' value, the option will be deactivated. Detected Bluetooth Device will be given as a parameter.</p>
+
+<pre class="prettyprint">
+<code>
+/**
+* callback from BluetoothLEManager to show detected last connected device
+* @param device - BluetoothDevice
+* @return boolean - (application settings scanner connect to last scanner)?true:false
+* if user wish to auto connect last connected device : return true
+* default false
+*/
+@Override
+public boolean onLastConnectedScannerDetect(BluetoothDevice device) {
+    return true;
+}
+</code>
+</pre>
+
+                                                    <h4 id="las-connected-scanner-connect" class="anchor">Connecting to the last connected scanner</h4>
+
+                                                    <p>By overriding 'void onConnectingToLastConnectedScanner (BluetoothDevice device)' user can perform UI updates. BlutoothDevice will be given as a parameter.</p>
+
+<pre class="prettyprint">
+<code>
+/**
+* callback from BluetoothLeManager to show start connecting last connected device
+* @param device
+*/
+@Override
+public void onConnectingToLastConnectedScanner(BluetoothDevice device) {
+
+}
+</code>
+</pre>
+
+                                                    <h4 id="scanner-detection" class="anchor">Scanner disconnection</h4>
+
+                                                    <p>The callback will occur on scanner disconnection via BluetoothLEManager. By overriding 'void onScannerDisconnect()' user can perform UI updates. </p>
+
+<pre class="prettyprint">
+<code>
+/**
+* callback from BluetoothLeManager to show disconnected device
+*/
+@Override
+public void onScannerDisconnect() {
+
+}
+</code>
+</pre>
+
+                                                    <hr>
+
+                                                    <h2 id="virtual-tether" class="anchor"><a class="heading-anchor" href="#virtual-tether"><span></span></a>Virtual Tether</h2>
+
+                                                    <p>Virtual Tether is used to alert the user when the scanner is interrupted or taken out of the range of the host device. The attribute command <strong>DCSSDKDefs.DCSSDK_COMMAND_OPCODE.DCSSDK_RSM_ATTR_STORE</strong> is used to store the value for enabling or disabling the virtual tether alarm.</p>
+
+                                                    <p>The below xml string attribute is used for Enabling the Virtual Tether feature.</p>
+
+<pre class="prettyprint">
+<code>
+// Example: Scanner ID is 1 and RMD_ATTR_VIRTUAL_TETHER_ALARM_STATUS is 2053, and RMD_ATTR_VALUE_VIRTUAL_TETHER_ALARM_ENABLE is 1 to enable the virtual tether or RMD_ATTR_VALUE_VIRTUAL_TETHER_ALARM_ENABLE is 0 to disable the virtual tether.
+
+String inXML = 
+    "&lt;inArgs>
+        &lt;scannerID>" + scannerID + "&lt;/scannerID>
+        &lt;cmdArgs>
+            &lt;arg-xml>
+                &lt;attrib_list>
+                    &lt;attribute>
+                        &lt;id>" + RMD_ATTR_VIRTUAL_TETHER_ALARM_STATUS + "&lt;/id>
+                        &lt;datatype>B&lt;/datatype>
+                        &lt;value>" + RMD_ATTR_VALUE_VIRTUAL_TETHER_ALARM_ENABLE + "&lt;/value>
+                    &lt;/attribute>
+                &lt;/attrib_list>
+            &lt;/arg-xml>
+        &lt;/cmdArgs>
+    &lt;/inArgs>";
+</code>
+</pre>
+
+                                                    <p>Pass the above string to async task to execute the command and get the results.</p>
+
+<pre class="prettyprint">
+<code>
+VirtualTetherAsyncTask vtAsyncTask = new VirtualTetherAsyncTask(scannerID, DCSSDKDefs.DCSSDK_COMMAND_OPCODE.DCSSDK_RSM_ATTR_STORE);
+vtAsyncTask.execute(in_xml);
+</code>
+</pre>
+
+                                                    <p>Below is an AsyncTask code to enable or disable the virtual tethering.</p>
+
+<pre class="prettyprint">
+<code>
+private class VirtualTetherAsyncTask extends AsyncTask<String, Integer, Boolean> {
+    int scannerId;
+    DCSSDKDefs.DCSSDK_COMMAND_OPCODE opcode;
+
+    public VirtualTetherAsyncTask(int scannerId, DCSSDKDefs.DCSSDK_COMMAND_OPCODE opcode) {
+        this.scannerId = scannerId;
+        this.opcode = opcode;
+    }
+
+    @Override
+    protected void onPreExecute() {
+        super.onPreExecute();
+    }
+
+    @Override
+    protected Boolean doInBackground(String... strings) {
+        StringBuilder outXML = new StringBuilder();
+        DCSSDKDefs.DCSSDK_RESULT result = Application.sdkHandler.dcssdkExecuteCommandOpCodeInXMLForScanner(opCode, strings[0], outXML, scannerID);
+        if (result == DCSSDKDefs.DCSSDK_RESULT.DCSSDK_RESULT_SUCCESS) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    @Override
+    protected void onPostExecute(Boolean b) {
+        super.onPostExecute(b);
+        if(b) {
+            // Virtual Tether Update Success.
+        }
+        else {
+            // Virtual Tether Update Failed.
+        }
+    }
+}                                                            
+</code>
+</pre>
+
+                                                    <p>Below given code can be used to simulate virtual tether audio, led, haptics and illumination alarms. In here, the command attribute <strong>DCSSDKDefs.DCSSDK_COMMAND_OPCODE.DCSSDK_SET_ACTION</strong> is used.</p>
+
+<pre class="prettyprint">
+<code>
+// Example: ScannerID is 1 and ACTION_COMMAND_VIRTUAL_TETHER_START_SIMULATION is 232
+
+String in_XML_Simulation = 
+    "&lt;inArgs>
+        &lt;scannerID>" + scannerID + "&lt;/scannerID>
+        &lt;cmdArgs>
+            &lt;arg-int>" + ACTION_COMMAND_VIRTUAL_TETHER_START_SIMULATION + "&lt;/arg-int>
+        &lt;/cmdArgs>
+    &lt;/inArgs>";
+
+VirtualTetherAsyncTask vtAsyncTask = new VirtualTetherAsyncTask(scannerID, DCSSDKDefs.DCSSDK_COMMAND_OPCODE.DCSSDK_SET_ACTION);
+vtAsyncTask.execute(in_xml_for_simulation);
 </code>
 </pre>
                                                 </div>
