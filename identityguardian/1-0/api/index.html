@@ -11,8 +11,8 @@
     <meta name="author" content="Zebra Technologies">
     <meta name="google-site-verification" content="i4B78BrWnNy8ShJwe5feRW3jO3HE6gfYlYqYbxfl8yY">
     <meta name="msvalidate.01" content="6B651B00161BCE79B8950AC09D5C4C75">
-    <meta title="User Guide">
-    <title>User Guide - TechDocs</title>
+    <meta title="APIs">
+    <title>APIs - TechDocs</title>
     <!-- core CSS -->
     <link href="/css/bootstrap.min.css" rel="stylesheet">
 <!--     
@@ -133,7 +133,7 @@
                     <nav id="toc" data-toggle="toc" data-spy="affix" style="height: 75%; max-width: 225px; overflow-y: auto; ">
                         
                         <ul class="nav">
-                            <li><strong>User Guide</strong></li>
+                            <li><strong>APIs</strong></li>
                         </ul>
                     </nav>
                     <div class="modal fade" id="modal-smartdocs" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true" data-backdrop="true">
@@ -219,7 +219,7 @@
                         <div class="col-sm-12">
                             <section id="cta" class="wow fadeIn">
                                 <div class="">
-                                    <h1 id="user-guide" class="anchor"><a class="heading-anchor" href="#user-guide"><span></span></a>User Guide</h1>
+                                    <h1 id="apis" class="anchor"><a class="heading-anchor" href="#apis"><span></span></a>APIs</h1>
                                     <p>
                                             Identity Guardian
                                             1.0
@@ -237,151 +237,169 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>Identity Guardian offers 2 types of models for secure and personalized device access:</p>
+<p><strong>Identity Guardian's</strong> implements a content provider interface to securely retrieve and share data between applications. The content provider URI contains four distinct parts: <code>&lt;Scheme:&gt;//&lt;Authority&gt;/&lt;API&gt;/&lt;data&gt;</code></p>
 
 <ol>
-<li><strong>Shared Device -</strong> A device that is designated for use by multiple individuals. </li>
+<li><strong>Scheme -</strong> The identifier that informs Android that the URI provides access to a content source. This is typically: <code>content://</code></li>
 
-<li><strong>Personally Assigned Device -</strong> A device that is issued and allocated specifically to an individual for their dedicated use.</li>
+<li><strong>Authority -</strong> The authority name, typically in the forma <code>packagename.provider</code>. </li>
+
+<li><strong>API -</strong> Th path that differentiates the content data. </li>
+
+<li><strong>Data -</strong> The key name which points to data in the path.</li>
 </ol>
 
-<p>For users who opt into using facial biometrics, Identity Guardian provides Terms and Conditions to the user, which they must accept to use the biometric portion of the solution. The Terms &amp; Conditions may be customized.</p>
+<p>For example, <code>content://com.zebra.mdna.els.provider/&lt;API&gt;/&lt;data&gt;</code></p>
+
+<p>Where <api> and <data> are replaced with the appropriate information.</data></api></p>
 
 <hr>
 
-<h2 id="shareddevice" class="anchor"><a class="heading-anchor" href="#shareddevice"><span></span></a>Shared Device</h2>
+<h2 id="registerfornotifications" class="anchor"><a class="heading-anchor" href="#registerfornotifications"><span></span></a>Register for Notifications</h2>
 
-<p>Shared device users utilize a shared device designated for use by multiple individuals. There could be a multitude of shared devices within an organization. The user's defined organizational role can enable customized experiences on shared devices. A shared device can recognize an unrestricted number of enrolled users. Each user's data is encrypted and stored within a unique barcode that is issued to and managed by each user and stored on the device in the <code>\enterprise\usr</code> folder. Optionally, facial biometrics may be used to generate this barcode. For temporary users, barcodes can be set to automatically expire at a specified date and time. </p>
+<p>Register to receive device notifications for user sign in and sign out events. The return value is in a JSON string format: 
+        {state: “SHOWN” or “HIDDEN”, lastchangedtimestamp:”MM:DD:YY HH:MM:SS”}
+Register this API in onCreate() and unregister it in onDestroy() method.</p>
 
-<p>Workflow for shared devices:</p>
+<p>URI: <code>content://com.zebra.mdna.els.provider/lockscreenstatus/state</code></p>
 
-<p><img alt="image" style="height:200px" src="shared-workflow.jpg"></p>
+<p>Sample code:</p>
 
-<h3 id="setupuserprofile" class="anchor"><a class="heading-anchor" href="#setupuserprofile"><span></span></a>Setup User Profile</h3>
+<pre class="prettyprint"><code>    Uri URI_CURRENT_LOCKSCREEN_STATE = Uri.parse("content://com.zebra.mdna.els.provider/lockscreenstatus/state");
+    cr.registerContentObserver(URI_CURRENT_LOCKSCREEN_STATE, false, contentObserverLockScreenState);
+    contentObserverLockScreenState = new ContentObserver(new Handler(getMainLooper())) {
 
-<p>Use the following instructions for initial setup of the user profile. Organizations may choose to walk-through this initial setup with the shared device user:</p>
+        @Override
+        public void onChange(boolean selfChange, Uri uri) {
+            super.onChange(selfChange, uri);
+            Log.d(TAG, "content has changed, uri = " + uri);
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    getCurrentLockScreenStateOfDevice();
+                }
+            }).start();
 
-<ol>
-<li>Open <strong>Identity Guardian.</strong></li>
+        }
+    };
+</code></pre>
 
-<li>Tap <strong>Start.</strong>
-<img alt="image" style="height:350px" src="welcome.png"></li>
+<hr>
 
-<li>Setup ID and PIN:
+<h2 id="retrieveusersessiondata" class="anchor"><a class="heading-anchor" href="#retrieveusersessiondata"><span></span></a>Retrieve User Session Data</h2>
 
+<h3 id="retrievecurrentusersessiondata" class="anchor"><a class="heading-anchor" href="#retrievecurrentusersessiondata"><span></span></a>Retrieve Current User Session Data</h3>
+
+<p>Retrieve data for the current user session. The data retrieved includes: user ID, role, and timestamps for sign in/sign out.</p>
+
+<p>URI: <code>content://com.zebra.mdna.els.provider/currentsession</code></p>
+
+<p>Return values:</p>
 
 <ul>
-<li>Enter ID or email</li>
+<li>Value = “User ID”, returns empty if not applicable</li>
 
-<li>(Optional) Select the appropriate user role (options vary based on your adminstrator setup)</li>
-
-<li>(Optional) Enter the expiration date for the barcode. This applies for temporary users.</li>
-
-<li>Create a PIN</li>
-
-<li>Re-enter the PIN
-<img alt="image" style="height:350px" src="setup.png"></li></ul>
-</li>
-
-<li>(Optional) Capture facial biometrics. <em>If opting out, tap <strong>Skip</strong> and skip to step 7 below.</em> Otherwise, tap <strong>Add</strong> and continue with the subsequent steps.
-<img alt="image" style="height:350px" src="face-capture.png"></li>
-
-<li>Tap <strong>Confirm</strong> to accept the Terms &amp; Conditions.
-<img alt="image" style="height:350px" src="t&amp;c.png"></li>
-
-<li>Position your face within the device screen for the photo capture. Capture 1 to 3 facial photos that may vary based on the individual's look, for example, with eyeglasses, hat, etc. Confirm the photo capture(s). Tap <strong>Add</strong> to capture additional photos. Tap <strong>Next</strong> when done.
-<img alt="image" style="height:350px" src="face-capture-added.png"></li>
-
-<li>The barcode is generated. Tap <strong>Next.</strong>
-<img alt="image" style="height:350px" src="barcode.png"></li>
-
-<li>Tap <strong>Save</strong> to save the profile.
-<img alt="image" style="height:350px" src="setup-complete-shared.png"></li>
-
-<li>Tap <strong>Continue.</strong> The profile creation is complete.
-<img alt="image" style="height:350px" src="congrats.png"></li>
-</ol>
-
-<hr>
-
-<h2 id="personallyassigneddevice" class="anchor"><a class="heading-anchor" href="#personallyassigneddevice"><span></span></a>Personally Assigned Device</h2>
-
-<p>For devices that are issued and allocated to specific individuals, user data is encrypted and stored securely in Identity Guardian's designated sandboxed storage within Android's access-controlled application fraemwork. Users have authority over their personal data and can delete it at any time. This data remains inaccessible to the organization. Administrators have visibility into which security a user has setup on their assigned device, are able to help with PIN resets, and can override screen lock for troubleshooting without the need to access personal data.</p>
-
-<p>Workflow for personally assigned devices:
-<img alt="image" style="height:200px" src="personal-workflow.jpg"></p>
-
-<p>Subsequent device unlocks, reboot, etc. requires user entry based on setup : PIN, facial recognition, etc.</p>
-
-<h3 id="setupuserprofile-1" class="anchor"><a class="heading-anchor" href="#setupuserprofile-1"><span></span></a>Setup User Profile</h3>
-
-<p>Perform the following for initial setup of the user profile :</p>
-
-<ol>
-<li>Open <strong>Identity Guardian.</strong></li>
-
-<li>Tap <strong>Start.</strong>
-<img alt="image" style="height:350px" src="welcome.png"></li>
-
-<li>Setup ID and PIN:
-
-
-<ul>
-<li>Enter ID or email</li>
-
-<li>(Optional) Select the appropriate user role (options vary based on your adminstrator setup)</li>
-
-<li>(Optional) Enter the expiration date for the barcode. This applies for temporary users.</li>
-
-<li>Create a PIN</li>
-
-<li>Re-enter the PIN
-<img alt="image" style="height:350px" src="setup.png"></li></ul>
-</li>
-
-<li>(Optional) Capture facial biometrics. <em>If opting out, tap <strong>Skip</strong> and skip to step 7 below.</em> Otherwise, tap <strong>Add</strong> and continue with the subsequent steps.
-<img alt="image" style="height:350px" src="face-capture.png"></li>
-
-<li>Tap <strong>Confirm</strong> to accept the Terms &amp; Conditions.
-<img alt="image" style="height:350px" src="t&amp;c.png"></li>
-
-<li>To add a facial photo, tap <strong>Add.</strong> Position your face within the device screen for the photo capture. Capture 1 to 3 facial photos that may vary based on the individual's look, for example, with eyeglasses, hat, etc. Confirm the photo capture(s). Tap <strong>Add</strong> to capture additional photos. Tap <strong>Next</strong> when done.
-<img alt="image" style="height:350px" src="face-capture-added.png"></li>
-
-<li>Tap <strong>Save</strong> to save the profile.
-<img alt="image" style="height:350px" src="setup-complete-personal.png"></li>
-
-<li>Tap <strong>Continue.</strong> The profile creation is complete.
-<img alt="image" style="height:350px" src="congrats.png"></li>
-</ol>
-
-<hr>
-
-<h2 id="signin" class="anchor"><a class="heading-anchor" href="#signin"><span></span></a>Sign In</h2>
-
-<p>After a device is setup with the user profile, the lock screen appears when a user signs out, locks, or restarts the device. </p>
-
-<p>To sign in a device, tap <strong>Unlock.</strong>
-<img alt="image" style="height:350px" src="lock-screen.png">
-The device prompts the user to authenticate via the primary authentication method selected by the administrator (facial biometric or PIN entry). If the primary authenticaiton method fails, the secondary authentication method is presented for the user to execute.</p>
-
-<hr>
-
-<h2 id="signout" class="anchor"><a class="heading-anchor" href="#signout"><span></span></a>Sign Out</h2>
-
-<p>To sign out a device, perform one of the following:</p>
-
-<ul>
-<li>Open Identity Guardian app (Zebra Biometric) and tap <strong>Sign out.</strong>
-<img alt="image" style="height:350px" src="app-signout.png"></li>
-
-<li>Lock the device.</li>
-
-<li>Restart the device (if configured by the administrator).</li>
+<li>Cursor cursor = cr.query(URI, null, null, null, null);</li>
 </ul>
 
-<p>After a device is signed out, the lock screen is visible:
-<img alt="image" style="height:350px" src="lock-screen.png"></p>
+<p>If cursor is null or empty, it means no user has signed in.
+Iterate over the cursor to create the result:</p>
+
+<pre class="prettyprint"><code>    result  : {"signin_time":"2023-10-04 10:53.381+0530","user_role":"Manager","user_id":"John Doe","signout_time":null,"barcode_id":"16946760673674C04C38","signed_in_state":"1"}
+</code></pre>
+
+<h3 id="retrieveprevioususersessiondata" class="anchor"><a class="heading-anchor" href="#retrieveprevioususersessiondata"><span></span></a>Retrieve Previous User Session Data</h3>
+
+<p>Retrieve data for the previous user session. The data retrieved includes: user ID, role, and timestamps for sign in/sign out.</p>
+
+<p>URI = <code>content://com.zebra.mdna.els.provider/previoussession</code></p>
+
+<p>Return values:</p>
+
+<ul>
+<li><p>Value = “User ID”, empty if not applicable</p>
+
+<pre class="prettyprint"><code>Uri URI_PREVIOUS_USER_SESSION = Uri.parse("content://com.zebra.mdna.els.provider/previoussession");
+Cursor cursor = cr.query(URI_PREVIOUS_USER_SESSION , null, null, null, null);
+</code></pre></li>
+</ul>
+
+<p>Iterate the cursor to create the result:
+        result:  {"signin_time":"2023-10-04 11:19.338+0530","user_role":"Warehouse ","user_id":"John Doe","signout_time":"2023-10-04 11:19.068+0530","barcode_id":"1693820652113F736CAB","signed_in_state":"0"}</p>
+
+<hr>
+
+<h2 id="authenticateuser" class="anchor"><a class="heading-anchor" href="#authenticateuser"><span></span></a>Authenticate User</h2>
+
+<p>Authenticate user </p>
+
+<p>URI = <code>content://com.zebra.mdna.els.provider/lockscreenaction/startauthentication</code></p>
+
+<p>Write value is stringified JSON = { user verification : user verification setup 1, launchflag : blocking }
+    * user verification key can be "user verification setup 1", "user verification setup 2", "user verification setup 3", "user verification setup 4"
+    * lauchflag key can be "blocking" or "unblocking" - 9/10 , Response: authState: IN_PROGRESS / authState: BUSY / authState: ERROR / </p>
+
+<p>Sample code:</p>
+
+<pre class="prettyprint"><code>    String BASE_URI = "content://com.zebra.mdna.els.provider/";
+    private final String USER_VERIFICATION = "user_verification";
+    private final String LAUNCH_FLAG = "launchflag";
+    Uri uri = Uri.parse(BASE_URI);
+
+    String METHOD_NAME = "lockscreenaction";
+    String API_NAME = "startauthentication";
+    ContentResolver cr = getContentResolver();
+    Bundle bundle = new Bundle();
+    bundle.putString(USER_VERIFICATION, "authenticationScheme1");
+    bundle.putString(LAUNCH_FLAG, "blocking");
+
+    Bundle response = cr.call(uri, METHOD_NAME, API_NAME, bundle);
+    if (response != null &amp;&amp; response.containsKey("RESULT")) {
+        Log.i(TAG, response.getString("RESULT"));
+    }
+</code></pre>
+
+<hr>
+
+<h2 id="checkauthenticationstatus" class="anchor"><a class="heading-anchor" href="#checkauthenticationstatus"><span></span></a>Check Authentication Status</h2>
+
+<p>After calling the Authenticate User API, check to ensure that authentication is successful.</p>
+
+<p>URI: <code>content://com.zebra.mdna.els.provider/lockscreenaction/authenticationstatus</code></p>
+
+<p>Read value can be authState: SUCCESS/authState: IN_PROGRESS / authState: BUSY / authState: ERROR / , "other error", 3rd party app can register a listener and listen for data changes.</p>
+
+<p>API Response: </p>
+
+<pre class="prettyprint"><code>    response: {"code":0,"message":"Authenticated user","status":"SUCCESS","userData":{"applicationId":"com.test.lob_testapp_2","barcodeId":"1693820652113F736CAB","userId":"ns4943","userLoggedInState":"SUCCESS","userLoginTime":"2023-10-03 14:42.901+0530","userRole":"Warehouse "}}
+</code></pre>
+
+<p>Sample code:</p>
+
+<pre class="prettyprint"><code>    Uri uri = Uri.parse(BASE_URI + "lockscreenaction/authenticationstatus");
+    ContentResolver cr = getContentResolver();
+    Cursor cursor = cr.query(uri, null, null, null, null);
+    if (cursor != null){
+        Bundle bundle = cursor.getExtras();
+        if (bundle != null &amp;&amp; bundle.containsKey("RESULT")) {
+            String valueFromBundle = bundle.getString("RESULT");
+            Log.i("TAG", "" + valueFromBundle);
+
+        }
+    }
+</code></pre>
+
+<p>Register for application state(sign in/sign out) change: </p>
+
+<pre class="prettyprint"><code>    cr.registerContentObserver(URI_AUTHENTICATION_STATUS,false,contentObserverAuthenticationStatus);
+    contentObserverAuthenticationStatus = new ContentObserver(new Handler(getMainLooper())) {
+
+        @Override
+        public void onChange(boolean selfChange, Uri uri) {
+            super.onChange(selfChange, uri);
+            Log.d(TAG, "content has changed, uri = " + uri);
+    }}
+</code></pre>
 
 <hr>
 
@@ -392,9 +410,9 @@ The device prompts the user to authenticate via the primary authentication metho
 
 <li><a href="../setup">Setup</a></li>
 
-<li><a href="../mc">Managed Configurations</a></li>
+<li><a href="../usage">User Guide</a></li>
 
-<li><a href="../api/">APIs</a></li>
+<li><a href="../mc">Managed Configurations</a></li>
 </ul><p></p>
                                         
 
