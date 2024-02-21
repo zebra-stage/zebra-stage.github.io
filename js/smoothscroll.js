@@ -126,9 +126,10 @@ function ssc_keydown(e) {
   if (/input|textarea|embed/i.test(t.nodeName) || t.isContentEditable || e.defaultPrevented || n) {
     return true
   }
+  /*
   if (ssc_isNodeName(t, "button") && e.keyCode === ssc_key.spacebar) {
     return true
-  }
+  }*/
   var r, i = 0,
       s = 0;
   var o = ssc_overflowingAncestor(ssc_activeElement);
