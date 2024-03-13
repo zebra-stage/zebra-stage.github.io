@@ -271,6 +271,8 @@
 &lt;/queries&gt;
 </code></pre></li>
 
+<li><p>To use Identity Guardian APIs, they need to be <a href="#whitelistapis">whitelisted</a> within your application.</p></li>
+
 <li><p>For security purposes, your app must be included on Identity Guardian's permitted app whitelist using <a href="/mx/accessmgr">AccessMgr CSP</a> from <a href="/flux/about">Zebra Device Manager (ZDM)</a> to enable utilization of the APIs. Create a profile using <a href="/stagenow">StageNow</a> to deploy the configuration to whitelist your app. Set the following parameters:</p>
 
 <ul>
@@ -282,16 +284,18 @@
 
 <li><strong>Specify Caller Package Name</strong>: &lt;enter app package name, e.g.: com.company.appname&gt;</li>
 
-<li><strong>Caller Signature</strong>: &lt;select signature file that contains the app certificate&gt;</li></ul></li>
-</ul>
+<li><strong>Caller Signature</strong>: &lt;select signature file that contains the app certificate&gt;</li></ul>
 
-<p>See <a href="/mx/accessmgr/#caller-signature">Caller Signature</a> in the Access Mgr CSP documentation for information on generating a signature file. After creating the StageNow profile, use StageNow to scan the barcode generated or deploy the XML file via Enterprise Mobility Management (EMM) software.</p>
+<p>See <a href="/mx/accessmgr/#caller-signature">Caller Signature</a> in the Access Mgr CSP documentation for information on generating a signature file. After creating the StageNow profile, use StageNow to scan the barcode generated or deploy the XML file via Enterprise Mobility Management (EMM) software.</p></li>
+</ul>
 
 <hr>
 
 <h2 id="registerfornotifications" class="anchor"><a class="heading-anchor" href="#registerfornotifications"><span></span></a>Register for Notifications</h2>
 
-<p>Register to receive notifications on the locked/unlocked status of Identity Guardian for user sign in/out events. Register this API in onCreate() and unregister it in onDestroy() method.</p>
+<h3 id="lockscreenstatus" class="anchor"><a class="heading-anchor" href="#lockscreenstatus"><span></span></a>Lock Screen Status</h3>
+
+<p>Register to receive notifications about the locked/unlocked status of Identity Guardian during user sign in/out events. Register this API in onCreate() and unregister it in onDestroy() method.</p>
 
 <p>URI: <code>content://com.zebra.mdna.els.provider/lockscreenstatus/state</code></p>
 
@@ -329,9 +333,23 @@
 
 <hr>
 
-<h2 id="retrieveusersessiondata" class="anchor"><a class="heading-anchor" href="#retrieveusersessiondata"><span></span></a>Retrieve User Session Data</h2>
+<h2 id="retrieveusersession" class="anchor"><a class="heading-anchor" href="#retrieveusersession"><span></span></a>Retrieve User Session</h2>
 
-<h3 id="retrievecurrentusersessiondata" class="anchor"><a class="heading-anchor" href="#retrievecurrentusersessiondata"><span></span></a>Retrieve Current User Session Data</h3>
+<p>Retrieve session data associated with the current or previous user. <em>When the device is in a locked state, these APIs are functional if the lock state is activated by specific device system events, not by an application triggering the lock state.</em> The lock screen can be activated by the following device system events, based on <a href="../mc/#authenticationconfiguration">Authentication Configuration</a>:</p>
+
+<ul>
+<li>Unlocking the device (OnUnlock)</li>
+
+<li>Rebooting the device (OnReboot)</li>
+
+<li>Connecting the device to AC power (OnACPowerConnected)</li>
+
+<li>Disconnecting the device from AC power (OnACPowerDisconnected)</li>
+</ul>
+
+<p>An application can activate the lock screen by invoking <a href="#startauthentication">Start Authentication</a>.</p>
+
+<h3 id="currentsession" class="anchor"><a class="heading-anchor" href="#currentsession"><span></span></a>Current Session</h3>
 
 <p>Retrieve data from the current user's session. The data retrieved includes: user ID, role, and timestamps for sign in/out.</p>
 
@@ -350,9 +368,9 @@
 <pre class="prettyprint"><code>    result : {"signin_time":"2023-10-04 10:53.381+0530","user_role":"Manager","user_id":"John Doe","signout_time":null,"barcode_id":"16946760673674C04C38","signed_in_state":"1"}
 </code></pre>
 
-<h3 id="retrieveprevioususersessiondata" class="anchor"><a class="heading-anchor" href="#retrieveprevioususersessiondata"><span></span></a>Retrieve Previous User Session Data</h3>
+<h3 id="previoussession" class="anchor"><a class="heading-anchor" href="#previoussession"><span></span></a>Previous Session</h3>
 
-<p>Retrieve data from the last user's session. Data retrieved include: user ID, role, and timestamps for sign in/out.</p>
+<p>Retrieve data from the previous user's session. Data retrieved include: user ID, role, and timestamps for sign in/out.</p>
 
 <p>URI = <code>content://com.zebra.mdna.els.provider/previoussession</code></p>
 
@@ -371,7 +389,9 @@
 
 <h2 id="authenticateuser" class="anchor"><a class="heading-anchor" href="#authenticateuser"><span></span></a>Authenticate User</h2>
 
-<p>This launches Identity Guardian for user authentication.</p>
+<p><strong>Start Authentication</strong> launches Identity Guardian and displays it over any open apps, restricting device access until the user successfully logs in to the device. </p>
+
+<h3 id="startauthentication" class="anchor"><a class="heading-anchor" href="#startauthentication"><span></span></a>Start Authentication</h3>
 
 <p>URI = <code>content://com.zebra.mdna.els.provider/lockscreenaction/startauthentication</code></p>
 
@@ -431,6 +451,8 @@
 
 <h2 id="checkappstatus" class="anchor"><a class="heading-anchor" href="#checkappstatus"><span></span></a>Check App Status</h2>
 
+<h3 id="authenticationstatus" class="anchor"><a class="heading-anchor" href="#authenticationstatus"><span></span></a>Authentication Status</h3>
+
 <p>After calling Authenticate User, monitor the Identity Guardian status of screen lock state and user sign in/out by registering for notifications of these state changes. For example, if Identity Guardian launched successfully, will be launched or is launched by another application, listen for these notifications to take further action if needed.</p>
 
 <p>URI: <code>content://com.zebra.mdna.els.provider/lockscreenaction/authenticationstatus</code></p>
@@ -480,6 +502,85 @@
 
 <pre class="prettyprint"><code>    response: {"code":0,"message":"Authenticated user","status":"SUCCESS","userData":{"applicationId":"com.test.lob_testapp_2","barcodeId":"1693820652113F736CAB","userId":"ns4943","userLoggedInState":"SUCCESS","userLoginTime":"2023-10-03 14:42.901+0530","userRole":"Warehouse "}}
 </code></pre>
+
+<hr>
+
+<h2 id="whitelistapis" class="anchor"><a class="heading-anchor" href="#whitelistapis"><span></span></a>Whitelist APIs</h2>
+
+<p>Identity Guardian APIs must be whitelisted within your app to enable their use. </p>
+
+<h3 id="prerequisites" class="anchor"><a class="heading-anchor" href="#prerequisites"><span></span></a>Prerequisites</h3>
+
+<ol>
+<li><strong>Download <a href="/emdk-for-android/latest/samples/sigtools/">SigTools.jar</a>.</strong> This is used to generate the certificate to create a signature file for security purposes.</li>
+
+<li><strong>Place your .APK app and <a href="/emdk-for-android/latest/samples/sigtools/">SigTools.jar</a> in the same folder</strong> on your host computer.</li>
+
+<li><strong>Download <a href="/stagenow">StageNow</a>.</strong> This is used to create the profile to whitelist the APIs.</li>
+</ol>
+
+<h3 id="procedure" class="anchor"><a class="heading-anchor" href="#procedure"><span></span></a>Procedure</h3>
+
+<p>Procedure to whitelist Identity Guardian APIs within your app using StageNow:</p>
+
+<ol>
+<li><p>From the commnd line, change the path to the location where your .APK and "SigTools.jar" is located.</p></li>
+
+<li><p>Generate the certificate by running the following command, where "LOB_app.apk" is replaced by the name of your .APK file:</p>
+
+<pre class="prettyprint"><code>java -jar SigTools.jar getcert -inform apk -outform der -in LOB_app.apk -outfile app.crt 
+</code></pre></li>
+
+<li><p>From your host system, open StageNow and click on <strong>Create New Profile.</strong></p></li>
+
+<li><p>Select the MX version that matches or exceeds the one on your device. Refer to the <a href="/mx/mx-version-on-device/">MX documentation</a> for guidance on how to determine the version. </p></li>
+
+<li><p>Select <strong>Expert Mode</strong> and click <strong>Create.</strong>
+<img alt="image" style="height:400px" src="sn-wizard.jpg"></p></li>
+
+<li><p>Enter a profile name and click <strong>Start.</strong>
+<img alt="image" style="height:250px" src="sn-profile-name.png"></p></li>
+
+<li><p>Click the plus (+) sign next to <strong>AccessMgr.</strong> This adds AccessMgr to the Config tab on the right side. Click <strong>Add.</strong>
+<img alt="image" style="height:450px" src="sn-accessmgr.png"></p></li>
+
+<li><p>Enter/select the following for <strong>AccessMgr:</strong></p>
+
+<ul>
+<li><strong>Service Access Action:</strong> Allow Caller to Call Service</li>
+
+<li><strong>Service Identifier:</strong> [Enter the API URI, see step 11. For example: <code>content://com.zebra.mdna.els.provider/lockscreenaction/startauthentication</code>]</li>
+
+<li><strong>Caller Package Name:</strong> [Enter the package name for your .APK app file.]</li>
+
+<li><strong>Caller Signature:</strong> [Browse to the .CRT certificate generated from step 2 above.]
+<img alt="image" style="height:450px" src="sn-accessmgr-options.png"></li></ul></li>
+
+<li><p>Click <strong>Continue.</strong></p></li>
+
+<li><p>Click <strong>Complete Profiles.</strong></p></li>
+
+<li><p>Repeat steps 3 to 10 for each API to whitelist in your app, replacing <strong>Service Identifier</strong> with the desired API URI:     </p>
+
+<ul>
+<li><code>content://com.zebra.mdna.els.provider/lockscreenaction/startauthentication</code> (Start Authentication)</li>
+
+<li><code>content://com.zebra.mdna.els.provider/previoussession</code> (Previous User Session)</li>
+
+<li><code>content://com.zebra.mdna.els.provider/currentsession</code> (Current User Session)</li>
+
+<li><code>content://com.zebra.mdna.els.provider/lockscreenaction/authenticationstatus</code> (Authentication Status)</li>
+
+<li><code>content://com.zebra.mdna.els.provider/lockscreenaction/logout</code> (Logout)</li></ul></li>
+</ol>
+
+<p>After creating the StageNow profiles, use one of the following methods based on the desired tool for device deployment:</p>
+
+<ul>
+<li><strong>StageNow:</strong> Generate the barcode from the StageNow profile. Open StageNow client on the device and scan the barcode(s) generated from the installation, configuration and/or BLE profile. </li>
+
+<li><strong>EMM:</strong> Export each StageNow XML file from the StageNow installation, connection and BLE profiles. <em>Do not edit the XML file</em> - it can cause unexpected behavior. Send the XML using either <a href="/oemconfig">OEMConfig</a> or <a href="/mx/overview/">MX</a> to configure the app and grant all required permissions. The installation profile and server connectivity profile XML files must be used separately.</li>
+</ul>
 
 <hr>
 
