@@ -1,1 +1,1 @@
-packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"com.zebra.barcode.sdk.sms"},{"l":"com.zebra.scannercontrol"}];updateSearchResults();
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"com.zebra.barcode.sdk"},{"l":"com.zebra.barcode.sdk.sms"},{"l":"com.zebra.barcode.sdk.sms.entities"},{"l":"com.zebra.commoniolib"},{"l":"com.zebra.scannercontrol"},{"l":"com.zebra.scannercontrol.beacon"},{"l":"com.zebra.scannercontrol.beacon.entities"}];updateSearchResults();
