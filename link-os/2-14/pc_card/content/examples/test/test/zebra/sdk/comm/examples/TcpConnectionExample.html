@@ -1,0 +1,66 @@
+<pre>package test.zebra.sdk.comm.examples;
+
+import com.zebra.sdk.comm.*;
+import com.zebra.sdk.common.card.containers.*;
+import com.zebra.sdk.common.card.exceptions.ZebraCardException;
+import com.zebra.sdk.common.card.printer.*;
+import com.zebra.sdk.settings.SettingsException;
+
+public class TcpConnectionExample {
+
+	public static void main(String[] args) throws Exception {
+		new TcpConnectionExample().getPrinterStatusOverTcp("1.2.3.4");
+		new TcpConnectionExample().getPrinterInfoUsingDnsName("PrinterName");
+	}
+
+	private void getPrinterStatusOverTcp(String theIpAddress) throws ConnectionException, SettingsException, ZebraCardException {
+		Connection connection = new TcpConnection(theIpAddress, 9100);
+		ZebraCardPrinter zebraCardPrinter = null;
+
+		try {
+			connection.open();
+			zebraCardPrinter = ZebraCardPrinterFactory.getInstance(connection);
+
+			PrinterStatusInfo printerStatusInfo = zebraCardPrinter.getPrinterStatus();
+			System.out.format("Status: %s%n", printerStatusInfo.status);
+			System.out.format("Alarm: %s (%s)%n", printerStatusInfo.alarmInfo.value, printerStatusInfo.alarmInfo.description);
+			System.out.format("Error: %s (%s)%n", printerStatusInfo.errorInfo.value, printerStatusInfo.errorInfo.description);
+			System.out.format("Total jobs: %s%n", printerStatusInfo.jobsTotal);
+			System.out.format("Pending jobs: %s%n", printerStatusInfo.jobsPending);
+			System.out.format("Active jobs: %s%n", printerStatusInfo.jobsActive);
+			System.out.format("Completed jobs: %s%n%n", printerStatusInfo.jobsComplete);
+		} catch (ConnectionException e) {
+			// Handle communications error here.
+			e.printStackTrace();
+		} finally {
+			// Release resources and close the connection
+			zebraCardPrinter.destroy();
+			connection.close();
+		}
+	}
+
+	private void getPrinterInfoUsingDnsName(String dnsName) throws ConnectionException, SettingsException, ZebraCardException {
+		Connection connection = new TcpConnection(dnsName, 9100);
+		ZebraCardPrinter zebraCardPrinter = null;
+
+		try {
+			connection.open();
+			zebraCardPrinter = ZebraCardPrinterFactory.getInstance(connection);
+
+			PrinterInfo printerInfo = zebraCardPrinter.getPrinterInformation();
+			System.out.format("Vendor: %s%n", printerInfo.vendor);
+			System.out.format("Model: %s%n", printerInfo.model);
+			System.out.format("SerialNumber: %s%n", printerInfo.serialNumber);
+			System.out.format("OEM Code: %s%n", printerInfo.oemCode);
+			System.out.format("Firmware Version: %s%n%n", printerInfo.firmwareVersion);
+		} catch (ConnectionException e) {
+			// Handle communications error here.
+			e.printStackTrace();
+		} finally {
+			// Release resources and close the connection
+			zebraCardPrinter.destroy();
+			connection.close();
+		}
+	}
+}
+</pre>

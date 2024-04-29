@@ -1,0 +1,68 @@
+<pre>package test.com.zebra.sdk.job.examples;
+
+import java.util.EnumSet;
+
+import com.zebra.sdk.comm.*;
+import com.zebra.sdk.common.card.containers.MagTrackData;
+import com.zebra.sdk.common.card.enumerations.DataSource;
+import com.zebra.sdk.common.card.exceptions.ZebraCardException;
+import com.zebra.sdk.common.card.printer.*;
+
+public class ReadMagneticCardExample {
+
+	public static void main(String[] args) {
+		Connection connection = null;
+		ZebraCardPrinter zebraCardPrinter = null;
+
+		try {
+			connection = new TcpConnection("1.2.3.4", 9100);
+			connection.open();
+
+			zebraCardPrinter = ZebraCardPrinterFactory.getInstance(connection);
+
+			if (zebraCardPrinter.hasMagneticEncoder()) {
+				EnumSet&lt;DataSource&gt; tracksToRead = EnumSet.range(DataSource.Track1, DataSource.Track3);
+				MagTrackData trackData = zebraCardPrinter.readMagData(tracksToRead, true);
+
+				if (tracksToRead.contains(DataSource.Track1)) {
+					System.out.println("Track 1 Data: " + trackData.track1Data);
+				}
+
+				if (tracksToRead.contains(DataSource.Track2)) {
+					System.out.println("Track 2 Data: " + trackData.track2Data);
+				}
+
+				if (tracksToRead.contains(DataSource.Track3)) {
+					System.out.println("Track 3 Data: " + trackData.track3Data);
+				}
+			} else {
+				System.out.println("No magnetic encoder installed.");
+			}
+		} catch (Exception e) {
+			System.out.println("Error reading magnetic card: " + e.getMessage());
+		} finally {
+			cleanUpQuietly(connection, zebraCardPrinter);
+		}
+	}
+
+	private static void cleanUpQuietly(Connection connection, ZebraCardPrinter genericPrinter) {
+		try {
+			if (genericPrinter != null) {
+				genericPrinter.destroy();
+				genericPrinter = null;
+			}
+		} catch (ZebraCardException e) {
+			e.printStackTrace();
+		}
+
+		if (connection != null) {
+			try {
+				connection.close();
+				connection = null;
+			} catch (ConnectionException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+}
+</pre>

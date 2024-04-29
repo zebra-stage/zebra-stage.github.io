@@ -1,0 +1,151 @@
+<pre>package test.com.zebra.sdk.job.examples;
+
+import java.util.*;
+
+import com.zebra.sdk.comm.*;
+import com.zebra.sdk.common.card.containers.*;
+import com.zebra.sdk.common.card.exceptions.ZebraCardException;
+import com.zebra.sdk.common.card.job.template.ZebraTemplate;
+import com.zebra.sdk.common.card.printer.*;
+import com.zebra.sdk.common.card.template.ZebraCardTemplate;
+import com.zebra.sdk.device.ZebraIllegalArgumentException;
+
+public class PrintTemplateExample {
+
+	public static void main(String[] args) {
+		Connection connection = null;
+		ZebraCardPrinter zebraCardPrinter = null;
+
+		try {
+			connection = new UsbConnection("\\\\?\\usb#vid_0a5f&pid_00a7#411738706#...");
+			connection.open();
+
+			zebraCardPrinter = ZebraCardPrinterFactory.getInstance(connection);
+			ZebraTemplate zebraCardTemplate = new ZebraCardTemplate(zebraCardPrinter);
+
+			String templateData = getTemplateData();
+			List&lt;String&gt; templateFields = zebraCardTemplate.getTemplateDataFields(templateData);
+			Map&lt;String, String&gt; fieldData = populateTemplateFieldData(templateFields);
+
+			// Generate template job
+			TemplateJob templateJob = zebraCardTemplate.generateTemplateDataJob(templateData, fieldData);
+
+			// Send job
+			int jobId = zebraCardPrinter.printTemplate(1, templateJob);
+
+			// Poll job status
+			JobStatusInfo jobStatusInfo = pollJobStatus(jobId, zebraCardPrinter);
+			System.out.println(String.format(Locale.US, "Job %d completed with status '%s'", jobId, jobStatusInfo.printStatus));
+		} catch (Exception e) {
+			System.out.println("Error printing template: " + e.getMessage());
+			e.printStackTrace();
+		} finally {
+			cleanUpQuietly(connection, zebraCardPrinter);
+		}
+	}
+
+	private static String getTemplateData() {
+		return "&lt;?xml version=\"1.0\" encoding=\"UTF-8\"?&gt;\n" + 
+				"&lt;template name=\"TemplateExample\" card_type=\"2\" card_thickness=\"30\" delete=\"no\"&gt;\n" + 
+				"  &lt;fonts&gt;\n" + 
+				"    &lt;font id=\"1\" name=\"Arial\" size=\"12\" bold=\"no\" italic=\"no\" underline=\"no\"/&gt;\n" + 
+				"    &lt;font id=\"2\" name=\"Arial\" size=\"14\" bold=\"yes\" italic=\"yes\" underline=\"no\"/&gt;\n" + 
+				"  &lt;/fonts&gt;\n" + 
+				"  &lt;sides&gt;\n" + 
+				"    &lt;side name=\"front\" orientation=\"landscape\" rotation=\"0\" k_mode=\"text\"&gt;\n" + 
+				"      &lt;print_types&gt;\n" + 
+				"        &lt;print_type type=\"mono\"&gt;\n" + 
+				"          &lt;text field=\"firstName\" font_id=\"1\" x=\"100\" y=\"100\" width=\"0\" height=\"0\" angle=\"0\" color=\"0x000000\"/&gt;\n" + 
+				"          &lt;text field=\"lastName\" font_id=\"2\" x=\"100\" y=\"150\" width=\"0\" height=\"0\" angle=\"0\" color=\"0x000000\"/&gt;\n" + 
+				"          &lt;line x1=\"100\" y1=\"235\" x2=\"260\" y2=\"235\" thickness=\"10\" color=\"0\"/&gt;\n" + 
+				"          &lt;barcode field=\"qrCode\" code=\"qrCode\" x=\"100\" y=\"270\" multiplier=\"3\" quiet_zone_width=\"0\"/&gt;\n" + 
+				"        &lt;/print_type&gt;\n" + 
+				"      &lt;/print_types&gt;\n" + 
+				"    &lt;/side&gt;\n" + 
+				"  &lt;/sides&gt;\n" + 
+				"&lt;/template&gt;";
+	}
+
+	private static Map&lt;String, String&gt; populateTemplateFieldData(List&lt;String&gt; templateFields) {
+		Map&lt;String, String&gt; fieldData = new HashMap&lt;String, String&gt;();
+		for (String fieldName : templateFields) {
+			String fieldValue = "";
+			if (fieldName.equals("firstName")) {
+				fieldValue = "Bob";
+			} else if (fieldName.equals("lastName")) {
+				fieldValue = "Smith";
+			} else if (fieldName.equals("qrCode")) {
+				fieldValue = "https://www.zebra.com";
+			}
+
+			if (fieldValue != null && !fieldValue.isEmpty()) {
+				if (!fieldData.containsKey(fieldName)) {
+					fieldData.put(fieldName, fieldValue);
+				}
+			}
+		}
+		return fieldData;
+	}
+
+	private static JobStatusInfo pollJobStatus(int jobId, ZebraCardPrinter zebraCardPrinter) throws ConnectionException, ZebraCardException, ZebraIllegalArgumentException {
+		long dropDeadTime = System.currentTimeMillis() + 40000;
+		long pollInterval = 500;
+
+		// Poll job status
+		JobStatusInfo jobStatusInfo = new JobStatusInfo();
+
+		do {
+			jobStatusInfo = zebraCardPrinter.getJobStatus(jobId);
+
+			String alarmDesc = jobStatusInfo.alarmInfo.value &gt; 0 ? String.format(Locale.US, " (%s)", jobStatusInfo.alarmInfo.description) : "";
+			String errorDesc = jobStatusInfo.errorInfo.value &gt; 0 ? String.format(Locale.US, " (%s)", jobStatusInfo.errorInfo.description) : "";
+
+			System.out.println(String.format("Job %d, Status:%s, Card Position:%s, Alarm Code:%d%s, Error Code:%d%s", jobId, jobStatusInfo.printStatus, jobStatusInfo.cardPosition, jobStatusInfo.alarmInfo.value, alarmDesc, jobStatusInfo.errorInfo.value, errorDesc));
+
+			if (jobStatusInfo.printStatus.contains("done_ok")) {
+				break;
+			} else if (jobStatusInfo.printStatus.contains("alarm_handling")) {
+				System.out.println("Alarm Dectected: " + jobStatusInfo.alarmInfo.description);
+			} else if (jobStatusInfo.printStatus.contains("error") || jobStatusInfo.printStatus.contains("cancelled")) {
+				break;
+			} else if (jobStatusInfo.errorInfo.value &gt; 0) {
+				System.out.println(String.format(Locale.US, "The job encountered an error [%s] and was cancelled.", jobStatusInfo.errorInfo.description));
+				zebraCardPrinter.cancel(jobId);
+			}
+
+			if (System.currentTimeMillis() &gt; dropDeadTime) {
+				break;
+			}
+
+			try {
+				Thread.sleep(pollInterval);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
+		} while (true);
+
+		return jobStatusInfo;
+	}
+
+	private static void cleanUpQuietly(Connection connection, ZebraCardPrinter genericPrinter) {
+		try {
+			if (genericPrinter != null) {
+				genericPrinter.destroy();
+				genericPrinter = null;
+			}
+		} catch (ZebraCardException e) {
+			e.printStackTrace();
+		}
+
+		if (connection != null) {
+			try {
+				connection.close();
+				connection = null;
+			} catch (ConnectionException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+}
+</pre>

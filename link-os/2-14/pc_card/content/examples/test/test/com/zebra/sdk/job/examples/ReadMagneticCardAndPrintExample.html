@@ -1,0 +1,161 @@
+<pre>package test.com.zebra.sdk.job.examples;
+
+import java.awt.Color;
+import java.awt.Font;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Locale;
+
+import com.zebra.sdk.comm.Connection;
+import com.zebra.sdk.comm.ConnectionException;
+import com.zebra.sdk.comm.TcpConnection;
+import com.zebra.sdk.common.card.containers.GraphicsInfo;
+import com.zebra.sdk.common.card.containers.JobStatusInfo;
+import com.zebra.sdk.common.card.containers.MagTrackData;
+import com.zebra.sdk.common.card.enumerations.CardSide;
+import com.zebra.sdk.common.card.enumerations.DataSource;
+import com.zebra.sdk.common.card.enumerations.GraphicType;
+import com.zebra.sdk.common.card.enumerations.OrientationType;
+import com.zebra.sdk.common.card.enumerations.PrintType;
+import com.zebra.sdk.common.card.exceptions.ZebraCardException;
+import com.zebra.sdk.common.card.graphics.ZebraCardGraphics;
+import com.zebra.sdk.common.card.graphics.ZebraCardImageI;
+import com.zebra.sdk.common.card.graphics.ZebraGraphics;
+import com.zebra.sdk.common.card.printer.ZebraCardPrinter;
+import com.zebra.sdk.common.card.printer.ZebraCardPrinterFactory;
+import com.zebra.sdk.device.ZebraIllegalArgumentException;
+
+public class ReadMagneticCardAndPrintExample {
+
+	public static void main(String[] args) {
+		Connection connection = null;
+		ZebraCardPrinter zebraCardPrinter = null;
+
+		try {
+			connection = new TcpConnection("1.2.3.4", 9100);
+			connection.open();
+
+			zebraCardPrinter = ZebraCardPrinterFactory.getInstance(connection);
+
+			if (zebraCardPrinter.hasMagneticEncoder()) {
+				EnumSet&lt;DataSource&gt; tracksToRead = EnumSet.range(DataSource.Track1, DataSource.Track3);
+				MagTrackData trackData = zebraCardPrinter.readMagData(tracksToRead, true);
+
+				List&lt;GraphicsInfo&gt; graphicsData = new ArrayList&lt;GraphicsInfo&gt;();
+				graphicsData.add(drawGraphics(zebraCardPrinter, trackData));
+
+				// Send job
+				int jobId = zebraCardPrinter.print(1, graphicsData);
+
+				// Poll job status
+				JobStatusInfo jobStatusInfo = pollJobStatus(jobId, zebraCardPrinter);
+				System.out.println(String.format(Locale.US, "Job %d completed with status '%s'", jobId, jobStatusInfo.printStatus));
+			} else {
+				System.out.println("No magnetic encoder installed.");
+			}
+		} catch (Exception e) {
+			System.out.println("Error reading magnetic card: " + e.getMessage());
+		} finally {
+			cleanUpQuietly(connection, zebraCardPrinter);
+		}
+	}
+
+	private static GraphicsInfo drawGraphics(ZebraCardPrinter zebraCardPrinter, MagTrackData trackData) throws ConnectionException, IOException, ZebraCardException {
+		ZebraGraphics graphics = null;
+		try {
+			graphics = new ZebraCardGraphics(zebraCardPrinter);
+			graphics.initialize(0, 0, OrientationType.Landscape, PrintType.MonoK, Color.WHITE);
+
+			graphics.setFont(new Font("Arial", Font.PLAIN, 12));
+			graphics.drawText("Track 1 Data: " + trackData.track1Data, 50, 50, Color.BLACK);
+			graphics.drawText("Track 2 Data: " + trackData.track2Data, 50, 150, Color.BLACK);
+			graphics.drawText("Track 3 Data: " + trackData.track3Data, 50, 250, Color.BLACK);
+
+			ZebraCardImageI zebraCardImage = graphics.createImage();
+			return addImage(CardSide.Front, PrintType.Color, 0, 0, -1, zebraCardImage);
+		} finally {
+			if (graphics != null) {
+				graphics.close();
+			}
+		}
+	}
+
+	private static GraphicsInfo addImage(CardSide side, PrintType printType, int xOffset, int yOffset, int fillColor, ZebraCardImageI zebraCardImage) {
+		GraphicsInfo graphicsInfo = new GraphicsInfo();
+		graphicsInfo.fillColor = fillColor;
+		graphicsInfo.graphicData = zebraCardImage != null ? zebraCardImage : null;
+		graphicsInfo.graphicType = zebraCardImage != null ? GraphicType.BMP : GraphicType.NA;
+		graphicsInfo.opacity = 0;
+		graphicsInfo.overprint = false;
+		graphicsInfo.printType = printType;
+		graphicsInfo.side = side;
+		graphicsInfo.xOffset = xOffset;
+		graphicsInfo.yOffset = yOffset;
+		return graphicsInfo;
+	}
+
+	private static JobStatusInfo pollJobStatus(int jobId, ZebraCardPrinter zebraCardPrinter) throws ConnectionException, ZebraCardException, ZebraIllegalArgumentException {
+		long dropDeadTime = System.currentTimeMillis() + 40000;
+		long pollInterval = 500;
+
+		// Poll job status
+		JobStatusInfo jobStatusInfo = new JobStatusInfo();
+
+		do {
+			jobStatusInfo = zebraCardPrinter.getJobStatus(jobId);
+
+			String alarmDesc = jobStatusInfo.alarmInfo.value &gt; 0 ? String.format(Locale.US, " (%s)", jobStatusInfo.alarmInfo.description) : "";
+			String errorDesc = jobStatusInfo.errorInfo.value &gt; 0 ? String.format(Locale.US, " (%s)", jobStatusInfo.errorInfo.description) : "";
+
+			System.out.println(String.format("Job %d, Status:%s, Card Position:%s, Alarm Code:%d%s, Error Code:%d%s", jobId, jobStatusInfo.printStatus, jobStatusInfo.cardPosition, 
+					jobStatusInfo.alarmInfo.value, alarmDesc, jobStatusInfo.errorInfo.value, errorDesc));
+
+			if (jobStatusInfo.printStatus.contains("done_ok")) {
+				break;
+			} else if (jobStatusInfo.printStatus.contains("alarm_handling")) {
+				System.out.println("Alarm Detected: " + jobStatusInfo.alarmInfo.description);
+			} else if (jobStatusInfo.printStatus.contains("error") || jobStatusInfo.printStatus.contains("cancelled")) {
+				break;
+			} else if (jobStatusInfo.errorInfo.value &gt; 0) {
+				System.out.println(String.format(Locale.US, "The job encountered an error [%s] and was cancelled.", jobStatusInfo.errorInfo.description));
+				zebraCardPrinter.cancel(jobId);
+			}
+
+			if (System.currentTimeMillis() &gt; dropDeadTime) {
+				break;
+			}
+
+			try {
+				Thread.sleep(pollInterval);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
+		} while (true);
+
+		return jobStatusInfo;
+	}
+
+	private static void cleanUpQuietly(Connection connection, ZebraCardPrinter genericPrinter) {
+		try {
+			if (genericPrinter != null) {
+				genericPrinter.destroy();
+				genericPrinter = null;
+			}
+		} catch (ZebraCardException e) {
+			e.printStackTrace();
+		}
+
+		if (connection != null) {
+			try {
+				connection.close();
+				connection = null;
+			} catch (ConnectionException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+}
+</pre>

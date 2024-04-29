@@ -1,0 +1,173 @@
+<pre>package test.com.zebra.sdk.job.examples;
+
+import java.awt.Color;
+import java.awt.image.BufferedImage;
+import java.io.*;
+import java.util.*;
+
+import javax.imageio.ImageIO;
+
+import org.apache.commons.io.IOUtils;
+
+import com.zebra.sdk.comm.*;
+import com.zebra.sdk.common.card.containers.*;
+import com.zebra.sdk.common.card.enumerations.*;
+import com.zebra.sdk.common.card.exceptions.ZebraCardException;
+import com.zebra.sdk.common.card.graphics.*;
+import com.zebra.sdk.common.card.graphics.enumerations.RotationType;
+import com.zebra.sdk.common.card.printer.*;
+import com.zebra.sdk.device.ZebraIllegalArgumentException;
+import com.zebra.sdk.printer.discovery.*;
+
+public class Print_Mono_Example {
+
+	public static void main(String[] args) {
+		DiscoveredPrinter[] printers = null;
+		Connection connection = null;
+		ZebraCardPrinter zebraCardPrinter = null;
+		ZebraGraphics graphics = null;
+
+		ByteArrayOutputStream baos = null;
+
+		try {
+			printers = UsbDiscoverer.getZebraUsbPrinters();
+			if (printers.length &gt; 0) {
+				connection = printers[0].getConnection();
+
+				connection.open();
+				zebraCardPrinter = ZebraCardPrinterFactory.getInstance(connection);
+			}
+
+			if (zebraCardPrinter == null) {
+				return;
+			}
+
+			List&lt;GraphicsInfo&gt; graphicsData = new ArrayList&lt;GraphicsInfo&gt;();
+
+			BufferedImage img = null;
+			GraphicsInfo grInfo = new GraphicsInfo();
+
+			graphics = new ZebraCardGraphics(zebraCardPrinter);
+			graphics.initialize(0, 0, OrientationType.Landscape, PrintType.MonoK, Color.WHITE);
+
+			// Front MonoK
+			grInfo.side = CardSide.Front;
+			grInfo.printType = PrintType.MonoK;
+			grInfo.graphicType = GraphicType.BMP;
+
+			String filepath = "myImage.bmp"; // replace with path to your image
+			img = ImageIO.read(new File(filepath));
+			baos = new ByteArrayOutputStream();
+			ImageIO.write(img, "bmp", baos);
+
+			graphics.drawImage(baos.toByteArray(), 0, 0, 0, 0, RotationType.RotateNoneFlipNone);
+			grInfo.graphicData = graphics.createImage(null);
+			graphics.clear();
+
+			graphicsData.add(grInfo);
+
+			// Back MonoK
+			graphics.initialize(0, 0, OrientationType.Landscape, PrintType.MonoK, Color.WHITE);
+
+			grInfo = new GraphicsInfo();
+			grInfo.side = CardSide.Back;
+			grInfo.printType = PrintType.MonoK;
+			grInfo.graphicType = GraphicType.BMP;
+
+			filepath = "myImage.bmp"; // replace with path to your image
+			img = ImageIO.read(new File(filepath));
+			baos = new ByteArrayOutputStream();
+			ImageIO.write(img, "bmp", baos);
+
+			graphics.drawImage(baos.toByteArray(), 0, 0, 0, 0, RotationType.RotateNoneFlipNone);
+			grInfo.graphicData = graphics.createImage(null);
+			graphics.clear();
+
+			graphicsData.add(grInfo);
+
+			int jobId = zebraCardPrinter.print(1, graphicsData);
+			pollJobStatus(zebraCardPrinter, jobId);
+
+			JobStatusInfo jStatus = zebraCardPrinter.getJobStatus(jobId);
+			System.out.println("Job complete: " + jStatus.printStatus);
+		} catch (ConnectionException e) {
+			System.out.println("Error discovering local printers: " + e.getMessage());
+			e.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			IOUtils.closeQuietly(baos);
+			cleanUp(connection, zebraCardPrinter, graphics);
+		}
+	}
+
+	static boolean pollJobStatus(ZebraCardPrinter device, int actionID) throws ConnectionException, ZebraCardException, ZebraIllegalArgumentException {
+		boolean success = false;
+		long dropDeadTime = System.currentTimeMillis() + 40000;
+		long pollInterval = 500;
+
+		// Poll job status
+		JobStatusInfo jStatus = null;
+
+		do {
+			jStatus = device.getJobStatus(actionID);
+			System.out.println(String.format("Job %d, Status:%s, Card Position:%s, " + "ReadyForNextJob:%s, Mag Status:%s, Contact Status:%s, Contactless Status:%s, " + "Error Code:%d, Alarm Code:%d",
+					actionID, jStatus.printStatus, jStatus.cardPosition, jStatus.readyForNextJob, jStatus.magneticEncoding, jStatus.contactSmartCard, jStatus.contactlessSmartCard,
+					jStatus.errorInfo.value, jStatus.alarmInfo.value));
+
+			if (jStatus.contactSmartCard.contains("station")) {
+				success = true;
+				break;
+			} else if (jStatus.contactlessSmartCard.contains("station")) {
+				success = true;
+				break;
+			} else if (jStatus.printStatus.contains("done_ok")) {
+				success = true;
+				break;
+			} else if (jStatus.printStatus.contains("alarm_handling")) {
+				System.out.println("Error Dectected: " + jStatus.alarmInfo.description);
+				success = false;
+			} else if (jStatus.printStatus.contains("error") || jStatus.printStatus.contains("cancelled")) {
+				success = false;
+				break;
+			}
+
+			if (System.currentTimeMillis() &gt; dropDeadTime) {
+				success = false;
+				break;
+			}
+
+			try {
+				Thread.sleep(pollInterval);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
+		} while (true);
+
+		return success;
+	}
+
+	protected static void cleanUp(Connection connection, ZebraCardPrinter genericPrinter, ZebraGraphics graphics) {
+		try {
+			if (genericPrinter != null) {
+				genericPrinter.destroy();
+			}
+		} catch (ZebraCardException e) {
+			e.printStackTrace();
+		}
+
+		if (graphics != null) {
+			graphics.close();
+		}
+
+		if (connection != null) {
+			try {
+				connection.close();
+			} catch (ConnectionException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+}
+</pre>

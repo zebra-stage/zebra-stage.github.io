@@ -1,0 +1,71 @@
+<pre>package test.com.zebra.sdk.job.examples;
+
+import java.util.*;
+
+import com.zebra.sdk.comm.*;
+import com.zebra.sdk.common.card.exceptions.ZebraCardException;
+import com.zebra.sdk.common.card.printer.*;
+import com.zebra.sdk.common.card.printer.discovery.ZebraCardPrinterFilter;
+import com.zebra.sdk.printer.discovery.*;
+import com.zebra.sdk.settings.SettingsException;
+
+public class JobControlProviderExample {
+
+	public static void main(String[] args) {
+		Connection connection = null;
+		ZebraCardPrinter zebraCardPrinter = null;
+
+		try {
+			for (DiscoveredUsbPrinter usbPrinter : UsbDiscoverer.getZebraUsbPrinters(new ZebraCardPrinterFilter())) {
+				connection = usbPrinter.getConnection();
+				connection.open();
+
+				zebraCardPrinter = ZebraCardPrinterFactory.getInstance(connection);
+				displayJobSettings(zebraCardPrinter);
+
+				cleanUpQuietly(connection, zebraCardPrinter);
+			}
+		} catch (Exception e) {
+			System.out.println("Error retrieving job settings: " + e.getMessage());
+		} finally {
+			cleanUpQuietly(connection, zebraCardPrinter);
+		}
+	}
+
+	private static void displayJobSettings(ZebraCardPrinter zebraCardPrinter) throws SettingsException {
+		if (zebraCardPrinter != null) {
+			System.out.println("Available Job Settings for myDevice:");
+			Set&lt;String&gt; availableJobSettings = zebraCardPrinter.getJobSettings();
+			for (String setting : availableJobSettings) {
+				System.out.println(setting + ": Range = (" + zebraCardPrinter.getJobSettingRange(setting) + ")");
+			}
+
+			System.out.println("\nCurrent Job Setting Values for myDevice:");
+			Map&lt;String, String&gt; allJobSettingValues = zebraCardPrinter.getAllJobSettingValues();
+			for (String settingName : allJobSettingValues.keySet()) {
+				System.out.println(settingName + ":" + allJobSettingValues.get(settingName));
+			}
+		}
+	}
+
+	private static void cleanUpQuietly(Connection connection, ZebraCardPrinter genericPrinter) {
+		try {
+			if (genericPrinter != null) {
+				genericPrinter.destroy();
+				genericPrinter = null;
+			}
+		} catch (ZebraCardException e) {
+			e.printStackTrace();
+		}
+
+		if (connection != null) {
+			try {
+				connection.close();
+				connection = null;
+			} catch (ConnectionException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+}
+</pre>

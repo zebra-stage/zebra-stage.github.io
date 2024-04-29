@@ -1,0 +1,168 @@
+<pre>package test.com.zebra.sdk.job.examples;
+
+import java.util.*;
+
+import org.apache.commons.lang3.StringUtils;
+
+import com.zebra.sdk.comm.*;
+import com.zebra.sdk.common.card.containers.JobStatusInfo;
+import com.zebra.sdk.common.card.exceptions.ZebraCardException;
+import com.zebra.sdk.common.card.jobSettings.ZebraCardJobSettingNames;
+import com.zebra.sdk.common.card.printer.*;
+import com.zebra.sdk.device.ZebraIllegalArgumentException;
+import com.zebra.sdk.settings.SettingsException;
+
+public class PositionSmartCardExample {
+
+	public static void main(String[] args) {
+		Connection connection = null;
+		ZebraPrinterZmotif zmotifCardPrinter = null;
+
+		try {
+			connection = new UsbConnection("\\\\?\\usb#vid_0a5f&pid_00a7#411738706#...");
+			connection.open();
+
+			zmotifCardPrinter = ZebraCardPrinterFactory.getZmotifPrinter(connection);
+
+			if (zmotifCardPrinter.hasSmartCardEncoder()) {
+				configureSmartCardJobSettings(zmotifCardPrinter);
+
+				// Send job
+				int jobId = zmotifCardPrinter.smartCardEncode(1);
+				
+				// Poll job status
+				JobStatusInfo jobStatusInfo = pollJobStatus(jobId, zmotifCardPrinter);
+				System.out.println(String.format(Locale.US, "Job %d completed with status '%s'", jobId, jobStatusInfo.printStatus));
+			} else {
+				System.out.println("No smart card encoder installed.");
+			}
+		} catch (Exception e) {
+			System.out.println("Error positioning card: " + e.getMessage());
+		} finally {
+			cleanUpQuietly(connection, zmotifCardPrinter);
+		}
+	}
+
+	private static void configureSmartCardJobSettings(ZebraPrinterZmotif zmotifCardPrinter) throws ConnectionException, SettingsException, ZebraCardException {
+		System.out.print("Available smart card encoding types: ");
+		Map&lt;String, String&gt; smartCardEncoders = zmotifCardPrinter.getSmartCardConfigurations();
+		System.out.println(StringUtils.join(smartCardEncoders.keySet(), ", "));
+
+		// Configure smart card encoding type
+		String encoderType = "";
+		if (smartCardEncoders.containsKey("mifare")) {
+			encoderType = "mifare";
+		} else if (smartCardEncoders.containsKey("hf")) {
+			encoderType = "hf";
+		} else if (smartCardEncoders.containsKey("other")) {
+			encoderType = "other";
+		} else if (smartCardEncoders.containsKey("contact") || smartCardEncoders.containsKey("contact_station")) {
+			encoderType = smartCardEncoders.containsKey("contact") ? "contact" : "contact_station";
+		}
+
+		if (encoderType != null && !encoderType.isEmpty()) {
+			System.out.println("Setting encoder type to: " + encoderType);
+			if (encoderType.contains("contact")) {
+				zmotifCardPrinter.setJobSetting(ZebraCardJobSettingNames.SMART_CARD_CONTACT, "yes");
+			} else {
+				zmotifCardPrinter.setJobSetting(ZebraCardJobSettingNames.SMART_CARD_CONTACTLESS, encoderType);
+			}
+		}
+	}
+
+	private static JobStatusInfo pollJobStatus(int jobId, ZebraCardPrinter zebraCardPrinter) throws ConnectionException, ZebraCardException, ZebraIllegalArgumentException {
+		Scanner scanner = null;
+		JobStatusInfo jobStatusInfo = new JobStatusInfo();
+
+		try {
+			long dropDeadTime = System.currentTimeMillis() + 60000;
+			long pollInterval = 500;
+			
+			do {
+				jobStatusInfo = zebraCardPrinter.getJobStatus(jobId);
+
+				String alarmDesc = jobStatusInfo.alarmInfo.value &gt; 0 ? String.format(Locale.US, " (%s)", jobStatusInfo.alarmInfo.description) : "";
+				String errorDesc = jobStatusInfo.errorInfo.value &gt; 0 ? String.format(Locale.US, " (%s)", jobStatusInfo.errorInfo.description) : "";
+
+				System.out.println(String.format("Job %d, Status:%s, Card Position:%s, Contact Status:%s, Contactless Status:%s, Alarm Code:%d%s, Error Code:%d%s", jobId, jobStatusInfo.printStatus, 
+						jobStatusInfo.cardPosition, jobStatusInfo.contactSmartCard, jobStatusInfo.contactlessSmartCard, jobStatusInfo.alarmInfo.value, alarmDesc, jobStatusInfo.errorInfo.value, errorDesc));
+
+				if (jobStatusInfo.printStatus.contains("done_ok")) {
+					break;
+				} else if (jobStatusInfo.contactSmartCard.contains("at_station") || jobStatusInfo.contactlessSmartCard.contains("at_station")) {
+					scanner = new Scanner(System.in);
+					waitForUserInput(scanner, zebraCardPrinter);
+				} else if (jobStatusInfo.printStatus.contains("alarm_handling")) {
+					System.out.println("Alarm Detected: " + jobStatusInfo.alarmInfo.description);
+				} else if (jobStatusInfo.printStatus.contains("error") || jobStatusInfo.printStatus.contains("cancelled")) {
+					break;
+				} else if (jobStatusInfo.errorInfo.value &gt; 0) {
+					System.out.println(String.format(Locale.US, "The job encountered an error [%s] and was cancelled.", jobStatusInfo.errorInfo.description));
+					zebraCardPrinter.cancel(jobId);
+				}
+
+				if (System.currentTimeMillis() &gt; dropDeadTime) {
+					break;
+				}
+
+				try {
+					Thread.sleep(pollInterval);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			} while (true);
+			
+			return jobStatusInfo;
+		} finally {
+			if (scanner != null) {
+				scanner.close();
+			}
+		}
+	}
+
+	private static void waitForUserInput(Scanner scanner, ZebraCardPrinter zebraCardPrinter) {
+		while (true) {
+			try {
+				System.out.print("Card staged for encoding. Press 'r' to resume or 'c' to cancel: ");
+				String input = scanner.next().toLowerCase();
+				if (input.equals("r")) {
+					System.out.println("Resuming smart card job");
+					zebraCardPrinter.resume();
+					break;
+				} else if (input.equals("c")) {
+					System.out.println("Cancelling smart card job");
+					if (zebraCardPrinter instanceof ZebraPrinterZmotif) {
+						ZebraCardPrinterFactory.createZmotifPrinter(zebraCardPrinter).abort(true);
+					} else {
+						zebraCardPrinter.cancel(0);
+					}
+					break;
+				} else {
+					scanner.nextLine();
+				}
+			} catch (Exception e) {
+			}
+		}
+	}
+
+	private static void cleanUpQuietly(Connection connection, ZebraCardPrinter genericPrinter) {
+		try {
+			if (genericPrinter != null) {
+				genericPrinter.destroy();
+				genericPrinter = null;
+			}
+		} catch (ZebraCardException e) {
+			e.printStackTrace();
+		}
+
+		if (connection != null) {
+			try {
+				connection.close();
+				connection = null;
+			} catch (ConnectionException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+}
+</pre>

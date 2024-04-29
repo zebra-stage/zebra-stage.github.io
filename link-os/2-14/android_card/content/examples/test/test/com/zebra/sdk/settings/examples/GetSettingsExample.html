@@ -1,0 +1,170 @@
+<pre>package test.com.zebra.sdk.settings.examples;
+
+import java.io.UnsupportedEncodingException;
+import java.util.List;
+import java.util.Map;
+
+import com.zebra.sdk.comm.*;
+import com.zebra.sdk.common.card.containers.*;
+import com.zebra.sdk.common.card.enumerations.*;
+import com.zebra.sdk.common.card.exceptions.ZebraCardException;
+import com.zebra.sdk.common.card.jobSettings.ZebraCardJobSettingNames;
+import com.zebra.sdk.common.card.printer.*;
+import com.zebra.sdk.common.card.printer.discovery.ZebraCardPrinterFilter;
+import com.zebra.sdk.device.ZebraIllegalArgumentException;
+import com.zebra.sdk.printer.discovery.*;
+import com.zebra.sdk.settings.SettingsException;
+
+public class GetSettingsExample {
+
+	public static void main(String[] args) {
+		DiscoveredUsbPrinter[] printers = null;
+		Connection connection = null;
+		ZebraCardPrinter zebraCardPrinter = null;
+
+		try {
+			printers = UsbDiscoverer.getZebraUsbPrinters(new ZebraCardPrinterFilter());
+			if (printers != null) {
+				for (DiscoveredUsbPrinter printer : printers) {
+					connection = printer.getConnection();
+
+					connection.open();
+					zebraCardPrinter = ZebraCardPrinterFactory.getInstance(connection);
+
+					OutputStatus(zebraCardPrinter);
+					cleanUp(connection, zebraCardPrinter);
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			cleanUp(connection, zebraCardPrinter);
+		}
+	}
+
+	private static void OutputStatus(ZebraCardPrinter genericPrinter) throws ZebraCardException, SettingsException, ZebraIllegalArgumentException, UnsupportedEncodingException, ConnectionException {
+		PrinterInfo printerInfo = genericPrinter.getPrinterInformation();
+		System.out.println("Printer Model            : " + printerInfo.model);
+		System.out.println("Printer Serial Number    : " + printerInfo.serialNumber);
+
+		List&lt;MediaInfo&gt; mediaInfo = genericPrinter.getMediaInformation();
+		for (MediaInfo info : mediaInfo) {
+			if (info.type.name().equalsIgnoreCase(MediaType.Ribbon.getValue())) {
+				System.out.println("ribbon                   : " + info.description);
+			}
+		}
+
+		if (genericPrinter.hasMagneticEncoder()) {
+			System.out.println("Magnetic Encoder present : Yes");
+			String encType = genericPrinter.getJobSettingValue(ZebraCardJobSettingNames.MAG_ENCODING_TYPE);
+			System.out.println("Magnetic Encoder Type    : " + encType);
+		} else {
+			System.out.println("Magnetic Encoder present : No");
+		}
+
+		SmartCardInfo smconf = genericPrinter.getSmartCardConfiguration();
+		if (!smconf.contactEncoder.equals(SmartCardEncoderType.None)) {
+			System.out.println("Contact Encoder present  : Yes");
+		} else {
+			System.out.println("Contact Encoder present  : No");
+		}
+
+		if (!smconf.contactlessEncoder.equals(SmartCardEncoderType.None)) {
+			System.out.println("Contactless Encoder present : " + smconf.contactlessEncoder);
+		} else {
+			System.out.println("Contactless Encoder present  : No");
+		}
+
+		if (!smconf.serialNumber.isEmpty()) {
+			System.out.println("Encoder Serial Number    : " + smconf.serialNumber);
+		}
+
+		if (genericPrinter.hasLaminator()) {
+			System.out.println("Laminator present        : Yes");
+		} else {
+			System.out.println("Laminator present        : No");
+		}
+
+		PrinterStatusInfo printerStatus = genericPrinter.getPrinterStatus();
+		System.out.println("Printer State            : " + printerStatus.status);
+		AlarmInfo alarmInfo = genericPrinter.checkForAlarm();
+		System.out.println("Alarm Code               : " + alarmInfo.value);
+		System.out.println("Alarm Description        : " + alarmInfo.description);
+		System.out.println("");
+
+		System.out.println("Device Settings:");
+		Map&lt;String, String&gt; settings = genericPrinter.getAllSettingValues();
+		for (String key : settings.keySet()) {
+			String sep = getSeparation(key);
+			System.out.println("Key: " + key + sep + "Value: " + settings.get(key));
+		}
+
+		System.out.println("");
+		System.out.println("Job Settings:");
+		settings = genericPrinter.getAllJobSettingValues();
+		for (String key : settings.keySet()) {
+			String sep = getSeparation(key);
+			System.out.println("Key: " + key + sep + "Value: " + settings.get(key));
+		}
+
+		System.out.println("");
+		System.out.println("Sensor States:");
+		settings = genericPrinter.getSensorStates();
+		for (String key : settings.keySet()) {
+			String sep = getSeparation(key);
+			System.out.println("Key: " + key + sep + "Value: " + settings.get(key));
+		}
+
+		System.out.println("");
+		System.out.println("Sensor Values:");
+		settings = genericPrinter.getSensorValues();
+		for (String key : settings.keySet()) {
+			String sep = getSeparation(key);
+			System.out.println("Key: " + key + sep + "Value: " + settings.get(key));
+		}
+
+		System.out.println("");
+		System.out.println("");
+	}
+
+	private static String getSeparation(String key) {
+		// Assumes 8 character tabs
+		String sep = "\t";
+		if (key.length() &lt;= 3)
+			sep += "\t";
+		if (key.length() &lt;= 10)
+			sep += "\t";
+		if (key.length() &lt;= 18)
+			sep += "\t";
+		if (key.length() &lt;= 26)
+			sep += "\t";
+		if (key.length() &lt;= 34)
+			sep += "\t";
+		if (key.length() &lt;= 42)
+			sep += "\t";
+		if (key.length() &lt;= 50)
+			sep += "\t";
+		return sep;
+	}
+
+	protected static void cleanUp(Connection connection, ZebraCardPrinter genericPrinter) {
+		try {
+			if (genericPrinter != null) {
+				genericPrinter.destroy();
+				genericPrinter = null;
+			}
+		} catch (ZebraCardException e) {
+			e.printStackTrace();
+		}
+
+		if (connection != null) {
+			try {
+				connection.close();
+				connection = null;
+			} catch (ConnectionException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+}
+</pre>

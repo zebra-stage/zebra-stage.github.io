@@ -1,0 +1,285 @@
+<pre>package test.com.zebra.sdk.printer.discovery.examples;
+
+import java.io.*;
+import java.util.*;
+
+import org.apache.commons.io.FileUtils;
+
+import com.zebra.sdk.comm.*;
+import com.zebra.sdk.common.card.containers.*;
+import com.zebra.sdk.common.card.enumerations.*;
+import com.zebra.sdk.common.card.errors.ZebraCardErrors;
+import com.zebra.sdk.common.card.exceptions.ZebraCardException;
+import com.zebra.sdk.common.card.graphics.*;
+import com.zebra.sdk.common.card.graphics.enumerations.RotationType;
+import com.zebra.sdk.common.card.printer.*;
+import com.zebra.sdk.device.ZebraIllegalArgumentException;
+import com.zebra.sdk.printer.discovery.*;
+import com.zebra.sdk.settings.SettingsException;
+
+import android.app.*;
+import android.content.*;
+import android.graphics.Color;
+import android.hardware.usb.*;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.*;
+
+public class UsbDiscoveryAndPrintExample extends Activity {
+
+	private static final String ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION";
+	private IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
+	
+	private PendingIntent mPermissionIntent;
+	private boolean hasPermissionToCommunicate = false;
+
+	private UsbManager mUsbManager;
+	private Button buttonRequestPermission;
+	private Button buttonPrint;
+	private DiscoveredPrinterUsb discoveredPrinterUsb;
+
+	private static final int CARD_FEED_TIMEOUT = 30000;
+
+	// Catches intent indicating if the user grants permission to use the USB device
+	private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
+		public void onReceive(Context context, Intent intent) {
+			String action = intent.getAction();
+			if (ACTION_USB_PERMISSION.equals(action)) {
+				synchronized (this) {
+					UsbDevice device = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+					if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+						if (device != null) {
+							hasPermissionToCommunicate = true;
+						}
+					}
+				}
+			}
+		}
+	};
+
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(android.R.layout.activity_list_item);
+
+		// Register broadcast receiver that catches USB permission intent
+		mUsbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
+		mPermissionIntent = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), 0);
+
+		buttonRequestPermission = (Button) findViewById(android.R.id.button1);
+		buttonPrint = (Button) findViewById(android.R.id.button2);
+
+		// Request Permission button click
+		buttonRequestPermission.setOnClickListener(new View.OnClickListener() {
+
+			public void onClick(View v) {
+				new Thread(new Runnable() {
+
+					public void run() {
+						// Find connected printers
+						UsbDiscoveryHandler handler = new UsbDiscoveryHandler();
+						UsbDiscoverer.findPrinters(getApplicationContext(), handler);
+
+						try {
+							while (!handler.discoveryComplete) {
+								Thread.sleep(100);
+							}
+
+							if (handler.printers != null && handler.printers.size() &gt; 0) {
+								discoveredPrinterUsb = handler.printers.get(0);
+								
+								if (!mUsbManager.hasPermission(discoveredPrinterUsb.device)) {
+									mUsbManager.requestPermission(discoveredPrinterUsb.device, mPermissionIntent);
+								} else {
+									hasPermissionToCommunicate = true;
+								}
+							}
+						} catch (Exception e) {
+							Toast.makeText(getApplicationContext(), e.getMessage() + e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+						}
+					}
+				}).start();
+			}
+		});
+
+		// Print button click
+		buttonPrint.setOnClickListener(new View.OnClickListener() {
+
+			public void onClick(View v) {
+				Connection connection = null;
+				ZebraCardPrinter printer = null;
+
+				try {
+					if (hasPermissionToCommunicate) {
+						try {
+							connection = discoveredPrinterUsb.getConnection();
+							connection.open();
+
+							printer = ZebraCardPrinterFactory.getInstance(connection);
+							if (printer != null) {
+								printCard(printer);
+							}
+						} catch (Exception e) {
+							Toast.makeText(getApplicationContext(), e.getMessage() + e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+						}
+					} else {
+						Toast.makeText(getApplicationContext(), "No permission to communicate", Toast.LENGTH_LONG).show();
+					}
+				} finally {
+					try {
+						if (printer != null) {
+							printer.destroy();
+							printer = null;
+						}
+					} catch (ZebraCardException e) {
+						e.printStackTrace();
+					}
+
+					if (connection != null) {
+						try {
+							connection.close();
+							connection = null;
+						} catch (ConnectionException e) {
+							e.printStackTrace();
+						}
+					}
+				}
+			}
+		});
+	}
+	
+    protected void onPause() {
+        unregisterReceiver(mUsbReceiver);
+        super.onPause();
+    }
+	
+	protected void onResume() {
+		super.onResume();
+        registerReceiver(mUsbReceiver, filter);
+	}
+
+	protected void printCard(ZebraCardPrinter printer) throws ZebraCardException, ConnectionException, IOException, SettingsException, ZebraIllegalArgumentException {
+		ZebraGraphics graphics = null;
+		try {
+			List&lt;GraphicsInfo&gt; graphicsData = new ArrayList&lt;GraphicsInfo&gt;();
+			graphics = new ZebraCardGraphics(printer);
+
+			generatePrintJobImage(graphics, graphicsData);
+
+			int jobId = printer.print(1, graphicsData);
+			pollJobStatus(printer, jobId);
+
+			JobStatusInfo jStatus = printer.getJobStatus(jobId);
+			Toast.makeText(getApplicationContext(), "Job completed: " + jStatus.printStatus, Toast.LENGTH_LONG).show();
+		} finally {
+			if (graphics != null) {
+				graphics.clear();
+				graphics.close();
+			}
+		}
+	}
+
+	private void generatePrintJobImage(ZebraGraphics graphics, List&lt;GraphicsInfo&gt; graphicsData) throws IOException {
+		GraphicsInfo grInfo = new GraphicsInfo();
+
+		graphics.initialize(0, 0, OrientationType.Landscape, PrintType.Color, Color.WHITE);
+
+		// Front Color
+		grInfo.side = CardSide.Front;
+		grInfo.printType = PrintType.Color;
+		grInfo.graphicType = GraphicType.BMP;
+
+		String filepath = "myImage.bmp"; // replace with path to your image
+		byte[] imageData = FileUtils.readFileToByteArray(new File(filepath));
+
+		graphics.drawImage(imageData, 0, 0, 0, 0, RotationType.RotateNoneFlipNone);
+		grInfo.graphicData = graphics.createImage();
+		graphics.clear();
+
+		graphicsData.add(grInfo);
+
+		// Front Full Overlay
+		grInfo = new GraphicsInfo();
+		grInfo.side = CardSide.Front;
+		grInfo.printType = PrintType.Overlay;
+		grInfo.graphicType = GraphicType.NA;
+		grInfo.graphicData = null;
+		graphicsData.add(grInfo);
+	}
+
+	private boolean pollJobStatus(ZebraCardPrinter printer, int actionID) throws ConnectionException, ZebraCardException, ZebraIllegalArgumentException {
+		boolean success = false;
+		long dropDeadTime = System.currentTimeMillis() + 40000;
+		long pollInterval = 500;
+
+		// Poll job status
+		JobStatusInfo jobStatus = null;
+
+		long start = System.currentTimeMillis();
+
+		do {
+			jobStatus = printer.getJobStatus(actionID);
+			System.out.println(String.format("Job %d, Status:%s, Card Position:%s, " + "ReadyForNextJob:%s, Mag Status:%s, Contact Status:%s, Contactless Status:%s, " + "Error Code:%d, Alarm Code:%d", actionID, jobStatus.printStatus, jobStatus.cardPosition,
+					jobStatus.readyForNextJob, jobStatus.magneticEncoding, jobStatus.contactSmartCard, jobStatus.contactlessSmartCard, jobStatus.errorInfo.value, jobStatus.alarmInfo.value));
+
+			if (jobStatus.contactSmartCard.contains("at_station") || jobStatus.contactlessSmartCard.contains("at_station")) {
+				success = true;
+				break;
+			} else if (jobStatus.printStatus.contains("done_ok")) {
+				success = true;
+				break;
+			} else if (jobStatus.printStatus.contains("error") || jobStatus.printStatus.contains("cancelled")) {
+				System.out.println("The job encountered an error [" + jobStatus.errorInfo.description + "] and was cancelled.");
+				success = false;
+				break;
+			} else if (jobStatus.errorInfo.value &gt; 0) {
+				System.out.println("The job encountered an error [" + jobStatus.errorInfo.description + "] and was cancelled.");
+				printer.cancel(actionID);
+				success = false;
+				break;
+			} else if ((jobStatus.printStatus.contains("in_progress") && jobStatus.cardPosition.contains("feeding")) // ZMotif printers
+					|| (jobStatus.printStatus.contains("alarm_handling") && jobStatus.alarmInfo.value == ZebraCardErrors.MEDIA_OUT_OF_CARDS)) { // ZXP printers
+				if (System.currentTimeMillis() &gt; start + CARD_FEED_TIMEOUT) {
+					Toast.makeText(getApplicationContext(), "The job timed out waiting for a card and was cancelled.", Toast.LENGTH_LONG).show();
+					printer.cancel(actionID);
+					success = false;
+					break;
+				}
+			}
+
+			if (System.currentTimeMillis() &gt; dropDeadTime) {
+				success = false;
+			}
+
+			try {
+				Thread.sleep(pollInterval);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		} while (true);
+
+		return success;
+	}
+
+	// Handles USB device discovery
+	private class UsbDiscoveryHandler implements DiscoveryHandler {
+		public List&lt;DiscoveredPrinterUsb&gt; printers;
+		public boolean discoveryComplete = false;
+
+		public UsbDiscoveryHandler() {
+			printers = new LinkedList&lt;DiscoveredPrinterUsb&gt;();
+		}
+
+		public void foundPrinter(final DiscoveredPrinter printer) {
+			printers.add((DiscoveredPrinterUsb) printer);
+		}
+
+		public void discoveryFinished() {
+			discoveryComplete = true;
+		}
+
+		public void discoveryError(String message) {
+			discoveryComplete = true;
+		}
+	}
+}
+</pre>
