@@ -413,6 +413,25 @@ return cursor;
 
 <p>Battery information can be retrieved only on peripherals connected to the mobile computer at the time of the query. Information is stored as a single JSON string that can be queried based on application requirements. API values match those of Android system properties.</p>
 
+<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>To retrieve information about a connected peripheral (e.g. battery status)</strong>:<br></p>
+
+<ul>
+<li><strong>Zebra <a href="/devicecentral/latest/guide/setup/">Device Central</a> must be installed and running</strong> on the mobile device.</li>
+
+<li><strong>The peripheral must be connected</strong> to—and enabled on—the device.</li>
+
+<li><strong>To query battery information of RS-series scanners</strong>: 
+
+
+<ul>
+<li><strong>Devices running Android 13</strong> must have the Jul. 2023 LifeGuard update (or later)  </li>
+
+<li><strong>Devices running Android 11</strong> must have the Oct. 2023 LifeGuard update (or later)</li></ul>
+</li>
+</ul>
+
+<p><i class="fa fa-check-circle" style="color:#27AE60;"></i> <strong>Where to <a href="https://www.zebra.com/us/en/support-downloads/lifeguard-security.html">get LifeGuard updates</a></strong></p>
+
 <h4 id="uri" class="anchor"><a class="heading-anchor" href="#uri"><span></span></a>URI:</h4>
 
 <ul>
@@ -507,7 +526,15 @@ protected Cursor doInBackground(String... args) {
 <li>HS3100</li>
 </ul>
 
-<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>To retrieve peripheral information (e.g. battery information), the peripheral must be connected to and/or enabled on the device</strong>.</p>
+<blockquote>
+  <p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>To retrieve peripheral battery information</strong>:<br></p>
+  
+  <ul>
+  <li><strong>Zebra <a href="/devicecentral/latest/guide/setup/">Device Central</a> must be installed and running</strong> on the mobile device <br></li>
+  
+  <li><strong>The peripheral must be connected to and enabled</strong> on the device<br></li>
+  </ul>
+</blockquote>
 
 <hr>
 
@@ -622,6 +649,8 @@ protected Cursor doInBackground(String... args) {
 
 <ul>
 <li><code>content://oem_info/wan/</code></li>
+
+<li><code>content://com.zebra.phone.provider/phone_info</code></li>
 </ul>
 
 <h4 id="apis-2" class="anchor"><a class="heading-anchor" href="#apis-2"><span></span></a>APIs:</h4>
@@ -629,12 +658,80 @@ protected Cursor doInBackground(String... args) {
 <ul>
 <li><code>telephony_sim_operator</code></li>
 
-<li><code>imei</code>* - <strong>International Mobile Equipment Identity</strong> unique to each mobile phone                         </li>
+<li><code>imei</code> - <strong>International Mobile Equipment Identity (IMEI)</strong> unique to each mobile phone SIM slot</li>
 
-<li><code>eid</code> - Embedded Identity Document unique to each eSIM </li>
+<li><code>eid</code> - <strong>Embedded Identity Document (EID)</strong> unique to each eSIM</li>
+
+<li><code>Imei0</code> - IMEI information for the first SIM slot</li>
+
+<li><code>Imei1</code> - IMEI information for the second SIM slot (if device is so equipped)</li>
+
+<li><code>Eid0</code> - EID for the eSIM installed in the first SIM slot</li>
+
+<li><code>Eid1</code> - EID for the eSIM installed in the second SIM slot (if device is so equipped)</li>
+
+<li><code>AllESIMProfilesInfo0</code> – This gives the eSIM profiles information of all the eSIM profiles for the first slot. This is JSON formatted string. Explanation is given in the note section below.</li>
+
+<li><code>AllESIMProfilesInfo1</code> - This gives the eSIM profiles information of all the eSIM profiles for the second slot. This is JSON formatted string. Explanation is given in the note section below.</li>
+
+<li><code>CarrierName0</code> – Carrier name for the SIM in the first SIM slot</li>
+
+<li><code>CarrierName1</code> - Carrier name for the SIM in the second SIM slot</li>
+
+<li><code>Iccid0</code> - Integrated Circuit Card Identification (ICCID) information (a unique identifier for SIM and other circuit cards) for the SIM card in the first SIM slot</li>
+
+<li><code>Iccid1</code>- ICCID information for the SIM card in the second SIM slot (if device is so equipped)</li>
+
+<li><code>Imsi0</code> - International Mobile Subscriber Identity (IMSI) (a unique number that identifies each user of a cellular network) for the SIM card in the first SIM slot</li>
+
+<li><code>Imsi1</code> - IMSI information for the SIM card in the second SIM slot (if device is so equipped)</li>
+
+<li><code>SimState0</code> – State of the SIM card in the first slot. <br>Possible values: 
+
+
+<ul>
+<li>“Present”</li>
+
+<li>“Absent”</li>
+
+<li>“Unknown”</li>
+
+<li>“Card Restricted”</li>
+
+<li>“Card I/O Error”</li></ul>
+</li>
+
+<li><code>SimState1</code> – State of the SIM card in the second slot (if device is so equipped). <br>Possible values: 
+
+
+<ul>
+<li>“Present”</li>
+
+<li>“Absent”</li>
+
+<li>“Unknown”</li>
+
+<li>“Card Restricted”</li>
+
+<li>“Card I/O Error”</li></ul>
+</li>
+
+<li><code>PreferredAPN</code> - The access point name (APN) currently set by the device user or the network provider for the current data connection. Value is a Json string including APN, MCC, MNC, NAME, TYPE, MVNO_TYPE and MVNO_MATCH_DATA.</li>
 </ul>
 
-<p>* <i><font size="2" color="DimGrey"> OEMInfo exposes IMEI only for SIM #1 </font></i> </p>
+<!-- &#42; <i><font size="2" color="DimGrey"> OEMInfo exposes IMEI only for SIM #1 </font></i>  -->
+
+<!-- 
+NOTE:-
+
+Below section explains about eSIM profiles information.
+
+{"eSIMProfileInfo":[\{"eSIMProfileName":"<CarrierNameForTheProfile>","eSIMProfileStatus":"<Enabled/Disabled>","eSIMIccid":"<ICCID NoForTheProfiles>","eSIMIMSI":"<IMSIForTheProfile"}
+]}
+
+
+
+The JSON object element “[\{"eSIMProfileName":"<CarrierName>","eSIMProfileStatus":"<Enabled/Disabled?","eSIMIccid":"<ICCID NoForFirstProfiles>","eSIMIMSI":"<IMSIForFirstProfile"}]” is repeated based on the number of eSIM profiles available on the respective eSIM chip. For example, if there are 5 eSIM profiles, then there will be 5 such JSON object elements for each profiles. eSIMIccid and eSIMIMSI are not guaranteed to be available for all the profiles. Some profiles can have empty string. -->
 
 <hr>
 
@@ -959,7 +1056,7 @@ String OSU_TS = “ts”;
             <div class="container-fluid">
                 <div class="row">
                     <div class="col-sm-10">
-                        ZEBRA and the stylized Zebra head are trademarks of Zebra Technologies Corp., registered in many jurisdictions worldwide. All other trademarks are the property of their respective owners. ©2023 Zebra Technologies Corp. and/or its affiliates.<br> <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal.html">Legal</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/compliance/information-privacy/terms-of-use.html">Terms of Use</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal/privacy-statement.html">Privacy Policy</a> 
+                        ZEBRA and the stylized Zebra head are trademarks of Zebra Technologies Corp., registered in many jurisdictions worldwide. All other trademarks are the property of their respective owners. ©2024 Zebra Technologies Corp. and/or its affiliates.<br> <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal.html">Legal</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/compliance/information-privacy/terms-of-use.html">Terms of Use</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal/privacy-statement.html">Privacy Policy</a> 
                     </div>
                      <!--
                      <div class="col-sm-2">
