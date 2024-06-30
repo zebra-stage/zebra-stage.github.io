@@ -242,6 +242,9 @@ private void initializeDcsSdk() {
 
     // Subscribe to events set in notification mask.
     sdkHandler.dcssdkSubsribeForEvents(notifications_mask);
+
+    //Subscribe to events set on Scanner Relaunch.
+    sdkHandler.setiDcsScannerEventsOnReLaunch(this);
 }    
 </code>
 </pre>
@@ -2193,7 +2196,7 @@ vtAsyncTask.execute(in_xml);
 
 <pre class="prettyprint">
 <code>
-private class VirtualTetherAsyncTask extends AsyncTask<String, Integer, Boolean> {
+private class VirtualTetherAsyncTask extends AsyncTask&lt;String, Integer, Boolean> {
     int scannerId;
     DCSSDKDefs.DCSSDK_COMMAND_OPCODE opcode;
 
@@ -2249,6 +2252,699 @@ String in_XML_Simulation =
 
 VirtualTetherAsyncTask vtAsyncTask = new VirtualTetherAsyncTask(scannerID, DCSSDKDefs.DCSSDK_COMMAND_OPCODE.DCSSDK_SET_ACTION);
 vtAsyncTask.execute(in_xml_for_simulation);
+</code>
+</pre>
+
+                                                    <hr>
+
+                                                    <h3 id="weight-scale" class="anchor"><a class="heading-anchor" href="#weight-scale"><span></span></a>Weight Scale</h3>
+
+                                                    <p><strong>IDcsSdkApiDelegate</strong> interface needs to be implemented in the activity as given in the code snippet.</p>
+
+<pre class="prettyprint">
+<code>
+public class MainActivity extends AppCompatActivity implements IDcsSdkApiDelegate {
+}
+</code>
+</pre>
+
+                                                    <p>The following variables need to be initialized in the activity as shown below.</p>
+
+<pre class="prettyprint">
+<code>
+public static SDKHandler sdkHandler;
+int currentConnectedScannerID;
+static AvailableScanner curAvailableScanner = null;
+static ConnectAsyncTask cmdExecTask = null;
+public static CustomProgressDialog progressDialog;
+private static ArrayList&lt;DCSScannerInfo> mSNAPIList = new ArrayList&lt;DCSScannerInfo>();//use in connect scanner
+private static ArrayList&lt;DCSScannerInfo> mScannerInfoList; >();//use in connect scanner
+private boolean liveWeightEnable;
+public boolean isScaleAvailable = false;
+
+private int STATUS_SCALE_NOT_ENABLED = 0;
+private int STATUS_SCALE_NOT_READY = 1;
+private int STATUS_STABLE_WEIGHT_OVER_LIMIT = 2;
+private int STATUS_STABLE_WEIGHT_UNDER_ZERO = 3;
+private int STATUS_NON_STABLE_WEIGHT = 4;
+private int STATUS_STABLE_ZERO_WEIGHT = 5;
+private int STATUS_STABLE_NON_ZERO_WEIGHT = 6;
+
+// Xml tags.
+public static final String XMLTAG_SCANNER_ID = "&lt;scannerID>";
+public static final String XMLTAG_ARGXML = "&lt;inArgs>";
+// Error Messages.
+public static final String INVALID_SCANNER_ID_MSG = "Invalid Scanner ID";
+// Weight status.
+public static final String WEIGHT_XML_ELEMENT = "weight";
+public static final String WEIGHT_MODE_XML_ELEMENT = "weight_mode";
+public static final String WEIGHT_STATUS_XML_ELEMENT = "status";
+public static final String SCALE_STATUS_SCALE_NOT_ENABLED = "Scale Not Enabled";
+public static final String SCALE_STATUS_SCALE_NOT_READY = "Scale Not Ready";
+public static final String SCALE_STATUS_STABLE_WEIGHT_OVER_LIMIT = "Stable Weight OverLimit";
+public static final String SCALE_STATUS_STABLE_WEIGHT_UNDER_ZERO = "Stable Weight Under Zero";
+public static final String SCALE_STATUS_NON_STABLE_WEIGHT = "Non Stable Weight";
+public static final String SCALE_STATUS_STABLE_ZERO_WEIGHT = "Stable Zero Weight";
+public static final String SCALE_STATUS_STABLE_NON_ZERO_WEIGHT = "Stable NonZero Weight";
+</code>
+</pre>
+
+                                                    <p>Initializing the SDK and connecting the Scanner should be done as described in the section 'Wired Connection/SNAPI Mode'.</p>
+
+                                                    <p>Override interface methods.</p>
+
+<pre class="prettyprint">
+<code>
+/**
+* "Device Arrival" notification informs about appearance of a particular available scanner.
+* @param dcsScannerInfo Object representing an appeared available scanner.
+*/
+@Override
+public void dcssdkEventScannerAppeared(DCSScannerInfo dcsScannerInfo) {
+}
+
+/**
+* "Device Disappeared" notification informs about disappearance of a particular available scanner.
+* @param scannerID Unique identifier of a disappeared available scanner assigned by SDK.
+*/
+@Override
+public void dcssdkEventScannerDisappeared(int scannerID) {
+}
+
+/**
+* "Session Established" notification informs about appearance of a particular active scanner.
+* @param dcsScannerInfo Object representing an appeared active scanner.
+*/
+@Override
+public void dcssdkEventCommunicationSessionEstablished(DCSScannerInfo dcsScannerInfo) {
+}
+
+/**
+* "Session Terminated" notification informs about disappearance of a particular active scanner
+* @param scannerID Unique identifier of a disappeared active scanner assigned by SDK.
+*/
+@Override
+public void dcssdkEventCommunicationSessionTerminated(int scannerID) {
+}
+
+/**
+* "Barcode Event" notification informs about reception of a particular barcode of a particular type from a particular active scanner.
+* @param barcodeData Object representing ASCII data of scanned barcode.
+* @param barcodeType Barcode type of the scanned barcode.
+* @param fromScannerID Unique identifier of a particular active scanner assigned by SDK.
+*/
+@Override
+public void dcssdkEventBarcode(byte[] barcodeData, int barcodeType, int fromScannerID) {
+}
+
+/**
+* "Image Event" notification is triggered when an active imaging scanner captures images in image mode.
+* @param imageData Object representing raw data of the received image.
+* @param fromScannerID Unique identifier of a particular active scanner assigned by SDK.
+*/
+@Override
+public void dcssdkEventImage(byte[] imageData, int fromScannerID) {
+}
+
+/**
+* "Video Event" notification is triggered when an active imaging scanner captures video in video mode
+* @param videoFrame Object representing raw data of the received video frame.
+* @param fromScannerID Unique identifier of a particular active scanner assigned by SDK.
+*/
+@Override
+public void dcssdkEventVideo(byte[] videoFrame, int fromScannerID) {
+}
+
+/**
+* "Binary Data Event" notification is triggered when an active imaging scanner captures Intelligent Document Capture(IDC) data in IDC Operating Mode.
+* @param binaryData Object representing raw data of the received Intelligent Document Capture(IDC) data.
+* @param fromScannerID Unique identifier of a particular active scanner assigned by SDK.
+*/
+@Override
+public void dcssdkEventBinaryData(byte[] binaryData, int fromScannerID) {
+}
+
+/**
+* "Firmware Update Event" notification informs about status in firmware update process
+* @param firmwareUpdateEvent
+*/
+@Override
+public void dcssdkEventFirmwareUpdate(FirmwareUpdateEvent firmwareUpdateEvent) {
+}
+
+/**
+* Notification to inform that new Aux scanner has been appeared
+* @param newTopology   Device tree that change has occurred
+* @param auxScanner    New Aux scanner
+*/
+@Override
+public void dcssdkEventAuxScannerAppeared(DCSScannerInfo newTopology, DCSScannerInfo auxScanner) {
+}
+
+/**
+* "Configuration Push Event" notification informs about status in configuration update process
+* @param configurationUpdateEvent
+*/
+@Override
+public void dcssdkEventConfigurationUpdate(ConfigurationUpdateEvent configurationUpdateEvent) {
+}
+</code>
+</pre>
+
+                                                    <p>The implementation of model class AvailableScanner is achieved as given below.</p>
+
+<pre class="prettyprint">
+<code>
+/**
+* Class to encapsulate scanner data and connected info
+*/
+public class AvailableScanner implements Comparable&lt;AvailableScanner> {
+
+    private int scannerId;
+    private String scannerName;
+    private String scannerAddress;
+    private boolean isConnected;
+
+    public boolean isConnectable() {
+        return isConnectable;
+    }
+
+    public void setIsConnectable(boolean isConnectable) {
+        this.isConnectable = isConnectable;
+    }
+
+    private  boolean isConnectable;
+
+    private DCSSDKDefs.DCSSDK_CONN_TYPES connectionType;
+    public AvailableScanner(DCSScannerInfo activeScanner) {
+        this(activeScanner.getScannerID(),activeScanner.getScannerName(),activeScanner.getScannerHWSerialNumber(),activeScanner.isActive(),activeScanner.isAutoCommunicationSessionReestablishment(),activeScanner.getConnectionType());
+    }
+
+    public boolean isAutoReconnection() {
+        return isAutoReconnection;
+    }
+
+    public void setIsAutoReconnection(boolean isAutoReconnection) {
+        this.isAutoReconnection = isAutoReconnection;
+    }
+
+    public DCSSDKDefs.DCSSDK_CONN_TYPES getConnectionType() {
+        return connectionType;
+    }
+
+    public void setConnectionType(DCSSDKDefs.DCSSDK_CONN_TYPES connectionType) {
+        this.connectionType = connectionType;
+    }
+
+    private boolean isAutoReconnection;
+
+    public AvailableScanner(int scannerId, String scannerName, String scannerAddress, boolean isConnected, boolean isAutoReconnection, DCSSDKDefs.DCSSDK_CONN_TYPES connectionType){
+        this.scannerId=scannerId;
+        this.scannerName = scannerName;
+        this.scannerAddress = scannerAddress;
+        this.isConnected = isConnected;
+        this.isAutoReconnection = isAutoReconnection;
+        this.connectionType = connectionType;
+        this.isConnectable = false;
+    }
+    public int getScannerId() {
+        return scannerId;
+    }
+
+    public void setScannerId(int scannerId) {
+        this.scannerId = scannerId;
+    }
+
+    public String getScannerName() {
+        return scannerName;
+    }
+
+    public void setScannerName(String scannerName) {
+        this.scannerName = scannerName;
+    }
+
+    public String getScannerAddress() {
+        return scannerAddress;
+    }
+
+    public void setScannerAddress(String scannerAddress) {
+        this.scannerAddress = scannerAddress;
+    }
+
+    public boolean isConnected() {
+        return isConnected;
+    }
+
+    public void setConnected(boolean isConnected) {
+        this.isConnected = isConnected;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+
+        final AvailableScanner other = (AvailableScanner) obj;
+        return !((this.scannerName == null) ? (other.scannerName != null) : !this.scannerName.equals(other.scannerName));
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 3;
+        hash = 53 * hash + (this.scannerName != null ? this.scannerName.hashCode() : 0) + (this.scannerName != null ? this.scannerName.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public int compareTo(@NonNull AvailableScanner availableScanner) {
+        return this.toString().compareTo(availableScanner.toString());
+    }
+
+    @Override
+    public String toString() {
+        return scannerName + "\n" + scannerAddress;
+    }
+}
+</code>
+</pre>
+
+                                                    <p>Updating the method <strong>dcssdkEventCommunicationSessionEstablished</strong> and implementing class <strong>AsyncTaskScaleAvailable</strong> need to be done to check the scale availability in the connected scanner.</p>                       
+
+<pre class="prettyprint">
+<code>
+/**
+* "Session Established" notification informs about appearance of a particular active scanner.
+* @param dcsScannerInfo Object representing an appeared active scanner.
+*/
+@Override
+public void dcssdkEventCommunicationSessionEstablished(DCSScannerInfo dcsScannerInfo) {
+    // Keep scanner id on connection.
+    currentConnectedScannerID = dcsScannerInfo.getScannerID();
+
+    // Check weight scale availability on scanner.
+    String in_xml = "&lt;inArgs>&lt;scannerID>" + currentConnectedScannerID + "&lt;/scannerID>&lt;/inArgs>";
+    new AsyncTaskScaleAvailable(currentConnectedScannerID, DCSSDKDefs.DCSSDK_COMMAND_OPCODE.DCSSDK_READ_WEIGHT, MainActivity.this).execute(in_xml);
+}   
+</code>
+</pre>
+
+<pre class="prettyprint">
+<code>
+* scale availability check
+*/
+private class AsyncTaskScaleAvailable extends AsyncTask&lt;String, Integer, Boolean> {
+    int scannerId;
+    Context context;
+    private CustomProgressDialog progressDialog;
+    DCSSDKDefs.DCSSDK_COMMAND_OPCODE opcode;
+
+    public AsyncTaskScaleAvailable(int scannerId, DCSSDKDefs.DCSSDK_COMMAND_OPCODE opcode, Context context) {
+        this.scannerId = scannerId;
+        this.opcode = opcode;
+        this.context = context;
+    }
+
+    @Override
+    protected void onPreExecute() {
+        super.onPreExecute();
+    }
+
+    @Override
+    protected Boolean doInBackground(String... strings) {
+        StringBuilder sb = new StringBuilder();
+        boolean result = executeCommand(opcode, strings[0], sb, scannerId);
+        if (opcode == DCSSDKDefs.DCSSDK_COMMAND_OPCODE.DCSSDK_READ_WEIGHT) {
+            if (result) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    protected void onPostExecute(Boolean scaleAvailability) {
+        super.onPostExecute(scaleAvailability);
+        if (progressDialog != null && progressDialog.isShowing()) {
+            progressDialog.dismiss();
+        }
+
+        isScaleAvailable = scaleAvailability;
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                // change ui on connection
+            }
+        });
+    }
+}                     
+</code>
+</pre>
+
+                                                <p>The implementation of <strong>CustomProgressDialog</strong> is carried out as follows to display the progress until the async tasks are run.</p>
+
+<pre class="prettyprint">
+<code>
+/**
+* Custom Dialog to be shown when sending commands to the RFID Reader
+*/
+public class CustomProgressDialog extends ProgressDialog {
+    private static final String MESSAGE = "Saving Settings....";
+
+    /**
+    * Constructor to handle the initialization
+    *
+    * @param context - Context to be used
+    */
+    public CustomProgressDialog(Context context, String message) {
+        super(context, ProgressDialog.STYLE_SPINNER);
+        setTitle(null);
+        if (message != null) {
+            setMessage(message);
+        }
+        else {
+            setMessage(MESSAGE);
+        }
+        setCancelable(true);
+    }
+}                                                       
+</code>
+</pre>
+
+                                                <p>The <strong>executeCommand</strong> method is implemented as follows.</p>
+                                                        
+<pre class="prettyprint">
+<code>
+public boolean executeCommand(DCSSDKDefs.DCSSDK_COMMAND_OPCODE opCode, String inXML, StringBuilder outXML, int scannerID) {
+    if (sdkHandler != null) {
+        if (outXML == null) {
+            outXML = new StringBuilder();
+        }
+        DCSSDKDefs.DCSSDK_RESULT result = sdkHandler.dcssdkExecuteCommandOpCodeInXMLForScanner(opCode, inXML, outXML, scannerID);
+        if (result == DCSSDKDefs.DCSSDK_RESULT.DCSSDK_RESULT_SUCCESS) {
+            return true;
+        }
+        else if (result == DCSSDKDefs.DCSSDK_RESULT.DCSSDK_RESULT_FAILURE) {
+            return false;
+        }
+    }
+    return false;
+}                                                        
+</code>
+</pre>
+
+                                                <h4 id="weight-scale-enable-disable" class="anchor"><a class="heading-anchor" href="#weight-scale-enable-disable"><span></span></a>Weight Scale Enable and Disable</h4>
+
+                                                <p>The enabling/disabling of scale weight measurement is done using the following methods.</p>
+                                                        
+<pre class="prettyprint">
+<code>
+public void enableScale() {
+    StringBuilder stringBuilder = new StringBuilder();
+    if (currentConnectedScannerID > 0) {
+        String in_xml = "&lt;inArgs>"+"&lt;scannerID>"  + currentConnectedScannerID + "&lt;/scannerID>"+ "&lt;/inArgs>";
+        sdkHandler.dcssdkExecuteCommandOpCodeInXMLForScanner(DCSSDK_ENABLE_SCALE, in_xml, stringBuilder, currentConnectedScannerID);
+    }
+}
+public void disableScale() {
+    StringBuilder stringBuilder = new StringBuilder();
+    if (currentConnectedScannerID > 0) {
+        String in_xml = "&lt;inArgs>"+"&lt;scannerID>"  + currentConnectedScannerID + "&lt;/scannerID>"+ "&lt;/inArgs>";
+        sdkHandler.dcssdkExecuteCommandOpCodeInXMLForScanner(DCSSDK_DISABLE_SCALE, in_xml, stringBuilder, currentConnectedScannerID);
+    }
+}
+</code>
+</pre>
+
+                                                <h4 id="weight-scale-zero" class="anchor"><a class="heading-anchor" href="#weight-scale-zero"><span></span></a>Set Scale to Zero</h4>
+
+                                                <p>It is allowing User to set Scale to Zero.</p>
+                                                        
+<pre class="prettyprint">
+<code>
+public void zeroScale(View view) {
+    StringBuilder stringBuilder = new StringBuilder();
+    if (currentConnectedScannerID > 0) {
+        String in_xml = "&lt;inArgs>"+"&lt;scannerID>"  + currentConnectedScannerID + "&lt;/scannerID>"+ "&lt;/inArgs>";
+        sdkHandler.dcssdkExecuteCommandOpCodeInXMLForScanner(DCSSDK_ZERO_SCALE, in_xml, stringBuilder, currentConnectedScannerID);
+    }
+}
+</code>
+</pre>
+
+                                                <h4 id="weight-scale-reset" class="anchor"><a class="heading-anchor" href="#weight-scale-reset"><span></span></a>Reset Scale</h4>
+
+                                                <p>Resetting of the scale can be achieved with the 'Reset Scale' feature.</p>
+                                                        
+<pre class="prettyprint">
+<code>
+public void resetScale(View view) {
+    StringBuilder stringBuilder = new StringBuilder();
+    if (currentConnectedScannerID > 0) {
+        String in_xml = "&lt;inArgs>"+"&lt;scannerID>"  + currentConnectedScannerID + "&lt;/scannerID>"+ "&lt;/inArgs>";
+        sdkHandler.dcssdkExecuteCommandOpCodeInXMLForScanner(DCSSDK_RESET_SCALE, in_xml, stringBuilder, currentConnectedScannerID);
+    }
+}
+</code>
+</pre>
+
+                                                <h4 id="weight-scale-read" class="anchor"><a class="heading-anchor" href="#weight-scale-read"><span></span></a>Read Weight</h4>
+
+                                                <p>The weight reading capability is offered with this feature.</p>
+                                                        
+<pre class="prettyprint">
+<code>
+public void readWeight(View view) {
+    if (currentConnectedScannerID > 0) {
+        String in_xml = "&lt;inArgs>"+"&lt;scannerID>"  + currentConnectedScannerID + "&lt;/scannerID>"+ "&lt;/inArgs>"
+        new ExecuteRSMAsyncReadWeight(currentConnectedScannerID, DCSSDKDefs.DCSSDK_COMMAND_OPCODE.DCSSDK_READ_WEIGHT).execute(new String[]{in_xml});
+    } else {
+        Toast.makeText(this, "Invalid Scanner ID", Toast.LENGTH_SHORT).show();
+    }
+}
+
+private class ExecuteRSMAsyncReadWeight extends AsyncTask&lt;String, Integer, Boolean> {
+    private int scannerId = 0;
+    private CustomProgressDialog progressDialog;
+    DCSSDKDefs.DCSSDK_COMMAND_OPCODE opcode;
+
+    public ExecuteRSMAsyncReadWeight(int scannerId, DCSSDKDefs.DCSSDK_COMMAND_OPCODE opcode) {
+        this.scannerId = scannerId;
+        this.opcode = opcode;
+    }
+
+    @Override
+    protected void onPreExecute() {
+        super.onPreExecute();
+        progressDialog = new CustomProgressDialog(MainActivity.this, "Execute Command...");
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+    }
+
+    @Override
+    protected Boolean doInBackground(String... strings) {
+        StringBuilder sbOutXml = new StringBuilder();
+        boolean result = executeCommand(opcode, strings[0], sbOutXml, scannerId);
+        if (opcode == DCSSDKDefs.DCSSDK_COMMAND_OPCODE.DCSSDK_READ_WEIGHT && result) {
+            try {
+                XmlPullParser parserForOutXml = Xml.newPullParser();
+                parserForOutXml.setInput(new StringReader(sbOutXml.toString()));
+                int event = parserForOutXml.getEventType();
+                String outXmlAttribute = null;
+
+                while (event != XmlPullParser.END_DOCUMENT) {
+                    String outXmlElement = parserForOutXml.getName();
+                    switch (event) {
+                        case XmlPullParser.START_TAG:
+                            break;
+                        case XmlPullParser.TEXT:
+                            outXmlAttribute = parserForOutXml.getText();
+                            break;
+                        case XmlPullParser.END_TAG:
+                            if (outXmlAttribute != null) {
+                                if (outXmlElement.equals(WEIGHT_XML_ELEMENT)) {
+                                    final String weight = outXmlAttribute.trim();
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            // display weight
+                                        }
+                                    });
+                                } else if (outXmlElement.equals(WEIGHT_MODE_XML_ELEMENT)) {
+                                    final String weightMode = outXmlAttribute.trim();
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            // display weightMode
+                                        }
+                                    });
+                                } else if (outXmlElement.equals(WEIGHT_STATUS_XML_ELEMENT)) {
+                                    int status = Integer.parseInt(outXmlAttribute.trim());
+                                    String scaleStatus = null;
+                                    if (status == STATUS_SCALE_NOT_ENABLED) { // status = 0
+                                        scaleStatus = SCALE_STATUS_SCALE_NOT_ENABLED;
+                                    } else if (status == STATUS_SCALE_NOT_READY) { // status = 1
+                                        scaleStatus = SCALE_STATUS_SCALE_NOT_READY ;
+                                    } else if (status == STATUS_STABLE_WEIGHT_OVER_LIMIT) { // status = 2
+                                        scaleStatus = SCALE_STATUS_STABLE_WEIGHT_OVER_LIMIT ;
+                                    } else if (status == STATUS_STABLE_WEIGHT_UNDER_ZERO) { // status = 3
+                                        scaleStatus = SCALE_STATUS_STABLE_WEIGHT_UNDER_ZERO;
+                                    } else if (status == STATUS_NON_STABLE_WEIGHT) { // status = 4
+                                        scaleStatus = SCALE_STATUS_NON_STABLE_WEIGHT;
+                                    } else if (status == STATUS_STABLE_ZERO_WEIGHT) { // status = 5
+                                        scaleStatus = SCALE_STATUS_STABLE_ZERO_WEIGHT;
+                                    } else if (status == STATUS_STABLE_NON_ZERO_WEIGHT) { // status = 6
+                                        scaleStatus = SCALE_STATUS_STABLE_NON_ZERO_WEIGHT;
+                                    }
+
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            // display scaleStatus
+                                        }
+                                    });
+                                }
+                            }
+                            break;
+                    }
+                    event = parserForOutXml.next();
+                }
+            } catch (Exception e) {
+
+            }
+        }
+        return result;
+    }
+
+    @Override
+    protected void onPostExecute(Boolean b) {
+        super.onPostExecute(b);
+        if (progressDialog != null && progressDialog.isShowing())
+            progressDialog.dismiss();
+    }
+}
+</code>
+</pre>
+
+                                                <h4 id="weight-scale-live" class="anchor"><a class="heading-anchor" href="#weight-scale-live"><span></span></a>Live Weight</h4>
+
+                                                <p>The feature allows the user to retrieve 'live weight' of the scale.</p>
+
+<pre class="prettyprint">
+<code>
+public void liveWeight() {
+    if (currentConnectedScannerID > 0) {
+        String in_xml = "&lt;inArgs>"+"&lt;scannerID>" + currentConnectedScannerID + "&lt;/scannerID>"+ "&lt;/inArgs>";
+        new ExecuteRSMAsyncLiveWeight(currentConnectedScannerID, DCSSDKDefs.DCSSDK_COMMAND_OPCODE.DCSSDK_READ_WEIGHT).execute(new String[]{in_xml});
+    } else {
+        Toast.makeText(this, INVALID_SCANNER_ID_MSG, Toast.LENGTH_SHORT).show();
+    }
+}
+
+private class ExecuteRSMAsyncLiveWeight extends AsyncTask&lt;String, Integer, Boolean> {
+    private int scannerId = 0;
+    DCSSDKDefs.DCSSDK_COMMAND_OPCODE opcode;
+
+    public ExecuteRSMAsyncLiveWeight(int scannerId, DCSSDKDefs.DCSSDK_COMMAND_OPCODE opcode) {
+        this.scannerId = scannerId;
+        this.opcode = opcode;
+    }
+
+    @Override
+    protected void onPreExecute() {
+        super.onPreExecute();
+    }
+
+    @Override
+    protected Boolean doInBackground(String... strings) {
+        boolean result;
+        do {
+            StringBuilder sbOutXml = new StringBuilder();
+            result = executeCommand(opcode, strings[0], sbOutXml, scannerId);
+            if (opcode == DCSSDKDefs.DCSSDK_COMMAND_OPCODE.DCSSDK_READ_WEIGHT && result) {
+                try {
+                    XmlPullParser parserForOutXml = Xml.newPullParser();
+                    parserForOutXml.setInput(new StringReader(sbOutXml.toString()));
+                    int event = parserForOutXml.getEventType();
+                    String outXmlAttribute = null;
+                    while (event != XmlPullParser.END_DOCUMENT) {
+                        String outXmlElement = parserForOutXml.getName();
+                        switch (event) {
+                            case XmlPullParser.START_TAG:
+                                break;
+                            case XmlPullParser.TEXT:
+                                outXmlAttribute = parserForOutXml.getText();
+                                break;
+                            case XmlPullParser.END_TAG:
+                                if (outXmlAttribute != null) {
+
+                                    if (outXmlElement.equals(WEIGHT_XML_ELEMENT)) {
+                                        final String weight = outXmlAttribute.trim();
+                                        runOnUiThread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                // display weight
+                                            }
+                                        });
+                                    } else if (outXmlElement.equals(WEIGHT_MODE_XML_ELEMENT)) {
+                                        final String weightMode = outXmlAttribute.trim();
+                                        runOnUiThread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                // display weightMode
+                                            }
+                                        });
+                                    } else if (outXmlElement.equals("status")) {
+                                        int status = Integer.parseInt(outXmlAttribute.trim());
+                                        String scaleStatus = null;
+                                        if (status == STATUS_SCALE_NOT_ENABLED) {
+                                            scaleStatus = SCALE_STATUS_SCALE_NOT_ENABLED;
+                                        } else if (status == STATUS_SCALE_NOT_READY) {
+                                            scaleStatus = SCALE_STATUS_SCALE_NOT_READY;
+                                        } else if (status == STATUS_STABLE_WEIGHT_OVER_LIMIT) {
+                                            scaleStatus = SCALE_STATUS_STABLE_WEIGHT_OVER_LIMIT;
+                                        } else if (status == STATUS_STABLE_WEIGHT_UNDER_ZERO) {
+                                            scaleStatus = SCALE_STATUS_STABLE_WEIGHT_UNDER_ZERO;
+                                        } else if (status == STATUS_NON_STABLE_WEIGHT) {
+                                            scaleStatus = SCALE_STATUS_NON_STABLE_WEIGHT;
+                                        } else if (status == STATUS_STABLE_ZERO_WEIGHT) {
+                                            scaleStatus = SCALE_STATUS_STABLE_ZERO_WEIGHT;
+                                        } else if (status == STATUS_STABLE_NON_ZERO_WEIGHT) {
+                                            scaleStatus = SCALE_STATUS_STABLE_NON_ZERO_WEIGHT;
+                                        }
+                                        runOnUiThread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                // display scaleStatus
+                                            }
+                                        });
+                                    }
+                                }
+                                break;
+                        }
+                        event = parserForOutXml.next();
+                    }
+                    TimeUnit.SECONDS.sleep(1);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+
+                } catch (IOException | XmlPullParserException ignored){
+
+                }
+            }
+        } while (liveWeightEnable);
+        return result;
+    }
+
+    @Override
+    protected void onPostExecute(Boolean b) {
+        super.onPostExecute(b);
+    }
+}
 </code>
 </pre>
                                                 </div>
