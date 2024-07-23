@@ -1399,6 +1399,116 @@ private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
 };
 </code></pre>
 
+<h3 id="getworkflowdataoutput" class="anchor"><a class="heading-anchor" href="#getworkflowdataoutput"><span></span></a>Get Workflow Data Output</h3>
+
+<pre class="prettyprint"><code>public void getConfig() {
+    Bundle bMain = new Bundle();
+    bMain.putString("PROFILE_NAME", "Profile007");
+    Bundle bConfig = new Bundle();
+
+    Bundle processPlugin_TOKEN_IP = new Bundle();
+    processPlugin_TOKEN_IP.putString("PLUGIN_NAME", "TOKEN");
+    processPlugin_TOKEN_IP.putString("OUTPUT_PLUGIN_NAME", "KEYSTROKE"); // Tokens are supported only in KEYSTROKE and IP plugins only, for others empty bundle will be returned.
+
+    bConfig.putBundle("PROCESS_PLUGIN_NAME", processPlugin_TOKEN_IP);
+
+    bMain.putBundle("PLUGIN_CONFIG", bConfig);
+    Intent i = new Intent();
+    i.setAction("com.symbol.datawedge.api.ACTION");
+    i.putExtra("com.symbol.datawedge.api.GET_CONFIG", bMain);
+    this.sendBroadcast(i);
+}
+
+private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        String action = intent.getAction();
+
+        String strFinalResult = "";
+        String command = intent.getStringExtra("COMMAND");
+        String commandidentifier = intent.getStringExtra("COMMAND_IDENTIFIER");
+        String result = intent.getStringExtra("RESULT");
+        Bundle bundle = new Bundle();
+        String resultInfo = "";
+
+        if (action.equals("com.symbol.datawedge.api.RESULT_ACTION")) {
+
+            if (intent.hasExtra("RESULT_INFO")) {
+                bundle = intent.getBundleExtra("RESULT_INFO");
+                Set&lt;String&gt; keys = bundle.keySet();
+                for (String key : keys) {
+                    String val = bundle.getString(key);
+                    if (val == null) {
+
+                        if (bundle.getStringArray(key) != null) {
+                            val = "";
+                            for (String s : bundle.getStringArray(key)) {
+                                val += "" + s + "\n";
+                            }
+                        }
+                    }
+
+                    resultInfo += key + ": " + val + "\n";
+                }
+
+            } else if (intent.hasExtra("com.symbol.datawedge.api.RESULT_GET_CONFIG")) {
+
+                Bundle resultGetConfig = intent.getBundleExtra("com.symbol.datawedge.api.RESULT_GET_CONFIG");
+                Set&lt;String&gt; keys = resultGetConfig.keySet();
+
+                for (String key : keys) {
+                    if (key.equalsIgnoreCase("PLUGIN_CONFIG")) {
+                        ArrayList&lt;Bundle&gt; bundleArrayList = resultGetConfig.getParcelableArrayList("PLUGIN_CONFIG");
+                        for (Bundle configBundle : bundleArrayList) {
+
+                            String pluginName = configBundle.getString("PLUGIN_NAME");
+
+                            strFinalResult += "\nPlugin " + pluginName + " Settings\n";
+
+                            if (pluginName != null &amp;&amp; pluginName.equalsIgnoreCase("TOKEN")) {
+                                strFinalResult += "\nPlugin " + configBundle.getString("OUTPUT_PLUGIN_NAME") + " TOKEN Settings\n";
+                                Set&lt;String&gt; keys2 = configBundle.keySet();
+                                for (String key2 : keys2) {
+                                    if (!key2.equalsIgnoreCase("PARAM_LIST")) {
+                                    } else {
+                                        Bundle params = configBundle.getBundle("PARAM_LIST");
+                                        Set&lt;String&gt; keys3 = params.keySet();
+                                        for (String key3 : keys3) {
+
+                                            if (key3.equalsIgnoreCase("token_order")) {
+                                                strFinalResult += "\n" + key3 + ": gs1_token_order\n";
+
+                                                ArrayList&lt;Bundle&gt; tokenOrderList = params.getParcelableArrayList("token_order");
+                                                int order = 0;
+                                                for (Bundle b : tokenOrderList) {
+                                                    strFinalResult += "\t" + order + ". " + b.getString("name") + ": " + b.getString("enabled") + "\n";
+                                                    order++;
+                                                }
+                                            } else {
+                                                strFinalResult += "\n" + key3 + ": " + params.get(key3);
+                                            }
+                                        }
+                                    }
+                                }
+                                strFinalResult += "\n";
+                            }
+                        }
+                    }
+                }
+
+                Log.d("TAG", "#IntentApp#\n\nGet config info received\n" + strFinalResult);
+            }
+
+            if (command != null) {
+                if (command.equalsIgnoreCase("com.symbol.datawedge.api.SET_CONFIG")) {
+                    Log.d("TAG", "#IntentApp# \n\nSetConfig status received: " + result + "\nResultInfo: " + resultInfo);
+                }
+            }
+        }
+    }
+};
+</code></pre>
+
 <h3 id="getgs1tokenprocessing" class="anchor"><a class="heading-anchor" href="#getgs1tokenprocessing"><span></span></a>Get GS1 TOKEN processing</h3>
 
 <pre class="prettyprint"><code>    public void getConfig() {
