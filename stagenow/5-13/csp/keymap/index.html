@@ -867,10 +867,6 @@
                                     
                                     
                                     
-                                    
-                                    
-                                    
-                                    
                                         <div class="" data-osx="" data-osx-end="" data-osx-specific-list="" data-osx-specific="" data-osx-exclude="" data-osx-exclude-end="" data-mx="" data-api="" data-smartdoc="">
 
                                     <h2 class="anchor" id="overview"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
@@ -1015,46 +1011,112 @@
 
 <p><strong>To retrieve the active key modifier list programmatically</strong>:</p>
 
-<ol>
-<li><p><strong>Add the following permission</strong> to the app's <code>AndroidManifest.xml</code> file:</p>
+<p><strong>1. Add the following permission</strong> to the app's <code>AndroidManifest.xml</code> file:</p>
 
-<pre class="prettyprint"><code>
-&lt;uses-permission android:name="zebra.permission.KEY_EVENT_SERVICE"/&gt;
-</code></pre></li>
-
-<li><p><strong>Create a broadcast receiver</strong> in the app:</p>
-
-<pre class="prettyprint"><code>
-IntentFilter intentFilter = new IntentFilter();
-intentFilter.addAction("com.zebra.intent.action.ACTIVE_MODIFIER_LIST");
-registerReceiver(receiver,intentFilter,"zebra.permission.KEY_EVENT_SERVICE",null);
-
-<pre><code>      private BroadcastReceiver receiver = new BroadcastReceiver() {
-             @Override
-             public void onReceive(Context context, Intent intent) {
-                     if(intent.getAction() == "com.zebra.intent.action.ACTIVE_MODIFIER_LIST"){
-                             List&amp;lt;String&amp;gt; list= intent.getStringArrayListExtra("activeModifiersList");
-                             Log.d("Active modifier list"," List "+list);
-                     }
-             }
-
-    };
+<pre class="prettyprint"><code>    
+    &lt;uses-permission android:name="zebra.permission.KEY_EVENT_SERVICE"/&gt;
 </code></pre>
 
-</code></pre></li>
+<p><strong>2. Create a broadcast receiver</strong> in the app:</p>
 
-<li><p><strong>Query Zebra's KeyEventService</strong> to get the active key modifier list:</p>
+<pre class="prettyprint"><code>    
+    IntentFilter intentFilter = new IntentFilter();
+    intentFilter.addAction("com.zebra.intent.action.ACTIVE_MODIFIER_LIST");
+    registerReceiver(receiver,intentFilter,"zebra.permission.KEY_EVENT_SERVICE",null);
 
-<pre class="prettyprint"><code>
-Intent intent = new Intent();
-intent.setAction("com.zebra.intent.action.GET_ACTIVE_MODIFIER");
-intent.setPackage("com.zebra.keyeventservice");
-sendBroadcast(intent);
-</code></pre></li>
-</ol>
+              private BroadcastReceiver receiver = new BroadcastReceiver() {
+                     @Override
+                     public void onReceive(Context context, Intent intent) {
+                             if(intent.getAction() == "com.zebra.intent.action.ACTIVE_MODIFIER_LIST"){
+                                List&lt;String&gt; list= intent.getStringArrayListExtra("activeModifiersList");
+                                Log.d("Active modifier list"," List "+list);
+                             }
+                     }
+
+            };
+</code></pre>
+
+<p><strong>3. Query Zebra's KeyEventService</strong> to get the active key modifier list:</p>
+
+<pre class="prettyprint"><code>    
+    Intent intent = new Intent();
+    intent.setAction("com.zebra.intent.action.GET_ACTIVE_MODIFIER");
+    intent.setPackage("com.zebra.keyeventservice");
+    sendBroadcast(intent);
+</code></pre>
 
 <blockquote>
   <p><i class="fa fa-exclamation-circle" style="color:#FF0000;"></i> <strong>This feature requires Android 11 and LifeGuard Update</strong> <code>11-26-05.00-RG-U00</code> (or later).</p>
+</blockquote>
+
+<hr>
+
+<h3 id="retrievemodifiers" class="anchor"><a class="heading-anchor" href="#retrievemodifiers"><span></span></a>Retrieve Modifiers</h3>
+
+<p><strong>To get the modifiers with key state</strong>:</p>
+
+<p><strong>1. Add the following permission</strong> to the app's <code>AndroidManifest.xml</code> file:</p>
+
+<pre class="prettyprint"><code>        
+        &lt;uses-permission android:name="zebra.permission.KEY_EVENT_SERVICE"/&gt;
+</code></pre>
+
+<p><strong>2. Create a broadcast receiver</strong> in the app:</p>
+
+<pre class="prettyprint"><code>        
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction("com.zebra.intent.action.GET_MODIFIER_WITH_STATE ");
+        registerReceiver(receiver,intentFilter,"zebra.permission.KEY_EVENT_SERVICE",null);
+
+        private BroadcastReceiver receiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if(intent.getAction() == 
+                "com.zebra.intent.action.ALL_MODIFIER_WITH_STATE"
+                    Map&lt;String,String&gt; map= (Map&lt;String, String&gt;)
+                intent.getSerializableExtra("allModifiersWithState”);
+                Log.d("Active modifier list"," Map "+map);
+
+                }
+            }
+        };
+</code></pre>
+
+<p><strong>3. Request KeyEventService</strong> to get the modifiers with Key state list:</p>
+
+<pre class="prettyprint"><code>        
+        Intent intent = new Intent();
+        intent.setAction("com.zebra.intent.action.GET_ACTIVE_MODIFIER");
+        intent.setPackage("com.zebra.keyeventservice");
+        sendBroadcast(intent);
+</code></pre>
+
+<ul>
+<li><strong>Output of modifier with state</strong>:
+
+
+<ul>
+<li><code>com.zebra.testbroadcast</code> D/Active modifier list: <strong>List {orange=0, alt=0, diamond=1, ctrl=0, shift=2}</strong></li>
+
+<li><code>com.zebra.testbroadcast</code> D/Active modifier list: <strong>List {orange=0, alt=0, diamond=2, ctrl=0, shift=2}</strong></li>
+
+<li><code>com.zebra.testbroadcast</code> D/Active modifier list: <strong>List {orange=0, alt=0, diamond=0, ctrl=0, shift=2}</strong></li></ul>
+</li>
+
+<li><strong>Key State Indicators</strong>
+
+
+<ul>
+<li>0 = Inactive (modifier is not "pressed")</li>
+
+<li>1 = Single use (resets to Inactive after one use)</li>
+
+<li>2 = Locked (remains "pressed" until state is reset)</li></ul>
+</li>
+</ul>
+
+<blockquote>
+  <p><i class="fa fa-exclamation-circle" style="color:#FF0000;"></i> <strong>This feature requires Android 11 and LifeGuard Update</strong> <code>11-49-09.00-RG-U00-STD-HEL-04</code> (or later).</p>
 </blockquote>
 
 <hr>
@@ -1312,6 +1374,9 @@ B1, P1/P2/P3 are new addition, which is just different label.
                                     
                                     
                                     
+                                    
+                                    
+                                    
                                         <div class="">
                                     
                                     <h2 class="anchor" id="action"><a class="heading-anchor" href="#action"><span></span></a>Action</h2>
@@ -1425,28 +1490,6 @@ B1, P1/P2/P3 are new addition, which is just different label.
                                     </div>	
                                     
                                 </div> 
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
                                     
                                     
                                     
@@ -3812,6 +3855,27 @@ info: Applies to MC20 devices only.
                                     </div>	
                                     
                                 </div> 
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
                                     
                                     
                                     
@@ -9370,6 +9434,25 @@ info: Applies to MC20 devices only.
                                     
                                     
                                     
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
                                         <div class="">
                                     
                                     <h2 class="anchor" id="key-base-behavior"><a class="heading-anchor" href="#key-base-behavior"><span></span></a>Key Base Behavior</h2>
@@ -9580,43 +9663,6 @@ info: Applies to MC20 devices only.
                                     </div>	
                                     
                                 </div> 
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
                                     
                                     
                                     
@@ -9945,6 +9991,13 @@ info: Applies to MC20 devices only.
                                     
                                     
                                     
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
                                         <div class="">
                                     
                                     <h2 class="anchor" id="advanced"><a class="heading-anchor" href="#advanced"><span></span></a>Advanced</h2>
@@ -10033,6 +10086,24 @@ info: Applies to MC20 devices only.
                                     </div>	
                                     
                                 </div> 
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
                                     
                                     
                                     
@@ -10176,9 +10247,6 @@ info: Applies to MC20 devices only.
                                     </div>	
                                     
                                 </div> 
-                                    
-                                    
-                                    
                                     
                                     
                                     
@@ -10456,10 +10524,6 @@ info: Applies to MC20 devices only.
                                     
                                     
                                     
-                                    
-                                    
-                                    
-                                    
                                         <div class="">
                                     
                                     <h2 class="anchor" id="shift-state"><a class="heading-anchor" href="#shift-state"><span></span></a>Shift State</h2>
@@ -10588,7 +10652,6 @@ info: Applies to MC20 devices only.
                                     </div>	
                                     
                                 </div> 
-                                    
                                     
                                     
                                     
@@ -11105,6 +11168,16 @@ info: Applies to MC20 devices only.
                                     
                                     
                                     
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
                                         <div class="">
                                     
                                     <h2 class="anchor" id="add-key-event"><a class="heading-anchor" href="#add-key-event"><span></span></a>Add Key Event</h2>
@@ -11206,15 +11279,6 @@ info: Applies to MC20 devices only.
                                     </div>	
                                     
                                 </div> 
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
                                     
                                     
                                     
@@ -11509,6 +11573,10 @@ info: Applies to MC20 devices only.
                                     
                                     
                                     
+                                    
+                                    
+                                    
+                                    
                                         <div class="" data-osx="" data-osx-end="" data-osx-specific-list="" data-osx-specific="" data-osx-exclude="" data-osx-exclude-end="" data-mx="4.4" data-api="" data-smartdoc="">
 
                                     <h2 class="anchor" id="include-additional-flags"><a class="heading-anchor" href="#include-additional-flags"><span></span></a>Include Additional Flags</h2>
@@ -11591,6 +11659,17 @@ info: Applies to MC20 devices only.
                                     
                                     
                                     
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
                                         <div class="" data-osx="" data-osx-end="" data-osx-specific-list="" data-osx-specific="" data-osx-exclude="" data-osx-exclude-end="" data-mx="4.4" data-api="" data-smartdoc="">
 
                                     <h2 class="anchor" id="application-launch"><a class="heading-anchor" href="#application-launch"><span></span></a>Application Launch</h2>
@@ -11643,20 +11722,6 @@ info: Applies to MC20 devices only.
                                     
                                     
                                 </div> 
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
                                     
                                     
                                     
@@ -11798,6 +11863,15 @@ info: Applies to MC20 devices only.
                                     
                                     
                                     
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
                                         <div class="" data-osx="" data-osx-end="" data-osx-specific-list="" data-osx-specific="" data-osx-exclude="" data-osx-exclude-end="" data-mx="11.4" data-api="" data-smartdoc="">
 
                                     <h2 class="anchor" id="double-trigger-timer"><a class="heading-anchor" href="#double-trigger-timer"><span></span></a>Double-trigger Timer</h2>
@@ -11830,18 +11904,6 @@ info: Applies to MC20 devices only.
                                     
                                     
                                 </div> 
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
                                     
                                     
                                     
@@ -11900,6 +11962,11 @@ info: Applies to MC20 devices only.
                                     
                                     
                                     
+                                    
+                                    
+                                    
+                                    
+                                    
                                         <div class="" data-osx="" data-osx-end="" data-osx-specific-list="" data-osx-specific="" data-osx-exclude="" data-osx-exclude-end="" data-mx="11.4" data-api="" data-smartdoc="">
 
                                     <h2 class="anchor" id="advanced-double-trigger-key-code"><a class="heading-anchor" href="#advanced-double-trigger-key-code"><span></span></a>Advanced Double-trigger Key Code</h2>
@@ -11944,13 +12011,6 @@ info: Applies to MC20 devices only.
                                     
                                     
                                 </div> 
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
                                     
                                     
                                     
@@ -14097,6 +14157,12 @@ info: Applies to MC20 devices only.
                                     
                                     
                                     
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
                                 </div><!--/.container-->
                                 
                             </section><!--/#services-->
@@ -14116,7 +14182,6 @@ filtering
         csp: "keymapmgr",
         name: "KeyMapping Manager",
         parms: [
-                    
                     
                     
                     
@@ -14251,28 +14316,6 @@ filtering
                         
                         ]
                     },
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
                     
                     
                     
@@ -15883,6 +15926,27 @@ filtering
                         
                         ]
                     },
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
                     
                     
                     
@@ -19703,6 +19767,25 @@ filtering
                     
                     
                     
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
                     {
                             presentif: "The Action value is &quot;Remap a key&quot; and Choose a key to modify is not &quot;None&quot;",
                             name: "BaseBehavior",
@@ -19831,43 +19914,6 @@ filtering
                         
                         ]
                     },
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
                     
                     
                     
@@ -20114,6 +20160,13 @@ filtering
                     
                     
                     
+                    
+                    
+                    
+                    
+                    
+                    
+                    
                     {
                             presentif: "The Action value is &quot;Remap a key&quot; and Choose a key to modify is not &quot;None&quot; and the Key Behavior for the Mapping Table is &quot;Send key-code&quot;",
                             name: "BaseKeyCodeAdvanced,BlueKeyCodeAdvanced,OrangeKeyCodeAdvanced,GreyKeyCodeAdvanced,ShiftKeyCodeAdvanced,ControlKeyCodeAdvanced,DiamondKeyCodeAdvanced",
@@ -20157,6 +20210,24 @@ filtering
                         
                         ]
                     },
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
                     
                     
                     
@@ -20232,9 +20303,6 @@ filtering
                         
                         ]
                     },
-                    
-                    
-                    
                     
                     
                     
@@ -20369,10 +20437,6 @@ filtering
                         
                         ]
                     },
-                    
-                    
-                    
-                    
                     
                     
                     
@@ -20535,7 +20599,6 @@ filtering
                     
                     
                     
-                    
                     {
                         requires: {
                             osx: "",
@@ -20555,6 +20618,16 @@ filtering
                         
                         
                     },
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
                     
                     
                     
@@ -20646,15 +20719,6 @@ filtering
                         
                         ]
                     },
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
                     
                     
                     
@@ -20841,6 +20905,10 @@ filtering
                     
                     
                     
+                    
+                    
+                    
+                    
                     {
                         requires: {
                             osx: "",
@@ -20885,6 +20953,17 @@ filtering
                     
                     
                     
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
                     {
                         requires: {
                             osx: "",
@@ -20904,20 +20983,6 @@ filtering
                         
                         
                     },
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
                     
                     
                     
@@ -21011,6 +21076,15 @@ filtering
                     
                     
                     
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
                     {
                         requires: {
                             osx: "",
@@ -21030,18 +21104,6 @@ filtering
                         
                         
                     },
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
                     
                     
                     
@@ -21087,6 +21149,11 @@ filtering
                     
                     
                     
+                    
+                    
+                    
+                    
+                    
                     {
                         requires: {
                             osx: "",
@@ -21106,7 +21173,6 @@ filtering
                         
                         
                     },
-                    
                     
                     
                     
