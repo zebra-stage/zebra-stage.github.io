@@ -689,175 +689,7 @@ public void disableScanner(View view) {
 </code>
 </pre>
 
-                                                    <h3 id="connect-scanner-in-snapi" class="anchor">Wired Connection/SNAPI Mode</h3>
-
-<pre class="prettyprint">
-<code>
-public class MainActivity extends AppCompatActivity implements IDcsSdkApiDelegate {
-    public static SDKHandler sdkHandler;
-    private FrameLayout barcodeDisplayArea;
-    private RelativeLayout snapiLayout;
-    private RelativeLayout brcodeLayout;
-    RecyclerView recyclerView;
-
-    int currentConnectedScannerID;
-    static AvailableScanner curAvailableScanner = null;
-
-    private static ArrayList&lt;DCSScannerInfo> mSNAPIList = new ArrayList&lt;DCSScannerInfo>();
-    private static ArrayList&lt;DCSScannerInfo> mScannerInfoList;
-
-    ArrayList&lt;Barcode> listScannedBarcodes;
-    BarcodeListAdapter barcodeListAdapter;
-
-    static ConnectAsyncTask cmdExecTask = null;
-
-    public static CustomProgressDialog progressDialog;
-
-    /**
-    * The method that initializes the SDK.
-    */
-    @SuppressLint("MissingPermission")
-    private void initializeDcsSdk() {
-        // Initializing sdk handler.
-        if (sdkHandler == null) {
-            sdkHandler = new SDKHandler(this, true);
-        }
-
-        sdkHandler.dcssdkSetDelegate(this);
-        sdkHandler.dcssdkEnableAvailableScannersDetection(true);
-        sdkHandler.dcssdkSetOperationalMode(DCSSDKDefs.DCSSDK_MODE.DCSSDK_OPMODE_SNAPI);
-
-        int notifications_mask = 0;
-
-        // We would like to subscribe to all scanner available/not-available events.
-        notifications_mask |= DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SCANNER_APPEARANCE.value | DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SCANNER_DISAPPEARANCE.value;
-
-        // We would like to subscribe to all scanner connection events.
-        notifications_mask |= DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SESSION_ESTABLISHMENT.value | DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SESSION_TERMINATION.value;
-
-        // We would like to subscribe to all barcode events.
-        notifications_mask |= DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_BARCODE.value;
-
-        // Subscribe to events set in notification mask.
-        sdkHandler.dcssdkSubsribeForEvents(notifications_mask);
-
-        // Connect to scanner.
-        connectToScanner();
-    }
-
-    /**
-    * Get available scanner and connect.
-    */
-    private void connectToScanner(){
-        mScannerInfoList = new ArrayList&lt;>();
-        mSNAPIList.clear();
-        updateScannersList();
-        for (DCSScannerInfo device : mScannerInfoList) {
-            if (device.getConnectionType() == DCSSDKDefs.DCSSDK_CONN_TYPES.DCSSDK_CONNTYPE_USB_SNAPI) {
-                mSNAPIList.add(device);
-            }
-        }
-
-        if (mSNAPIList.isEmpty()) {
-            // No SNAPI Scanners.
-            getSnapiBarcode();
-        } 
-        else if (mSNAPIList.size() &lt;= 1) {
-            // Only one SNAPI scanner available.
-            if (mSNAPIList.get(0).isActive()) {
-                // Available scanner is active. Navigate to active scanner.
-                currentConnectedScannerID = mSNAPIList.get(0).getScannerID();
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        // Change UI on connection.    
-                    }
-                });
-                
-            } 
-            else {
-                // Try to connect available scanner.
-                cmdExecTask = new ConnectAsyncTask(mSNAPIList.get(0));
-                cmdExecTask.execute();
-            }
-        }
-    }
-
-    @SuppressLint({"MissingInflatedId", "MissingPermission"})
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        // Initialization of UI components.
-        barcodeDisplayArea = (FrameLayout) findViewById(R.id.scan_to_connect_barcode);
-        snapiLayout = (RelativeLayout) findViewById(R.id.snapi_layout);
-
-        // Change visibility on connection state change. Initially display the barcode.
-        snapiLayout.setVisibility(View.VISIBLE);
-
-        initializeDcsSdk();
-    }
-
-    /**
-    * Initial method that gets called to display the barcode.
-    * once scan the barcode Scanner change the protocol to SNAPI mode.
-    */
-    private void getSnapiBarcode() {
-        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(-1, -1);
-        BarCodeView barCodeView = sdkHandler.dcssdkGetUSBSNAPIWithImagingBarcode();
-        Display display = getWindowManager().getDefaultDisplay();
-        Point size = new Point();
-        display.getSize(size);
-        int width = size.x;
-        int orientation = this.getResources().getConfiguration().orientation;
-        int x = width * 9 / 10;
-        int y = x / 3;
-        if (getDeviceScreenSize() > 6) { // TODO: Check 6 is ok or not
-            if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                x = width / 2;
-                y = x / 3;
-            } 
-            else {
-                x = width * 2 / 3;
-                y = x / 3;
-            }
-        }
-        barCodeView.setSize(x, y);
-        barcodeDisplayArea.addView(barCodeView, layoutParams);
-    }
-
-    /**
-    * Get display size to utilize the UI.
-    * @return double.
-    */
-    private double getDeviceScreenSize() {
-        double screenInches = 0;
-        WindowManager windowManager = getWindowManager();
-        Display display = windowManager.getDefaultDisplay();
-
-        int mWidthPixels;
-        int mHeightPixels;
-
-        try {
-            Point realSize = new Point();
-            Display.class.getMethod("getRealSize", Point.class).invoke(display, realSize);
-            mWidthPixels = realSize.x;
-            mHeightPixels = realSize.y;
-            DisplayMetrics dm = new DisplayMetrics();
-            getWindowManager().getDefaultDisplay().getMetrics(dm);
-            double x = Math.pow(mWidthPixels / dm.xdpi, 2);
-            double y = Math.pow(mHeightPixels / dm.ydpi, 2);
-            screenInches = Math.sqrt(x + y);
-        } 
-        catch (Exception e) {
-            e.printStackTrace();
-        }
-        return screenInches;
-    }
-}
-</code>
-</pre>
+                                                    <h3 id="bluetooth-classic-mode-connection" class="anchor">Classic mode connection and Enter Bluetooth Address</h3>
 
                                                     <p>Inside the 'generatePairingBarcode', value of 'barCodeView' is checked. For devices with Android versions 6.xxx and below, the method 'updateBarcodeView' is called directly and the Bluetooth Address of the device is retrieved automatically rendering the STC barcode across the screen.</p>
 
@@ -1035,6 +867,176 @@ public static enum DCSSDK_BT_SCANNER_CONFIG {
                                                     <p>Code snippets extracted from Barcode Scanner SDK are for information purpose only and need not be included in the Java file.</p>
 
                                                     <p>Note that the operational mode set using the method, 'sdkHandler.dcssdkSetOperationalMode(DCSSDK_OPMODE_BT_LE)' should be compatible with the Bluetooth protocol used. For instance, if 'DCSSDK_OPMODE_BT_NORMAL' is used as the operational mode, then the Bluetooth protocol to be used is the 'SSI_BT_CRADLE_HOST'.</p>
+
+                                                    <h3 id="connect-scanner-in-snapi" class="anchor">Wired Connection/SNAPI Mode</h3>
+
+<pre class="prettyprint">
+<code>
+public class MainActivity extends AppCompatActivity implements IDcsSdkApiDelegate {
+    public static SDKHandler sdkHandler;
+    private FrameLayout barcodeDisplayArea;
+    private RelativeLayout snapiLayout;
+    private RelativeLayout brcodeLayout;
+    RecyclerView recyclerView;
+
+    int currentConnectedScannerID;
+    static AvailableScanner curAvailableScanner = null;
+
+    private static ArrayList&lt;DCSScannerInfo> mSNAPIList = new ArrayList&lt;DCSScannerInfo>();
+    private static ArrayList&lt;DCSScannerInfo> mScannerInfoList;
+
+    ArrayList&lt;Barcode> listScannedBarcodes;
+    BarcodeListAdapter barcodeListAdapter;
+
+    static ConnectAsyncTask cmdExecTask = null;
+
+    public static CustomProgressDialog progressDialog;
+
+    /**
+    * The method that initializes the SDK.
+    */
+    @SuppressLint("MissingPermission")
+    private void initializeDcsSdk() {
+        // Initializing sdk handler.
+        if (sdkHandler == null) {
+            sdkHandler = new SDKHandler(this, true);
+        }
+
+        sdkHandler.dcssdkSetDelegate(this);
+        sdkHandler.dcssdkEnableAvailableScannersDetection(true);
+        sdkHandler.dcssdkSetOperationalMode(DCSSDKDefs.DCSSDK_MODE.DCSSDK_OPMODE_SNAPI);
+
+        int notifications_mask = 0;
+
+        // We would like to subscribe to all scanner available/not-available events.
+        notifications_mask |= DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SCANNER_APPEARANCE.value | DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SCANNER_DISAPPEARANCE.value;
+
+        // We would like to subscribe to all scanner connection events.
+        notifications_mask |= DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SESSION_ESTABLISHMENT.value | DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SESSION_TERMINATION.value;
+
+        // We would like to subscribe to all barcode events.
+        notifications_mask |= DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_BARCODE.value;
+
+        // Subscribe to events set in notification mask.
+        sdkHandler.dcssdkSubsribeForEvents(notifications_mask);
+
+        // Connect to scanner.
+        connectToScanner();
+    }
+
+    /**
+    * Get available scanner and connect.
+    */
+    private void connectToScanner(){
+        mScannerInfoList = new ArrayList&lt;>();
+        mSNAPIList.clear();
+        updateScannersList();
+        for (DCSScannerInfo device : mScannerInfoList) {
+            if (device.getConnectionType() == DCSSDKDefs.DCSSDK_CONN_TYPES.DCSSDK_CONNTYPE_USB_SNAPI) {
+                mSNAPIList.add(device);
+            }
+        }
+
+        if (mSNAPIList.isEmpty()) {
+            // No SNAPI Scanners.
+            getSnapiBarcode();
+        } 
+        else if (mSNAPIList.size() &lt;= 1) {
+            // Only one SNAPI scanner available.
+            if (mSNAPIList.get(0).isActive()) {
+                // Available scanner is active. Navigate to active scanner.
+                currentConnectedScannerID = mSNAPIList.get(0).getScannerID();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        // Change UI on connection.    
+                    }
+                });
+                
+            } 
+            else {
+                // Try to connect available scanner.
+                cmdExecTask = new ConnectAsyncTask(mSNAPIList.get(0));
+                cmdExecTask.execute();
+            }
+        }
+    }
+
+    @SuppressLint({"MissingInflatedId", "MissingPermission"})
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        // Initialization of UI components.
+        barcodeDisplayArea = (FrameLayout) findViewById(R.id.scan_to_connect_barcode);
+        snapiLayout = (RelativeLayout) findViewById(R.id.snapi_layout);
+
+        // Change visibility on connection state change. Initially display the barcode.
+        snapiLayout.setVisibility(View.VISIBLE);
+
+        initializeDcsSdk();
+    }
+
+    /**
+    * Initial method that gets called to display the barcode.
+    * once scan the barcode Scanner change the protocol to SNAPI mode.
+    */
+    private void getSnapiBarcode() {
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(-1, -1);
+        BarCodeView barCodeView = sdkHandler.dcssdkGetUSBSNAPIWithImagingBarcode();
+        Display display = getWindowManager().getDefaultDisplay();
+        Point size = new Point();
+        display.getSize(size);
+        int width = size.x;
+        int orientation = this.getResources().getConfiguration().orientation;
+        int x = width * 9 / 10;
+        int y = x / 3;
+        if (getDeviceScreenSize() > 6) { // TODO: Check 6 is ok or not
+            if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                x = width / 2;
+                y = x / 3;
+            } 
+            else {
+                x = width * 2 / 3;
+                y = x / 3;
+            }
+        }
+        barCodeView.setSize(x, y);
+        barcodeDisplayArea.addView(barCodeView, layoutParams);
+    }
+
+    /**
+    * Get display size to utilize the UI.
+    * @return double.
+    */
+    private double getDeviceScreenSize() {
+        double screenInches = 0;
+        WindowManager windowManager = getWindowManager();
+        Display display = windowManager.getDefaultDisplay();
+
+        int mWidthPixels;
+        int mHeightPixels;
+
+        try {
+            Point realSize = new Point();
+            Display.class.getMethod("getRealSize", Point.class).invoke(display, realSize);
+            mWidthPixels = realSize.x;
+            mHeightPixels = realSize.y;
+            DisplayMetrics dm = new DisplayMetrics();
+            getWindowManager().getDefaultDisplay().getMetrics(dm);
+            double x = Math.pow(mWidthPixels / dm.xdpi, 2);
+            double y = Math.pow(mHeightPixels / dm.ydpi, 2);
+            screenInches = Math.sqrt(x + y);
+        } 
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+        return screenInches;
+    }
+}
+</code>
+</pre>
 
                                                     <hr>
 
