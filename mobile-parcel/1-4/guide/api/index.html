@@ -71,7 +71,7 @@
                         <li class="navbar-text pull-left"><strong>TechDocs</strong></li>
                         <p class="navbar-text">
                                             Mobile Parcel
-                                            1.0
+                                            1.4
                         </p>
 
                     </ul>
@@ -82,17 +82,17 @@
 
 
                         <li>
-                            <a href="/mobile-parcel/1-0/guide/about">
+                            <a href="/mobile-parcel/1-4/guide/about">
                                     About
                             </a>
                         </li>
                         <li>
-                            <a href="/mobile-parcel/1-0/guide/api">
+                            <a href="/mobile-parcel/1-4/guide/api">
                                     APIs
                             </a>
                         </li>
                         <li>
-                            <a href="/mobile-parcel/1-0/guide/sample">
+                            <a href="/mobile-parcel/1-4/guide/sample">
                                     Sample
                             </a>
                         </li>
@@ -102,7 +102,7 @@
                             </a>
                         </li>
                         <li>
-                            <a href="/mobile-parcel/1-0/search">
+                            <a href="/mobile-parcel/1-4/search">
                                     <i class="fa fa-search"></i>
                             </a>
                         </li>
@@ -218,7 +218,7 @@
                                     <h1 id="mobile-parcel-api" class="anchor"><a class="heading-anchor" href="#mobile-parcel-api"><span></span></a>Mobile Parcel API</h1>
                                     <p>
                                             Mobile Parcel
-                                            1.0
+                                            1.4
                                     </p>
                                 </div>
                             </section>                    
@@ -233,7 +233,9 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>Mobile Parcel API is designed based on the Android Intent architecture, reducing library dependencies and integration time for app developers. To ensure the interface is secure, it uses explicit and pending intents secured using an API token. This section discusses the Mobile Parcel APIs and how they are used. Both Certified Mobile Parcel (legal for trade certifications) and Mobile Parcel are supported by the APIs.</p>
+<p>The Mobile Parcel API is designed based on the Android Intent architecture, reducing library dependencies and integration time for app developers. While the API interface originally used explicit and pending intents secured with an API token, this method is no longer included as a standard feature due to its added complexity and potential for unnecessary security measures. Developers who still need to use the API token can contact <a href="https://www.zebra.com/us/en/about-zebra/contact-zebra/contact-tech-support.html">Zebra Technical Support</a>.</p>
+
+<p>This section discusses the Mobile Parcel APIs and how they are used. Both Certified Mobile Parcel (legal for trade certifications) and Mobile Parcel are supported by the APIs.</p>
 
 <p>APIs available:</p>
 
@@ -254,8 +256,6 @@
 <ul>
 <li><strong>Multi-window or split-screen</strong> is not supported due to an Android bug.</li>
 
-<li>The <strong>API token expires after 24 hours</strong> and must be regenerated, see <a href="#generateapitoken">Generate API token</a>.</li>
-
 <li><strong>Camera failure can occur</strong> from rapid succession of start/stop dimensioning after suspend/resume.</li>
 </ul>
 
@@ -271,15 +271,14 @@ The following state diagram for the Mobile Parcel Dimensioning client explains t
 
 <h2 id="requirements" class="anchor"><a class="heading-anchor" href="#requirements"><span></span></a>Requirements</h2>
 
-<p>The line-of-business (LOB) app must define the Dimensioning service package name and generate the API token. Both are required to be sent with each Mobile Parcel API request. If either the token or package name is incorrect, the Mobile Parcel API reports the error result code with an access denied message. Additionally, API security is enforced by only allowing trusted applications to communicate with the Mobile Parcel API. Make sure to add your app to this allow list.</p>
+<p>The line-of-business (LOB) app must define the Dimensioning service package name, which is required to be sent with each Mobile Parcel API request. If the package name is incorrect, the Mobile Parcel API reports the error result code with an access denied message. </p>
 
 <h3 id="1addqueriestag" class="anchor"><a class="heading-anchor" href="#1addqueriestag"><span></span></a>1. Add queries tag</h3>
 
-<p>Add the <code>&lt;queries&gt;</code> tag in the AndroidManifest.xml of the LOB app to define two package names for Mobile Dimensioning. This is required to allow the Mobile Parcel API to communicate with the app and to allow the app to communicate with <a href="/flux/query/">Zebra Device Manager</a>.</p>
+<p>Add the <code>&lt;queries&gt;</code> tag in the AndroidManifest.xml of the LOB app to define the package name for Mobile Dimensioning. This is required to allow the app to communicate with <a href="/flux/query/">Zebra Device Manager</a>.</p>
 
 <pre class="prettyprint"><code>&lt;queries&gt;
     &lt;package android:name="com.zebra.dimensioning"/&gt;
-    &lt;package android:name="com.zebra.devicemanager"/&gt;
 &lt;/queries&gt;
 </code></pre>
 
@@ -290,165 +289,99 @@ The following state diagram for the Mobile Parcel Dimensioning client explains t
 <pre class="prettyprint"><code>&lt;uses-permission android:name="com.zebra.devicemanager.provider.READ_PERMISSION" /&gt;
 </code></pre>
 
-<h3 id="3generateapitoken" class="anchor"><a class="heading-anchor" href="#3generateapitoken"><span></span></a>3. Generate API token</h3>
+<!-- // TOKEN API DISABLED STARTING WITH V1.4 
+### 3. Generate API token
 
-<p>The API token is one of the parameters that must be sent with each API request for authentication. <em>The API token expires after 24 hours and must be regenerated.</em></p>
+The API token is one of the parameters that must be sent with each API request for authentication. _The API token expires after 24 hours and must be regenerated._
 
-<p>To generate the API token:</p>
+To generate the API token:
 
-<pre class="prettyprint"><code>private String token = "";
-private Instant tokenExpiration;
-public static final String SERVICE_IDENTIFIER = "delegation-zebra-com.zebra.mobiledimensioning-Enable";
-
-private void generateToken()
-{
-    Uri ZDM_AUTHORITY_URI = Uri.parse("content://com.zebra.devicemanager.zdmcontentprovider");
-    Uri ACQUIRE_TOKEN_URI = Uri.withAppendedPath(ZDM_AUTHORITY_URI, "AcquireToken");
-
-    try
-    {
-        Cursor cursor = this.getContentResolver().query(ACQUIRE_TOKEN_URI, (String[]) null,
-                "delegation_scope=?", new String[]{SERVICE_IDENTIFIER}, (String) null);
-        if (cursor != null &amp;&amp; cursor.getCount() &gt; 0)
-        {
-            cursor.moveToFirst();
-            int columnIndex = cursor.getColumnIndex("query_result");
-            if (columnIndex &gt;= 0)
-            {
-                token = cursor.getString(columnIndex);
-            }
-            cursor.close();
-        }
-    }
-    catch (Exception e)
-    {
-        e.printStackTrace();
-    }
-
-    if (token != null &amp;&amp; !token.isEmpty())
-    {
-        tokenExpiration = Instant.now().plus(24, ChronoUnit.HOURS);
-        // Communicate with Service
-    }
-}
-</code></pre>
-
-<!-- 
-1.  Add the .AAR library file (download <a href="https://github.com/ZebraDevs/Mobile_Dimensioning_Samples/blob/main/Java/ParcelMDClientSampleApp/app/libs/broadcastprotection-1.6.aar">here</a>) to the _libs_ folder of the application project.
-    <img alt="" style="height:100px"  src="libs-folder.png" />
-2.  Add the the .AAR library to the build.gradle file:
-
-        dependencies {
-            implementation fileTree(dir: 'libs', include: ['*.aar'])
-        }
-
-3.  Use BroadCastAuthenticator class to generate the token:
-
- <pre class="prettify">
- <code>
-    private final BroadCastAuthenticator vIntentprotect = new BroadCastAuthenticator();
     private String token = "";
     private Instant tokenExpiration;
     public static final String SERVICE_IDENTIFIER = "delegation-zebra-com.zebra.mobiledimensioning-Enable";
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState)
+    private void generateToken()
     {
-        super.onCreate(savedInstanceState);
-        // Token authenticator initialization.
-        vIntentprotect.initialize(getApplicationContext(), new OnInitCallback()
+        Uri ZDM_AUTHORITY_URI = Uri.parse("content://com.zebra.devicemanager.zdmcontentprovider");
+        Uri ACQUIRE_TOKEN_URI = Uri.withAppendedPath(ZDM_AUTHORITY_URI, "AcquireToken");
+
+        try
         {
-            @Override
-            public void onInitialized()
+            Cursor cursor = this.getContentResolver().query(ACQUIRE_TOKEN_URI, (String[]) null,
+                    "delegation_scope=?", new String[]{SERVICE_IDENTIFIER}, (String) null);
+            if (cursor != null && cursor.getCount() > 0)
             {
-                Log.d(TAG, "BroadCastAuthenticator is successfully initialized");
-
-                try
+                cursor.moveToFirst();
+                int columnIndex = cursor.getColumnIndex("query_result");
+                if (columnIndex >= 0)
                 {
-                    token = vIntentprotect.getToken(SERVICE_IDENTIFIER);
+                    token = cursor.getString(columnIndex);
                 }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
-                }
-                if (token != null && !token.isEmpty())
-                {
-                    tokenExpiration = Instant.now().plus(24, ChronoUnit.HOURS);
-                    // Communicate with Service
-                }
+                cursor.close();
             }
-        });
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+
+        if (token != null && !token.isEmpty())
+        {
+            tokenExpiration = Instant.now().plus(24, ChronoUnit.HOURS);
+            // Communicate with Service
+        }
     }
-</code>
-</pre>
--->
 
-<h3 id="4addyourapptotheallowlist" class="anchor"><a class="heading-anchor" href="#4addyourapptotheallowlist"><span></span></a>4. Add your app to the allow list</h3>
+### 4. Add your app to the allow list
 
-<p>Zebra requires developers use an access control method through <a href="/mx/accessmgr/">MX Access Manager</a> to ensure that only trusted applications communicate with the Mobile Parcel API. To allow the LOB application package to be placed on the allow list, perform the following procedure:</p>
+Zebra requires developers use an access control method through [MX Access Manager](/mx/accessmgr/) to ensure that only trusted applications communicate with the Mobile Parcel API. To allow the LOB application package to be placed on the allow list, perform the following procedure:
 
-<h4 id="aextractclientappcertificate" class="anchor"><a class="heading-anchor" href="#aextractclientappcertificate"><span></span></a>A. Extract Client App Certificate</h4>
+#### A. Extract Client App Certificate
 
-<p>Extract the client app certificate from the LOB app. This is a pre-requisite to create the StageNow profile that places the app in the allow list.</p>
+Extract the client app certificate from the LOB app. This is a pre-requisite to create the StageNow profile that places the app in the allow list.
+
 
 <p>Steps to extract the client app certificate:</p>
 
-<ol>
-<li>Download SigTools.jar from <a href="https://techdocs.zebra.com/emdk-for-android/latest/samples/sigtools/">Zebra’s App Signature Tools</a>.</li>
 
-<li>Follow the instructions provided from the link to extract the certificate from the LOB app APK file using command:<br>
-<code>java -jar SigTools.jar GetCert -INFORM APK -OUTFORM DER -IN [filename.apk] -OUTFILE [filename.crt]</code><br>
-where <em>[filename.apk]</em> is the full path and file name of the LOB app APK file and <em>[filename.crt]</em> is the designated certificate file name. The file extensions should be preserved in both file names. The certificate file is extracted as the CRT file. The certificate file is needed to create the StageNow profile.</li>
-</ol>
+1. Download SigTools.jar from [Zebra’s App Signature Tools](https://techdocs.zebra.com/emdk-for-android/latest/samples/sigtools/).
+2. Follow the instructions provided from the link to extract the certificate from the LOB app APK file using command:<br>
+   `java -jar SigTools.jar GetCert -INFORM APK -OUTFORM DER -IN [filename.apk] -OUTFILE [filename.crt]`<br>
+   where _[filename.apk]_ is the full path and file name of the LOB app APK file and _[filename.crt]_ is the designated certificate file name. The file extensions should be preserved in both file names. The certificate file is extracted as the CRT file. The certificate file is needed to create the StageNow profile.
 
-<h4 id="bcreatestagenowprofile" class="anchor"><a class="heading-anchor" href="#bcreatestagenowprofile"><span></span></a>B. Create StageNow Profile</h4>
+#### B. Create StageNow Profile
 
-<p>Create a StageNow profile to place the app in the allow list:</p>
+Create a StageNow profile to place the app in the allow list:
 
-<ol>
-<li><p>Download and install <a href="https://www.zebra.com/us/en/support-downloads/software/utilities/stagenow.html">StageNow</a> on a host computer.</p></li>
+1. Download and install [StageNow](https://www.zebra.com/us/en/support-downloads/software/utilities/stagenow.html) on a host computer.
+2. Open StageNow. In the StageNow home screen, click **Create New Profile** from the left menu.
+   <img alt="" style="height:350px" src="create-profile.png" />
+3. Ensure MX version 11.1 or higher is selected at the top drop-down selector. The MX version on the device should match this or higher. See [MX documentation](/mx/mx-version-on-device/) for instructions how to check the version.
+4. Select **Xpert Mode** from the list and click **Create.**
+   <img alt="" style="height:350px"  src="wizard-selection.png" />
+5. Enter the profile name. Click **Start.**
+   <img alt="" style="height:350px"  src="profile-name.png" />
+6. Scroll to **AccessMgr** and click the plus (+) sign to add AccessMgr to the Config tab on the right side.
+   <img alt="" style="height:350px"  src="add-accessmgr.png" />
+7. Click **Add.**
+8. Enter the appropriate information as prompted:
 
-<li><p>Open StageNow. In the StageNow home screen, click <strong>Create New Profile</strong> from the left menu.
-<img alt="" style="height:350px" src="create-profile.png"></p></li>
+   - **Service Access Action:** Allow Caller to Call Service
+   - **Service Identifier:** delegation-zebra-com.zebra.mobiledimensioning-Enable
+   - **Caller Package Name:** [Enter package name of the client app.]
+   - **Caller Signature:** [Browse to the app certificate generated from [Extract Client App Certificate](#extractclientappcertificate).]
 
-<li><p>Ensure MX version 11.1 or higher is selected at the top drop-down selector. The MX version on the device should match this or higher. See <a href="/mx/mx-version-on-device/">MX documentation</a> for instructions how to check the version.</p></li>
+   Click **Continue.**
+   <img alt="" style="height:350px"  src="accessmgr.png" />
 
-<li><p>Select <strong>Xpert Mode</strong> from the list and click <strong>Create.</strong>
-<img alt="" style="height:350px" src="wizard-selection.png"></p></li>
+9. Click **Complete Profiles.** Profile creation is complete.
+   <img alt="" style="height:350px"  src="complete-profile.png" />
 
-<li><p>Enter the profile name. Click <strong>Start.</strong>
-<img alt="" style="height:350px" src="profile-name.png"></p></li>
+Perform **one** of the following steps based on the staging method. Ensure devices are connected to the network during the staging process:
 
-<li><p>Scroll to <strong>AccessMgr</strong> and click the plus (+) sign to add AccessMgr to the Config tab on the right side.
-<img alt="" style="height:350px" src="add-accessmgr.png"></p></li>
-
-<li><p>Click <strong>Add.</strong></p></li>
-
-<li><p>Enter the appropriate information as prompted:</p>
-
-<ul>
-<li><strong>Service Access Action:</strong> Allow Caller to Call Service</li>
-
-<li><strong>Service Identifier:</strong> delegation-zebra-com.zebra.mobiledimensioning-Enable</li>
-
-<li><strong>Caller Package Name:</strong> [Enter package name of the client app.]</li>
-
-<li><strong>Caller Signature:</strong> [Browse to the app certificate generated from <a href="#extractclientappcertificate">Extract Client App Certificate</a>.]</li></ul>
-
-<p>Click <strong>Continue.</strong>
-<img alt="" style="height:350px" src="accessmgr.png"></p></li>
-
-<li><p>Click <strong>Complete Profiles.</strong> Profile creation is complete.
-<img alt="" style="height:350px" src="complete-profile.png"></p></li>
-</ol>
-
-<p>Perform <strong>one</strong> of the following steps based on the staging method. Ensure devices are connected to the network during the staging process:</p>
-
-<ul>
-<li><strong>StageNow:</strong> Generate the barcode. Open StageNow on the device and scan the barcode to place the app in the allow list.</li>
-
-<li><strong>EMM:</strong> Click on <strong>Export the XML for MDM.</strong> Send the XML using either <a href="/oemconfig">OEMConfig</a> or <a href="/mx/overview">MX</a> to place the app in the allow list.</li>
-</ul>
+- **StageNow:** Generate the barcode. Open StageNow on the device and scan the barcode to place the app in the allow list.
+- **EMM:** Click on **Export the XML for MDM.** Send the XML using either [OEMConfig](/oemconfig) or [MX](/mx/overview) to place the app in the allow list.
+-->
 
 <hr>
 
@@ -458,7 +391,7 @@ where <em>[filename.apk]</em> is the full path and file name of the LOB app APK 
 
 <p>ENABLE_DIMENSION starts the Dimensioning service and enables and configures the time-of-flight (ToF) camera for the app to be ready for dimensioning. This must be called before any other API to ensure the Mobile Parcel API is enabled, allowing communication with the app.</p>
 
-<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i>  <strong>NOTE:</strong> </p>
+<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>NOTE:</strong></p>
 
 <ul>
 <li><strong>To ensure that the Dimensioning service is properly started,</strong> ENABLE_DIMENSION should be called using the startForegroundService() method rather than the sendBroadcast() method.</li>
@@ -481,19 +414,20 @@ where <em>[filename.apk]</em> is the full path and file name of the LOB app APK 
     <th>Type</th>
     <th>Description/Value</th>
   </tr>
-
+<!-- 
   <tr>
        <td>TOKEN</td>
     <td>String</td>
     <td>API authentication token</td>
   </tr>
-
+-->
+<!-- 
   <tr>
        <td>APPLICATION_PACKAGE</td>
     <td>String</td>
     <td>LOB application package name</td>
   </tr>
-
+  -->
   <tr>
        <td>CALLBACK_RESPONSE</td>
     <td>PendingIntent</td>
@@ -555,6 +489,8 @@ where <em>[filename.apk]</em> is the full path and file name of the LOB app APK 
 
 <p>DISABLE_DIMENSION releases the ToF camera and any other Dimensioning service resources allocated during ENABLE_DIMENSION. To save battery, call DISABLE_DIMENSION when dimensioning is not in use or when the app is running in the background.</p>
 
+<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>NOTE:</strong> On Android 14 and above, FLAG_RECEIVER_FOREGROUND should be set in the intent to ensure DISABLE_DIMENSION API is properly called.</p>
+
 <h4 id="request-1" class="anchor"><a class="heading-anchor" href="#request-1"><span></span></a>Request</h4>
 
 <p>Use the following action to call DISABLE_DIMENSION:</p>
@@ -570,19 +506,20 @@ where <em>[filename.apk]</em> is the full path and file name of the LOB app APK 
     <th>Type</th>
     <th>Description/Value</th>
   </tr>
-
+<!-- 
   <tr>
        <td>TOKEN</td>
     <td>String</td>
     <td>API authentication token</td>
   </tr>
-
+-->
+<!-- 
   <tr>
        <td>APPLICATION_PACKAGE</td>
     <td>String</td>
     <td>Line of business (LOB) application package name</td>
   </tr>
-
+-->
   <tr>
        <td>CALLBACK_RESPONSE</td>
     <td>PendingIntent</td>
@@ -650,19 +587,20 @@ where <em>[filename.apk]</em> is the full path and file name of the LOB app APK 
     <th>Type</th>
     <th>Description/Value</th>
   </tr>
-
+<!-- 
   <tr>
        <td>TOKEN</td>
     <td>String</td>
     <td>API authentication token</td>
   </tr>
-
+-->
+<!-- 
   <tr>
        <td>APPLICATION_PACKAGE</td>
     <td>String</td>
     <td>LOB application package name</td>
   </tr>
-
+-->
   <tr>
        <td>CALLBACK_RESPONSE</td>
     <td>PendingIntent</td>
@@ -756,6 +694,12 @@ where <em>[filename.apk]</em> is the full path and file name of the LOB app APK 
     <td>Enable reporting proof of dimension image with dimension response:<p style="font-family:'Courier New'">• True<br>• False</p></td>
   </tr>
 
+  <tr>
+       <td>TIMEOUT</td>
+    <td>Integer</td>
+    <td colspan="2">Returns the timeout value set for dimensioning, range: 10-30 seconds</td>
+  </tr>
+
 </tbody></table>
 
 <p><br></p>
@@ -793,21 +737,22 @@ where <em>[filename.apk]</em> is the full path and file name of the LOB app APK 
     <th>Required</th>
     <th>Description/Value</th>
   </tr>
-
+<!-- 
   <tr>
        <td>TOKEN</td>
     <td>String</td>
     <td>Yes</td>
     <td>API authentication token</td>
   </tr>
-
+-->
+<!--
   <tr>
        <td>APPLICATION_PACKAGE</td>
     <td>String</td>
     <td>Yes</td>
     <td>LOB application package name</td>
   </tr>
-
+-->
   <tr>
        <td>CALLBACK_RESPONSE</td>
     <td>PendingIntent</td>
@@ -827,6 +772,13 @@ where <em>[filename.apk]</em> is the full path and file name of the LOB app APK 
     <td>Boolean</td>
     <td>No</td>
     <td><p style="font-family:'Courier New'">• True<br>• False</p></td>
+  </tr>
+
+  <tr>
+       <td>TIMEOUT</td>
+    <td>Integer</td>
+    <td>No</td>
+    <td>Timeout for dimensioning, range: 10-30 seconds</td>
   </tr>
 
 </tbody></table>
@@ -894,21 +846,22 @@ where <em>[filename.apk]</em> is the full path and file name of the LOB app APK 
     <th>Required</th>
     <th>Description/Value</th>
   </tr>
-
+<!-- 
   <tr>
        <td>TOKEN</td>
     <td>String</td>
     <td>Yes</td>
     <td>API authentication token</td>
   </tr>
-
+-->
+<!--
   <tr>
        <td>APPLICATION_PACKAGE</td>
     <td>String</td>
     <td>Yes</td>
     <td>LOB application package name</td>
   </tr>
-
+-->
   <tr>
        <td>CALLBACK_RESPONSE</td>
     <td>PendingIntent</td>
@@ -998,7 +951,7 @@ where <em>[filename.apk]</em> is the full path and file name of the LOB app APK 
   <tr>
        <td>TIMESTAMP</td>
     <td>Instant</td>
-    <td colspan="2">Time when dimension took place</td>
+    <td colspan="2">Time when dimension took place, in microseconds</td>
   </tr>
 
   <tr>
@@ -1050,8 +1003,6 @@ where <em>[filename.apk]</em> is the full path and file name of the LOB app APK 
 <p>Definition for overloaded method sendIntentApi() to be used with any Mobile Parcel API - refer to the Sample Code section of the specific API above for more details:</p>
 
 <pre class="prettyprint"><code>    public static final String ZEBRA_DIMENSIONING_PACKAGE = "com.zebra.dimensioning";
-    public static final String APPLICATION_PACKAGE = "APPLICATION_PACKAGE";
-    public static final String TOKEN = "TOKEN";
     public static final String CALLBACK_RESPONSE = "CALLBACK_RESPONSE";
     public static final String INTENT_ACTION_ENABLE_DIMENSION = "com.zebra.dimensioning.ENABLE_DIMENSION";
     public static final String INTENT_ACTION_DISABLE_DIMENSION = "com.zebra.dimensioning.DISABLE_DIMENSION";
@@ -1065,18 +1016,10 @@ where <em>[filename.apk]</em> is the full path and file name of the LOB app APK 
 
     public void sendIntentApi(String action, Bundle extras)
     {
-        if (token == null || token.isEmpty())
-        {
-            Log.e(TAG, "Token is Null");
-            return;
-        }
-
         Log.d(TAG, "sendIntentApi " + action);
         Intent intent = new Intent();
         intent.setAction(action);
         intent.setPackage(ZEBRA_DIMENSIONING_PACKAGE);
-        intent.putExtra(APPLICATION_PACKAGE, getPackageName());
-        intent.putExtra(TOKEN, token);
 
         if (extras != null)
         {
@@ -1207,8 +1150,6 @@ where <em>[filename.apk]</em> is the full path and file name of the LOB app APK 
 
 <pre class="prettify prettyprint"><code>
     public static final String ZEBRA_DIMENSIONING_PACKAGE = "com.zebra.dimensioning";
-    public static final String APPLICATION_PACKAGE = "APPLICATION_PACKAGE";
-    public static final String TOKEN = "TOKEN";
     public static final String INTENT_ACTION_DISABLE_DIMENSION = "com.zebra.dimensioning.DISABLE_DIMENSION";
 
     public class ApplicationDimensioningClient extends Application {
@@ -1223,19 +1164,6 @@ where <em>[filename.apk]</em> is the full path and file name of the LOB app APK 
                     handleUncaughtException(thread, ex);
                 } 
             });
-        }
-
-        public void handleUncaughtException (Thread thread, Throwable e) {
-
-            if (token != null &amp;&amp; !token.isEmpty())          // Validate application token
-            {
-                Intent intent = new Intent();
-                intent.setAction(INTENT_ACTION_DISABLE_DIMENSION);
-                intent.setPackage(ZEBRA_DIMENSIONING_PACKAGE);
-                intent.putExtra(APPLICATION_PACKAGE, getPackageName());
-                intent.putExtra(TOKEN, token);
-                sendBroadcast(intent);
-            }
         }
     }
 </code>
@@ -1263,6 +1191,19 @@ where <em>[filename.apk]</em> is the full path and file name of the LOB app APK 
             }
         }
     }
+</code></pre>
+
+<hr>
+
+<h2 id="configuration" class="anchor"><a class="heading-anchor" href="#configuration"><span></span></a>Configuration</h2>
+
+<blockquote>
+  <p>This configuration applies to <strong>Non-Certified Mobile Parcel Dimensioning</strong> only. Certification is hardware-dependent.</p>
+</blockquote>
+
+<p>The "Not Legal for Trade" banner can be hidden from the user. To achieve this, set the "HideNotLegalForTradeBanner" value to "true" in the configuration file located at <code>/sdcard/MD/NLFT_Banner.txt</code>.</p>
+
+<pre class="prettyprint"><code>    HideNotLegalForTradeBanner=true
 </code></pre>
 
 <hr>
