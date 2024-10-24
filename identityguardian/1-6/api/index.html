@@ -361,10 +361,30 @@
 
 <p>URI: <code>content://com.zebra.mdna.els.provider/currentsession</code></p>
 
-<p>Sample code:</p>
+<p><strong>General Sample code:</strong></p>
 
 <pre class="prettyprint"><code>    Uri URI_USER_CURRENT_SESSION = Uri.parse("content://com.zebra.mdna.els.provider/currentsession");
     Cursor cursor = cr.query(URI_USER_CURRENT_SESSION, null, null, null, null);
+</code></pre>
+
+<p><strong>Sample code to use <a href="../usage/#proxymode">Proxy Mode</a> to send the user sign-in and sign-out event notifications:</strong></p>
+
+<pre class="prettyprint"><code>    public void getDataForCurrentUser() { 
+        ContentResolver contentResolver = getContentResolver(); 
+        Uri uri = Uri.parse("content://com.zebra.mdna.els.provider/"); 
+        String METHOD_NAME = "currentsession";
+
+        Bundle bundle = new Bundle(); 
+        bundle.putString("user_id", "pd3445"); 
+        bundle.putBoolean("signed_in_state", true); 
+        bundle.putString("signin_time", getCurrentDateAndTimeFormat(System.currentTimeMillis())); 
+        bundle.putString("signout_time", “”); 
+        Bundle response = contentResolver.call(uri,METHOD_NAME,null,bundle); 
+        if (response != null &amp;&amp; response.containsKey("RESULT")) 
+        { 
+            Log.i(TAG, response.getString("RESULT"));
+        }
+    }
 </code></pre>
 
 <p>The 'cursor' is given in JSON format where each key is accompanied by a series of possible values separated by '/' and custom values enclosed in '[ ]' in the key-value pair:</p>
@@ -407,7 +427,20 @@
 <p><strong>The properties returned in the 'cursor' result are:</strong></p>
 
 <ul>
-<li><strong>signin_time -</strong> Timestamp in string format: </li>
+<li><strong>user_id -</strong> Identifier for the user signing into the device. This is required if a user is signing in.</li>
+
+<li><strong>signed_in_state -</strong> Indicates a user's sign-in status on the device. This is mandatory.
+
+
+<ul>
+<li><strong>1 -</strong> User is signed in or has checked out the device, updating the <strong>signin_time</strong>.</li>
+
+<li><strong>0 -</strong> User is signed out or checked in the device, updating the <strong>signout_time</strong>.</li></ul>
+</li>
+
+<li><strong>signin_time -</strong> Timestamp formatted as a string: “yyyy-dd-MM HH:mm:ss.SSSZ”. This is required when using <a href="../usage/#proxymode">Proxy Mode</a> for user sign-in.</li>
+
+<li><strong>signout_time -</strong> Timestamp formatted as a string: “yyyy-dd-MM HH:mm:ss.SSSZ”. This is required when using <a href="../usage/#proxymode">Proxy Mode</a> for user sign-out.</li>
 
 <li><strong>FactorType -</strong> Specifies the level of authentication:
 
@@ -475,16 +508,30 @@
 
 <li><strong>on_forcelock -</strong> Device automatically locked after reaching the specified timeout period.</li></ul>
 </li>
+</ul>
 
-<li><strong>signed_in_state -</strong> Indicates a user's sign-in status on the device.
+<p>The Response is received by the caller application in the form of a bundle:</p>
+
+<ul>
+<li><strong>RESULT:</strong>
 
 
 <ul>
-<li><strong>1 -</strong> User is signed in or has checked out the device.</li>
+<li>If successful: {"status":"SUCCESS","message":"successfully executed"}    </li>
 
-<li><strong>0 -</strong> User is signed out or checked in the device.</li></ul>
+<li>If failed: {"status":"FAILURE","message":"[error description]"}, where the "error description" is based on the type of error encountered. </li></ul>
 </li>
 </ul>
+
+<p>Throws errors:</p>
+
+<ul>
+<li><strong>NullPointerException –</strong> if the URI or method is null</li>
+
+<li><strong>IllegalArgumentException –</strong> if the URI is not known</li>
+</ul>
+
+<h4 id="sampleresults" class="anchor"><a class="heading-anchor" href="#sampleresults"><span></span></a>Sample Results</h4>
 
 <p><strong>Sample return value in JSON string format for 'cursor'.</strong> If 'cursor' is null or empty, that indicates no user has signed in:</p>
 
