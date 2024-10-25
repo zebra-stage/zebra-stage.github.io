@@ -357,7 +357,7 @@
 
 <h3 id="currentsession" class="anchor"><a class="heading-anchor" href="#currentsession"><span></span></a>Current Session</h3>
 
-<p>Retrieve data from the current user's session. The data retrieved includes but is not limited to: user ID, role, timestamps for sign in/out and multifactor authentication.</p>
+<p>Retrieve session data for the current user, including but not limited to: user ID, role, timestamps for sign in/out and multifactor authentication.</p>
 
 <p>URI: <code>content://com.zebra.mdna.els.provider/currentsession</code></p>
 
@@ -367,7 +367,7 @@
     Cursor cursor = cr.query(URI_USER_CURRENT_SESSION, null, null, null, null);
 </code></pre>
 
-<p><strong>Sample code to use <a href="../usage/#proxymode">Proxy Mode</a> to send the user sign-in and sign-out event notifications:</strong></p>
+<p><strong>Sample code for using <a href="../usage/#proxymode">Proxy Mode</a> to send sign-in and sign-out notifications to Identity Guardian:</strong></p>
 
 <pre class="prettyprint"><code>    public void getDataForCurrentUser() { 
         ContentResolver contentResolver = getContentResolver(); 
@@ -387,7 +387,9 @@
     }
 </code></pre>
 
-<p>The 'cursor' is given in JSON format where each key is accompanied by a series of possible values separated by '/' and custom values enclosed in '[ ]' in the key-value pair:</p>
+<p><strong>The 'cursor' result is returned as a JSON string format.</strong> If the 'cursor' is null or empty, no user is signed into the device.</p>
+
+<p>The result includes an <strong>authentication factors</strong> section, detailing the multifactor authentication factors, each represented as an object. This 'cursor' sample focuses on these factors, with keys followed by possible values separated by '/' and custom values enclosed in '[ ]':</p>
 
 <pre class="prettyprint"><code>    {
         "signin_time": "[time stamp]",
@@ -422,9 +424,7 @@
     }
 </code></pre>
 
-<p><strong>The result from 'cursor' includes an authentication factors section,</strong> which encapsulates an array of authentication factors used in multifactor authentication (MFA) with each factor represented as an object.</p>
-
-<p><strong>The properties returned in the 'cursor' result are:</strong></p>
+<p><strong>The 'cursor' result includes important properties (this is not an exhaustive list):</strong></p>
 
 <ul>
 <li><strong>user_id -</strong> Identifier for the user signing into the device. This is required if a user is signing in.</li>
@@ -508,6 +508,17 @@
 
 <li><strong>on_forcelock -</strong> Device automatically locked after reaching the specified timeout period.</li></ul>
 </li>
+
+<li><strong>enrollmentInformation -</strong> (Optional) Details about user enrollment, including enrollment type, security type, device model, etc.</li>
+
+<li><strong>isSSOInformationAvailable -</strong> Shows the availability of single sign-on (SSO) information:
+
+
+<ul>
+<li><strong>1 -</strong> SSO information is available; <strong>ssoInformation</strong> can be parsed for details.</li>
+
+<li><strong>0 -</strong> SSO information is not available.</li></ul>
+</li>
 </ul>
 
 <p>The Response is received by the caller application in the form of a bundle:</p>
@@ -533,34 +544,91 @@
 
 <h4 id="sampleresults" class="anchor"><a class="heading-anchor" href="#sampleresults"><span></span></a>Sample Results</h4>
 
-<p><strong>Sample return value in JSON string format for 'cursor'.</strong> If 'cursor' is null or empty, that indicates no user has signed in:</p>
+<p><strong>Sample return results for 'cursor':</strong> </p>
 
 <pre class="prettyprint"><code>    {
-        "signin_time":"2024-04-03 18:24.670+0530",
-        "user_role":"Manager",
-        "user_id":"manager@gmail.com",
-        "signout_time":null,
-        "authenticatedFactors":
+        "schemaVersion": "2.0",
+        "status": "SUCCESS",
+        "errorcode": 0,
+        "userLoggedInState": "1", 
+        "eventType":"Login/Logout",
+        "isSSOInformationAvailable":"1",  
+        "loginInformation":
         {
-            "schemaVersion":"1.0",
-            "factors":
-            [
-                {
-                    "factor":"FACE",
-                    "factorType":"PRIMARYPRIMARYFACTORY",
-                    "status":"EXECUTED",
-                }
-                {
-                    "factor":"PASSCODE",
-                    "factorType":"PRIMARYSECONDARYFACTOR1",
-                    "status":"EXECUTED"
-                }
-            ]
-            "eventType":"CurrentUser",
-            "lockScreenEventType":"on_unlock"
+            "userLoginTime":"EPOC",
+        },
+
+        "logOutInformation":
+        {
+            "userLogoutTime":"EPOC",
+            "logoutReason":"on_lock/manual_logout/user_change/onAcPowerConnect/onACPowerDisconnect" 
+        },
+
+        "userInformation": 
+        {
+            "userId": "test_user",
+            "userRole": "test_group"
+        },
+
+        "authenticationFactors": 
+        {                   
+            {
+                "schemaVersion":"2.0",    "factors": 
+                [
+                    {
+                        "factor": "FACE",
+                        "factorType": "PRIMARYPRIMARYFACTOR",
+                        "status": "EXECUTED"
+                    },
+
+                    {
+                        "factor": "PASSCODE",
+                        "factorType": "FALLBACKFACTOR1",
+                        "status": "EXECUTED"
+                    },
+
+                    "eventType":"CurrentUser",
+                    "lockScreenEventType":"on_unlock"
+                ]        
+            }
+        },
+
+        "ssoInformation": 
+        {
+            "ssoProvider": "PingId",
+            "ssoAccessToken": "12345abcde",
+            "ssoIDToken":"",
+            "ssoDataReceivedFromIDP": 
+            {
+
+                "sub": "user@company.com",
+                "aud": "test123_new_test_none",
+                "jti": "54321edcba",
+                "iss": "https://test.test.com",
+                "iat": 1727352498,
+                "exp": 1727352647,
+                "AdminJobID": "test-group",
+                "location": "NY",
+                "JobId": "testuser",
+                "GroupID": "test-Group",
+                "pi.sri": "46tGa230SsfoUoasdfJFzUTE.dXMtZWFzdC0y",
+                "sid": "46tGa230SsfoUasdfAJFzUTE.dXMtZWFzdC0y",
+                "nonce": "-W3pLAleOnWdfd8wqOW3pg"
+            }
+        },
+
+        "enrollmentInformation":
+        {
+            "enrollmentType":"Barcode",
+            "enrollmentId": "",
+            "securityTypes":"FACE,PASSCODE",
+            "validThrough":"Barcode Expiry TIme in EPOC",
+            "storageType": "Barcode/Device",
+            "enrollmentExpiryDate":"EPOC",
+            "enrollmentCreatedOn":"EPOC",
+            "enrollmentCreatedOnDeviceModel":"TC57",
+            "enrollmentCreatedOnDeviceSerialNo":"Serial Number"
         }
-        "barcode_id":"1709030550634ADFODBD",
-        "signed_in_state":"1"
     }
 </code></pre>
 
@@ -681,7 +749,7 @@
     }
 </code></pre>
 
-<p><strong>The result from 'cursor' includes an authentication factors section,</strong> which encapsulates an array of authentication factors used in multifactor authentication (MFA) with each factor represented as an object.</p>
+<p><strong>The result from 'cursor' includes an authentication factors section,</strong> which encapsulates an array of authentication factors used in multifactor authentication with each factor represented as an object.</p>
 
 <p><strong>The properties returned in the 'cursor' result are:</strong></p>
 
