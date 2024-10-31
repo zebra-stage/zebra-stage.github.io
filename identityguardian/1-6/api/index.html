@@ -277,9 +277,9 @@
 &lt;/queries&gt;
 </code></pre></li>
 
-<li><p>To use Identity Guardian APIs, they need to be <a href="#whitelistapis">whitelisted</a> within your application.</p></li>
+<li><p>To use Identity Guardian APIs, they need to be <a href="#allowlistapis">allowlisted</a> within your application.</p></li>
 
-<li><p>For security purposes, your app must be included on Identity Guardian's permitted app whitelist using <a href="/mx/accessmgr">AccessMgr CSP</a> from <a href="/flux/about">Zebra Device Manager (ZDM)</a> to enable utilization of the APIs. Create a profile using <a href="/stagenow">StageNow</a> to deploy the configuration to whitelist your app. Set the following parameters:</p>
+<li><p>For security purposes, your app must be included on Identity Guardian's permitted app allowlist using <a href="/mx/accessmgr">AccessMgr CSP</a> from <a href="/flux/about">Zebra Device Manager (ZDM)</a> to enable utilization of the APIs. Create a profile using <a href="/stagenow">StageNow</a> to deploy the configuration to allowlist your app. Set the following parameters:</p>
 
 <ul>
 <li><strong>Operation Mode:</strong> "Single User without Whitelist"</li>
@@ -357,68 +357,194 @@
 
 <h3 id="currentsession" class="anchor"><a class="heading-anchor" href="#currentsession"><span></span></a>Current Session</h3>
 
-<p>Retrieve data from the current user's session. The data retrieved includes but is not limited to: user ID, role, timestamps for sign in/out and multifactor authentication.</p>
+<p>Retrieve session data for the current user, including but not limited to: user ID, role, timestamps for sign in/out and multifactor authentication.</p>
 
 <p>URI: <code>content://com.zebra.mdna.els.provider/currentsession</code></p>
 
-<p>Sample code:</p>
+<p><strong>General Sample code:</strong></p>
 
 <pre class="prettyprint"><code>    Uri URI_USER_CURRENT_SESSION = Uri.parse("content://com.zebra.mdna.els.provider/currentsession");
     Cursor cursor = cr.query(URI_USER_CURRENT_SESSION, null, null, null, null);
 </code></pre>
 
-<p>The 'cursor' is given in JSON format where each key is accompanied by a series of possible values separated by '/' and custom values enclosed in '[ ]' in the key-value pair:</p>
+<p><strong>Sample code for using <a href="../usage/#proxymode">Proxy Mode</a> to send sign-in and sign-out notifications to Identity Guardian:</strong></p>
 
-<pre class="prettyprint"><code>    {
-        "signin_time": "[time stamp]",
-        "user_role":"[string]",
-        "user_id":"[string]",
-        "signout_time":"[time stamp]",
-        "authenticationFactors":
-        {
-            "SchemaVersion": "1.0"
-            "factors":[
-                {
-                    "FactorType": "PRIMARYPRIMARYFACTOR",
-                    "Factor": "PASSCODE/FACE/SSO/NO_COMPARISON",
-                    "Status": "EXECUTED/EXECUTED BUT NOT CONSIDERED/TIMEDOUT"
-                },
-                {
-                    "FactorType": "PRIMARYSECONDARYFACTOR1",
-                    "Factor": "PASSCODE/FACE/SSO/NONE",
-                    "Status": "TIMEDOUT/USERSKIPPED/EXECUTED"
-                },
-                {
-                    "FactorType": "FALLBACKFACTOR1",
-                    "Factor": "PASSCODE/FACE/SSO/ADMINBYPASS/NONE",
-                    "Status": "EXECUTED/TIMEDOUT/USERSKIPPED"
-                }
-            ]
-            "EventType": "PreviousUser/CurrentUser",
-            "lockScreenEventType": "on_reboot/on_unlock/on_user_change/ac_power_connected/ac_power_disconnected/on_devicemanual_checkin/on_forcelock"
+<pre class="prettyprint"><code>    public void getDataForCurrentUser() { 
+        ContentResolver contentResolver = getContentResolver(); 
+        Uri uri = Uri.parse("content://com.zebra.mdna.els.provider/"); 
+        String METHOD_NAME = "currentsession";
+
+        Bundle bundle = new Bundle(); 
+        bundle.putString("user_id", "pd3445"); 
+        bundle.putBoolean("signed_in_state", true); 
+        bundle.putString("signin_time", getCurrentDateAndTimeFormat(System.currentTimeMillis())); 
+        bundle.putString("signout_time", “”); 
+        Bundle response = contentResolver.call(uri,METHOD_NAME,null,bundle); 
+        if (response != null &amp;&amp; response.containsKey("RESULT")) 
+        { 
+            Log.i(TAG, response.getString("RESULT"));
         }
-        "barcode_id":"[string]",
-        "signed_in_state":"1/0"
     }
 </code></pre>
 
-<p><strong>The result from 'cursor' includes an authentication factors section,</strong> which encapsulates an array of authentication factors used in multifactor authentication (MFA) with each factor represented as an object.</p>
+<p><strong>The <code>cursor</code> result is returned as a JSON string format.</strong> If the <code>cursor</code> is null or empty, no user is signed into the device. The result includes an <strong>authentication factors</strong> section, detailing the multifactor authentication factors, each represented as an object. </p>
 
-<p><strong>The properties returned in the 'cursor' result are:</strong></p>
+<p><strong><code>Cursor</code> model:</strong> This outlines keys with their possible values (values are separated by '/' and custom values enclosed in '[ ]'):</p>
+
+<pre class="prettyprint"><code>    {
+        "schemaVersion": "2.0",
+        "status": "SUCCESS",
+        "errorcode": 0,
+        "userLoggedInState": "1", 
+        "eventType":"Login/Logout",
+        "isSSOInformationAvailable":"1",  
+        "loginInformation":
+        {
+            "userLoginTime":"[EPOC time]",
+        },
+
+        "logOutInformation":
+        {
+            "userLogoutTime":"[EPOC time]",
+            "logoutReason":"on_lock/manual_logout/user_change/onAcPowerConnect/onACPowerDisconnect" 
+        },
+
+        "userInformation": 
+        {
+            "userId": "test_user",
+            "userRole": "test_group"
+        },
+
+        "authenticationFactors": 
+        {                   
+            {
+                "schemaVersion":"2.0",    "factors": 
+                [
+                    {
+                        "factorType": "PRIMARYPRIMARYFACTOR",
+                        "factor": "FACE",
+                        "status": "EXECUTED/TIMEDOUT/USERSKIPPED"
+                    },
+                    {
+                       "factorType":"PRIMARYSECONDARYFACTOR1",
+                       "factor": "PASSCODE/SSO/FACE",
+                       "status": "EXECUTED/TIMEDOUT/USERSKIPPED "
+                    }
+
+                    {
+                        "factorType": "FALLBACKFACTOR1",
+                        "factor": "PASSCODE/FACE/SSO/ADMINBYPASS/NONE",
+                        "status": "EXECUTED/TIMEDOUT/USERSKIPPED"
+                    },
+
+                    "eventType":"CurrentUser",
+                    "lockScreenEventType":"on_unlock/manual_logout/user_change/onAcPowerConnect/onACPowerDisconnect"
+                ]        
+            }
+        },
+
+        "ssoInformation": 
+        {
+            "ssoProvider": "PingId/Microsoft/OKTA",
+            "ssoAccessToken": "[string]",
+            "ssoIDToken":"",
+            "ssoDataReceivedFromIDP": 
+            {
+
+                "sub": "[user@company.com]",
+                "aud": "[test123_new_test_none]",
+                "jti": "[54321edcba]",
+                "iss": "[https://test.test.com]",
+                "iat": [1727352498],
+                "exp": [1727352647],
+                "AdminJobID": "[test-group]",
+                "location": "[NY]",
+                "JobId": "[testuser]",
+                "GroupID": "[test-Group]",
+                "pi.sri": "[46tGa230SsfoUoasdfJFzUTE.dXMtZWFzdC0y]",
+                "sid": "[46tGa230SsfoUasdfAJFzUTE.dXMtZWFzdC0y]",
+                "nonce": "[-W3pLAleOnWdfd8wqOW3pg]"
+            }
+        },
+
+        "enrollmentInformation":
+        {
+            "enrollmentType":"Barcode",
+            "enrollmentId": "[string]",
+            "securityTypes":"FACE/PASSCODE/SSO",
+            "validThrough":"[EPOC time]",
+            "storageType": "Barcode/Device",
+            "enrollmentExpiryDate":"[EPOC time]",
+            "enrollmentCreatedOn":"[EPOC time]",
+            "enrollmentCreatedOnDeviceModel":"[TC57]",
+            "enrollmentCreatedOnDeviceSerialNo":"[string]"
+        }
+    }
+</code></pre>
+
+<p><strong>Important properties of the <code>cursor</code> result (not exhaustive):</strong></p>
 
 <ul>
-<li><strong>FactorType -</strong> Specifies the level of authentication:
+<li><strong>status -</strong> Indicates the API response outcome:
 
 
 <ul>
-<li><strong>PRIMARYPRIMARYFACTOR -</strong> Primary authentication</li>
+<li><strong>SUCCESS</strong></li>
 
-<li><strong>PRIMARYSECONDARYFACTOR1 -</strong> Secondary authentication</li>
-
-<li><strong>FALLBACKFACTOR1 -</strong> Fallback authentication</li></ul>
+<li><strong>FAILED</strong></li></ul>
 </li>
 
-<li><strong>Factor -</strong> Describes the type of authentication:
+<li><strong>userLoggedInState -</strong> User's login status on the device:
+
+
+<ul>
+<li><strong>1 -</strong> User is signed in or has checked out the device, updating the <code>userLoginTime</code>.</li>
+
+<li><strong>0 -</strong> User is signed out or has checked in the device, updating the <code>userLogoutTime</code>.</li></ul>
+</li>
+
+<li><strong>eventType -</strong> Specifies the event that occurred:
+
+
+<ul>
+<li><strong>Login</strong></li>
+
+<li><strong>Logout</strong></li></ul>
+</li>
+
+<li><strong>isSSOInformationAvailable -</strong> Availability of single sign-on (SSO) data:
+
+
+<ul>
+<li><strong>1 -</strong> SSO information is available; <code>ssoInformation</code> can be parsed for details.</li>
+
+<li><strong>0 -</strong> SSO information is not available.</li></ul>
+</li>
+
+<li><strong>userLoginTime -</strong> Timestamp in EPOCH format when user signed in.</li>
+
+<li><strong>userLogoutTime -</strong> Timestamp in EPOCH format when user signed out.</li>
+
+<li><strong>logoutReason -</strong> Event during user logout:
+
+
+<ul>
+<li><strong>on_lock -</strong> User locked the device.</li>
+
+<li><strong>manual_logout -</strong> User signed out manually via the <strong>Sign out</strong> button in Identity Guardian</li>
+
+<li><strong>user_change -</strong> User signed out and another user signed into the device.</li>
+
+<li><strong>onAcPowerConnect -</strong> Device connected to power.</li>
+
+<li><strong>onACPowerDisconnect -</strong> Device disconnected from power.</li></ul>
+</li>
+
+<li><strong>user_id -</strong> Identifier for the user signing into the device. In <a href="../usage/#proxymode">Proxy Mode</a>, it appears in the user name field of the Zebra app receiving user session information. For example, in Device Tracker, this name is shown in the Checked-Out field.</li>
+
+<li><strong>userRole -</strong> Role identifier based on data from the SSO provider.</li>
+
+<li><strong>Factor -</strong> Type of authentication:
 
 
 <ul>
@@ -428,25 +554,38 @@
 
 <li><strong>SSO</strong></li>
 
-<li><strong>NO_COMPARISON -</strong> Applies to "PRIMARYPRIMARYFACTOR" FactorType</li>
+<li><strong>ADMINBYPASS</strong></li>
 
-<li><strong>NONE -</strong> Applies to "PRIMARYSECONDARYFACTOR1" and "FALLBACKFACTOR1" FactorType</li></ul>
+<li><strong>NONE -</strong> Applies to "PRIMARYSECONDARYFACTOR1" and "FALLBACKFACTOR1" FactorType</li>
+
+<li><strong>NO_COMPARISON -</strong> Applies to "PRIMARYPRIMARYFACTOR" FactorType</li></ul>
 </li>
 
-<li><strong>Status -</strong> Indicates the current status of authentication:
+<li><strong>FactorType -</strong> The level of authentication:
 
 
 <ul>
-<li><strong>EXECUTED -</strong> Authentication is successful.</li>
+<li><strong>PRIMARYPRIMARYFACTOR -</strong> Primary authentication.</li>
+
+<li><strong>PRIMARYSECONDARYFACTOR1 -</strong> Secondary authentication.</li>
+
+<li><strong>FALLBACKFACTOR1 -</strong> Fallback authentication.</li></ul>
+</li>
+
+<li><strong>Status -</strong> Current authentication status:
+
+
+<ul>
+<li><strong>EXECUTED -</strong> Successful authentication.</li>
 
 <li><strong>EXECUTED BUT NOT CONSIDERED -</strong> Primary authentication was successful but secondary authentication failed.</li>
 
-<li><strong>TIMEDOUT -</strong> The authentication request exceeded the time limit.</li>
+<li><strong>TIMEDOUT -</strong> The authentication request timed out.</li>
 
-<li><strong>USERSKIPPED -</strong> The user opted for fallback authentication, bypassing the SSO login prompt by pressing the back button.</li></ul>
+<li><strong>USERSKIPPED -</strong> User bypassed the SSO login prompt by pressing the back button, resulting to fallback authentication.</li></ul>
 </li>
 
-<li><strong>EventType -</strong> Indicates whether the authentication is for a previous user or the current user. This could be relevant for tracking user sessions or determining access rights:
+<li><strong>eventType -</strong> Specifies authentication user, useful for tracking sessions or determining access rights:
 
 
 <ul>
@@ -455,63 +594,180 @@
 <li><strong>CurrentUser</strong></li></ul>
 </li>
 
-<li><strong>lockScreenEventType -</strong> Specifies the event that triggered the lock screen to appear. This could include events like device reboot, user unlock, power connection/disconnection, manual check-in, or forced lock.
+<li><strong>lockScreenEventType -</strong> Trigger for lock screen:
 
 
 <ul>
-<li><strong>on_reboot -</strong> Device rebooted</li>
+<li><strong>on_unlock -</strong> User unlocked the device.</li>
 
-<li><strong>on_unlock -</strong> User unlocked device</li>
+<li><strong>manual_logout -</strong> User signed out manually through the <strong>Sign out</strong> button in Identity Guardian.</li>
 
-<li><strong>on_user_change -</strong> User signed out and another user signed into the device</li>
+<li><strong>user_change -</strong> User signed out and another user signed into the device.</li>
 
-<li><strong>ac_power_connected -</strong> Device connected to power</li>
+<li><strong>onAcPowerConnect -</strong> Device connected to power.</li>
 
-<li><strong>ac_power_disconnected -</strong> Device disconnected from power</li>
-
-<li><strong>on_devicemanual_checkin -</strong> User manually signed out of the device through the "Sign out" button in Identity Guardian (applies to Shared Devices only).</li>
-
-<li><strong>on_forcelock -</strong> Device automatically locked after reaching the specified timeout period.</li></ul>
+<li><strong>onACPowerDisconnect -</strong> Device disconnected from power.</li></ul>
 </li>
 
-<li><strong>signed_in_state -</strong> Specifies whether a user has signed into the device.
+<li><strong>ssoProvider -</strong> SSO provider in use:
 
 
 <ul>
-<li><strong>1 -</strong> A user is signed into the device.</li>
+<li><strong>PingId</strong></li>
 
-<li><strong>0 -</strong> No user is signed into the device.</li></ul>
+<li><strong>Microsoft</strong></li>
+
+<li><strong>OKTA</strong></li></ul>
+</li>
+
+<li><strong>securityTypes -</strong> Authentication method for device checkout:
+
+
+<ul>
+<li><strong>FACE</strong></li>
+
+<li><strong>PASSCODE</strong></li>
+
+<li><strong>SSO</strong></li></ul>
+</li>
+
+<li><strong>validThrough -</strong> Date until the user barcode is valid, in EPOCH time, set by the administrator.</li>
+
+<li><strong>storageType -</strong> User data storage location:
+
+
+<ul>
+<li><strong>Barcode -</strong> For shared devices.</li>
+
+<li><strong>Device -</strong> For personal devices.</li></ul>
+</li>
+
+<li><strong>enrollmentExpiryDate -</strong> Barcode expiration date in EPOC time.</li>
+
+<li><strong>enrollmentCreatedOn -</strong> Barcode creation date in EPOC time.</li>
+
+<li><strong>enrollmentCreatedOnDeviceModel -</strong> Model of device used for barcode creation.</li>
+
+<li><strong>enrollmentCreatedOnDeviceSerialNo -</strong> Serial number of device used for barcode creation.</li>
+</ul>
+
+<!-- 
+- **signed_in_state -** Indicates a user's sign-in status on the device. This is mandatory.
+  - **1 -** User is signed in or has checked out the device, updating the **signin_time**.
+  - **0 -** User is signed out or checked in the device, updating the **signout_time**.
+- **signin_time -** Timestamp formatted as a string (“yyyy-dd-MM HH:mm:ss.SSSZ”), applicable without Proxy Mode.
+- **signout_time -** Timestamp formatted as a string (“yyyy-dd-MM HH:mm:ss.SSSZ”), applicable without Proxy Mode.
+- **enrollmentInformation -** (Optional) Details about user enrollment, including enrollment type, security type, device model, etc.
+-->
+
+<p>The Response is received by the caller application in the form of a bundle:</p>
+
+<ul>
+<li><strong>RESULT:</strong>
+
+
+<ul>
+<li>If successful: <code>{ "status":"SUCCESS","message":"successfully executed" }</code>    </li>
+
+<li>If failed: <code>{ "status":"FAILURE","message":"[error description]" }</code>, where the "error description" is based on the type of error encountered. </li></ul>
 </li>
 </ul>
 
-<p><strong>Sample return value in JSON string format for 'cursor'.</strong> If 'cursor' is null or empty, that indicates no user has signed in:</p>
+<p>Exceptions:</p>
+
+<ul>
+<li><strong>NullPointerException –</strong> if the URI or method is null</li>
+
+<li><strong>IllegalArgumentException –</strong> if the URI is not known</li>
+</ul>
+
+<h4 id="sampleresults" class="anchor"><a class="heading-anchor" href="#sampleresults"><span></span></a>Sample Results</h4>
+
+<p><strong>Sample return results for <code>cursor</code>:</strong> </p>
 
 <pre class="prettyprint"><code>    {
-        "signin_time":"2024-04-03 18:24.670+0530",
-        "user_role":"Manager",
-        "user_id":"manager@gmail.com",
-        "signout_time":null,
-        "authenticatedFactors":
+        "schemaVersion": "2.0",
+        "status": "SUCCESS",
+        "errorcode": 0,
+        "userLoggedInState": "1", 
+        "eventType":"Login",
+        "isSSOInformationAvailable":"1",  
+        "loginInformation":
         {
-            "schemaVersion":"1.0",
-            "factors":
-            [
-                {
-                    "factor":"FACE",
-                    "factorType":"PRIMARYPRIMARYFACTORY",
-                    "status":"EXECUTED",
-                }
-                {
-                    "factor":"PASSCODE",
-                    "factorType":"PRIMARYSECONDARYFACTOR1",
-                    "status":"EXECUTED"
-                }
-            ]
-            "eventType":"CurrentUser",
-            "lockScreenEventType":"on_unlock"
+            "userLoginTime":"1729232875461",
+        },
+
+        "logOutInformation":
+        {
+            "userLogoutTime":"1729232899461",
+            "logoutReason":"on_lock" 
+        },
+
+        "userInformation": 
+        {
+            "userId": "user@company.com",
+            "userRole": "test_group"
+        },
+
+        "authenticationFactors": 
+        {                   
+            {
+                "schemaVersion":"1.0",    "factors": 
+                [
+                    {
+                        "factor": "FACE",
+                        "factorType": "PRIMARYPRIMARYFACTOR",
+                        "status": "EXECUTED"
+                    },
+
+                    {
+                        "factor":"PASSCODE",
+                        "factorType":"PRIMARYSECONDARYFACTOR1",
+                        "status":"EXECUTED"
+                    }
+                ],
+
+                "eventType":"CurrentUser",
+                "lockScreenEventType":"on_unlock"                            
+            }
+        },
+
+        "ssoInformation": 
+        {
+            "ssoProvider": "PingId",
+            "ssoAccessToken": "12345abcde",
+            "ssoIDToken":"",
+            "ssoDataReceivedFromIDP": 
+            {
+
+                "sub": "user@company.com",
+                "aud": "test123_new_test_none",
+                "jti": "54321edcba",
+                "iss": "https://test.zebra.com",
+                "iat": 1727352498,
+                "exp": 1727352647,
+                "AdminJobID": "test-group",
+                "location": "NY",
+                "JobId": "testuser",
+                "GroupID": "test-Group",
+                "pi.sri": "46tGa230SsfoUoasdfJFzUTE.dXMtZWFzdC0y",
+                "sid": "46tGa230SsfoUasdfAJFzUTE.dXMtZWFzdC0y",
+                "nonce": "-W3pLAleOnWdfd8wqOW3pg"
+            }
+        },
+
+        "enrollmentInformation":
+        {
+            "enrollmentType":"Barcode",
+            "enrollmentId": "172208771078F577",
+            "securityTypes":"FACE,PASSCODE",
+            "validThrough":"1729436343123",
+            "storageType": "Barcode",
+            "enrollmentExpiryDate":"1729436343123",
+            "enrollmentCreatedOn":"1729232812461",
+            "enrollmentCreatedOnDeviceModel":"TC57",
+            "enrollmentCreatedOnDeviceSerialNo":"1234567890"
         }
-        "barcode_id":"1709030550634ADFODBD",
-        "signed_in_state":"1"
     }
 </code></pre>
 
@@ -597,7 +853,7 @@
     Cursor cursor = cr.query(URI_PREVIOUS_USER_SESSION , null, null, null, null);
 </code></pre>
 
-<p>The 'cursor' is given in JSON format where each key is accompanied by a series of possible values separated by '/' and custom values enclosed in '[ ]' in the key-value pair:</p>
+<p>The <code>cursor</code> is given in JSON format where each key is accompanied by a series of possible values separated by '/' and custom values enclosed in '[ ]' in the key-value pair:</p>
 
 <pre class="prettyprint"><code>    {
         "signin_time": "[time stamp]",
@@ -632,9 +888,9 @@
     }
 </code></pre>
 
-<p><strong>The result from 'cursor' includes an authentication factors section,</strong> which encapsulates an array of authentication factors used in multifactor authentication (MFA) with each factor represented as an object.</p>
+<p><strong>The result from <code>cursor</code> includes an authentication factors section,</strong> which encapsulates an array of authentication factors used in multifactor authentication with each factor represented as an object.</p>
 
-<p><strong>The properties returned in the 'cursor' result are:</strong></p>
+<p><strong>The properties returned in the <code>cursor</code> result are:</strong></p>
 
 <ul>
 <li><strong>FactorType -</strong> Specifies the level of authentication:
@@ -714,7 +970,7 @@
 </li>
 </ul>
 
-<p><strong>Sample return value in JSON string format for 'cursor'.</strong> If 'cursor' is null or empty, that indicates no user has signed in:</p>
+<p><strong>Sample return value in JSON string format for <code>cursor</code>.</strong> If <code>cursor</code> is null or empty, that indicates no user has signed in:</p>
 
 <pre class="prettyprint"><code>    {
         "signin_time":"2023-10-04 11:19.338+0530",
@@ -935,9 +1191,9 @@
 
 <hr>
 
-<h2 id="whitelistapis" class="anchor"><a class="heading-anchor" href="#whitelistapis"><span></span></a>Whitelist APIs</h2>
+<h2 id="allowlistapis" class="anchor"><a class="heading-anchor" href="#allowlistapis"><span></span></a>Allowlist APIs</h2>
 
-<p>Identity Guardian APIs must be whitelisted within your app to enable their use.</p>
+<p>Identity Guardian APIs must be allowlisted within your app to enable their use.</p>
 
 <h3 id="prerequisites" class="anchor"><a class="heading-anchor" href="#prerequisites"><span></span></a>Prerequisites</h3>
 
@@ -946,15 +1202,15 @@
 
 <li><strong>Place your .APK app and <a href="/emdk-for-android/latest/samples/sigtools/">SigTools.jar</a> in the same folder</strong> on your host computer.</li>
 
-<li><strong>Download <a href="/stagenow">StageNow</a>.</strong> This is used to create the profile to whitelist the APIs.</li>
+<li><strong>Download <a href="/stagenow">StageNow</a>.</strong> This is used to create the profile to allowlist the APIs.</li>
 </ol>
 
 <h3 id="procedure" class="anchor"><a class="heading-anchor" href="#procedure"><span></span></a>Procedure</h3>
 
-<p>Procedure to whitelist Identity Guardian APIs within your app using StageNow:</p>
+<p>Procedure to allowlist Identity Guardian APIs within your app using StageNow:</p>
 
 <ol>
-<li><p>From the commnd line, change the path to the location where your .APK and "SigTools.jar" is located.</p></li>
+<li><p>From the command line, change the path to the location where your .APK and "SigTools.jar" is located.</p></li>
 
 <li><p>Generate the certificate by running the following command, where "LOB_app.apk" is replaced by the name of your .APK file:</p>
 
@@ -990,7 +1246,7 @@
 
 <li><p>Click <strong>Complete Profiles.</strong></p></li>
 
-<li><p>Repeat steps 3 to 10 for each API to whitelist in your app, replacing <strong>Service Identifier</strong> with the desired API URI:</p>
+<li><p>Repeat steps 3 to 10 for each API to allowlist in your app, replacing <strong>Service Identifier</strong> with the desired API URI:</p>
 
 <ul>
 <li><code>content://com.zebra.mdna.els.provider/lockscreenaction/startauthentication</code> (Start Authentication)</li>
