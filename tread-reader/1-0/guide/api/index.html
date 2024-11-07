@@ -299,9 +299,9 @@ the Tire Tread Depth reader.</p>
 
 <h2 id="apis" class="anchor"><a class="heading-anchor" href="#apis"><span></span></a>APIs</h2>
 
-<h3 id="initiate" class="anchor"><a class="heading-anchor" href="#initiate"><span></span></a>Initiate</h3>
+<h3 id="initiatereader" class="anchor"><a class="heading-anchor" href="#initiatereader"><span></span></a>Initiate Reader</h3>
 
-<p>INITIATE starts the Tread Reader service and must be called only once within an application's lifecycle before any other APIs. This ensures the Tread Reader APIs are enabled and can communicate with the application. <strong><em>To properly start the Tread Reader service, INITIATE must be called using the startForegroundService() method.</em></strong></p>
+<p>INITIATE starts the Tread Reader service and must be called <em>only once</em> within an application's lifecycle before any other APIs. This ensures the Tread Reader APIs are enabled and can communicate with the application. <strong><em>To properly start the Tread Reader service, INITIATE must be called using the startForegroundService() method.</em></strong></p>
 
 <h4 id="request" class="anchor"><a class="heading-anchor" href="#request"><span></span></a>Request</h4>
 
@@ -309,8 +309,6 @@ the Tire Tread Depth reader.</p>
 
 <pre class="prettyprint"><code>    com.zebra.intentapis.action.TTDR_INITIATE
 </code></pre>
-
-<p>Package: com.zebra.intentapis</p>
 
 <p><strong>Request Keys:</strong></p>
 
@@ -436,7 +434,7 @@ method.</p>
 
 <hr>
 
-<h3 id="releasetreadreader" class="anchor"><a class="heading-anchor" href="#releasetreadreader"><span></span></a>Release Tread Reader</h3>
+<h3 id="releasesession" class="anchor"><a class="heading-anchor" href="#releasesession"><span></span></a>Release Session</h3>
 
 <p>RELEASE stops the Tread Reader framework session. Zebra recommends to call this API when the application goes to the inactive state. (i.e.
 onStop(), onDestroy())</p>
@@ -554,9 +552,11 @@ In the event the framework throws an exception while invoking RELEASE API, the f
 
 <hr>
 
-<h3 id="starttreadreader" class="anchor"><a class="heading-anchor" href="#starttreadreader"><span></span></a>Start Tread Reader</h3>
+<h3 id="startsession" class="anchor"><a class="heading-anchor" href="#startsession"><span></span></a>Start Session</h3>
 
-<p>START begins the tread reader measurement session. It is required for the framework to be initiated and the tread reader connected to the device (how?).</p>
+<p>START begins the tread reader measurement session. Multiple tires can be read in a single session. It is required for the framework to be initiated and the tread reader connected to the device. </p>
+
+<p>When the tread reader is snapped-onto the mobile computer, the accessory connects to the device via USB. Use CURRENT_STATE to query the USB connection status or ON_STATE_CHANGE to register for connection state changes.</p>
 
 <h4 id="request-2" class="anchor"><a class="heading-anchor" href="#request-2"><span></span></a>Request</h4>
 
@@ -626,6 +626,63 @@ In the event the framework throws an exception while invoking RELEASE API, the f
 </tbody></table>
 
 <p><br></p>
+
+<h4 id="treaddata" class="anchor"><a class="heading-anchor" href="#treaddata"><span></span></a>Tread Data</h4>
+
+<p>Tread data is received to the application as a list which contains tread depth readings on inner, center and outer treads in Json format, each object containing four attributes: confidenceLevel, metricTreadDepth, position, status.</p>
+
+<table class="facelift" style="width:100%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>Attribute</th>
+    <th>Description/Value</th>
+  </tr>
+
+  <tr>
+       <td>metricTreadDepth</td>
+    <td>Tread Depth measurement provided in units of millimeters (mm). The host application can convert mm to inches by multiplying this variable by 0.03937.<br> Example Conversation from mm to inches:<br>
+3.97 mm * 0.03937 = 0.1562989”<br>
+0.1562989” is equivalent to 5/32”<br>
+<b>Note:</b> 1/32” = 0.03125”<br></td>
+  </tr>
+
+  <tr>
+       <td>position</td>
+    <td>Enum reporting the position of the Tread Depth</td>
+  </tr>
+
+  <tr>
+       <td>confidenceLevel</td>
+    <td>The confidence level in the measurement taken, ranging from 0 to 100, where 0 signifies the lowest confidence and 100 the highest. This value varies based on factors such as swipe speed, environmental conditions and tire complexity (e.g. tread geometry and patterns). For example, scanning at a high speed can result to low confidence levels. Use the following thresholds as a guide to assess the confidence level:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;81-100 : High confidence measurement, generally user swipe was controlled and tread measurement is reliable.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;61-80 : Measurement is acceptable. A mid-range score may indicate that the measurement quality is degraded due to tread geometry and/or user swipe behavior. As an example, a narrow tread and fast
+swipe speed could create conditions where the confidence factor is lower than 80.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0-60 : Lowest confidence measurement. Levels 60 and lower usually indicate that the swipe behavior was not stable or larger than typical measurement variation.</td>
+  </tr>
+
+  <tr>
+       <td>status</td>
+    <td>Enum represents a status of the Tread Depth</td>
+  </tr>
+
+</tbody></table>
+
+<!-- 
+**metricTreadDepth -** Tread Depth measurement provided in units of millimeters (mm). The host application can convert mm to inches by multiplying this variable by 0.03937.<br /> _Example Conversation from mm to inches:_<br />
+3.97 mm * 0.03937 = 0.1562989”<br />
+0.1562989” is equivalent to 5/32”<br />
+**Note:** 1/32” = 0.03125”<br /> -->
+
+<!-- 
+**position -** Enum reporting the position of the Tread Depth
+
+**confidenceLevel -** This value represents the confidence in the measurement taken. The value range is 0 – 100, with 0 representing the lowest confidence and 100 representing the highest confidence. This value will vary based on factors like swipe speed, environmental conditions and tire complexity (e.g. tread geometry and patterns). As a guideline, the following thresholds should be considered for judging confidence level:<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;81-100 : High confidence measurement, generally user swipe was controlled and tread measurement is reliable.<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;61-80 : Measurement is acceptable. A mid-range score may indicate that the measurement quality is degraded due to tread geometry and/or user swipe behavior. As an example, a narrow tread and fast
+swipe speed could create conditions where the confidence factor is lower than 80.<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0-60 : Lowest confidence measurement. Levels 60 and lower usually indicate that the swipe behavior was not stable or larger than typical measurement variation.
+
+**status -** Enum represents a status of the Tread Depth
+-->
 
 <p><strong>Exception</strong></p>
 
@@ -707,74 +764,17 @@ In the event the framework throws an exception while invoking RELEASE API, the f
 
 <hr>
 
-<h3 id="treaddata" class="anchor"><a class="heading-anchor" href="#treaddata"><span></span></a>Tread Data</h3>
-
-<p>Tread data is received to the application as a list which contains tread depth readings on inner, center and outer treads in Json format, each object containing four attributes: confidenceLevel, metricTreadDepth, position, status.</p>
-
-<table class="facelift" style="width:100%" border="1" padding="5px">
-  <tbody><tr bgcolor="#dce8ef">
-    <th>Attribute</th>
-    <th>Description/Value</th>
-  </tr>
-
-  <tr>
-       <td>metricTreadDepth</td>
-    <td>Tread Depth measurement provided in units of millimeters (mm). The host application can convert mm to inches by multiplying this variable by 0.03937.<br> Example Conversation from mm to inches:<br>
-3.97 mm * 0.03937 = 0.1562989”<br>
-0.1562989” is equivalent to 5/32”<br>
-<b>Note:</b> 1/32” = 0.03125”<br></td>
-  </tr>
-
-  <tr>
-       <td>position</td>
-    <td>Enum reporting the position of the Tread Depth</td>
-  </tr>
-
-  <tr>
-       <td>confidenceLevel</td>
-    <td>This value represents the confidence in the measurement taken. The value range is 0 – 100, with 0 representing the lowest confidence and 100 representing the highest confidence. This value will vary based on factors like swipe speed, environmental conditions and tire complexity (e.g. tread geometry and patterns). As a guideline, the following thresholds should be considered for judging confidence level:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;81-100 : High confidence measurement, generally user swipe was controlled and tread measurement is reliable.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;61-80 : Measurement is acceptable. A mid-range score may indicate that the measurement quality is degraded due to tread geometry and/or user swipe behavior. As an example, a narrow tread and fast
-swipe speed could create conditions where the confidence factor is lower than 80.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0-60 : Lowest confidence measurement. Levels 60 and lower usually indicate that the swipe behavior was not stable or larger than typical measurement variation.</td>
-  </tr>
-
-  <tr>
-       <td>status</td>
-    <td>Enum represents a status of the Tread Depth</td>
-  </tr>
-
-
-
-</tbody></table>
-
-<!-- 
-**metricTreadDepth -** Tread Depth measurement provided in units of millimeters (mm). The host application can convert mm to inches by multiplying this variable by 0.03937.<br /> _Example Conversation from mm to inches:_<br />
-3.97 mm * 0.03937 = 0.1562989”<br />
-0.1562989” is equivalent to 5/32”<br />
-**Note:** 1/32” = 0.03125”<br /> -->
-
-<!-- 
-**position -** Enum reporting the position of the Tread Depth
-
-**confidenceLevel -** This value represents the confidence in the measurement taken. The value range is 0 – 100, with 0 representing the lowest confidence and 100 representing the highest confidence. This value will vary based on factors like swipe speed, environmental conditions and tire complexity (e.g. tread geometry and patterns). As a guideline, the following thresholds should be considered for judging confidence level:<br />
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;81-100 : High confidence measurement, generally user swipe was controlled and tread measurement is reliable.<br />
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;61-80 : Measurement is acceptable. A mid-range score may indicate that the measurement quality is degraded due to tread geometry and/or user swipe behavior. As an example, a narrow tread and fast
-swipe speed could create conditions where the confidence factor is lower than 80.<br />
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0-60 : Lowest confidence measurement. Levels 60 and lower usually indicate that the swipe behavior was not stable or larger than typical measurement variation.
-
-**status -** Enum represents a status of the Tread Depth
--->
-
-<hr>
-
 <h3 id="treadreaderstate" class="anchor"><a class="heading-anchor" href="#treadreaderstate"><span></span></a>Tread Reader State</h3>
 
-<p>CURRENT_STATE queries the Tread Reader framework, connection state and framework state after the Tread Reader has initiated.</p>
+<p>The framework must be initiated prior to making these API calls: CURRENT_STATE and ON_STATE_CHANGE.</p>
 
-<p>ON_STATE_CHANGE notifies the client app when the framework connection state or framework state changes.</p>
+<h4 id="current_state" class="anchor"><a class="heading-anchor" href="#current_state"><span></span></a>CURRENT_STATE</h4>
 
-<p>The framework must be initiated prior to making these API calls.</p>
+<p>CURRENT_STATE queries the Tread Reader framework connection state after the Tread Reader has initiated to determine if the tread reader accessory is connected to the device.</p>
+
+<h4 id="on_state_change" class="anchor"><a class="heading-anchor" href="#on_state_change"><span></span></a>ON_STATE_CHANGE</h4>
+
+<p>ON_STATE_CHANGE registers the app for state changes, notifying when the framework connection state or framework state changes.</p>
 
 <h4 id="request-3" class="anchor"><a class="heading-anchor" href="#request-3"><span></span></a>Request</h4>
 
