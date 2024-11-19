@@ -263,7 +263,7 @@
 
 <p><strong>Zebra's KC50 is a rugged Android-based fixed-mount computer designed for kiosk applications including point-of-sale, information display and/or look-up, and various payment and conversational self-service scenarios</strong>. Zebra's kiosk computers are available in 22-inch and 15-inch sizes and with or without Power Over Ethernet capability. </p>
 
-<p>Also available is the TD-50, a 15-inch touch display designed to work with the KC50 to provide secondary video output and touch input. All KC50 and TD50 models support standard VESA mounting, with wall, floor and countertop mounting solutions available. </p>
+<p>Also available is the TD50, a 15-inch touch display designed to work with the KC50 to provide secondary video output and touch input. All KC50 and TD50 models support standard VESA mounting, with wall, floor and countertop mounting solutions available. </p>
 
 <p><img alt="image" style="height:400px" src="KC50_15_TD50_15_NFC.jpeg">
 <b><i><font size="1" color="LightGrey">The 15-inch KC50 (facing away) with optional TC50 Touch Display and back-to-back counter stand.</font></i></b>
@@ -328,7 +328,7 @@
 
 <li><strong>Z-Flex SE4720 scanner</strong></li>
 
-<li><strong>Z-Flex LED Light Bar</strong></li>
+<li><strong>Z-Flex LED Light Bar</strong> (see <a href="#ledcontrol">LED Usage Guide</a>)</li>
 
 <li><strong>Stands</strong>* (third-party):
 
@@ -404,6 +404,316 @@
 <p><img alt="image" style="height:400px" src="kc50_diagram.jpg">
 <b><i><font size="1" color="LightGrey">With Z-Flex ports on all four sides, KC50 can be outfitted with accessories to fit an unlimited number of use cases. Click image to enlarge; ESC to exit.</font></i></b>
 <br></p>
+
+<hr>
+
+<h2 id="ledcontrol" class="anchor"><a class="heading-anchor" href="#ledcontrol"><span></span></a>LED Control</h2>
+
+<p><strong>The KC50 supports an optional multi-color LED Light Bar that can be controlled programmatically through the Zebra LED service</strong> and its <a href="https://developer.android.com/guide/components/aidl">Android Interface Definition Language (AIDL)</a> interface. This permits an app to control the light bar without the need for Android Notification APIs and the accompanying on-screen notifications. The sample code below can be modified for use in apps to indicate status of any relevant activity.</p>
+
+<p><img alt="image" style="height:400px" src="kc50_lightbar.jpg">
+<em>Click image to enlarge; ESC to exit</em>.
+<br></p>
+
+<h3 id="requirements" class="anchor"><a class="heading-anchor" href="#requirements"><span></span></a>Requirements</h3>
+
+<ul>
+<li>KC50 with Z-Flex Light Bar attached</li>
+
+<li><code>ILedBarLightService.aidl</code> file (download below) </li>
+
+<li>Supported Functions
+
+
+<ul>
+<li>Light Bar ON with defined color</li>
+
+<li>Light Bar repeats two-color sequence indefinitely</li>
+
+<li>Light Bar stops two-color sequence and displays a single color (or turns OFF)</li>
+
+<li>Light Bar OFF</li></ul>
+</li>
+</ul>
+
+<h3 id="intents" class="anchor"><a class="heading-anchor" href="#intents"><span></span></a>Intents</h3>
+
+<ul>
+<li>Binding to the Light Bar service</li>
+
+<li>Use established mechanisms to bind to the service</li>
+
+<li>Service package name: <code>com.zebra.ledbarlightservice</code></li>
+</ul>
+
+<h3 id="examplecode" class="anchor"><a class="heading-anchor" href="#examplecode"><span></span></a>Example code</h3>
+
+<pre class="prettyprint"><code>
+Intent i=new Intent(“LedBarLightService”);
+i.setPackage(“com.zebra.ledbarlightservice”);
+bindService(I, mConnection, BIND_AUTO_CREATE);
+</code></pre>
+
+<p>The <code>ServiceConnection</code> class method <code>onServiceConnected()</code> capture the binding to the service.</p>
+
+<h3 id="apis" class="anchor"><a class="heading-anchor" href="#apis"><span></span></a>APIs</h3>
+
+<ol>
+<li>setLight(int ID, int COLOR);</li>
+</ol>
+
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+</tr></tbody></table><table class="table table-striped">
+ <tbody><tr>
+<th>Parameter</th>
+<th>Values</th>
+<th>Description</th></tr>
+
+<tr>
+<td>ID</td>
+<td>Type: int<br>101</td>
+<td>LED identification</td>
+</tr>
+
+<tr>
+<td>COLOR</td>
+<td>Type: int <br>from 0x000000–0xFFFFFF</td>
+<td>RGB color in the format 0xRRGGBB<br><a href="https://www.rapidtables.com/web/color/RGB_Color.html">Go to RGB hex table</a></td>
+</tr>
+
+<tr>
+<td>COLOR1</td>
+<td>Type: int <br>from 0x000000–0xFFFFFF</td>
+<td>RGB color in the format 0xRRGGBB<br><a href="https://www.rapidtables.com/web/color/RGB_Color.html">Go to RGB hex table</a></td>
+</tr>
+
+<tr>
+<td>COLOR2</td>
+<td>Type: int <br>from 0x000000–0xFFFFFF</td>
+<td>RGB color in the format 0xRRGGBB<br><a href="https://www.rapidtables.com/web/color/RGB_Color.html">Go to RGB hex table</a></td>
+</tr>
+
+<tr>
+<td>PERIOD1</td>
+<td>Type: int</td>
+<td>Time (in milliseconds) to illuminate LED bar with COLOR1</td>
+</tr>
+
+<tr>
+<td>PERIOD2</td>
+<td>Type: int</td>
+<td>Time (in milliseconds) to illuminate LED bar with COLOR2</td>
+</tr>
+
+</tbody></table>
+
+
+<!-- 
+Parameter    Value   Description
+ID    
+
+101    LED ID
+COLOR    Type: int
+
+0x000000 – 0xFFFFFF
+
+RGB Color in the format 0xRRGGBB
+
+RR =  Red Value 00 – FF
+GG = Green Value 00 – FF
+BB = Blue Value 00 – FF
+
+Setting to 0x000000 turns the LED OFF
+
+If the LED is not illuminated, calling this API will illuminate the LEDs with the specified color.
+If the LED is illuminated, calling this API with a different color, changes the color.
+Calling the API with the “transparent” color turns the LEDs off.
+
+### Methods
+
+* `setLedOff()` - Turns off the LED bar
+ * Example: setLedOff();
+* `setLightSequence()` - Sets a repeating light sequence of two colors with defined periods
+ * Example: setLightSequence(int ID, int COLOR1, int PERIOD1, int COLOR2, int PERIOD2);
+
+setLedSequenceOff()
+setLedSequenceOff(int LEDID, int COLOR);
+Stops sequencing of light from setLedSequence() function. Will display COLOR as a solid color, or turn OFF if no COLOR parameter is passed.
+
+* `setLight()` - 
+ * Example: 
+
+
+
+4.    setLedSequenceOff(int LEDID, int COLOR);
+
+Stops sequencing of light from setLedSequence() function. Will display COLOR as a solid color, or turn OFF if no COLOR parameter is passed.
+
+`setLight(int ID, int COLOR)`
+If the LED is not illuminated, calling this API will illuminate the LEDs with the specified color.
+If the LED is illuminated, calling this API with a different color, changes the color.
+Calling the API with the “transparent” color turns the LEDs off.
+ -->
+
+<hr>
+
+<h4 id="tocontrolthekc50lightbarprogrammatically" class="anchor"><a class="heading-anchor" href="#tocontrolthekc50lightbarprogrammatically"><span></span></a>To control the KC50 Light Bar programmatically:</h4>
+
+<p><strong>1. <a href="ILedBarLightService.aidl">Download the KC50 AIDL file</a> and add it to the Android Studio project</strong>: <br>
+ <img alt="image" style="height:200px" src="add_aidl.png">
+<br>
+<strong>2. Add the standard AIDL boilerplate code</strong> to connect with (and disconnect from) the Zebra LED service and modify as needed for the app under development.<br><strong>Note the ComponentName in the sample code below</strong>:</p>
+
+<pre class="prettyprint"><code>    
+package com.mycompany.mysampleapp;
+
+// Imports go here.
+
+public class MySampleActivity extends Activity {
+    private static final String TAG = "MySampleActivity"
+    private ILed mLedService = null;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        //...
+
+        // Connect to the AIDL interface for LED control.
+        Intent intent = new Intent().setComponent(new ComponentName("com.zebra.led", "com.zebra.led.LedService"));
+        bindService(intent, ledConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    @Override
+    protected void onDestroy() {
+        unbindService(ledConnection);
+        super.onDestroy();
+    }
+
+    /**
+      * This code monitors the connection to the LED service:
+      */
+    private final ServiceConnection ledConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+            mLedService = ILed.Stub.asInterface(iBinder);
+        }
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {
+            mLedService = null;
+        }
+    };
+</code></pre>
+
+<p><strong>3. Call <code>ledId</code> and <code>color</code></strong> to illuminate LED wth the desired color:</p>
+
+<pre class="prettyprint"><code>// ILedBarLightService.aidl
+package com.zebra.ledbarlightservice;
+interface ILedBarLightService {
+      /**
+       * Sets the color of the LED with the specified ID.
+       *
+       * @param ledId The ID of the LED to control.
+       * @param color The color value to set for the LED.
+       */
+      void setLight(int ledId, int color);
+       /**
+        * Turns off the LED.
+        */
+      void setLedOff();
+       /**
+        * sets the sequence of led to flash with the specific color till the respective times given.
+        */
+      void setLightSequence(int ledId, int color1, int period1, int color2, int period2);
+      /**
+       * sets the led sequence to off and display the color specified. If color is not specified, the LED will turn off.
+       */
+      void setLedSequenceOff(int ledId, int color);
+
+
+ }
+</code></pre>
+
+<!--
+2. Interface with, specify and control the desired LED:
+
+        :::xml
+        package com.zebra.led;
+        // Interface for apps to control device LEDs:
+        interface ILed
+        {
+        const int LED_LEFT = 2; // WS50 left LED
+        const int LED_RIGHT = 3; // WS50 right LED
+
+        // Set LED to solid color:
+        void setLed(int ledId, int color);
+        }
+
+        // Other parameters:
+        //
+        // @param ledID - the LED to control, one of the LED_ constants
+        // @param color - the color to set, in standard Android ARGB format. The opacity (A) is ignored.
+        // Color.TRANSPARENT (0) - turns the LED off
+        // @throws IllegalArgumentException - the LED is not available or given color is not supported
+-->
+
+<!-- 
+<i class="fa fa-exclamation-triangle" aria-hidden="true" style="color:#FFA500;"></i> **The WS50 LEDs support only solid illumination**; "blinking" or "flashing" of the LEDs is not supported. 
+-->
+
+<hr>
+
+<h2 id="aidlfile" class="anchor"><a class="heading-anchor" href="#aidlfile"><span></span></a>AIDL File</h2>
+
+<p>The Zebra <code>aidl</code> file is shown below and is available for <a href="ILed.aidl">download</a>.</p>
+
+<pre class="prettyprint"><code>// Copyright (c) 2020-2021 Zebra Technologies Corporation and/or its affiliates. All rights reserved.
+
+package com.zebra.led;
+
+/**
+ * Interface for apps to control device LEDs. Use this interface when you wish to control LEDs
+ * beyond what is available in Android's Notification API; for example, to light an LED without
+ * showing an on-screen notification, or to specify which LED when there is (or could be more than 
+ * one (such as on KC50 and WS50 devices).
+ */
+interface ILed
+{
+    /** LED id for a single app-controlled LED (available on Sharp RZ-H270, red and green
+        colors only) */
+    const int LED_USER = 1;
+    /** LED id for the left LED on devices with multiple LEDs (available on Zebra WS50) */
+    const int LED_LEFT = 2;
+    /** LED id for the right LED on devices with multiple LEDs (available on Zebra WS50) */
+    const int LED_RIGHT = 3;
+
+    /**
+     * Sets an LED to a solid color. LED and color availability varies by product.
+     *
+     * @param ledID the LED to control, one of the LED_ constants
+     * @param color the color to set, in standard Android ARGB format. The opacity (A) is
+     *              ignored. Use Color.TRANSPARENT (0) to turn the LED off.
+     * @throws IllegalArgumentException the LED is not available to control on this product, or the
+     *                                  the given color is not supported for the LED
+     */
+    void setLed(int ledId, int color);
+
+    /**
+     * Sets an LED to a blinking color. LEDs, color availability, and blinking support varies by
+     * product.
+     *
+     * @param ledID the LED to control, one of the LED_ constants
+     * @param color the color to set, in standard Android ARGB format. The opacity (A) is
+     *              ignored.
+     * @throws IllegalArgumentException the LED is not available to control on this product, or the
+     *                                  the given color is not supported for the LED
+     * @throws UnsupportedOperationException blinking is not supported for this product or LED
+     */
+    void setLedBlinking(int ledId, int color);
+}
+</code></pre>
+
+<hr>
 
 <h2 id="alsosee" class="anchor"><a class="heading-anchor" href="#alsosee"><span></span></a>Also See</h2>
 
