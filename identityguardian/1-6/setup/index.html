@@ -335,25 +335,35 @@
 <li>Personally Assigned Device</li>
 </ul>
 
-<p>For both types, users must first enroll in Identity Guardian before signing in to authenticate to the device.</p>
+<p>For both types, users must first enroll in Identity Guardian before signing in to authenticate to the device. </p>
 
 <hr>
 
 <h3 id="shareddevice" class="anchor"><a class="heading-anchor" href="#shareddevice"><span></span></a>Shared Device</h3>
 
-<p>In environments where multiple users share a single device, Identity Guardian ensures secure and personalized access. Personalized experiences can be tailored based on each user's predefined organizational role. Users must first enroll with Identity Guardian before they can authenticate on a shared device. Shared devices can recognize an unlimited number of registered users.</p>
+<p>In environments where <strong>a single device is used by multiple users,</strong> Identity Guardian provides <strong>secure and personalized access</strong> tailored to each user's organizational role. Users must perform a one-time enrollment with Identity Guardian before they can authenticate on a shared device. These devices can support an unlimited number of registered users.</p>
 
 <p>There are 2 methods for enrolling users on shared devices:</p>
 
 <ul>
-<li><strong><a href="#standardenrollment">Standard</a> -</strong> Users enroll on a designated device based on the Enrollment profile deployed by administrators. Once enrolled, they can authenticate on their shared device, where the administrator has deployed the Authentication profile.</li>
+<li><strong><a href="#standardenrollment">Standard Enrollment</a> -</strong> <em>Users enroll on a dedicated device</em> using the Enrollment profile set up by their administrator. Once enrolled, they can authenticate on their shared device, which has the Authentication profile deployed by the administrator.</li>
 
-<li><strong><a href="#selfenrollment">Self-Enrollment</a> -</strong> Both enrollment and authentication are performed directly on the shared device, facilitated by a unified Authentication profile (which includes enrollment configurations) deployed by the administrator. SSO is used for user authentication.</li>
+<li><strong><a href="#selfenrollment">Self-Enrollment</a> -</strong> <em>Both enrollment and authentication are conducted directly on the shared device</em> through a unified Authentication profile that incorporates enrollment configurations set up by the administrator. SSO is used for user authentication.</li>
 </ul>
 
-<p>User data is encrypted and stored in a unique, encrypted barcode located in the <code>/enterprise/usr/Profiles</code> folder. This user barcode must be printed or shared within 24 hours before it is automatically deleted, ensuring that personal information is not stored on the device or in the cloud. Optionally, facial biometrics can be used to generate this barcode for enhanced security. For temporary user profiles, barcodes can be set to expire automatically at a specified date and time. Alternatively, SSO can be used as the primary authentication method instead of issuing individual barcodes.</p>
+<p>User data is encrypted and stored within a unique, encrypted barcode in the <code>/enterprise/usr/Profiles</code> folder. <em><strong>This barcode must be printed or shared within 24 hours</strong></em> before it is automatically deleted, ensuring that personal information is not retained on the device or in the cloud. Facial biometrics can optionally be used to enhance security. For temporary user profiles, barcodes can be set to expire automatically at a predetermined date and time. Alternatively, SSO can serve as the primary authentication method instead of issuing individual barcodes.</p>
 
-<p>Once enrolled, users can authenticate on their shared device. <strong>For enhanced security, multifactor authentication</strong> can be configured, offering options such as a passcode, facial biometrics, and/or SSO. </p>
+<p><strong>During enrollment, the user’s personal information,</strong> such as biometric facial image capture and passcode, <strong>is encrypted with an enrollment key.</strong> <em>This key is an encrypted public key derived from the organization’s certificate</em> and configured via Identity Guardian Managed Configuration. For details on generating an enrollment key, see <a href="../mc/#enrollmentconfiguration">Enrollment Configuration</a>. Ensure the device used for enrollment is provisioned with the Enrollment configuration.</p>
+
+<p><strong>To authenticate users on a device, administrators must supply the authentication key,</strong> an <em>encrypted private key derived from the organization’s certificate</em> and configured through Identity Guardian Managed Configuration. For details on generating the authentication key, see <a href="../mc/#authenticationconfiguration">Authentication Configuration</a>. Ensure the device is provisioned with the Authentication configuration.</p>
+
+<p>When the enrollment barcode is scanned, its data is decrypted using the authentication key and used for further authentication checks. <strong>This barcode <em>cannot be decrypted or reverse-engineered on any device without the authentication key.</em></strong> Organizations <em>must</em> maintain the security and confidentiality of their authentication key.</p>
+
+<blockquote>
+  <p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <b><code>IMPORTANT:</code> Administrators MUST provision their own enrollment key on devices designated for user enrollment and MUST provision their authentication key on devices designated for user authentication.</b> Failure to do so results in Identity Guardian using default keys, allowing any device with those keys to decrypt the barcode.</p>
+</blockquote>
+
+<!-- Once enrolled, users can authenticate on their shared device. **For enhanced security, multifactor authentication** can be configured, offering options such as a passcode, facial biometrics, and/or SSO. -->
 
 <p><img alt="image" style="height:200px" src="shared-workflow.jpg"></p>
 
@@ -388,6 +398,8 @@
 
 
 <ul>
+<li>Enter the <strong>Enrollment Key</strong> to encrypt the user's personal information.</li>
+
 <li>If barcode printing or sharing is required, enable the option <strong>Allow opening barcode while enrollment.</strong></li></ul>
 </li>
 
@@ -446,7 +458,12 @@
 <li><strong>Application Mode:</strong> AUTHENTICATION</li></ul>
 </li>
 
-<li>Configure settings in <a href="../mc/#authenticationconfiguration">Authentication Configuration</a> from Managed Configurations. <i><strong>It is required to configure SSO as one of the verification methods.</strong></i></li>
+<li>Configure the desired settings in <a href="../mc/#authenticationconfiguration">Authentication Configuration</a> from Managed Configurations. <i><strong>It is required to configure SSO as one of the verification methods.</strong></i>
+
+
+<ul>
+<li>Enter the <strong>Authentication Key</strong> to decrypt the user's personal information.</li></ul>
+</li>
 
 <li>In <strong><a href="../mc/#lockscreenconfiguration">Lock Screen Configuration</a>:</strong> Expand <strong>Lock Screen Menu &gt; Allow Self Enrollment</strong> and set the following options:
 
@@ -685,7 +702,7 @@
 
 <h2 id="emm" class="anchor"><a class="heading-anchor" href="#emm"><span></span></a>EMM</h2>
 
-<p>Deploy and configure Identity Guardian on devices using an Enterprise Mobility Management (EMM) system, such as <a href="/zebradna">Zebra DNA Cloud</a> or a third party system that supports Managed Configurations. For SSO integration, see <a href="#sso">SSO</a>.</p>
+<p>Deploy and configure Identity Guardian on devices using an Enterprise Mobility Management (EMM) system, such as <a href="/zebradna">Zebra DNA Cloud</a> or a third party system, which supports Managed Configurations.</p>
 
 <p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> After installation, Identity Guardian <em>must</em> be launched for the configurations to take effect.</p>
 
@@ -705,20 +722,18 @@
 
 <p><br></p>
 
-<p><strong>General Procedure for Setting Up Identity Guardian Using an EMM:</strong></p>
+<p><strong>Generic Procedure to setup Identity Guardian using an EMM:</strong></p>
 
 <ol>
-<li><strong>SSO Integration:</strong> If SSO is required, follow the steps in the <a href="#sso">SSO</a> guide to register Identity Guardian according to the IdP in use.</li>
+<li><strong>Enroll the devices to the EMM.</strong></li>
 
-<li><strong>Device Enrollment:</strong> Enroll the devices to the EMM.</li>
+<li><strong>Upload the <a href="https://www.zebra.com/us/en/support-downloads/software/mobile-computer-software/identity-guardian.html">Identity Guardian APK</a> to the EMM,</strong> for example via Android Enterprise or the EMM's App Store. <em>Ensure the app is set to auto-launch after installation.</em></li>
 
-<li><strong>App Deployment:</strong> Upload the <a href="https://www.zebra.com/us/en/support-downloads/software/mobile-computer-software/identity-guardian.html">Identity Guardian APK</a> to the EMM, for example via Android Enterprise or the EMM's App Store. <em>Ensure the app is set to auto-launch after installation.</em></li>
-
-<li><strong>Application Policy Configuration:</strong> Create a new application policy using <a href="../mc">Managed Configurations</a> to set the appropriate Identity Guardian settings. If using SSO, follow the <a href="#sso">SSO configuration steps</a> based on the IdP. Consider the following for different device types:
+<li><strong>Create a new application policy using <a href="../mc">Managed Configurations</a> to configure the appropriate Identity Guardian settings.</strong> Consider the following:
 
 
 <ul>
-<li><strong><em>Shared Devices:</em></strong>
+<li><strong>For <em>shared devices:</em></strong>
 
 
 <ul>
@@ -727,12 +742,12 @@
 <li><strong>Authentication Profile -</strong> Configures the authentication methods for users to sign into the device. Navigate to <strong>Usage Mode &gt; Application Mode</strong> and select <strong>Authentication.</strong></li></ul>
 </li>
 
-<li><strong><em>Personally Assigned Devices:</em></strong> A single profile encompasses both enrollment and authentication configurations. Navigate to <strong>Usage Mode &gt; Application Mode</strong> and select <strong>Personally Assigned.</strong></li></ul>
+<li><strong>For <em>personally assigned devices:</em></strong> A single profile encompasses both enrollment and authentication configurations. Navigate to <strong>Usage Mode &gt; Application Mode</strong> and select <strong>Personally Assigned.</strong></li></ul>
 </li>
 
-<li><strong>Policy Assignment:</strong> Assign and apply the application policy to the devices. For <em>shared devices,</em> apply the Enrollment profile first.</li>
+<li><strong>Assign and apply the application policy to the devices -</strong> For <em>shared devices,</em> apply the Enrollment profile first.</li>
 
-<li><strong>User Enrollment -</strong> Users complete the enrollment process by following on-device instructions, which are based on the Enrollment Configuration settings from step 4.
+<li><strong>User Enrollment -</strong> Users proceed through the enrollment process on the device by following the displayed instructions. These steps are based on the Enrollment Configuration settings from step 3.
 
 
 <ul>
@@ -741,9 +756,9 @@
 <li>For <em>personally assigned devices,</em> refer to <a href="../usage/#personllyassigneddevice">personl device user enrollment</a>.</li></ul>
 </li>
 
-<li><strong>Authentication Policy:</strong> Create and apply the Authentication policy for <em>shared devices</em>. For <em>personally assigned devices,</em> proceed to the next step.</li>
+<li><strong>Create and apply the Authentication policy (for <em>shared devices</em>).</strong> For <em>personally assigned devices,</em> skip to step 7.</li>
 
-<li><strong>User Authentication -</strong> After user enrollment, the Identity Guardian authentication screen is displayed. Users can sign into the device based on the Authentication Configuration settings from step 4. See <a href="../usage/#signin">Device Sign In</a> for detailed instructions.</li>
+<li><strong>User authentication -</strong> After user enrollment, the Identity Guardian authentication screen is displayed. The user can sign into the device based on the Authentication Configuration settings from step 3. Refer to <a href="../usage/#signin">Device Sign In</a>.</li>
 </ol>
 
 <p>The following subsections provide video demonstrations tailored for specific EMMs. Within the videos, profiles are created based on user access:</p>
@@ -870,21 +885,19 @@
 <p>After applying an enrollment profile, this next video continues with:</p>
 
 <ol>
-<li><p><strong>Creating and applying an authentication profile for shared devices:</strong> For the app configuration policy, modify the <a href="./MS_Intune_sample.json" download="">sample Microsoft Intune JSON file</a> according to your desired <a href="../mc/">Managed Configurations</a> settings based on the Key and Value columns in the tables. For example, to change a specific option, look up the key in the table and enter the desired value in the JSON file. Enter the following values for the designated key, replacing <code>[text]</code> with your custom values:</p>
+<li><strong>Creating and applying an authentication profile for shared devices</strong>
+
 
 <ul>
-<li>"key": "APPLICATION_MODE", "valueString": "AUTHENTICATION"</li>
+<li>For the app configuration policy, first modify the <a href="./MS_Intune_sample.json" download="">sample Microsoft Intune JSON file</a> according to your desired settings. Refer to <a href="../mc/">Managed Configurations</a> to update the "value" field in the JSON file for each configuration option based on its key. For example, for the key <code>APPLICATION_MODE</code>, enter the value <code>AUTHENTICATION</code> to authenticate shared devices. Then, copy and paste the entire JSON content into the designated field as instructed in the video.
 
-<li>"key": "ssoScope", "valueString": "[Enter your scope, e.g. user.read is the default]"</li>
-
-<li>\"client_id\" : \"[Enter your client_id]\"</li></ul>
-
-<p>Then, copy and paste the entire JSON content into the designated field as instructed in the video.</p>
 
 <ul>
-<li>For <strong>SSO Authentication Configuration,</strong> in addition to replacing the appropriate value for the key <code>ssoProvider</code>, enter the appropriate values for the following keys: <code>ssoScope</code>, <code>client_id</code>, <code>redirect_uri</code>, <code>authority_url</code>, and <code>ssoUseridIdentifier</code>.</li></ul></li>
+<li>For <strong>SSO Authentication Configuration,</strong> in addition to replacing the appropriate value for the key <code>ssoProvider</code>, enter the appropriate values for the following keys: <code>ssoScope</code>, <code>client_id</code>, <code>redirect_uri</code>, <code>authority_url</code>, and <code>ssoUseridIdentifier</code>.</li></ul>
+</li></ul>
+</li>
 
-<li><p><strong>Launching Identity Guardian to implement the changes -</strong> Copy the <a href="./XML-Launch-IG.txt" download="">XML content</a> for launching Identity Guardian via OEMConfig</p></li>
+<li><strong>Launching Identity Guardian to implement the changes -</strong> Copy the <a href="./XML-Launch-IG.txt" download="">XML content</a> for launching Identity Guardian via OEMConfig</li>
 </ol>
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/N02wG_0ghqg?si=yL-c4cIY3QN96Iz6" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen=""></iframe>
@@ -951,19 +964,10 @@
 <p>Please ensure to enter or select the following when registering Identity Guardian:</p>
 
 <ul>
-<li>In the <strong>Register an application</strong> screen, enter the following then click <strong>Register</strong>:
+<li>For the supported account type, select "Single tenant."
+<img alt="image" style="height:525px" src="single-tenant.png"></li>
 
-
-<ul>
-<li><strong>Name:</strong> [Enter a name, e.g. Zebra Identity Guardian]</li>
-
-<li><strong>Supported account type:</strong> Accounts in this organizational directory only (Single tenant)</li>
-
-<li>Redirect URI: <strong>Public client/native (mobile &amp; desktop)</strong> <strong>msauth://com.zebra.mdna.els/</strong>
-<img alt="image" style="height:525px" src="single-tenant.png"></li></ul>
-</li>
-
-<li>When configuring the Android app, enter the following then click <strong>Configure</strong>:
+<li>When configuring the Android app, enter the following:
 
 
 <ul>
@@ -973,7 +977,7 @@
 <img alt="image" style="height:450px" src="config-android-app.png"></li></ul>
 </li>
 
-<li>Download the code sample and save the file as <code>auth_config.json</code>. This will be used in a subsequent step to configure the app settings on the device.
+<li>Download the code sample and save the file as <code>auth_config_single_account.json</code>. This will be used in a subsequent step to configure the app settings on the device.
 <img alt="image" style="height:450px" src="download-code-sample.png">
 <br></li>
 </ul>
@@ -1100,7 +1104,7 @@
 
 <li><strong>Scope:</strong> [Enter the string based on the SSO server settings]</li>
 
-<li><strong>Configuration Settings:</strong> [Enter the following string, but replace "client_id" and "authority_url" with your values from <code>auth_config.json</code> file downloaded from step I.]
+<li><strong>Configuration Settings:</strong> [Enter the following string, but replace "client_id" and "authority_url" with your values from <code>auth_config_single_account.json</code> file downloaded from step I.]
 <pre class="prettify prettyprint"><code>
               {
                   "client_id" : "[ENTER YOUR CLIENT ID]",
