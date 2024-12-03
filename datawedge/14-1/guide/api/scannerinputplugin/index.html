@@ -262,11 +262,17 @@
 
                                         <p></p><h2 id="scanner_input_plugin" class="anchor"><a class="heading-anchor" href="#scanner_input_plugin"><span></span></a>SCANNER_INPUT_PLUGIN</h2>
 
-<p>Used to enable/disable the scanner Plug-in being used by the currently active Profile. Disabling the scanner Plug-in effectively disables scanning in that Profile, regardless of whether the Profile is associated with an app. <strong>This API changes only the runtime status of the scanner; it does not make persistent changes to the Profile</strong>.</p>
+<p>Used to enable/disable the <a href="../../input/barcode/">Barcode Input Plug-in</a> being used by the currently active Profile to scan barcodes. Disabling the Barcode Input Plug-in effectively disables scanning for that Profile, even if the Profile is associated with an app. <strong>This API is only functional when <a href="../../input/barcode/">Barcode Input</a> is enabled in the active Profile and only affects the runtime status of the scanner; it does not make persistent changes to the Profile</strong>.</p>
 
-<blockquote>
-  <p><strong>Functional only when Barcode Input is enabled in the active Profile</strong>.</p>
-</blockquote>
+<p>For example, if activity A launches and uses the Data Capture API intent to switch to ProfileA, where the Barcode Input Plug-in is enabled, then at some point it uses the Data Capture API to disable the Barcode Input Plug-in. If Activity B is then launched and is associated with ProfileB in DataWedge, DataWedge switches to ProfileB. When activity A returns to the foreground, the Data Capture API intent must be used within the <code>onResume</code> method to switch back to ProfileA, and then disable the Barcode Input Plug-in to restore its previous state.</p>
+
+<h4 id="notes" class="anchor"><a class="heading-anchor" href="#notes"><span></span></a>Notes</h4>
+
+<ul>
+<li>In the scenario described, ProfileA is not associated with any applications/activities. Therefore, when focus returns to activity A, DataWedge will not automatically switch to ProfileA. Thus, activity A must be switched back to ProfileA within its <code>onResume</code> method. Because DataWedge automatically switches Profiles when an activity is paused, Zebra recommends to call <code>SCANNER_INPUT_PLUGIN</code> from the <code>onResume</code> method of the activity.</li>
+
+<li>Zebra recommends using <code>SUSPEND_PLUGIN</code> and <code>RESUME_PLUGIN</code> for apps that require rapid toggling of barcode scanning across different activities within the same app.</li>
+</ul>
 
 <h3 id="functionprototype" class="anchor"><a class="heading-anchor" href="#functionprototype"><span></span></a>Function Prototype</h3>
 
@@ -304,7 +310,7 @@ i.putExtra("com.symbol.datawedge.api.SCANNER_INPUT_PLUGIN", "&lt;parameter&gt;")
 <ul>
 <li><strong>SCANNER_ALREADY_SUSPENDED -</strong> An intent was received to suspend the scanner which is already suspended.</li>
 
-<li><strong>PLUGIN_DISABLED -</strong> The scanner plugin is disabled so the suspend/resume action cannot be executed.</li>
+<li><strong>PLUGIN_DISABLED -</strong> The scanner plug-in is disabled so the suspend/resume action cannot be executed.</li>
 
 <li><strong>SCANNER_ALREADY_RESUMED -</strong> A resume intent is received but the scanner is not in a suspended state.</li>
 
@@ -428,7 +434,7 @@ BroadcastReceiver receiver = new BroadcastReceiver() {
 };
 </code></pre>
 
-<p>Receive the Enable/Disable Plugin result:</p>
+<p>Receive the Enable/Disable Plug-in result:</p>
 
 <pre class="prettyprint"><code>// send the intent
 Intent i = new Intent();
@@ -467,22 +473,6 @@ public void onReceive(Context context, Intent intent){
 
 };
 </code></pre>
-
-<hr>
-
-<h3 id="comments" class="anchor"><a class="heading-anchor" href="#comments"><span></span></a>Comments</h3>
-
-<p>This intent enables/disables the scanner plug-in for the currently enabled Profile. For example, let's say that activity A launches and uses the Data Capture API intent to switch to ProfileA in which the scanner plug-in is enabled, then at some point it uses the Data Capture API to disable the scanner plug-in. Activity B is launched. In DataWedge, ProfileB is associated with activity B. DataWedge switches to ProfileB. When activity A comes back to the foreground, in the <code>onResume</code> method, activity A must use the Data Capture API intent to switch back to ProfileA, then use the Data Capture API intent again to disable the scanner plug-in, to return back to the state it was in.</p>
-
-<h3 id="notes" class="anchor"><a class="heading-anchor" href="#notes"><span></span></a>Notes</h3>
-
-<ul>
-<li><p>The scenario above assumes that ProfileA is not associated with any applications/activities, therefore when focus switches back to activity A, DataWedge will not automatically switch to ProfileA, and therefore activity A must switch back to ProfileA in its <code>onResume</code> method. Because DataWedge will automatically switch Profiles when an activity is paused, it is recommended that this API function be called from the <code>onResume</code> method of the activity.</p></li>
-
-<li><p>Zebra recommends using SUSPEND_PLUGIN and RESUME_PLUGIN in apps that require faster response to disable and enable barcode scanning across activities within the same app.</p></li>
-</ul>
-
-<p><strong>This API changes only the runtime status of the scanner; it does not make persistent changes to the Profile</strong>.</p>
 
 <hr>
 

@@ -262,39 +262,67 @@
 
                                         <p></p><h2 id="switch_to_profile" class="anchor"><a class="heading-anchor" href="#switch_to_profile"><span></span></a>SWITCH_TO_PROFILE</h2>
 
-<p>Used to switch the application's association to the specified Profile. <strong>The specified Profile must not already be associated with another application</strong>; an application cannot be associated with more than one Profile. Zebra recommends to register for the profile switch notification to identify when the profile switch is complete.</p>
+<p>Used to switch an application's association to a specified Profile. <strong>An app cannot be associated to more than one Profile, and the specified Profile must not already be associated with another app.</strong> Zebra recommends registering for profile switch notifications to identify when the profile switch is complete.  <strong>This API will not function if the specified Profile does not exist or is already associated with an application.</strong></p>
 
-<p><strong>CAUTION</strong>: Switching to a disabled Profile is prevented if the <a href="../getignoredisabledprofiles">GET_IGNORE_DISABLED_PROFILES API</a> returns a value of "true."</p>
+<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>CAUTION</strong>: Switching to a disabled Profile is not allowed if the <a href="../getignoredisabledprofiles">GET_IGNORE_DISABLED_PROFILES API</a> returns "true."</p>
 
 <h3 id="profilesrecap" class="anchor"><a class="heading-anchor" href="#profilesrecap"><span></span></a>Profiles Recap</h3>
 
-<p>DataWedge is based on Profiles and Plug-ins. A Profile contains information about how DataWedge will behave with a given application.</p>
-
-<p>Profile information consists of:</p>
+<p>DataWedge operates using Profiles and Plug-ins. A Profile contains information about how DataWedge interacts with a specific application and includes:</p>
 
 <ul>
 <li>Associated application</li>
 
 <li>Input plug-in configurations</li>
 
-<li>Output plug-in configurations</li>
-
 <li>Process plug-in configurations</li>
+
+<li>Output plug-in configurations</li>
 </ul>
 
-<p>DataWedge includes a default Profile, Profile0, which is created automatically the first time DataWedge runs.</p>
+<p>DataWedge includes a default Profile, Profile0, automatically created the first time DataWedge runs. Profiles allow each application to have a tailored DataWedge configuration. For example, each user application can have a Profile that outputs scanned data in the required format when that application is active in the foreground. DataWedge can be configured to process the same captured data differently based on the requirements of each application.</p>
 
-<p>Using Profiles, each application can have a specific DataWedge configuration. For example, each user application can have a Profile that outputs scanned data in the required format when that application comes to the foreground. DataWedge can be configured to process the same set of captured data differently based on the requirements of each application.</p>
-
-<p><strong>Note:</strong> A single Profile can be associated with one or more activities or apps. However, an activity can be associated with no more than one Profile.</p>
+<p><strong>Note:</strong> A single Profile can be associated with one or more activities or apps, but an activity can only be associated with one Profile. DataWedge enforces a one-to-one relationship between Profiles and activities; a Profile can only be associated with a single activity. When a Profile is created, it is not associated with any application and will not activate until it is associated to an app. This allows the creation of multiple unassociated Profiles. This API function is used to activate such Profiles.</p>
 
 <h3 id="usagescenario" class="anchor"><a class="heading-anchor" href="#usagescenario"><span></span></a>Usage Scenario</h3>
 
-<p>Let’s say an application has two activities. ActivityA only requires EAN13 barcodes to be scanned. ActivityB only requires MSR card data. ProfileB is configured to only scan EAN13 barcodes and is left unassociated. ProfileM is configured to only accept MSR input and is left unassociated. When ActivityA launches it uses <code>SWITCH_TO_PROFILE</code> to activate ProfileB. Similarly, when ActivityB launches it uses <code>SWITCH_TO_PROFILE</code> to activate ProfileM.</p>
+<p>Consider an application with two activities: ActivityA, which requires scanning EAN13 barcodes, and ActivityB, which requires MSR card data. ProfileA is configured for EAN13 barcodes and is unassociated. ProfileB is configured for MSR input and is also left unassociated. When ActivityA launches, it uses <code>SWITCH_TO_PROFILE</code> to activate ProfileA. Similarly, when ActivityB launches it uses <code>SWITCH_TO_PROFILE</code> to activate ProfileB.</p>
 
-<p>If another activity/app comes to the foreground, DataWedge automatic Profile switching will set the DataWedge Profile accordingly, either to the default Profile or to an associated Profile.</p>
+<p>When another activity or app becomes active in the foreground, DataWedge automatically switches to the appropriate Profile, either default or associated. When ActivityA (or ActivityB) returns to the foreground, it will use <code>SWITCH_TO_PROFILE</code> to return the Profile to ProfileA (or ProfileB), respectively.</p>
 
-<p>When ActivityA (or ActivityB) returns to the foreground, it will use <code>SWITCH_TO_PROFILE</code> to return the Profile to ProfileB (or ProfileM).</p>
+<p>For example, if ProfileA is unassociated and ProfileB is associated with activity B, using <code>SWITCH_TO_PROFILE</code> to switch to ProfileA will keep it active while activity A is in the foreground. When activity B becomes active in the foreground, DataWedge automatically switches to ProfileB. When activity A resumes, the app must use <code>SWITCH_TO_PROFILE</code> in the <code>onResume</code> method to switch back to ProfileA.</p>
+
+<h3 id="notes" class="anchor"><a class="heading-anchor" href="#notes"><span></span></a>Notes</h3>
+
+<ul>
+<li>Since DataWedge automatically switches Profile when an activity is paused, Zebra recommends calling this API from the <code>onResume</code> method of the activity.</li>
+
+<li>After switching to a Profile, an unassociated Profile remains unassigned and can be used by other apps/activities later.</li>
+
+<li>For backward compatibility, DataWedge’s automatic Profile switching unaffected by the these API commands, which is the reason why the commands work only with unassociated Profiles and apps.</li>
+
+<li>DataWedge's automatic Profile switching functions as follows, every second:
+
+
+<ul>
+<li>Sets <strong>newProfileId</strong> to the Profile ID associated with the current foreground activity.</li>
+
+<li>If no associated Profile is found, sets <strong>newProfileId</strong> to the Profile ID associated with the current foreground app.</li>
+
+<li>If no associated Profile is still found, sets <strong>newProfileId</strong> to the current default Profile (which MAY NOT be Profile0).</li>
+
+<li>Compares <strong>newProfileId</strong> with <strong>currentProfileId</strong>. If they differ:
+
+
+<ul>
+<li>Deactivates the current Profile</li>
+
+<li>Activates the new Profile (<strong>newProfileId</strong>)</li>
+
+<li>Sets <strong>currentProfileId</strong> to <strong>newProfileId</strong></li></ul>
+</li></ul>
+</li>
+</ul>
 
 <h3 id="functionprototype" class="anchor"><a class="heading-anchor" href="#functionprototype"><span></span></a>Function Prototype</h3>
 
@@ -394,53 +422,6 @@ public void onResume() {
 
     };
 </code></pre>
-
-<hr>
-
-<h3 id="comments" class="anchor"><a class="heading-anchor" href="#comments"><span></span></a>Comments</h3>
-
-<p>This API function will have no effect if the specified Profile does not exist or is already associated with an application.</p>
-
-<p>DataWedge has a one-to-one relationship between Profiles and activities; a Profile can be associated only with a single activity. When a Profile is first created, it's not associated with any application, and will not be activated until associated. This makes it possible to create multiple unassociated Profiles.</p>
-
-<p>This API function activates such Profiles.</p>
-
-<p>For example, let's say that ProfileA is unassociated and ProfileB is associated with activity B. If activity A is launched and uses the <code>SWITCH_TO_PROFILE</code> function to switch to ProfileA, then ProfileA will be active whenever activity A is in the foreground. When activity B comes to the foreground, DataWedge will automatically switch to ProfileB.</p>
-
-<p>When activity A returns to the foreground, the app must use <code>SWITCH_TO_PROFILE</code> again to switch back to ProfileA. This would be done in the <code>onResume</code> method of activity A.</p>
-
-<h3 id="notes" class="anchor"><a class="heading-anchor" href="#notes"><span></span></a>Notes</h3>
-
-<ul>
-<li>Because DataWedge will automatically switch Profile when the activity is paused, Zebra recommends that this API function be called from the onResume method of the activity.</li>
-
-<li>After switching to a Profile, this unassociated Profile does not get assigned to the application/activity and is available to be used in the future with a different app/activity.</li>
-
-<li>For backward compatibility, DataWedge’s automatic Profile switching is not affected by the above API commands. This is why the commands work only with unassociated Profiles and apps.</li>
-</ul>
-
-<p>DataWedge auto Profile switching works as follows:</p>
-
-<p><strong>Every second…</strong></p>
-
-<ul>
-<li>Sets <strong>newProfileId</strong> to the associated Profile ID of the current foreground activity.</li>
-
-<li>If no associated Profile is found, sets <strong>newProfileId</strong> to the associated Profile ID of the current foreground app.</li>
-
-<li>If no associated Profile is found, sets <strong>newProfileId</strong> to the current default Profile (which MAY NOT be Profile0).</li>
-
-<li>Checks the <strong>newProfileId</strong> against the <strong>currentProfileId</strong>. If they are different:
-
-
-<ul>
-<li>deactivates current Profile</li>
-
-<li>activates new Profile (<strong>newProfileId</strong>)</li>
-
-<li>sets <strong>currentProfileId</strong> = <strong>newProfileId</strong></li></ul>
-</li>
-</ul>
 
 <hr>
 
