@@ -215,11 +215,7 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>Tread Depth Reader API is designed based on the Android Intent architecture, reducing library dependencies and integration time for app developers. To ensure the interface is secure, it uses explicit and pending intents. </p>
-
-<p>This document offers a comprehensive guide on accessing Tread Depth Reader APIs. It describes the API components necessary for interaction and fulfills functional and non-functional requirements for applications that retrieving tread data from the reader accessory.</p>
-
-<p>All the return data, including tread data, state changes, errors and exceptions are reported through the Android onActivtyResult() method. </p>
+<p>Tire Tread Depth Reader API is designed based on the Android intent architecture, reducing library dependencies and integration time for app developers. To ensure the interface is secure, it uses explicit and pending intents. This document offers a comprehensive guide on accessing Tread Depth Reader APIs. It describes the API components necessary for interaction and fulfills functional and non-functional requirements for applications that retrieving tread data from the reader accessory.</p>
 
 <p>APIs available:</p>
 
@@ -234,21 +230,18 @@
 
 <li><strong>SET_PARAMS –</strong> Set the Tread Reader parameter values.</li>
 
-<li><strong>VERSION –</strong> Get the Tread Reader framework version(set) data.</li>
+<li><strong>VERSION –</strong> Get the Tread Reader framework version data.</li>
 
-<li><strong>CURRENT_STATE -</strong> Querying the Tread Reader Framework, Connection State and Framework
-State</li>
+<li><strong>CURRENT_STATE -</strong> Query the Tread Reader framework, connection state and framework state</li>
 
-<li><strong>ON_STATE_CHANGE -</strong> Notify when any given time if the framework Connection State or
-Framework State change.</li>
+<li><strong>ON_STATE_CHANGE -</strong> Register to receive notification when the framework connection state or framework state changes.</li>
 </ul>
 
 <hr>
 
 <h2 id="requirements" class="anchor"><a class="heading-anchor" href="#requirements"><span></span></a>Requirements</h2>
 
-<p>Requirements must be met to ensure the successful invocation of intent APIs and obtain accurate readings from
-the Tire Tread Depth reader.</p>
+<p>Requirements must be met to successfully invoke intent APIs and obtain accurate readings from the Tread Depth Reader.</p>
 
 <h3 id="1addqueriestag" class="anchor"><a class="heading-anchor" href="#1addqueriestag"><span></span></a>1. Add Queries Tag</h3>
 
@@ -261,7 +254,7 @@ the Tire Tread Depth reader.</p>
 
 <h3 id="2addconstants" class="anchor"><a class="heading-anchor" href="#2addconstants"><span></span></a>2. Add Constants</h3>
 
-<p>Create a Java class named <code>IntentAPIConstantUtils</code> within the Android application project and add the code below. This helps manage and maintain clean, consistent values throughout the project.</p>
+<p>Create a Java class named <code>IntentAPIConstantUtils</code> within the Android application project and add the code below. This helps manage and maintain consistent values throughout the project.</p>
 
 <pre class="prettyprint"><code>    public class IntentAPIConstantUtils {
         public static final int TTDR_REQUEST_CODE_START_FRAMEWORK = 10100;
@@ -297,9 +290,25 @@ the Tire Tread Depth reader.</p>
 
 <hr>
 
+<h2 id="apiguide" class="anchor"><a class="heading-anchor" href="#apiguide"><span></span></a>API Guide</h2>
+
+<p>This section provides guidance on using the APIs for the Tread Depth Reader framework. To begin, invoke the INITIATE API to initialize the framework, setting it up for subsequent operations. Once initiated, use the START API to begin the measurement process and start data acquisition with the default parameter configurations; see section 4.9.1. Supported Parameters. To retrieve and configure the framework’s parameters to meet specific requirements, use the GET_PARAMS and SET_PARAMS APIs. </p>
+
+<p>To check version compatibility, call the VERSION API to obtain the framework's version information. </p>
+
+<p>Use the CURRENT_STATE API to monitor the framework’s real-time operational status, providing insights into its current state.</p>
+
+<p>At the end of the application lifecycle, ensure proper resource management by calling the RELEASE API. This frees up resources and properly terminates the framework, preparing it for future sessions. This structured approach facilitates effective measurement and configuration, ensuring optimal performance and reliability.</p>
+
+<p>All return data, including tread data, state changes, errors and exceptions, are reported through the Android onActivityResult() method. </p>
+
+<p><strong>Note:</strong> For state change monitoring, register for notifications with ON_STATE_CHANGE.</p>
+
+<hr>
+
 <h2 id="apis" class="anchor"><a class="heading-anchor" href="#apis"><span></span></a>APIs</h2>
 
-<h3 id="initiatereader" class="anchor"><a class="heading-anchor" href="#initiatereader"><span></span></a>Initiate Reader</h3>
+<h3 id="initiate" class="anchor"><a class="heading-anchor" href="#initiate"><span></span></a>Initiate</h3>
 
 <p>INITIATE starts the Tread Reader service and must be called <em>only once</em> within an application's lifecycle before any other APIs. This ensures the Tread Reader APIs are enabled and can communicate with the application. <strong><em>To properly start the Tread Reader service, INITIATE must be called using the startForegroundService() method.</em></strong></p>
 
@@ -331,6 +340,8 @@ the Tire Tread Depth reader.</p>
 
 <p><strong>Sample code:</strong></p>
 
+<p>The sample code below demonstrates how to initialize a reader by sending an intent with a specified action and sets up a callback mechanism using a <code>PendingIntent</code> to handle responses from the service.</p>
+
 <pre class="prettyprint"><code>    Intent intent = new Intent();
     intent.setPackage(IntentAPIConstantUtils.TTDR_SDK_PACKAGE);
     intent.setAction(IntentAPIConstantUtils.TTDR_INTENT_ACTION_INITIATE_READER);
@@ -341,13 +352,13 @@ the Tire Tread Depth reader.</p>
 
 <h4 id="response" class="anchor"><a class="heading-anchor" href="#response"><span></span></a>Response</h4>
 
-<p>The following key-value pairs are received in the onActivityResult() method after invoking INITIATE API.</p>
+<p>The key-value pairs below are received in the onActivityResult() method after invoking INITIATE API.</p>
 
 <table class="facelift" style="width:80%" border="1" padding="5px">
   <tbody><tr bgcolor="#dce8ef">
     <th>Key</th>
     <th>Type</th>
-    <th>Description/Value</th>
+    <th>Value</th>
   </tr>
 
   <tr>
@@ -366,15 +377,15 @@ the Tire Tread Depth reader.</p>
 
 <p><br></p>
 
-<p><strong>Exception:</strong> In the event that the framework throws an exception while invoking INITIATE api below
-mentioned key value pairs should expected as response to the onActivityResult()
-method.</p>
+<h4 id="exception" class="anchor"><a class="heading-anchor" href="#exception"><span></span></a>Exception</h4>
+
+<p>If the framework encounters an exception when invoking the INITIATE API, the onActivityResult() method will return the following key-value pairs.</p>
 
 <table class="facelift" style="width:80%" border="1" padding="5px">
   <tbody><tr bgcolor="#dce8ef">
     <th>Key</th>
     <th>Type</th>
-    <th>Description/Value</th>
+    <th>Value</th>
   </tr>
 
   <tr>
@@ -386,24 +397,28 @@ method.</p>
   <tr>
        <td>TTDR_INTENT_EXCEPTION_OCCURRED_ACTION</td>
     <td>String</td>
-    <td>com.zebra.intentapis.action.TTDR_INITIATE</td>
+    <td><p style="font-family:'Courier New'">com.zebra.intentapis.action.TTDR_INITIATE</p></td>
   </tr>
 
   <tr>
        <td>TTDR_INTENT_EXCEPTION_NUMBER</td>
     <td>Integer</td>
-    <td>Integer value that assigns for segregates exception</td>
+    <td>[Integer value that represents the exception]</td>
   </tr>
 
   <tr>
        <td>TTDR_INTENT_EXCEPTION_OCCURRED_ACTION</td>
     <td>String</td>
-    <td>Description of the exception occurred</td>
+    <td>[Description of the exception that corresponds with the exception number]</td>
   </tr>
 
 </tbody></table>
 
-<p><strong>Sample Code</strong></p>
+<p>This sample handles the response and includes exception handling. </p>
+
+<h4 id="samplecode" class="anchor"><a class="heading-anchor" href="#samplecode"><span></span></a>Sample Code</h4>
+
+<p>This sample handles the response and includes exception handling. </p>
 
 <pre class="prettyprint"><code>    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -536,7 +551,7 @@ In the event the framework throws an exception while invoking RELEASE API, the f
 
 <p><br></p>
 
-<h4 id="samplecode" class="anchor"><a class="heading-anchor" href="#samplecode"><span></span></a>Sample Code</h4>
+<h4 id="samplecode-1" class="anchor"><a class="heading-anchor" href="#samplecode-1"><span></span></a>Sample Code</h4>
 
 <pre class="prettyprint"><code>    if (Objects.equals(mACTION, IntentAPIConstantUtils.TTDR_INTENT_ACTION_RELEASE)) {
 
@@ -554,9 +569,9 @@ In the event the framework throws an exception while invoking RELEASE API, the f
 
 <h3 id="startsession" class="anchor"><a class="heading-anchor" href="#startsession"><span></span></a>Start Session</h3>
 
-<p>START begins the tread reader measurement session. Multiple tires can be read in a single session. It is required for the framework to be initiated and the tread reader connected to the device. </p>
+<p>START begins the tread reader measurement session, allowing multiple tires to be measured within a single session. It is essentiaal for the framework to be initiated and the tread reader to be connected to the device. </p>
 
-<p>When the tread reader is snapped-onto the mobile computer, the accessory connects to the device via USB. Use CURRENT_STATE to query the USB connection status or ON_STATE_CHANGE to register for connection state changes.</p>
+<p>When the tread reader is attached to the mobile computer, it connects to the device via USB. Use CURRENT_STATE to check the USB connection status, or ON_STATE_CHANGE to register for notifications of connection state changes.</p>
 
 <h4 id="request-2" class="anchor"><a class="heading-anchor" href="#request-2"><span></span></a>Request</h4>
 
@@ -723,7 +738,7 @@ swipe speed could create conditions where the confidence factor is lower than 80
 
 <p><br></p>
 
-<h4 id="samplecode-1" class="anchor"><a class="heading-anchor" href="#samplecode-1"><span></span></a>Sample Code</h4>
+<h4 id="samplecode-2" class="anchor"><a class="heading-anchor" href="#samplecode-2"><span></span></a>Sample Code</h4>
 
 <pre class="prettyprint"><code>    if (Objects.equals(mACTION, IntentAPIConstantUtils.TTDR_INTENT_ACTION_START)) {
         int mACTION_STATUS = data.getIntExtra(IntentAPIConstantUtils.TTDR_ACTION_STATUS,0);
@@ -802,7 +817,7 @@ swipe speed could create conditions where the confidence factor is lower than 80
 
 </tbody></table>
 
-<h4 id="samplecode-2" class="anchor"><a class="heading-anchor" href="#samplecode-2"><span></span></a>Sample Code</h4>
+<h4 id="samplecode-3" class="anchor"><a class="heading-anchor" href="#samplecode-3"><span></span></a>Sample Code</h4>
 
 <pre class="prettyprint"><code>    private void getCurrentState(){
         Intent intent = new Intent();
@@ -857,7 +872,7 @@ swipe speed could create conditions where the confidence factor is lower than 80
 
 <p><br></p>
 
-<h4 id="samplecode-3" class="anchor"><a class="heading-anchor" href="#samplecode-3"><span></span></a>Sample Code</h4>
+<h4 id="samplecode-4" class="anchor"><a class="heading-anchor" href="#samplecode-4"><span></span></a>Sample Code</h4>
 
 <pre class="prettyprint"><code>    if (Objects.equals(mACTION,IntentAPIConstantUtils.TTDR_INTENT_ACTION_CURRENT_STATE)) {
         String mFW_STATE = data.getStringExtra(IntentAPIConstantUtils.TTDR_FW_STATE);
@@ -997,7 +1012,7 @@ swipe speed could create conditions where the confidence factor is lower than 80
     }
 </code></pre>
 
-<h5 id="exception" class="anchor"><a class="heading-anchor" href="#exception"><span></span></a>Exception</h5>
+<h5 id="exception-1" class="anchor"><a class="heading-anchor" href="#exception-1"><span></span></a>Exception</h5>
 
 <p>In the event that the framework throws an exception while invoking VERSION API, the following key-value pairs may be part of the response to the onActivityResult() method.</p>
 
@@ -1177,7 +1192,7 @@ swipe speed could create conditions where the confidence factor is lower than 80
     }
 </code></pre>
 
-<h4 id="exception-1" class="anchor"><a class="heading-anchor" href="#exception-1"><span></span></a>Exception</h4>
+<h4 id="exception-2" class="anchor"><a class="heading-anchor" href="#exception-2"><span></span></a>Exception</h4>
 
 <p>In the event of an exception, the following key-value pairs may occur as response to the onActivityResult() method:</p>
 
