@@ -1,1 +1,1 @@
-packageSearchIndex = [{"l":"All Packages","url":"allpackages-index.html"},{"l":"com.zebra.rfid.api3"},{"l":"com.zebra.scannercontrol"}]
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"com.zebra.rfid.api3"},{"l":"com.zebra.scannercontrol"}];updateSearchResults();
