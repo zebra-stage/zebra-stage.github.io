@@ -63,7 +63,9 @@
 <h3 id="querynotice" class="anchor"><a class="heading-anchor" href="#querynotice"><span></span></a>Query Notice</h3>
 
 <blockquote>
-  <p><i class="fa fa-exclamation-circle" aria-hidden="true" style="color:#FF0000;"></i> MX-based query functions have been discontinued in Zebra devices running Android 11 and later. <strong>Only programmatic queries are supported</strong>. </p>
+  <p><i class="fa fa-exclamation-circle" aria-hidden="true" style="color:#FF0000;"></i> <strong>Only programmatic queries are supported on devices running Android 11 and later</strong>. MX-based query functions were discontinued in Zebra devices with Android 11 and later.  </p>
+  
+  <p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong><u>The broadcast receiver code varies depending on the LifeGuard update installed on the device</u> for programmatic access to the active key modifier list</strong>. </p>
 </blockquote>
 
 <p><strong>To retrieve the active key modifier list programmatically</strong>:</p>
@@ -76,20 +78,40 @@
 
 <p><strong>2. Create a broadcast receiver</strong> in the app:</p>
 
+<h4 id="deviceswithlifeguardupdate11260500rgu00minimumlgrequiredforthisfeature" class="anchor"><a class="heading-anchor" href="#deviceswithlifeguardupdate11260500rgu00minimumlgrequiredforthisfeature"><span></span></a>Devices with LifeGuard Update <code>11-26-05.00-RG-U00</code> (minimum LG required for this feature):</h4>
+
 <pre class="prettyprint"><code>    
     IntentFilter intentFilter = new IntentFilter();
     intentFilter.addAction("com.zebra.intent.action.ACTIVE_MODIFIER_LIST");
     registerReceiver(receiver,intentFilter,"zebra.permission.KEY_EVENT_SERVICE",null);
 
-              private BroadcastReceiver receiver = new BroadcastReceiver() {
-                     @Override
-                     public void onReceive(Context context, Intent intent) {
-                             if(intent.getAction() == "com.zebra.intent.action.ACTIVE_MODIFIER_LIST"){
-                                List&lt;String&gt; list= intent.getStringArrayListExtra("activeModifiersList");
-                                Log.d("Active modifier list"," List "+list);
-                             }
-                     }
+            private BroadcastReceiver receiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    if(intent.getAction() == "com.zebra.intent.action.ACTIVE_MODIFIER_LIST"){
+                    List&lt;String&gt; list= intent.getStringArrayListExtra("activeModifiersList");
+                    Log.d("Active modifier list"," List "+list);
+                    }
+                }
 
+            };
+</code></pre>
+
+<h4 id="deviceswithlifeguardupdate11312700rgu00orlater" class="anchor"><a class="heading-anchor" href="#deviceswithlifeguardupdate11312700rgu00orlater"><span></span></a>Devices with LifeGuard Update <code>11-31-27.00-RG-U00</code> or later:</h4>
+
+<pre class="prettyprint"><code>    
+    IntentFilter intentFilter = new IntentFilter();
+    intentFilter.addAction("com.zebra.intent.action.ACTIVE_MODIFIER_LIST");
+    registerReceiver(receiver,intentFilter,"zebra.permission.KEY_EVENT_SERVICE",null);
+
+            private BroadcastReceiver receiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    if(intent.getAction() == "com.zebra.intent.action.ACTIVE_MODIFIER_LIST") {
+                    Map&lt;String,String&gt; list= (Map&lt;String, String&gt;) intent.getSerializableExtra("activeModifiersList");
+                    Log.d("Active modifier list"," List "+list);
+                    }
+                }
             };
 </code></pre>
 
@@ -101,10 +123,6 @@
     intent.setPackage("com.zebra.keyeventservice");
     sendBroadcast(intent);
 </code></pre>
-
-<blockquote>
-  <p><i class="fa fa-exclamation-circle" style="color:#FF0000;"></i> <strong>This feature requires Android 11 and LifeGuard Update</strong> <code>11-26-05.00-RG-U00</code> (or later).</p>
-</blockquote>
 
 <hr>
 
