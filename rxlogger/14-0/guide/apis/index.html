@@ -234,7 +234,95 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>The functionality of RxLogger can be controlled via Android intents within a third-party application. For methods to enable API calls when RxLogger is in secure mode, refer to <a href="#thirdpartyappsinsecuremode">Third-Party Apps in Secure Mode</a>.</p>
+<p>RxLogger's functionality can be controlled through Android intents within third-party applications. </p>
+
+<hr>
+
+<h2 id="securemode" class="anchor"><a class="heading-anchor" href="#securemode"><span></span></a>Secure Mode</h2>
+
+<p>In <a href="../settings/#securemode">Secure Mode</a>, third-party apps intending to use RxLogger APIs must gain access through one of two methods:</p>
+
+<ul>
+<li><strong><a href="../settings/#securemode">AppOps</a> -</strong> Use Android's AppOpsManager to control access for specific app packages, enhancing security by managing permissions for RxLogger operations.</li>
+
+<li><strong><a href="#apptoken">App Token</a> -</strong> Include a token as an extra within intents to access to the RxLogger APIs. </li>
+</ul>
+
+<h3 id="appops" class="anchor"><a class="heading-anchor" href="#appops"><span></span></a>AppOps</h3>
+
+<p>To grant an app access to RxLogger APIs in <a href="../settings/#securemode">Secure Mode</a> using the AppOps method, execute the following shell command:</p>
+
+<pre class="prettyprint"><code>    appops set --user 0 com.symbol.your_app ACCESS_RXLOGGER allow
+</code></pre>
+
+<p>Replace <code>com.symbol.your_app</code> with your app's package name and adjust the permission mode as needed:</p>
+
+<ul>
+<li><strong>allow -</strong> grants access</li>
+
+<li><strong>ignore -</strong> denies access</li>
+</ul>
+
+<h3 id="apptoken" class="anchor"><a class="heading-anchor" href="#apptoken"><span></span></a>App Token</h3>
+
+<p>To grant an app access to RxLogger APIs in <a href="../settings/#securemode">Secure Mode</a> using an app token,include the token as an extra in the intents. This token can be obtained through the following methods:</p>
+
+<ul>
+<li><a href="/flux/delegation/">Zebra Device Manager with delegation scope</a>
+
+
+<ul>
+<li>Use “token” and “password” as keys.</li>
+
+<li>Delegation scope: <code>delegation-zebra-com-symbol-secure-rxlogger</code></li></ul>
+</li>
+
+<li><a href="/stagenow/latest/csp/access/#service-access-action">Access Manager in StageNow</a>:
+
+
+<ul>
+<li>Grant access through <strong>Service Access Action</strong> using the package name, signature and service identifier (for Android 13 or higher: <code>delegation-zebra-com-symbol-secure-rxlogger</code>).</li></ul>
+</li>
+</ul>
+
+<p>Procedure to request the token and send an intent:</p>
+
+<ol>
+<li><p>Download and import the library <a href="./broadcastprotection-1.6.aar">BroadcastProtectionLibrary.aar</a> into your application project.</p>
+
+<pre class="prettyprint"><code>import com.zebra.security.broadcastprotection.BroadCastAuthenticator;
+</code></pre></li>
+
+<li><p>Instantiate <code>BroadCastAuthenticator</code> in your activity, fragment or service.</p>
+
+<pre class="prettyprint"><code>BroadCastAuthenticator vIntentprotect = new BroadCastAuthenticator();
+</code></pre></li>
+
+<li><p>In the <code>onCreate()</code> method, add the following:</p>
+
+<pre class="prettyprint"><code>vIntentprotect.initialize(getApplicationContext());
+</code></pre></li>
+
+<li><p>If needed, request a token using the <code>getToken()</code> API:</p>
+
+<pre class="prettyprint"><code>String token=vIntentprotect.getToken("delegation-zebra-com-symbol-secure-rxlogger");
+</code></pre></li>
+
+<li><p>Send the intent with the token as extras:</p>
+
+<pre class="prettyprint"><code>Intent intent = new Intent();
+intent.setAction("&lt;specify_intent&gt;");
+intent.putExtra("token", token);
+sendBroadcast(intent);
+</code></pre>
+
+<p>Replace <code>&lt;specify_intent&gt;</code> with the specific intent, e.g. <code>com.symbol.rxlogger.intent.action.ENABLE</code>.</p></li>
+
+<li><p>In the <code>onDestroy()</code> method, terminate with:</p>
+
+<pre class="prettyprint"><code>vIntentprotect.terminate();
+</code></pre></li>
+</ol>
 
 <hr>
 
@@ -242,27 +330,32 @@
 
 <p>Initiates data collection for all enabled modules, equivalent to tapping the Start button. Special instructions apply when RxLogger is operated in <a href="../settings/#securemode">Secure Mode</a>.</p>
 
-<p>Intent:</p>
+<p>Standard method using an intent to start RxLogger:</p>
 
 <pre class="prettify prettyprint">    <code>com.symbol.rxlogger.intent.action.ENABLE</code>
 </pre>
 
-<h3 id="securemode" class="anchor"><a class="heading-anchor" href="#securemode"><span></span></a>Secure Mode</h3>
+<h3 id="securemethod" class="anchor"><a class="heading-anchor" href="#securemethod"><span></span></a>Secure Method</h3>
 
-<p>To enable RxLogger in <a href="../settings/#securemode">Secure Mode</a>, use one of the following methods:</p>
+<p>To start RxLogger when in <a href="../settings/#securemode">Secure Mode</a>, use one of the following methods:</p>
 
 <ul>
-<li><p><strong>Enable RxLogger via shell command:</strong></p>
+<li><p><strong>Using AppOps (Recommended) -</strong> Send an intent from a third-party app:</p>
 
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.ENABLE_SHELL
+<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.ENABLE
 </code></pre></li>
 
-<li><p><strong>Enable RxLogger via third-party app:</strong></p>
+<li><p><strong>Using an App Token -</strong> Send an intent with a token from a third-party app:</p>
 
 <pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.ENABLE -e "token" "&lt;token-id&gt;"
 </code></pre>
 
-<p>A token must be passed as an extra in the intent. Replace <code>&lt;token-id&gt;</code> with the token obtained, see <a href="#thirdpartytokenrequest">Third-Party App Token Request</a>.</p></li>
+<p>Include a token as an extra in the intent. Replace <code>&lt;token-id&gt;</code> with the obtained token, see <a href="#apptoken">App Token</a>.</p></li>
+
+<li><p><strong>Using a shell command -</strong> Execute the following command:</p>
+
+<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.ENABLE_SHELL
+</code></pre></li>
 </ul>
 
 <hr>
@@ -282,27 +375,32 @@
 
 <p>Stops data collection for all modules; the equivalent of tapping the Stop button. Special instructions apply when RxLogger is operated in <a href="../settings/#securemode">Secure Mode</a>.</p>
 
-<p>Intent:</p>
+<p>Standard method using an intent to stop RxLogger:</p>
 
 <pre class="prettify prettyprint">    <code>com.symbol.rxlogger.intent.action.DISABLE</code>
 </pre>
 
-<h3 id="securemode-1" class="anchor"><a class="heading-anchor" href="#securemode-1"><span></span></a>Secure Mode</h3>
+<h3 id="securemethod-1" class="anchor"><a class="heading-anchor" href="#securemethod-1"><span></span></a>Secure Method</h3>
 
-<p>To disable RxLogger in <a href="../settings/#securemode">Secure Mode</a>, use one of the following methods:</p>
+<p>To stop RxLogger when in <a href="../settings/#securemode">Secure Mode</a>, use one of the following methods:</p>
 
 <ul>
-<li><p><strong>Disable RxLogger via shell command:</strong></p>
+<li><p><strong>Using AppOps (Recommended) -</strong> Send an intent from a third-party app:</p>
 
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.DISABLE_SHELL
+<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.DISABLE
 </code></pre></li>
 
-<li><p><strong>Disable RxLogger via third-party app:</strong></p>
+<li><p><strong>Using an App Token -</strong> Send an intent with a token from a third-party app:</p>
 
 <pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.DISABLE -e "token" "&lt;token-id&gt;"
 </code></pre>
 
-<p>A token must be passed as an extra in the intent. Replace <code>&lt;token-id&gt;</code> with the token obtained, see <a href="#thirdpartytokenrequest">Third-Party App Token Request</a>.</p></li>
+<p>Include a token as an extra in the intent. Replace <code>&lt;token-id&gt;</code> with the obtained token, see <a href="#apptoken">App Token</a>.</p></li>
+
+<li><p><strong>Using a shell command -</strong> Execute the following command:</p>
+
+<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.DISABLE_SHELL
+</code></pre></li>
 </ul>
 
 <hr>
@@ -320,29 +418,38 @@
 
 <h2 id="backupnow" class="anchor"><a class="heading-anchor" href="#backupnow"><span></span></a>BackupNow</h2>
 
-<p>Triggers a backup of the log files in the RxLogger folder, compressing them into a zip file named <code>Backup-&lt;date&gt;-&lt;HHMMSS&gt;.zip</code>, where <code>&lt;date&gt;-&lt;HHMMSS&gt;</code> represents the date time stamp. Special instructions apply when RxLogger is operated in <a href="../settings/#securemode">Secure Mode</a>.</p>
+<p>Initiates a backup of log files in the RxLogger folder, compressing them into a zip file named <code>Backup-&lt;date&gt;-&lt;HHMMSS&gt;.zip</code>, where <code>&lt;date&gt;-&lt;HHMMSS&gt;</code> is time stamp. Special instructions apply when operating RxLogger in <a href="../settings/#securemode">Secure Mode</a>.</p>
 
-<p>Intent:</p>
+<p>Standard method using an intent to stop RxLogger:</p>
 
 <pre class="prettify prettyprint">    <code>com.symbol.rxlogger.intent.action.BACKUP_NOW</code>
 </pre>
 
-<h3 id="securemode-2" class="anchor"><a class="heading-anchor" href="#securemode-2"><span></span></a>Secure Mode</h3>
+<h3 id="securemethod-2" class="anchor"><a class="heading-anchor" href="#securemethod-2"><span></span></a>Secure Method</h3>
 
-<p>To trigger a backup in secure mode, use one of the following methods:</p>
+<p>To trigger a backup in <a href="../settings/#securemode">Secure Mode</a>, use one of the following methods:</p>
 
 <ul>
-<li><p><strong>BackupNow via shell command:</strong></p>
+<li><p><strong>Using AppOps (Recommended) -</strong> Send an intent from a third-party app:</p>
 
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.BACKUP_NOW_SHELL  -e "password" "&lt;password&gt;"
-</code></pre></li>
+<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.BACKUP_NOW  -e "password" "&lt;password&gt;"
+</code></pre>
 
-<li><p><strong>BackupNow via third-party app:</strong></p>
+<p>Replace <code>&lt;password&gt;</code> with the password set for app access, see <a href="#appops">AppOps</a>.</p></li>
+
+<li><p><strong>Using an App Token -</strong> Send an intent with a token from a third-party app:</p>
 
 <pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.BACKUP_NOW -e "token" "&lt;token-id&gt;" -e "password" "&lt;password&gt;"
 </code></pre>
 
-<p>A token must be passed as an extra in the intent. Replace <code>&lt;token-id&gt;</code> with the token obtained, see <a href="#thirdpartytokenrequest">Third-Party App Token Request</a>.</p></li>
+<p>Includ a token as an extra in the intent. Replace <code>&lt;token-id&gt;</code> with the obtained token and <code>&lt;password&gt;</code> with the password set, see <a href="#apptoken">App Token</a>.</p></li>
+
+<li><p><strong>Using a shell command -</strong> Execute the command:</p>
+
+<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.BACKUP_NOW_SHELL  -e "password" "&lt;password&gt;"
+</code></pre>
+
+<p>Replace <code>&lt;password&gt;</code> with the password set for app access, see <a href="#appops">AppOps</a>.</p></li>
 </ul>
 
 <hr>
@@ -436,104 +543,6 @@
 
 <hr>
 
-<h2 id="thirdpartyappsinsecuremode" class="anchor"><a class="heading-anchor" href="#thirdpartyappsinsecuremode"><span></span></a>Third-Party Apps in Secure Mode</h2>
-
-<p>In secure mode, any third-party app attempting to use the RxLogger APIs - such as starting, stopping or triggering a backup via intents - must use one of two methods:</p>
-
-<ul>
-<li><strong><a href="#appops">AppOps</a> -</strong> Use Android's AppOpsManager to provide access control for specific app packages, thereby enhancing security by managing permissions for RxLogger operations.</li>
-
-<li><strong><a href="#thirdpartytokenrequest">Third-Party Token Request</a> -</strong> Attach a token as an extra within intents to gain access to the RxLogger APIs. </li>
-</ul>
-
-<h3 id="appops" class="anchor"><a class="heading-anchor" href="#appops"><span></span></a>AppOps</h3>
-
-<p>Android's AppOpsManager provides access control for specific app packages, enhancing security by managing permissions for RxLogger operations such as starting, stopping, backing up, and sending broadcasts.</p>
-
-<p><strong>To use AppOps:</strong> </p>
-
-<ul>
-<li><p>Make sure RxLogger is in secure mode.</p></li>
-
-<li><p>Grant access permissions to the app using this shell command:</p>
-
-<pre class="prettyprint"><code>appops set --user 0 com.symbol.your_app ACCESS_RXLOGGER allow
-</code></pre></li>
-</ul>
-
-<p>Replace <code>com.symbol.your_app</code> with your app's package name.</p>
-
-<p>Adjust the permission mode as needed:</p>
-
-<ul>
-<li><strong>allow -</strong> grants access</li>
-
-<li><strong>ignore -</strong> denies access</li>
-</ul>
-
-<h3 id="thirdpartytokenrequest" class="anchor"><a class="heading-anchor" href="#thirdpartytokenrequest"><span></span></a>Third-Party Token Request</h3>
-
-<p>To access the RxLogger APIs, apps must include a token as an extra in their intents. This token is obtained through the following methods:</p>
-
-<ul>
-<li><a href="/flux/delegation/">Zebra Device Manager with delegation scope</a>
-
-
-<ul>
-<li>The keys for the token and password are “token” and “password” respectively.</li>
-
-<li>The delegation scope is <code>delegation-zebra-com-symbol-secure-rxlogger</code>.</li></ul>
-</li>
-
-<li><a href="/stagenow/latest/csp/access/#service-access-action">Access Manager in StageNow</a>:
-
-
-<ul>
-<li>The package name, signature and service identifier (for Android 13 or higher: <code>delegation-zebra-com-symbol-secure-rxlogger</code>) must be granted access through <strong>Service Access Action.</strong></li></ul>
-</li>
-</ul>
-
-<p>Follow this procedure to request the token and send an intent with the token as an extra:</p>
-
-<ol>
-<li><p>Download the library <a href="./broadcastprotection-1.6.aar">BroadcastProtectionLibrary.aar</a> and import it into your application project.</p>
-
-<pre class="prettyprint"><code>import com.zebra.security.broadcastprotection.BroadCastAuthenticator;
-</code></pre></li>
-
-<li><p>Instantiate BroadCastAuthenticator() in your activity, fragment or service.</p>
-
-<pre class="prettyprint"><code>BroadCastAuthenticator vIntentprotect=new BroadCastAuthenticator();
-</code></pre></li>
-
-<li><p>Add the following code in the onCreate() method:</p>
-
-<pre class="prettyprint"><code>vIntentprotect.initialize(getApplicationContext());
-</code></pre></li>
-
-<li><p>If your application needs to request a token, call the getToken() API:</p>
-
-<pre class="prettyprint"><code>String token=vIntentprotect.getToken("delegation-zebra-com-symbol-secure-rxlogger");
-</code></pre></li>
-
-<li><p>Send the required intent along with the token as extras:</p>
-
-<pre class="prettyprint"><code>Intent intent = new Intent();
-intent.setAction("&lt;specify_intent&gt;");
-intent.putExtra("token", token);
-sendBroadcast(intent);
-</code></pre>
-
-<p>Replace <code>&lt;specify_intent&gt;</code> with the intent to send, e.g. <code>com.symbol.rxlogger.intent.action.ENABLE</code> or <code>com.symbol.rxlogger.intent.action.BACKUP_NOW</code>.</p></li>
-
-<li><p>Add the following code in the onDestroy() method:</p>
-
-<pre class="prettyprint"><code>vIntentprotect.terminate();
-</code></pre></li>
-</ol>
-
-<hr>
-
 <h2 id="relatedlinks" class="anchor"><a class="heading-anchor" href="#relatedlinks"><span></span></a>Related Links</h2>
 
 <ul>
@@ -578,7 +587,7 @@ sendBroadcast(intent);
             <div class="container-fluid">
                 <div class="row">
                     <div class="col-sm-10">
-                        ZEBRA and the stylized Zebra head are trademarks of Zebra Technologies Corp., registered in many jurisdictions worldwide. All other trademarks are the property of their respective owners. ©2024 Zebra Technologies Corp. and/or its affiliates.<br><a href="https://www.zebra.com/us/en/about-zebra/company-information/legal.html">Legal</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal/terms-of-use.html">Terms of Use</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal/privacy-statement.html">Privacy Policy</a> 
+                        ZEBRA and the stylized Zebra head are trademarks of Zebra Technologies Corp., registered in many jurisdictions worldwide. All other trademarks are the property of their respective owners. ©2025 Zebra Technologies Corp. and/or its affiliates.<br><a href="https://www.zebra.com/us/en/about-zebra/company-information/legal.html">Legal</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal/terms-of-use.html">Terms of Use</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal/privacy-statement.html">Privacy Policy</a> 
                     </div>
                     <!--
                     <div class="col-sm-2">

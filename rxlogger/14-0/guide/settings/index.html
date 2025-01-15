@@ -232,37 +232,29 @@
                                 <div class="service-box wow fadeInRight">
                                     <div class="">
 
-                                        <p></p><div class="alert alert-danger alert-dismissible fade in" role="alert"> <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span></button> <h4 id="-advisory" class="anchor"><a class="heading-anchor" href="#-advisory"><span></span></a><i class="fa fa-exclamation-circle" aria-hidden="true" style="color:#FF0000;"></i> ADVISORY</h4> <b>Starting with Android 15, RxLogger will default to <a href="#securemode">Secure Mode.</a></b> The non-secure legacy mode will be deprecated in Android 14 and phased out by Android 15. As a result, RxLogger can process intents received by third-party apps only via the <a href="#appops">AppOps</a> method. Additionally, <a href="../modules/#securebackup">Secure Backup</a> will become the standard mode, replacing the non-secure legacy backup method.
+                                        <p></p><div class="alert alert-danger alert-dismissible fade in" role="alert"> <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span></button> <h4 id="-advisory" class="anchor"><a class="heading-anchor" href="#-advisory"><span></span></a><i class="fa fa-exclamation-circle" aria-hidden="true" style="color:#FF0000;"></i> ADVISORY</h4> <b>Starting with Android 15, RxLogger defaults to <a href="#securemode">Secure Mode.</a></b> with non-secure legacy mode deprecated in Android 14 and phased out by Android 15. Consequently, RxLogger will only process intents from third-party apps via the <a href="#securemode">AppOps</a> method, and <a href="../modules/#securebackup">Secure Backup</a> will replace the non-secure legacy backup method as the standard.
 </div>
 
 <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>RxLogger settings are configured through the RxLogger user interface or by pushing a configuration file to the device. All settings are stored in the <code>config.json</code> file that can be exported and mass-deployed to devices across an enterprise.</p>
+<p>RxLogger settings can be configured via the RxLogger user interface or by deploying a configuration file to the device. All settings are stored in the <code>config.json</code> file, which can be exported and deployed across multiple devices within an enterprise.</p>
 
 <hr>
 
 <h2 id="securemode" class="anchor"><a class="heading-anchor" href="#securemode"><span></span></a>Secure Mode</h2>
 
-<p><strong>Secure Mode</strong> enhances the security of Rxlogger by restricting external access of RxLogger logs, reducing the risk of misuse of potentially sensitive data. It also offers a secure method to broadcast intents, ensuring that only trusted users have access, and establishes a safeguarded environment for the deployment of the configuration file to adjust RxLogger settings.</p>
-
-<p><strong>Secure Mode is enabled/disabled exclusively through <a href="/oemconfig">Zebra OEMConfig</a>,</strong> which can be configured using an Enterprise Mobility Management (EMM) system. To enable/disable Secure Mode, see <a href="https://techdocs.zebra.com/oemconfig/latest/mc2/#controlsecurelogging">Control Secure Logging</a> in the OEMConfig documentation.</p>
-
-<p>When secure mode is activated, <strong>RxLogger-Secure</strong> is displayed as the title in the RxLogger main screen.</p>
-
-<p><img alt="" style="height:350px" src="secure-mode.png"></p>
-
-<p><em>RxLogger in secure mode</em></p>
+<p><strong>Secure Mode</strong> enhances Rxlogger security by restricting external access to logs and providing a secure method for broadcasting intents. Only authorized apps can access logs or use the secure method to call RxLogger APIs. This reduces the risk of misuse of potentially sensitive data, ensures access is limited to trusted users and creates a protected environment for deploying configuration files to adjust RxLogger settings.</p>
 
 <h3 id="requirements" class="anchor"><a class="heading-anchor" href="#requirements"><span></span></a>Requirements</h3>
 
-<p>Requirements to utilized RxLogger in Secure Mode:</p>
+<p>To use RxLogger in Secure Mode, ensure the following:</p>
 
 <ul>
 <li><strong>Operating System:</strong> Android 11 or higher</li>
 
 <li><strong>OEMConfig:</strong> v11.5.0.1 or higher</li>
 
-<li><strong>RxLogger Versions:</strong> Minimum RxLogger versions based on platform (see <a href="https://supportcommunity.zebra.com/s/article/000022440?language=en_US">Zebra Platform Devices list</a>):
+<li><strong>RxLogger Versions:</strong> Minimum version required based on platform (see <a href="https://supportcommunity.zebra.com/s/article/000022440?language=en_US">Zebra Platform Devices list</a>):
 
 
 <ul>
@@ -307,6 +299,49 @@
 
 -->
 
+<h3 id="enablesecuremode" class="anchor"><a class="heading-anchor" href="#enablesecuremode"><span></span></a>Enable Secure Mode</h3>
+
+<p>There are two methods to activate Secure Mode:</p>
+
+<ul>
+<li><p><strong><a href="/oemconfig">Zebra OEMConfig</a> -</strong> Configure using an Enterprise Mobility Management (EMM) system. For instructions to enable/disable Secure Mode, see <a href="https://techdocs.zebra.com/oemconfig/latest/mc2/#controlsecurelogging">Control Secure Logging</a> in the OEMConfig documentation.</p></li>
+
+<li><p><strong>AppOps -</strong> Use Android's AppOpsManager to control access for specific app packages, enhancing security by managing permissions for RxLogger operations such as starting, stopping, backing up, and broadcasting intents.
+To enable Secure Mode via AppOps, grant access permissions to the app using the following shell command:</p>
+
+<pre class="prettyprint"><code>    appops set --user 0 com.symbol.your_app ACCESS_RXLOGGER allow
+</code></pre>
+
+<p>Replace <code>com.symbol.your_app</code> with your app's package name and adjust the permission mode as needed:</p>
+
+<ul>
+<li><strong>allow -</strong> grants access</li>
+
+<li><strong>ignore -</strong> denies access</li></ul></li>
+</ul>
+
+<p>When secure mode is activated, <strong>RxLogger-Secure</strong> appears as the title in the RxLogger main screen.</p>
+
+<p><img alt="" style="height:350px" src="secure-mode.png"></p>
+
+<p><em>RxLogger in secure mode</em></p>
+
+<p><br></p>
+
+<h3 id="deployment" class="anchor"><a class="heading-anchor" href="#deployment"><span></span></a>Deployment</h3>
+
+<p>To deploy the configuration file (<code>config.json</code>) using ADB, the intent must be broadcast before file deployment. Failing to broadcast the intent results in the configuration file remaining unprocessed, preventing the application of new settings. Use the following command to broadcast this intent via ADB shell:</p>
+
+<pre class="prettyprint"><code>    com.symbol.rxlogger.intent.action.DEPLOY_CONFIG_SHELL
+</code></pre>
+
+<p>In <strong>Secure Mode,</strong> any third-party app deploying the configuration file must broadcast the intent and include a "token" as an extra. Obtain the "token" from the Zebra Device Manager with the appropriate delegation scope; see <a href="/flux/delegation/">Using Delegation Scopes</a> for guidance. Deployment fails if the intent is not broadcast during deployment. To broadcast the intent for deploying the configuration file, use:</p>
+
+<pre class="prettyprint"><code>    com.symbol.rxlogger.intent.action.DEPLOY_CONFIG -e “token” “&lt;token-id&gt;”
+</code></pre>
+
+<p>Replace <code>&lt;token-id&gt;</code> with the obtained token; see <a href="../apis/#apptoken">App Token</a> for details.</p>
+
 <p><br></p>
 
 <h3 id="logs" class="anchor"><a class="heading-anchor" href="#logs"><span></span></a>Logs</h3>
@@ -347,7 +382,7 @@
 
 <h3 id="backup" class="anchor"><a class="heading-anchor" href="#backup"><span></span></a>Backup</h3>
 
-<p>In Secure Mode, the backup of the RxLogger folder is password-protected.</p>
+<p>In Secure Mode, backups of the RxLogger folder are password-protected.</p>
 
 <ul>
 <li>For backup from the <strong>RxLogger main screen,</strong> see <a href="../modules/#securebackup">Secure Backup</a>.</li>
@@ -355,27 +390,9 @@
 <li>For backup from the <strong>RxLogger Utility</strong> see <a href="../utility/#securebackup">Secure Backup</a>.</li>
 </ul>
 
-<h3 id="deployment" class="anchor"><a class="heading-anchor" href="#deployment"><span></span></a>Deployment</h3>
-
-<p>To deploy the configuration file (<code>config.json</code>) using ADB, the intent must be broadcasted prior to file deployment. If the intent is not broadcasted, this results in the configuration file being unprocessed, preventing the new settings from being applied. To broadcast this intent via ADB shell:</p>
-
-<pre class="prettyprint"><code>    com.symbol.rxlogger.intent.action.DEPLOY_CONFIG_SHELL
-</code></pre>
-
-<h4 id="securemode-1" class="anchor"><a class="heading-anchor" href="#securemode-1"><span></span></a>Secure Mode</h4>
-
-<p>In <strong>Secure Mode,</strong> any third-party app attempting to deploy the configuration file must broadcast the intent and include a "token" as an extra. The "token" is requested from the Zebra Device Manager with the delegation scope. See <a href="/flux/delegation/">Using Delegation Scopes</a>. The deployment fails if the intent is not broadcast during deployment. To broadcast the intent to deploy the configuration file:</p>
-
-<pre class="prettyprint"><code>    com.symbol.rxlogger.intent.action.DEPLOY_CONFIG -e “token” “&lt;token-id&gt;”
-</code></pre>
-
-<p>Replace <code>&lt;token-id&gt;</code> with the token obtained, see <a href="../apis/#thirdpartytokenrequest">Third-Party App Token Request</a> for details.</p>
-
-<p><br></p>
-
 <h3 id="apis" class="anchor"><a class="heading-anchor" href="#apis"><span></span></a>APIs</h3>
 
-<p>Special APIs are available to enable RxLogger in Secure Mode using tokens for authentication. See <a href="../apis/">APIs</a> for details.</p>
+<p>APIs are available to enable RxLogger while in Secure Mode using either AppOps or tokenization for authentication; see <a href="../apis/">APIs</a> for details.</p>
 
 <hr>
 
@@ -543,7 +560,7 @@
             <div class="container-fluid">
                 <div class="row">
                     <div class="col-sm-10">
-                        ZEBRA and the stylized Zebra head are trademarks of Zebra Technologies Corp., registered in many jurisdictions worldwide. All other trademarks are the property of their respective owners. ©2024 Zebra Technologies Corp. and/or its affiliates.<br><a href="https://www.zebra.com/us/en/about-zebra/company-information/legal.html">Legal</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal/terms-of-use.html">Terms of Use</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal/privacy-statement.html">Privacy Policy</a> 
+                        ZEBRA and the stylized Zebra head are trademarks of Zebra Technologies Corp., registered in many jurisdictions worldwide. All other trademarks are the property of their respective owners. ©2025 Zebra Technologies Corp. and/or its affiliates.<br><a href="https://www.zebra.com/us/en/about-zebra/company-information/legal.html">Legal</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal/terms-of-use.html">Terms of Use</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal/privacy-statement.html">Privacy Policy</a> 
                     </div>
                     <!--
                     <div class="col-sm-2">
