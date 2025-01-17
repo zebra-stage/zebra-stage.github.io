@@ -739,6 +739,63 @@ public bool AccessOperationTagKill(int readerID, string tagId, int password)
 
 </code>
 </pre>
+
+<h3><strong>Tag Write</strong></h3>
+<p>
+    The AccessOperationTagWrite method writes data to an RFID tag using a specified reader. It takes parameters like the tag ID, memory bank, offset, data, password, and a block write flag.  It logs the outcome and returns true if successful, or false if it fails or encounters a response error. 
+</p>
+<pre class="prettyprint"><code></code>
+public bool AccessOperationTagWrite(string tagId, SrfidMemorybank memoryBank, short offset, string data, int password, bool blockWrite)
+{
+
+    var handler = ReaderResponseStatusEventHandler;
+    string statusMessage = null;
+    bool status = false;
+    SrfidResult tagWriteResult = SrfidResult.Failure;
+
+    srfidTagData tagData = new srfidTagData();
+    IntPtr availableHandle = tagData.Handle;
+
+    //Retry for 2 times if we get any failure/timeref response
+    for (int i = 0; i < 2; i++)
+    {
+        tagWriteResult = apiInstance.SrfidWriteTag(connectedReaderID, tagId, ref availableHandle, memoryBank, offset, data, password, blockWrite, ref statusMessage);
+        tagData = ObjCRuntime.Runtime.GetNSObject<srfidTagData>(availableHandle);
+
+        if ((tagWriteResult != SrfidResult.ResponseTimeout) && (tagWriteResult != SrfidResult.Failure))
+        {
+            break;
+        }
+
+    }
+
+    if (tagWriteResult == SrfidResult.Success)
+    {
+        System.Diagnostics.Debug.WriteLine("Native SrfidWriteTag :" + tagData.TagId);
+        status = true;
+        ReaderResponseResult(tagWriteResult, "Tag Write Result");
+
+    }
+    else if (tagWriteResult == SrfidResult.ResponseError)
+    {
+        status = false;
+        System.Diagnostics.Debug.WriteLine("SrfidWriteTag ResponseError");
+        ReaderResponseResult(tagWriteResult, "Tag Write Result");
+    }
+    else if (tagWriteResult == SrfidResult.Failure || tagWriteResult == SrfidResult.ResponseTimeout)
+    {
+        status = false;
+        System.Diagnostics.Debug.WriteLine("SrfidWriteTag reder prob");
+
+        ReaderResponseResult(tagWriteResult, "Tag Write Result");
+    }
+
+
+
+    return status;
+}
+</code>
+</pre>
 	
 <h2 id="code2" class="anchor"><a class="heading-anchor" href="#code2"><span></span></a>Access Sequence</h2>	
 <p>This API is used to execute multiple access operations (Read, Write, etc) at the sametime</p>
