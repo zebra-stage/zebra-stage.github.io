@@ -243,22 +243,22 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>The <code>TextOCR</code> class is designed for detecting and recognizing text within an image using Optical Character Recognition (OCR) technology. This class provides methods to detect text, words, and paragraphs in various image formats.</p>
+<p>The <code>TextOCR</code> class detects and recognizes text within images using Optical Character Recognition (OCR) technology. It provides methods for identifying text, words, and paragraphs across various image formats. </p>
 
-<p>The model is adaptable to detecting and recognizing various fonts and adjustment of the input size at initialization to suit different use cases, such as varying distances from the text when capturing images. Smaller input sizes typically yield better results for images with larger or closer text, while larger input sizes enhance detection of smaller or more distant text at the cost of increased inference time. Various methods and options allow customization of output behavior, such as grouping detected words into ‘lines’ or ‘paragraphs.’ </p>
+<ul>
+<li><strong>Input</strong>: Model and Image</li>
 
-<p>Supported characters include:</p>
+<li><strong>Output</strong>: Words or Paragraphs</li>
+</ul>
+
+<p>The model is adaptable, recognizing various fonts and allowing for input size adjustment during initialization to accommodate different use cases, such as varying distances from the text when capturing images. Smaller input sizes typically yield better results for larger or closer text, while larger input sizes enhance detection of smaller or more distant text at the cost of increased inference time. Various methods and options allow customization of output behavior, such as grouping detected words into ‘lines’ or ‘paragraphs.’ </p>
+
+<p>Supported characters:</p>
 
 <pre class="prettyprint"><code>    *0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!\"#$%&amp;'()*+,-./:;&lt;=&gt;?@[\\]^_`{|}~*
 </code></pre>
 
 <p>By default, a maximum word length of approximately 15 characters is supported, although this limit may decrease with uncommon fonts. Enabling <a href="../textocr/#tilingoptions">tiling</a> removes this restriction.</p>
-
-<p><a href="../types/#boundingbox">Bounding boxes</a> are a list of points - a rectangle, but not necessarily perpendicular to the bottom and sides of the screen. There may be more than 4 points if the rectangle has been clipped around the edges of the screen.</p>
-
-<p><strong>Input</strong>: Model and <a href="../types/#image">Image</a></p>
-
-<p><strong>Output</strong>: <a href="../types/#words">OCR Detections</a></p>
 
 <!-- 
 ## Table of Contents
@@ -279,17 +279,11 @@
 
 <h2 id="initialization" class="anchor"><a class="heading-anchor" href="#initialization"><span></span></a>Initialization</h2>
 
-<p>The <code>TextOCR</code> object is initialized via its configuration structure.</p>
+<p>The <code>TextOCR</code> object is initialized via its configuration structure. Users can optionally override the default model input size (height and width) via <code>inferencerOptions</code>; see the examples below. Sizes should be expressed in powers of two (e.g., 640). Larger sizes improve accuracy for smaller text (further away) but increase inference time. Smaller sizes improve speed, but may decrease accuracy. Minimum and maximum dimensions can be set for processing varied image sizes. <strong>Note:</strong> Model input can only be overridden if <code>resizeDetectorToImage</code> is set to false in <a href="#detectionparameters">Detection Parameters</a>.</p>
 
-<p><code>MODEL_ARCHIVE_FILEPATH</code> = fully qualified file path to the .tar or .crypt archive from which the OCR model is read.</p>
+<p><strong>For ONNX models:</strong> Specifying the default height and width is mandatory. If image sizes are outside the min/max range, detection fails. If not explicitly set, the min/max dimensions are set to defaults. <strong>Note:</strong> Excessive input size may cause out-of-memory error and crash the application.</p>
 
-<p>The user can also optionally override the default model input size (height and width) by specifying the height and width in <code>inferencerOptions</code> in the examples below. The width and height sizes should be multiples of powers of two (e.g., 640). Rule of thumb is that if the user wants to analyze smaller text boxes in the image, the default size needs to be higher. Changing the input size provides a trade-off between accuracy and inference time. Smaller input sizes will run faster but potentially at the loss of accuracy. Larger input sizes will take longer to inference but may give better detection accuracy for use cases where objects are smaller/further away. Additionally, minimum and maximum dimensions can also be provided. This will be helpful if the user is processing images of varying sizes. <strong><em>Note:</em></strong> Model input can be overridden only if <em>resizeDetectorToImage</em> in <a href="#detectionparameters">Detection Parameters</a> is set to false.</p>
-
-<p><strong>For ONNX models:</strong> The user must specify the default width and height, and it is not optional. If the sizes of images are outside the min/max range the detection will fail. If not explicitly set, the min and max dimensions are set to the default dimensions. <em>Caution</em>: Choosing an input size that is too large may cause an out-of-memory situation and crash your application at run-time.</p>
-
-<p>For more advanced inferencer options, refer to <a href="../class/inferenceroptions/">Inferencer Options</a>.</p>
-
-<p>Additional OCR options are available if required. Please look at the <a href="#options">Options</a> for more information.</p>
+<p>For advanced inferencer options, refer to <a href="../class/inferenceroptions/">Inferencer Options</a>. Additional OCR options are available in <a href="#options">Options</a>.</p>
 
 <pre class="prettyprint"><code>    import com.zebra.AI.Vision.TextOCR;
     &nbsp;
@@ -303,83 +297,116 @@
     TextOCR textocr = new TextOCR(settings);
 </code></pre>
 
+<p><code>MODEL_ARCHIVE_FILEPATH</code> represents the fully qualified file path to the .tar or .crypt archive from which the OCR model is read.</p>
+
 <h2 id="usage" class="anchor"><a class="heading-anchor" href="#usage"><span></span></a>Usage</h2>
 
-<p>Detect text on a given image. Output is a collection of <a href="../types/#word">words</a>
-or <a href="../types/#paragraph">paragraphs</a>. A paragraph is a collection of words with additional
-hierarchical structure, where words appearing on the same line of text are grouped together. The lines
-prepared this way are further grouped into paragraphs. The whole process is parameterized and the relevant parameters are described in <a href="#options">Options</a>. The API calls to get both the words
-and paragraphs were provided below.</p>
+<p>Detect text in an image, outputting words or paragraphs. A paragraph is a collection of words with additional hierarchical structure, where words on the same line are grouped into lines, and lines into paragraphs. This process is parameterized, with relevant parameters described in <a href="#options">Options</a>.</p>
 
-<p><em>IMAGE</em> = Bitmap image</p>
+<p>Sample API calls to retrieve both words and paragraphs:</p>
 
-<pre class="prettyprint"><code>    CompletableFuture&lt;Word[ ]&gt; words = textocr.detectWords(IMAGE); // com.zebra.AI.Vision.Word[]
+<pre class="prettyprint"><code>    CompletableFuture&lt;Word[]&gt; words = textocr.detectWords(IMAGE); // com.zebra.AI.Vision.Word[]
     CompletableFuture&lt;TextParagraph[]&gt; paragraphs = textocr.detectParagraphs(IMAGE); // com.zebra.AI.Vision.TextParagraph[]
 </code></pre>
 
-<h2 id="options" class="anchor"><a class="heading-anchor" href="#options"><span></span></a>Options</h2>
+<p><code>IMAGE</code> represents the bitmap image.</p>
 
-<p>The <code>Options</code> structure provides various configuration settings for the TextOCR library. OCR contains a detection stage followed by a recognition stage. These settings allow you to customize the behavior of the OCR process. Below are the available options:</p>
+<h3 id="definitions" class="anchor"><a class="heading-anchor" href="#definitions"><span></span></a>Definitions</h3>
 
-<h3 id="availableoptions" class="anchor"><a class="heading-anchor" href="#availableoptions"><span></span></a>Available Options</h3>
-
-<h4 id="modelconfiguration" class="anchor"><a class="heading-anchor" href="#modelconfiguration"><span></span></a>Model Configuration</h4>
-
-<ol>
-<li><p><strong>modelFileLocator</strong></p>
+<p>Definitions for key terms:</p>
 
 <ul>
-<li><strong>Description</strong>: Location of the file with resources for the models and meta values.</li>
+<li><strong>Bounding box -</strong> A list of points forming a rectangle, which may not be perpendicular to the bottom and sides of the screen. More than 4 points can be present if the rectangle is clipped at the edges of the screen. Each bounding box includes:
 
-<li><strong>Type</strong>: <code>FileLocator</code></li></ul></li>
 
-<li><p><strong>detectionModelName</strong></p>
+<ul>
+<li><strong>Coordinates of the bounding rectangle -</strong> Defines the position and size of the detected object.</li>
+
+<li><strong>Probability (Confidence) -</strong> Indicates the certainty of the detection.</li>
+
+<li><strong>Class -</strong> Specifies the type of object detected.</li></ul>
+</li>
+
+<li><strong>Paragraph -</strong> Contains a complex bounding box and an array of lines.</li>
+
+<li><strong>Line -</strong> Contains a complex bounding box and an array of words.</li>
+
+<li><strong>Word -</strong> Contains a complex bounding box and an array of decodes.</li>
+
+<li><strong>Decode -</strong> Contains decoded text strings (referred to as content) and their confidence.</li>
+</ul>
+
+<h2 id="options" class="anchor"><a class="heading-anchor" href="#options"><span></span></a>Options</h2>
+
+<p>The <code>Options</code> structure provides configuration settings for the <code>TextOCR</code> library, containing a detection and recognition stage. These settings customize OCR behavior.</p>
+
+<h3 id="modelconfiguration" class="anchor"><a class="heading-anchor" href="#modelconfiguration"><span></span></a>Model Configuration</h3>
+
+<ol>
+<li><strong>modelFileLocator</strong>
+
+
+<ul>
+<li><strong>Description</strong>: Location of the file containing resources for the models and meta values.</li>
+
+<li><strong>Type</strong>: <code>FileLocator</code></li></ul>
+</li>
+
+<li><strong>detectionModelName</strong>
+
 
 <ul>
 <li><strong>Description</strong>: Name of the detection model in the compressed file.</li>
 
 <li><strong>Type</strong>: <code>string</code></li>
 
-<li><strong>Default</strong>: <code>"det"</code></li></ul></li>
+<li><strong>Default</strong>: <code>"det"</code></li></ul>
+</li>
 
-<li><p><strong>recognitionModelName</strong></p>
+<li><strong>recognitionModelName</strong>
 
-<p></p><ul>
-<li><strong>Description</strong>: Name of the recognition model in the compressed file.</li></ul><p></p>
 
-<p></p></li><li><strong>Type</strong>: <code>string</code></li><p></p>
+<ul>
+<li><strong>Description</strong>: Name of the recognition model in the compressed file.</li>
 
-<p></p><li><strong>Default</strong>: <code>"rec"</code></li><p></p>
+<li><strong>Type</strong>: <code>string</code></li>
+
+<li><strong>Default</strong>: <code>"rec"</code></li></ul>
+</li>
 </ol>
 
-<h4 id="inferenceroptions" class="anchor"><a class="heading-anchor" href="#inferenceroptions"><span></span></a>Inferencer Options</h4>
+<h3 id="inferenceroptions" class="anchor"><a class="heading-anchor" href="#inferenceroptions"><span></span></a>Inferencer Options</h3>
 
 <p>Advanced options for inferencer can be found in <a href="../class/inferenceroptions/">inferencer options</a>.</p>
 
 <ol>
-<li><p><strong>recognitionInferencerOptions</strong></p>
+<li><strong>recognitionInferencerOptions</strong>
+
 
 <ul>
 <li><strong>Description</strong>: Options for the recognition inferencer.</li>
 
-<li><strong>Type</strong>: <a href="../class/inferenceroptions/"><code>Inferencer::Options</code></a></li></ul></li>
+<li><strong>Type</strong>: <a href="../class/inferenceroptions/"><code>Inferencer::Options</code></a></li></ul>
+</li>
 
-<li><p><strong>detectionInferencerOptions</strong></p>
+<li><strong>detectionInferencerOptions</strong>
 
-<p></p><ul>
-<li><strong>Description</strong>: Options for the detection inferencer. The same as for recognition inferencer.</li></ul><p></p>
 
-<p></p></li><li><strong>Type</strong>: <a href="../class/inferenceroptions/"><code>Inferencer::Options</code></a></li><p></p>
+<ul>
+<li><strong>Description</strong>: Options for the detection inferencer. The same as for recognition inferencer.</li>
+
+<li><strong>Type</strong>: <a href="../class/inferenceroptions/"><code>Inferencer::Options</code></a></li></ul>
+</li>
 </ol>
 
-<h4 id="detectionparameters" class="anchor"><a class="heading-anchor" href="#detectionparameters"><span></span></a>Detection Parameters</h4>
+<h3 id="detectionparameters" class="anchor"><a class="heading-anchor" href="#detectionparameters"><span></span></a>Detection Parameters</h3>
 
 <ol>
 <li><strong>heatmapThreshold</strong>
 
 
 <ul>
-<li><strong>Description</strong>: Threshold for detector model output heatmap. The detector model's output is a grayscale image of [0, 1.0] real values, representing the confidence that a given pixel contains text. Raising this threshold value will result in fewer areas being classified as text.</li>
+<li><strong>Description</strong>: Threshold for detector model output heatmap. The detector model's output is a grayscale image of [0, 1.0] real values, representing the confidence that a given pixel contains text. Raising this threshold value results in fewer areas being classified as text.</li>
 
 <li><strong>Type</strong>: <code>float</code></li>
 
@@ -455,7 +482,7 @@ and paragraphs were provided below.</p>
 </li>
 </ol>
 
-<h4 id="decodingoptions" class="anchor"><a class="heading-anchor" href="#decodingoptions"><span></span></a>Decoding Options</h4>
+<h3 id="decodingoptions" class="anchor"><a class="heading-anchor" href="#decodingoptions"><span></span></a>Decoding Options</h3>
 
 <ol>
 <li><strong>decoderType</strong>
@@ -545,15 +572,14 @@ and paragraphs were provided below.</p>
 
 <p><br></p>
 
-<h4 id="groupingoptions" class="anchor"><a class="heading-anchor" href="#groupingoptions"><span></span></a>Grouping Options</h4>
+<h3 id="groupingoptions" class="anchor"><a class="heading-anchor" href="#groupingoptions"><span></span></a>Grouping Options</h3>
 
-<p>Grouping works in two stages. Words detected by OCR are grouped into lines that are further grouped into paragraphs as shown in the schema below. Words, lines and paras are represented by blue, green and fuchsia respectively.</p>
+<p>Grouping works in two stages. Words detected by OCR are grouped into lines that are further grouped into paragraphs as shown in the schema below. Words, lines and paragraphs in the graphics below are represented by blue, green and fuchsia colored borders respectively.</p>
 
 <img alt="image" style="height:300px" src="../about/assets/schema.png">
 <!-- ![schema](../about/assets/schema.png) -->
 
-<ol>
-<li><p><strong>grouping</strong></p>
+<p><strong>grouping</strong></p>
 
 <ul>
 <li><p><strong>Description</strong>: A structure containing parameters for the word into line and line into paragraph grouping.</p></li>
@@ -574,10 +600,10 @@ and paragraphs were provided below.</p>
 
 <li><strong>Example</strong>: If the average width of words is 90 pixels, setting <code>widthDistanceRatio</code> to 2.0 will allow words up to 180 pixels apart to be grouped into the same line.</li></ul>
 
-<p><img alt="image" style="height:75px" src="../about/assets/widthDistanceRatio.jpg">
-<!-- <img src="../about/assets/widthDistanceRatio.jpg" alt="widthDistanceRatio" /> --></p></li><p></p>
+<img alt="image" style="height:75px" src="../about/assets/widthDistanceRatio.jpg">
+<!-- ![widthDistanceRatio](../about/assets/widthDistanceRatio.jpg) --></li>
 
-<p></p><li><p><strong>heightDistanceRatio</strong></p></li><p></p>
+<li><p><strong>heightDistanceRatio</strong></p>
 
 <ul>
 <li><strong>Description</strong>: Determines whether there is a significant difference in the height of two words. Raising this parameter will cause words of different heights to be joined into a line.</li>
@@ -588,10 +614,10 @@ and paragraphs were provided below.</p>
 
 <li><strong>Example</strong>: <code>heightDistanceRatio</code> to 4.0 will allow words with heights in the range of from approximately 0.25 and 4 times the height to be grouped into the same line.</li></ul>
 
-<p><img alt="image" style="height:75px" src="../about/assets/heightDistanceRatio.jpg">
-<!-- <img src="../about/assets/heightDistanceRatio.jpg" alt="heightDistanceRatio" /> --></p></ol></li><p></p>
+<img alt="image" style="height:75px" src="../about/assets/heightDistanceRatio.jpg">
+<!-- ![heightDistanceRatio](../about/assets/heightDistanceRatio.jpg) --></li>
 
-<p></p><li><p><strong>centerDistanceRatio</strong></p></li><p></p>
+<li><p><strong>centerDistanceRatio</strong></p>
 
 <ul>
 <li><strong>Description</strong>: Determines whether the distance between the centers of two boxes along the y-axis is significantly large. Raising this parameter will cause words that are not strictly aligned in a straight line to be joined into a line object.</li>
@@ -602,10 +628,10 @@ and paragraphs were provided below.</p>
 
 <li><strong>Example</strong>: If the average height of words is 20 pixels, setting <code>centerDistanceRatio</code> to 1.0 will allow words with centers up to 20 pixels apart vertically to be grouped into the same line.</li></ul>
 
-<p><img alt="image" style="height:75px" src="../about/assets/centerDistanceRatio.jpg">
-<!-- <img src="../about/assets/centerDistanceRatio.jpg" alt="centerDistanceRatio" /> --></p></ul></li><p></p>
+<img alt="image" style="height:75px" src="../about/assets/centerDistanceRatio.jpg">
+<!-- ![centerDistanceRatio](../about/assets/centerDistanceRatio.jpg) --></li>
 
-<p></p><li><p><strong>paragraphHeightDistance</strong></p></li><p></p>
+<li><p><strong>paragraphHeightDistance</strong></p>
 
 <ul>
 <li><strong>Description</strong>: Determines the difference in the distance between the centers of two rows along the y-axis. Raising this parameter will cause lines that are spaced out vertically to be joined into a paragraph.</li>
@@ -616,10 +642,10 @@ and paragraphs were provided below.</p>
 
 <li><strong>Example</strong>: If the average height of lines is 30 pixels, setting <code>paragraphHeightDistance</code> to 2 will allow lines with centers up to 60 pixels apart vertically to be grouped into the same paragraph.</li></ul>
 
-<p><img alt="image" style="height:125px" src="../about/assets/paragraphHeightDistance.jpg">
-<!-- <img src="../about/assets/paragraphHeightDistance.jpg" alt="paragraphHeightDistance" /> --></p>
+<img alt="image" style="height:125px" src="../about/assets/paragraphHeightDistance.jpg">
+<!-- ![paragraphHeightDistance](../about/assets/paragraphHeightDistance.jpg) --></li>
 
-<p></p><li><p><strong>paragraphHeightRatioThreshold</strong></p></li><p></p>
+<li><p><strong>paragraphHeightRatioThreshold</strong></p>
 
 <ul>
 <li><strong>Description</strong>: Determines whether there is a significant difference in the heights of two rows. Lowering this parameter will cause lines with higher difference in heights to be joined into a paragraph.</li>
@@ -630,15 +656,13 @@ and paragraphs were provided below.</p>
 
 <li><strong>Example</strong>: If the average height of lines is 50 pixels, setting <code>paragraphHeightRatioThreshold</code> to 0.2 will allow lines with heights ranging from approximately 10 pixels to 250 pixels to be grouped into the same paragraph.</li></ul>
 
-<p><img alt="image" style="height:125px" src="../about/assets/paragraphHeightRatioThreshold.jpg">
-<!-- <img src="../about/assets/paragraphHeightRatioThreshold.jpg" alt="paragraphHeightRatioThreshold" /> --></p></ol><p></p>
+<img alt="image" style="height:125px" src="../about/assets/paragraphHeightRatioThreshold.jpg">
+<!-- ![paragraphHeightRatioThreshold](../about/assets/paragraphHeightRatioThreshold.jpg) --></li></ol></li>
+</ul>
 
+<h3 id="tilingoptions" class="anchor"><a class="heading-anchor" href="#tilingoptions"><span></span></a>Tiling Options</h3>
 
-<h4 id="tilingoptions" class="anchor"><a class="heading-anchor" href="#tilingoptions"><span></span></a>Tiling Options</h4>
-
-<ol>
-<li><strong>tiling</strong>
-
+<p><strong>tiling</strong></p>
 
 <ul>
 <li><strong>Description</strong>: A structure containing parameters related to handling very long text boxes.</li>
@@ -729,13 +753,12 @@ and paragraphs were provided below.</p>
 
 <li><strong>Default</strong>: <code>5</code></li></ul>
 </li></ol>
-</li></ul>
 </li>
-</ol>
+</ul>
 
 <p><br></p>
 
-<p>TextOCR.md#textocrsettingssettings</p>
+<!-- TextOCR.md#textocrsettingssettings -->
 
 <!-- 
 ## APIs
@@ -765,10 +788,13 @@ void      | [dispose](TextOCR.md#dispose-) ()
 <li>TextOCR.TextOCR (<a href="../textocr/textocrsettings/">Settings</a> settings) throws FileNotFoundException, IOException</li></ul>
 </li>
 
-<li><strong>Parameters:</strong></li>
+<li><strong>Parameters:</strong>
 
+
+<ul>
 <li><code>settings</code> - <a href="../textocr/textocrsettings/">TextOCR.Settings settings</a> to construct an OCR object with.
-An instance of the <code>Settings</code> class, containing configuration options for the OCR engine. These settings include model paths, language preferences, and performance configurations.</li>
+An instance of the <code>Settings</code> class, containing configuration options for the OCR engine. These settings include model paths, language preferences, and performance configurations.</li></ul>
+</li>
 
 <li><strong>Exceptions:</strong>
 
@@ -816,22 +842,37 @@ An instance of the <code>Settings</code> class, containing configuration options
 
 <h3 id="detectwordsbitmapsrcimg" class="anchor"><a class="heading-anchor" href="#detectwordsbitmapsrcimg"><span></span></a>detectWords(Bitmap    srcImg)</h3>
 
-<h4 id="apiname" class="anchor"><a class="heading-anchor" href="#apiname"><span></span></a>API Name</h4>
-
-<p><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a>&lt;<a href="../class/word/">Word</a>[ ]&gt; TextOCR.detectWords(Bitmap    srcImg) throws <a href="../class/invalidinputexception/">InvalidInputException</a>
-<strong>Description</strong>
-Detects individual words in the given Bitmap image. Each word may have multiple possible readings with associated confidence scores.
-<strong>Parameters</strong></p>
+<p>Detects individual words in the given Bitmap image. Each word may have multiple possible readings with associated confidence scores.</p>
 
 <ul>
-<li><code>srcImg</code> (Bitmap srcImg) - The image to analyze for word detection.
-<strong>Exceptions</strong>
-<code>InvalidInputException</code></li>
-</ul>
+<li><strong>Method:</strong> 
 
-<p>Throws <code>InvalidInputException</code> exception when Bitmap is passed as null. 
-<strong>Return Value</strong>
-An array of <code>Words</code> objects containing bounding boxes and possible text decodes.</p>
+
+<ul>
+<li><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a>&lt;<a href="../class/word/">Word</a>[ ]&gt; TextOCR.detectWords(Bitmap    srcImg) throws <a href="../class/invalidinputexception/">InvalidInputException</a></li></ul>
+</li>
+
+<li><strong>Parameters:</strong>
+
+
+<ul>
+<li><code>srcImg</code> (Bitmap srcImg) - The image to analyze for word detection.</li></ul>
+</li>
+
+<li><strong>Exceptions:</strong>
+
+
+<ul>
+<li><code>InvalidInputException</code> thrown when Bitmap is passed as null. </li></ul>
+</li>
+
+<li><strong>Return Value:</strong>
+
+
+<ul>
+<li>An array of <code>Words</code> objects containing bounding boxes and possible text decodes.</li></ul>
+</li>
+</ul>
 
 <h3 id="detectparagraphsbitmapsrcimg" class="anchor"><a class="heading-anchor" href="#detectparagraphsbitmapsrcimg"><span></span></a>detectParagraphs (Bitmap    srcImg)</h3>
 
@@ -912,7 +953,7 @@ An array of <code>Words</code> objects containing bounding boxes and possible te
             <div class="container-fluid">
                 <div class="row">
                     <div class="col-sm-10">
-                        ZEBRA and the stylized Zebra head are trademarks of Zebra Technologies Corp., registered in many jurisdictions worldwide. All other trademarks are the property of their respective owners. ©2024 Zebra Technologies Corp. and/or its affiliates.<br> <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal.html">Legal</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/compliance/information-privacy/terms-of-use.html">Terms of Use</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal/privacy-statement.html">Privacy Policy</a> 
+                        ZEBRA and the stylized Zebra head are trademarks of Zebra Technologies Corp., registered in many jurisdictions worldwide. All other trademarks are the property of their respective owners. ©2025 Zebra Technologies Corp. and/or its affiliates.<br> <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal.html">Legal</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/compliance/information-privacy/terms-of-use.html">Terms of Use</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal/privacy-statement.html">Privacy Policy</a> 
                     </div>
                      <!--
                      <div class="col-sm-2">
