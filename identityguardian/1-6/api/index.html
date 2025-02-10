@@ -266,6 +266,8 @@
 
 <h3 id="apis-1" class="anchor"><a class="heading-anchor" href="#apis-1"><span></span></a>APIs</h3>
 
+<h4 id="currentapis" class="anchor"><a class="heading-anchor" href="#currentapis"><span></span></a>Current APIs</h4>
+
 <table class="facelift" style="width:100%" border="1" padding="5px">
   <tbody><tr bgcolor="#dce8ef">
     <th>API Name</th>
@@ -274,13 +276,13 @@
   </tr>
 
   <tr>
-       <td><a href="#getcurrentusersession">Get Current User Session</a></td>
-    <td>Retrieves information about the current user session.</td>
+       <td><a href="#registerfornotifications">Register for Notifications</a></td>
+    <td>Enables applications to receive notifications of user changes.</td>
     <td>Applicable when Identity Guardian is used for user authentication at either the device or application level.</td>
   </tr>
 
   <tr>
-       <td><a href="#getcurrentusersessionlegacy">Get Current User Session (Legacy)</a></td>
+       <td><a href="#getcurrentusersession">Get Current User Session</a></td>
     <td>Retrieves information about the current user session.</td>
     <td>Applicable when Identity Guardian is used for user authentication at either the device or application level.</td>
   </tr>
@@ -292,7 +294,7 @@
   </tr>
 
   <tr>
-       <td>Set Current Session</td>
+       <td><a href="#setcurrentusersession">Set Current User Session</a></td>
     <td>Notifies Identity Guardian of user check-in/check-out events when the Identity Guardian lock screen is not utilized.</td>
     <td>Applicable for organizations using custom blocking screen apps for device access, aiming to track user activity across Zebra apps.</td>
   </tr>
@@ -310,14 +312,31 @@
   </tr>
 
   <tr>
-       <td><a href="#registerfornotifications">Register for Notifications</a></td>
-    <td>Enables applications to receive notifications of user changes.</td>
+       <td><a href="#lockscreenmessage">Lock Screen Message</a></td>
+    <td>Displays a message on the Identity Guardian lock screen to notify users of important information.</td>
     <td>Applicable when Identity Guardian is used for user authentication at either the device or application level.</td>
   </tr>
 
   <tr>
-       <td>User Session Logout</td>
+       <td><a href="#usersessionlogout">User Session Logout</a></td>
     <td>Allows applications to clear the current user session and lock the screen.</td>
+    <td>Applicable when Identity Guardian is used for user authentication at either the device or application level.</td>
+  </tr>
+
+</tbody></table>
+
+<h4 id="legacyapis" class="anchor"><a class="heading-anchor" href="#legacyapis"><span></span></a>Legacy APIs</h4>
+
+<table class="facelift" style="width:100%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>API Name</th>
+    <th>Description</th>
+    <th>Usage Context</th>
+  </tr>
+
+  <tr>
+       <td><a href="#getcurrentusersessionlegacy">Get Current User Session (Legacy)</a></td>
+    <td>Retrieves information about the current user session.</td>
     <td>Applicable when Identity Guardian is used for user authentication at either the device or application level.</td>
   </tr>
 
@@ -356,6 +375,46 @@
 
 <hr>
 
+<h2 id="registerfornotifications" class="anchor"><a class="heading-anchor" href="#registerfornotifications"><span></span></a>Register for Notifications</h2>
+
+<p><strong>Description:</strong> Register to receive notifications about the locked/unlocked status of Identity Guardian during user sign in/out events. Register this API in onCreate() and unregister it in onDestroy() method.</p>
+
+<p><strong>Content URI:</strong> &nbsp;&nbsp;<span style="font-family:'Courier New'">content://com.zebra.mdna.els.provider/lockscreenstatus/state</span></p>
+
+<p>Sample code:</p>
+
+<pre class="prettyprint"><code>    Uri URI_CURRENT_LOCKSCREEN_STATE = Uri.parse("content://com.zebra.mdna.els.provider/lockscreenstatus/state");
+    cr.registerContentObserver(URI_CURRENT_LOCKSCREEN_STATE, false, contentObserverLockScreenState);
+    contentObserverLockScreenState = new ContentObserver(new Handler(getMainLooper())) {
+
+        @Override
+        public void onChange(boolean selfChange, Uri uri) {
+            super.onChange(selfChange, uri);
+            Log.d(TAG, "content has changed, uri = " + uri);
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    getCurrentLockScreenStateOfDevice();
+                }
+            }).start();
+
+        }
+    };
+</code></pre>
+
+<p>The return value is in JSON string format:</p>
+
+<pre class="prettyprint"><code>    {state: “SHOWN” or “HIDDEN”, lastchangedtimestamp:”MM:DD:YY HH:MM:SS”}
+</code></pre>
+
+<ul>
+<li>"HIDDEN" indicates that the device is unlocked and a user is currently logged in.</li>
+
+<li>"SHOWN" indicates that the device is locked and no user is logged in.</li>
+</ul>
+
+<hr>
+
 <h2 id="getusersession" class="anchor"><a class="heading-anchor" href="#getusersession"><span></span></a>Get User Session</h2>
 
 <p>Retrieve session data associated with the current or previous user. <em><strong>When the device is in a locked state, these APIs are functional if the lock state is activated by specific device system events,</strong> <u>not</u> by an application triggering the lock state.</em> The lock screen can be activated by the following device system events, based on <a href="../mc/#authenticationconfiguration">Authentication Configuration</a>:</p>
@@ -374,7 +433,7 @@
 
 <h3 id="getcurrentusersession" class="anchor"><a class="heading-anchor" href="#getcurrentusersession"><span></span></a>Get Current User Session</h3>
 
-<p><strong>Description:</strong> This API uses a content URI to access data from the current user session. It retrieves the cursor’s extras and extracts the result string from the extras bundle. If the result string is not empty, it should be parsed into a JSON object. </p>
+<p><strong>Description:</strong> This API uses a content URI to access data from the current user session. It retrieves the cursor’s extras and extracts the result string from the extras bundle. If the result string is not empty, it must be parsed into a JSON object since that is the expected format for the result.</p>
 
 <blockquote>
   <p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <b>Note:</b> Zebra recommends using this API instead of the <a href="#getcurrentusersessionlegacy">Get Current User Session (Legacy)</a> API.</p>
@@ -708,7 +767,7 @@
 
 <h3 id="getcurrentusersessionlegacy" class="anchor"><a class="heading-anchor" href="#getcurrentusersessionlegacy"><span></span></a>Get Current User Session (Legacy)</h3>
 
-<p><strong>Description:</strong> This API uses a content URI to access data from the current user session. It retrieves the cursor’s extras and extracts the result string from the extras bundle. If the result string is not empty, it should be parsed into a JSON object. </p>
+<p><strong>Description:</strong> This API uses a content URI to access data from the current user session. It retrieves the cursor’s extras and extracts the result string from the extras bundle. If the result string is not empty, it must be parsed into a JSON object since that is the expected format for the result.</p>
 
 <blockquote>
   <p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <b>Warning:</b> This API is deprecated and will be removed in a future release. Zebra recommends to use the <a href="#getcurrentusersession">Get Current User Session</a> API instead.</p>
@@ -1338,7 +1397,7 @@ The Response is received by the caller application in the form of a bundle:
 
 <h3 id="getprevioususersession" class="anchor"><a class="heading-anchor" href="#getprevioususersession"><span></span></a>Get Previous User Session</h3>
 
-<p><strong>Description:</strong> This API uses a content URI to access data from the previous user session. It retrieves the cursor’s extras and extracts the result string from the extras bundle. If the result string is not empty, it should be parsed into a JSON object.</p>
+<p><strong>Description:</strong> This API uses a content URI to access data from the previous user session. It retrieves the cursor’s extras and extracts the result string from the extras bundle. If the result string is not empty, it must be parsed into a JSON object since that is the expected format for the result.</p>
 
 <p><strong>Content URI:</strong> &nbsp;&nbsp;<span style="font-family:'Courier New'">content://com.zebra.mdna.els.provider/previoussession</span></p>
 
@@ -1768,33 +1827,224 @@ The `cursor` is given in JSON format where each key is accompanied by a series o
 
 <hr>
 
-<h2 id="setusersession" class="anchor"><a class="heading-anchor" href="#setusersession"><span></span></a>Set User Session</h2>
+<h2 id="setcurrentusersession" class="anchor"><a class="heading-anchor" href="#setcurrentusersession"><span></span></a>Set Current User Session</h2>
 
-<p><strong>General Sample code:</strong></p>
+<p><strong>Description:</strong> When <a href="../usage/#proxymode">Proxy Mode</a>, where third-party apps function as screen blocking apps instead of Identity Guardian, is enabled, the current user session should be set to either a Session Sign-In State or Session SIgn-out State. To identify whether Identity Guardian is in Proxy Mode, the Application Mode is set to "Proxy."</p>
 
-<pre class="prettyprint"><code>    Uri URI_USER_CURRENT_SESSION = Uri.parse("content://com.zebra.mdna.els.provider/currentsession");
-    Cursor cursor = cr.query(URI_USER_CURRENT_SESSION, null, null, null, null);
+<h3 id="setsessionsigninstate" class="anchor"><a class="heading-anchor" href="#setsessionsigninstate"><span></span></a>Set Session Sign-In State</h3>
+
+<p><strong>Description:</strong> This API uses a content URI to configure data for the current user session and returns the result string from the bundle. If the result string is not empty, it should return a JSON object. </p>
+
+<p><strong>Content URI:</strong> &nbsp;&nbsp;<span style="font-family:'Courier New'">content://com.zebra.mdna.els.provider/currentsession</span></p>
+
+<p><strong>Input Keys:</strong> </p>
+
+<table class="facelift" style="width:100%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>Key</th>
+    <th>Value Type</th>
+    <th>Description</th>
+    <th>Requirement</th>
+  </tr>
+
+  <tr>
+       <td>user_id</td>
+    <td>[string]</td>
+    <td>The email address of the user signing in.</td>
+    <td>Mandatory</td>
+  </tr>
+
+  <tr>
+       <td>signed_in_state</td>
+    <td>boolean</td>
+    <td>Indicates whether the user is signed in. Default = true.</td>
+    <td>Mandatory</td>
+  </tr>
+  <tr>
+       <td>signin_time</td>
+    <td>string</td>
+    <td>The date and time of sign-in, obtained using <code>getCurrentDateAndTimeFormat
+    (System.currentTimeMillis())</code>.
+    </td>
+    <td>Mandatory</td>
+  </tr>
+  <tr>
+       <td>signout_time</td>
+    <td>[string]</td>
+    <td>The sign-out time, initially empty.</td>
+    <td>Optional</td>
+  </tr>
+  <tr>
+       <td>METHOD_NAME</td>
+    <td>[string]</td>
+    <td>The name of the method being called on the ContentResolver. Default = "currentsession".</td>
+    <td>Mandatory</td>
+  </tr>
+
+</tbody></table>
+
+<p><strong>Response:</strong> The response returns a Cursor object that contains the required bundle.</p>
+
+<p>Sample response:</p>
+
+<pre class="prettyprint"><code>    {
+    "status": "SUCCESS",
+    "message": "successfully executed"
+    }
 </code></pre>
 
-<p><strong>Sample code for using <a href="../usage/#proxymode">Proxy Mode</a> to send sign-in and sign-out notifications to Identity Guardian:</strong></p>
+<h4 id="samplecode-2" class="anchor"><a class="heading-anchor" href="#samplecode-2"><span></span></a>Sample Code</h4>
 
-<pre class="prettyprint"><code>    public void getDataForCurrentUser() { 
-        ContentResolver contentResolver = getContentResolver(); 
-        Uri uri = Uri.parse("content://com.zebra.mdna.els.provider/"); 
+<p>To set the current user session sign-in state:</p>
+
+<pre class="prettyprint"><code>    public void setSessionSignInState() {
+        ContentResolver contentResolver = getContentResolver();
+        Uri uri = Uri.parse("content://com.zebra.mdna.els.provider/");
         String METHOD_NAME = "currentsession";
 
-        Bundle bundle = new Bundle(); 
-        bundle.putString("user_id", "pd3445"); 
-        bundle.putBoolean("signed_in_state", true); 
-        bundle.putString("signin_time", getCurrentDateAndTimeFormat(System.currentTimeMillis())); 
-        bundle.putString("signout_time", “”); 
-        Bundle response = contentResolver.call(uri,METHOD_NAME,null,bundle); 
-        if (response != null &amp;&amp; response.containsKey("RESULT")) 
-        { 
+        // Creating a bundle to pass user session information
+        Bundle bundle = new Bundle();
+        bundle.putString("user_id", "sujith.chakka@zebrablr.onmicrosoft.com");
+        bundle.putBoolean("signed_in_state", true);
+        bundle.putString("signin_time", getCurrentDateAndTimeFormat(System.currentTimeMillis()));
+        bundle.putString("signout_time", ""); // Sign-out time is initially empty
+
+        // Calling the content resolver to get the current session data
+        Bundle response = contentResolver.call(uri, METHOD_NAME, null, bundle);
+
+        // Checking if the response is not null and contains the "RESULT" key
+        if (response != null &amp;&amp; response.containsKey("RESULT")) {
+            // Logging the proxy result
             Log.i(TAG, response.getString("RESULT"));
         }
     }
 </code></pre>
+
+<h3 id="setsessionsignoutstate" class="anchor"><a class="heading-anchor" href="#setsessionsignoutstate"><span></span></a>Set Session Sign-Out State</h3>
+
+<p><strong>Description:</strong> This API uses a content URI to configure data for the current user session and returns the result string from the bundle. If the result string is not empty, it should return a JSON object. </p>
+
+<p><strong>Content URI:</strong> &nbsp;&nbsp;<span style="font-family:'Courier New'">content://com.zebra.mdna.els.provider/currentsession</span></p>
+
+<p><strong>Input Keys:</strong> </p>
+
+<table class="facelift" style="width:100%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>Key</th>
+    <th>Value Type</th>
+    <th>Description</th>
+    <th>Requirement</th>
+  </tr>
+
+  <tr>
+       <td>user_id</td>
+    <td>[string]</td>
+    <td>The email address of the user signing in.</td>
+    <td>Mandatory</td>
+  </tr>
+
+  <tr>
+       <td>signed_in_state</td>
+    <td>boolean</td>
+    <td>Indicates whether the user is signed in. Default = false.</td>
+    <td>Mandatory</td>
+  </tr>
+  <tr>
+       <td>signin_time</td>
+    <td>string</td>
+    <td>The sign-in time. Default = (null)  </td>
+    <td>Optional</td>
+  </tr>
+  <tr>
+       <td>signout_time</td>
+    <td>[string]</td>
+    <td>The date and time of sign-out, obtained using <code>getCurrentDateAndTimeFormat
+    (System.currentTimeMillis())</code>.</td>
+    <td>Mandatory</td>
+  </tr>
+  <tr>
+       <td>METHOD_NAME</td>
+    <td>[string]</td>
+    <td>The name of the method being called on the ContentResolver. Default = "currentsession".</td>
+    <td>Mandatory</td>
+  </tr>
+
+</tbody></table>
+
+<p><strong>Response:</strong> The response returns a Cursor object that contains the required bundle.</p>
+
+<p>Sample response:</p>
+
+<pre class="prettyprint"><code>    {
+    "status": "SUCCESS",
+    "message": "successfully executed"
+    }
+</code></pre>
+
+<h4 id="samplecode-3" class="anchor"><a class="heading-anchor" href="#samplecode-3"><span></span></a>Sample Code</h4>
+
+<p>To set the current user session sign-out state:</p>
+
+<pre class="prettyprint"><code>    public void setSessionSignOutState() {
+        ContentResolver contentResolver = getContentResolver();
+        Uri uri = Uri.parse("content://com.zebra.mdna.els.provider/");
+        String METHOD_NAME = "currentsession";
+
+        // Creating a bundle to pass user session information
+        Bundle bundle = new Bundle();
+        bundle.putString("user_id", "sujith.chakka@zebrablr.onmicrosoft.com");
+        bundle.putBoolean("signed_in_state", false);
+        bundle.putString("signin_time", ""); // Sign-in time is left empty for sign-out state
+        bundle.putString("signout_time", getCurrentDateAndTimeFormat(System.currentTimeMillis())); // Setting the current sign-out time
+
+
+        // Calling the content resolver to update the current session data
+        Bundle response = contentResolver.call(uri, METHOD_NAME, null, bundle);
+
+        // Checking if the response is not null and contains the "RESULT" key
+        if (response != null &amp;&amp; response.containsKey("RESULT")) {
+
+            Log.i(TAG, response.getString("RESULT"));
+        }
+    }
+</code></pre>
+
+<!-- 
+**General Sample code:**
+
+        Uri URI_USER_CURRENT_SESSION = Uri.parse("content://com.zebra.mdna.els.provider/currentsession");
+        Cursor cursor = cr.query(URI_USER_CURRENT_SESSION, null, null, null, null);
+
+**Sample code for using [Proxy Mode](../usage/#proxymode) to send sign-in and sign-out notifications to Identity Guardian:**
+
+        public void setCurrentUserDetailsForProxy() {
+            ContentResolver contentResolver = getContentResolver();
+            Uri uri = Uri.parse("content://com.zebra.mdna.els.provider/");
+            String METHOD_NAME = "currentsession";
+
+            // Create a bundle to pass user session information
+            Bundle bundle = new Bundle();
+            bundle.putString("user_id", "user1@zebra.com");
+            bundle.putBoolean("signed_in_state", true);
+            bundle.putString("signin_time", getCurrentDateAndTimeFormat(System.currentTimeMillis()));
+            bundle.putString("signout_time", ""); // Sign-out time is initially empty
+
+            // Call the content resolver to get the current session data
+            Bundle response = contentResolver.call(uri, METHOD_NAME, null, bundle);
+
+            // Check if the response is not null and contains the "RESULT" key
+            if (response != null && response.containsKey("RESULT")) {
+                // Log the proxy result
+                Log.i(TAG, response.getString("RESULT"));
+            }
+        }
+
+        private String getCurrentDateAndTimeFormat(long currentTimeMillis) {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-dd-MM HH:mm:ss.SSSZ", Locale.getDefault());
+            return sdf.format(new Date(currentTimeMillis));
+        }
+
+-->
 
 <hr>
 
@@ -1864,7 +2114,7 @@ The `cursor` is given in JSON format where each key is accompanied by a series o
 
 <p><strong>Content URI:</strong> &nbsp;&nbsp;<span style="font-family:'Courier New'">content://com.zebra.mdna.els.provider/lockscreenaction/authenticationstatus</span></p>
 
-<p>Sample code:</p>
+<h3 id="samplecode-4" class="anchor"><a class="heading-anchor" href="#samplecode-4"><span></span></a>Sample Code</h3>
 
 <pre class="prettyprint"><code>    Uri uri = Uri.parse(BASE_URI + "lockscreenaction/authenticationstatus");
     ContentResolver cr = getContentResolver();
@@ -1912,43 +2162,160 @@ The `cursor` is given in JSON format where each key is accompanied by a series o
 
 <hr>
 
-<h2 id="registerfornotifications" class="anchor"><a class="heading-anchor" href="#registerfornotifications"><span></span></a>Register for Notifications</h2>
+<h2 id="usersessionlogout" class="anchor"><a class="heading-anchor" href="#usersessionlogout"><span></span></a>User Session Logout</h2>
 
-<p><strong>Description:</strong> Register to receive notifications about the locked/unlocked status of Identity Guardian during user sign in/out events. Register this API in onCreate() and unregister it in onDestroy() method.</p>
+<p><strong>Description:</strong> This API uses a content URI to logout the user after authenticating to the device when <a href="../usage/#proxymode">Proxy Mode</a> is not in use. It communicates with a content provider to log the user out and processes the response from the provider.</p>
 
-<p><strong>Content URI:</strong> &nbsp;&nbsp;<span style="font-family:'Courier New'">content://com.zebra.mdna.els.provider/lockscreenstatus/state</span></p>
+<p><strong>Content URI:</strong> &nbsp;&nbsp;<span style="font-family:'Courier New'">content://com.zebra.mdna.els.provider/currentsession</span></p>
 
-<p>Sample code:</p>
+<p><strong>Input Keys:</strong> None</p>
 
-<pre class="prettyprint"><code>    Uri URI_CURRENT_LOCKSCREEN_STATE = Uri.parse("content://com.zebra.mdna.els.provider/lockscreenstatus/state");
-    cr.registerContentObserver(URI_CURRENT_LOCKSCREEN_STATE, false, contentObserverLockScreenState);
-    contentObserverLockScreenState = new ContentObserver(new Handler(getMainLooper())) {
+<p><strong>Response:</strong> The response returns a Cursor object that contains the required bundle.</p>
 
-        @Override
-        public void onChange(boolean selfChange, Uri uri) {
-            super.onChange(selfChange, uri);
-            Log.d(TAG, "content has changed, uri = " + uri);
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    getCurrentLockScreenStateOfDevice();
-                }
-            }).start();
+<p>Sample response for a user that successfully logs out:</p>
 
+<pre class="prettyprint"><code>    {
+        "status": "SUCCESS",
+    }
+</code></pre>
+
+<h4 id="samplecode-5" class="anchor"><a class="heading-anchor" href="#samplecode-5"><span></span></a>Sample Code</h4>
+
+<pre class="prettyprint"><code>    public void userSessionLogout() {
+        Uri uri = Uri.parse(BASE_URI); // Content provider URI
+        String METHOD_NAME = "lockscreenaction"; // Method name for lock screen actions
+        String API_NAME = "logout"; // API name for logout operation
+
+        ContentResolver cr = getContentResolver(); // Get content resolver to interact with the provider
+        Bundle response = cr.call(uri, METHOD_NAME, API_NAME, null); // Send logout request to content provider
+
+        if (response != null &amp;&amp; response.containsKey("RESULT")) {
+            // Check if response is valid and contains the expected RESULT key
+            provider_response.setText(response.getString("RESULT")); // Update UI with the response message
+            Log.i(TAG, "ZBA_LOCK STATE: " + response.getString("RESULT")); // Log the result 
         }
-    };
+    }
 </code></pre>
 
-<p>The return value is in JSON string format:</p>
+<hr>
 
-<pre class="prettyprint"><code>    {state: “SHOWN” or “HIDDEN”, lastchangedtimestamp:”MM:DD:YY HH:MM:SS”}
+<h2 id="lockscreenmessage" class="anchor"><a class="heading-anchor" href="#lockscreenmessage"><span></span></a>Lock Screen Message</h2>
+
+<p><strong>Description:</strong> This API allows messages to be displayed on the Identity Guardian lock screen of a device, enabling communication of important information to users even when their devices are locked. Applications can create custom messages with specified titles, descriptions and severity types, and also configure the message's timeout duration and dismissibility. </p>
+
+<p><strong>Input Parameters:</strong> </p>
+
+<table class="facelift" style="width:100%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>Parameter</th>
+    <th>Value Type</th>
+    <th>Description</th>
+  </tr>
+
+  <tr>
+       <td>BASE_URI</td>
+    <td>[string]</td>
+    <td>The base URI for the content provider: <code>content://com.zebra.mdna.els.provider/</code></td>
+  </tr>
+
+  <tr>
+    <td>METHOD_NAME</td>
+    <td>[string]</td>
+    <td>The method name for the lock screen action: lockscreenaction</td>
+  </tr>
+
+  <tr>
+    <td>API_NAME</td>
+    <td>[string]</td>
+    <td>The API name for showing the message: showmessage </td>
+  </tr>
+
+  <tr>
+    <td rowspan="5">Bundle Parameters</td>
+    <td>(varies, see description)</td>
+    <td><table>
+        <tbody><tr>
+            <td><b>Title</b></td>
+            <td>([string]) The title of the message to be displayed.</td>
+        </tr>
+        <tr>
+            <td><b>Message</b></td>
+            <td>([string]) The description or body of the message.</td>
+        </tr>
+        <tr>
+            <td><b>Type</b></td>
+            <td>([string]) The category or significance level of the message (e.g., critical, error, etc.).</td>
+        </tr>
+        <tr>
+            <td><b>Timeout</b></td>
+            <td>(integer) The duration, in seconds, after which the message will automatically disappear.</td>
+        </tr>
+        <tr>
+            <td><b>Dismissible</b></td>
+            <td>(boolean) A boolean value (true or false) that indicates whether the user can dismiss the message.</td>
+        </tr>
+        </tbody></table>
+    </td>
+  </tr>
+
+</tbody></table>
+
+<h4 id="samplecode-6" class="anchor"><a class="heading-anchor" href="#samplecode-6"><span></span></a>Sample Code</h4>
+
+<p>Sample code demonstrating how to display a lock screen message:</p>
+
+<pre class="prettyprint"><code>    public static final String BASE_URI = "content://com.zebra.mdna.els.provider/";
+
+    public void executeLockScreenAction() {
+        // Retrieving input values from the UI components
+        EditText title = findViewById(R.id.title);
+        EditText msg = findViewById(R.id.message);
+        EditText timeout = findViewById(R.id.timeout);
+        EditText type = findViewById(R.id.messagetype);
+        CheckBox dismiss = findViewById(R.id.checkbox_dismiss);
+
+        // Parsing the base URI
+        Uri uri = Uri.parse(BASE_URI);
+        String METHOD_NAME = "lockscreenaction";
+        String API_NAME = "showmessage";
+
+        // Creating a ContentResolver instance
+        ContentResolver cr = getContentResolver();
+
+        // Creating a bundle to pass the message parameters
+        Bundle bundle = new Bundle();
+        bundle.putString("Title", title.getText().toString().trim()); // Title of the message
+        bundle.putString("Message", msg.getText().toString().trim()); // Message description
+        bundle.putString("Type", type.getText().toString().trim()); // Type of the message (e.g., critical, error, etc.)
+
+        try {
+            // Setting the timeout duration
+            bundle.putInt("Timeout", Integer.parseInt(timeout.getText().toString()));
+        } catch (Exception e) {
+            bundle.putInt("Timeout", 0); // Default timeout value if parsing fails
+        }
+
+        // Setting the dismissibility of the message
+        bundle.putBoolean("Dismissible", dismiss.isChecked());
+
+        // Calling the content provider to display the message
+        Bundle response = cr.call(uri, METHOD_NAME, API_NAME, bundle);
+
+        // Handling the response from the content provider
+        if (response != null &amp;&amp; response.containsKey("RESULT")) {
+            Log.i(TAG, response.getString("RESULT"));
+            if (response.getString("RESULT").equals("SUCCESS")) {
+                if (response.containsKey("DATA")) {
+                    Log.i(TAG, "Data received: " + response.getString("RESULT") + " " + response.getString("DATA"));
+                    provider_response.setText(response.getString("RESULT") + " " + response.getString("DATA"));
+                }
+            } else {
+                Log.i(TAG, "Result received: " + response.getString("RESULT"));
+                provider_response.setText(response.getString("RESULT"));
+            }
+        }
+    }
 </code></pre>
-
-<ul>
-<li>"HIDDEN" indicates that the device is unlocked and a user is currently logged in.</li>
-
-<li>"SHOWN" indicates that the device is locked and no user is logged in.</li>
-</ul>
 
 <hr>
 
