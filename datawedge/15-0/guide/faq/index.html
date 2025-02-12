@@ -339,21 +339,35 @@ See <a href="../admin">Mass Deployment</a> for more information.</li>
 
 <p>Before executing any DataWedge Intent API calls, such as Set Config or Switch Scanner Params, Zebra recommends to first verify whether DataWedge is enabled using the <a href="../api/getdatawedgestatus/">Get DataWedge Status</a> API. DataWedge must be enabled for these API calls to function properly. This preliminary check ensures that your subsequent API calls are executed successfully.</p>
 
-<h3 id="qhowcanidynamicallychangescannerconfigurationsbasedonmybusinessneeds" class="anchor"><a class="heading-anchor" href="#qhowcanidynamicallychangescannerconfigurationsbasedonmybusinessneeds"><span></span></a>Q: How can I dynamically change scanner configurations based on my business needs?</h3>
+<h3 id="qhowcanscannerconfigurationsbedynamicallyadjustedtosuitbusinessneeds" class="anchor"><a class="heading-anchor" href="#qhowcanscannerconfigurationsbedynamicallyadjustedtosuitbusinessneeds"><span></span></a>Q: How can scanner configurations be dynamically adjusted to suit business needs?</h3>
 
-<p>To dynamically adjust scanner configurations, the <a href="../api/switchscannerparams/">Switch Scanner Params</a> API can be used to temporarily modify scanner parameters without altering the existing DataWedge profile. This approach is particularly beneficial for applications that need to quickly adapt to changing scanning requirements, such as toggling illumination or adjusting scanner settings.</p>
+<p>To dynamically adjust scanner configurations, use the <a href="../api/switchscannerparams/">Switch Scanner Params</a> API to temporarily modify scanner parameters without altering the existing DataWedge profile. This method is particularly beneficial for applications that need to quickly adapt to changing scanning requirements, such as toggling illumination or adjusting scanner settings.</p>
 
-<p>To dynamically change the scanner configuration:</p>
+<p>To dynamically change scanner configuration:</p>
 
 <ol>
-<li><strong>Register for Notifications -</strong> For instructions, refer to <a href="../api/registerfornotification/">Register for Notifications</a>.</li>
+<li><p><strong>Register for Notifications -</strong> For instructions, refer to <a href="../api/registerfornotification/">Register for Notifications</a>.</p></li>
 
-<li><strong>Monitor Scanner Status through Notifications -</strong> Before using the Switch Scanner Params API, ensure the scanner is in an IDLE state by registering for scanner status notifications. Zebra recommends to verify that the scanner status corresponds to the intended profile by checking the PROFILE_NAME extra. For more information, see the <a href="../api/registerfornotification/#examplecode">example code</a> for registering notifications.</li>
+<li><p><strong>Monitor Scanner Status through Notifications -</strong> Before using the Switch Scanner Params API, ensure that the scanner is in an IDLE state by registering for scanner status notifications. Zebra recommends to verify that the scanner status corresponds with the intended profile by checking the PROFILE_NAME extra. Here is a sample code snippet:</p>
 
-<li><strong>Switch Scanner Parameters -</strong> Once the scanner status is confirmed as IDLE, use the <a href="../api/switchscannerparams/">Switch Scanner Params</a> API to adjust scanner parameters. For more information, refer ot its documentation.</li>
+<pre class="prettyprint"><code>case NOTIFICATION_TYPE_SCANNER_STATUS: 
+Log.d(TAG, "SCANNER_STATUS: status: " + b.getString("STATUS") + ", profileName: " + b.getString("PROFILE_NAME")); 
+if (b.getString("STATUS").equals("IDLE") &amp;&amp; b.getString("PROFILE_NAME").equals("myprofile")) 
+{ 
+    //Scanner is enabled for the profile. Do something here. 
+} 
+else 
+{ 
+    //Ignore the status event 
+}
+</code></pre>
+
+<p>For more information, see the <a href="../api/registerfornotification/#examplecode">example code</a> for registering notifications.</p></li>
+
+<li><p><strong>Switch Scanner Parameters -</strong> Once the scanner status is confirmed as IDLE, use the <a href="../api/switchscannerparams/">Switch Scanner Params</a> API to adjust scanner parameters. For more information, refer to its documentation.</p></li>
 </ol>
 
-<h3 id="qhowcandatawedgeintentapicallsbesynchronizedinamultithreadingenvironment" class="anchor"><a class="heading-anchor" href="#qhowcandatawedgeintentapicallsbesynchronizedinamultithreadingenvironment"><span></span></a>Q: How can DataWedge Intent API calls be synchronized in a multithreading environment?</h3>
+<h3 id="qhowcandatawedgeintentapicallsbesynchronizedinamultithreadedenvironment" class="anchor"><a class="heading-anchor" href="#qhowcandatawedgeintentapicallsbesynchronizedinamultithreadedenvironment"><span></span></a>Q: How can DataWedge Intent API calls be synchronized in a multithreaded environment?</h3>
 
 <p>Given the asynchronous nature of intents, it is crucial for developers to synchronize DataWedge intent API calls.</p>
 
@@ -371,7 +385,19 @@ See <a href="../admin">Mass Deployment</a> for more information.</li>
 
 <h4 id="samplecode" class="anchor"><a class="heading-anchor" href="#samplecode"><span></span></a>Sample Code</h4>
 
-<pre class="prettyprint"><code>    // Declare the HandlerThread and Handler
+<pre class="prettyprint"><code>    /* Ensure that your custom application class is declared in the manifest file, for example:
+
+        &lt;application
+            android:name=".MyApp"
+            ... &gt;
+            ...
+        &lt;/application&gt;
+    */
+
+    /* Global Context: Implementing a custom Application class allows the broadcast receiver to be registered globally, ensuring it remains active as long as the application process is running. This is useful for receiving intents that are relevant across the entire application. */
+
+
+    // Declare the HandlerThread and Handler
     private HandlerThread handlerThread;
     private Handler handler;
 
