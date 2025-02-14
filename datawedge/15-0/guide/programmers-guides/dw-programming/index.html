@@ -325,125 +325,63 @@ i.putExtra(EXTRA_DATA, "&lt;parameter&gt;");
 <ul>
 <li><p><strong>Scanning performance optimization:</strong> To improve scanning performance, Zebra recommends disabling all Decoders not required by the app(s) associated with a given Profile.</p></li>
 
-<li><p><strong>Invoking DataWedge Intent APIs after a reboot:</strong> Before executing any DataWedge Intent API calls, such as Set Config or Switch Scanner Params, Zebra recommends to first verify whether DataWedge is enabled using the <a href="../api/getdatawedgestatus/">Get DataWedge Status</a> API. DataWedge must be enabled for these API calls to function properly. This preliminary check ensures that your subsequent API calls are executed successfully.</p></li>
+<li><p><strong>Invoking DataWedge Intent APIs after a reboot:</strong> After a device reboot, DataWedge may require a few seconds to initialize before it is ready to accept intent requests. Zebra recommends using <a href="../api/getdatawedgestatus/">Get DataWedge Status</a> API to verify whether DataWedge is enabled before setting any configuration or altering scanner parameters to ensure successful operation.</p></li>
 
 <li><p><strong>Dynamically change scanner configurations based on business needs:</strong> 
-To dynamically adjust scanner configurations, use the <a href="../api/switchscannerparams/">Switch Scanner Params</a> API to temporarily modify scanner parameters without altering the existing DataWedge profile. This method is particularly beneficial for applications that need to quickly adapt to changing scanning requirements, such as toggling illumination or adjusting scanner settings.</p>
+To dynamically change scanner configurations, use the <a href="../api/switchscannerparams/">Switch Scanner Params</a> API, which allows temporary adjustments to scanner parameters without modifying the existing DataWedge profile. This API is particularly beneficial for applications that must swiftly adapt to changing conditions while meeting scanning requirements.</p>
 
-<p>To dynamically change scanner configuration:</p>
+<p>Steps to dynamically change scanner configurations:</p>
 
 <ol>
-<li><p><strong>Register for Notifications -</strong> For instructions, refer to <a href="../api/registerfornotification/">Register for Notifications</a>.</p></li>
+<li><p><strong>Register for Notifications -</strong> By <a href="../api/registerfornotification/">registering for notifications</a>, the application can receive real-time updates on the scanner status (e.g., IDLE, WAITING, SCANNING, DISABLED) during data capture operations. This includes updates on successful or failed scans, as well as when the scanner is enabled or disabled.</p></li>
 
-<li><p><strong>Monitor Scanner Status through Notifications -</strong> Before using the Switch Scanner Params API, ensure that the scanner is in an IDLE state by registering for scanner status notifications. Zebra recommends to verify that the scanner status corresponds with the intended profile by checking the PROFILE_NAME extra. Here is a sample code snippet:</p>
+<li><p><strong>Register for Scanner Status Notifications -</strong> The scanner must be in an IDLE state before invoking the Switch Scanner Params API. This can be verified by registering for notifications. It is also important to check the <code>PROFILE_NAME</code> extra to ensure the scanner status aligns with the intended profile. Below is a sample code snippet:</p>
 
-<pre class="prettyprint"><code>case NOTIFICATION_TYPE_SCANNER_STATUS: 
-Log.d(TAG, "SCANNER_STATUS: status: " + b.getString("STATUS") + ", profileName: " + b.getString("PROFILE_NAME")); 
-if (b.getString("STATUS").equals("IDLE") &amp;&amp; b.getString("PROFILE_NAME").equals("myprofile")) 
-{ 
-    //Scanner is enabled for the profile. Do something here. 
+<pre class="prettyprint"><code>case NOTIFICATION_TYPE_SCANNER_STATUS:
+    Log.d(TAG, "SCANNER_STATUS: status: " + b.getString("STATUS") + ", profileName: " + b.getString("PROFILE_NAME"));
+
+<pre><code>if (b.getString("STATUS").equals("IDLE") &amp;amp;&amp;amp; b.getString("PROFILE_NAME").equals("myprofile")) {
+    //Scanner is enabled for the profile. Do something here.
 } 
-else 
-{ 
-    //Ignore the status event 
+else {
+    //Ignore the status event             
 }
+</code></pre>
+
 </code></pre>
 
 <p>For more information, see the <a href="../api/registerfornotification/#examplecode">example code</a> for registering notifications.</p></li>
 
-<li><p><strong>Switch Scanner Parameters -</strong> Once the scanner status is confirmed as IDLE, use the <a href="../api/switchscannerparams/">Switch Scanner Params</a> API to adjust scanner parameters. For more information, refer to its documentation.</p></li></ol></li>
+<li><p><strong>Switch Scanner Parameters -</strong> Once the scanner status is confirmed as IDLE, use the <a href="../api/switchscannerparams/">Switch Scanner Params</a> API to change the scanner parameters. </p></li></ol></li>
 
-<li><p><strong>Synchronize DataWedge Intent API calls in a multithreaded environment:</strong> Given the asynchronous nature of intents, it is crucial for developers to synchronize DataWedge intent API calls.</p>
+<li><p><strong>Synchronize DataWedge Intent API calls in multithreaded applications:</strong> When developing applications that interact with DataWedge Intent APIs, synchronization is crucial due to the asynchronous nature of intents. This guide highlights the potential issues arising from unsynchronized API calls, strategies to prevent them, and best practices for implementing synchronized intent handling.</p>
 
-<p><strong>Guidelines for Applications with Multiple Activities or Fragments:</strong></p>
+<p><strong>Problem Description:</strong> Without proper synchronization, using DataWedge Intent APIs can lead to critical issues. When multiple threads or processes make API calls simultaneously, it can lead to:</p>
 
 <ul>
-<li><strong>Register a Broadcast Receiver -</strong> In the global context of the application, register a broadcast receiver to handle intents related to DataWedge status, such as API Result Notifications, Profile Switch, Scanner Status, and DataWedge status.</li>
+<li>Concurrent API calls resulting in unpredictable results due to the lack of guaranteed execution order.</li>
 
-<li><strong>Spawn a Global Thread or Coroutine -</strong> Create a dedicated thread or coroutine in the application’s global context to manage the calling of intent APIs.</li>
+<li>Requests being processed out of order, causing inconsistent application states.</li>
 
-<li><strong>Execute Intent APIs Through the Dedicated Thread -</strong> Ensure that all Intent API calls are made through this dedicated thread or coroutine.</li></ul>
+<li>Inconsistent data states within the application, resulting to errors or unexpected behavior.</li></ul>
 
-<p><strong>Note:</strong> The application <em>must</em> manage the results of the intents and its state to determine which APIs to call next.</p>
+<p><strong>Solution - Best Practices for Synchronizing DataWedge Intent APIs:</strong> Given the asynchronous nature of intents, developers must ensure synchronization when calling DataWedge intent APIs. </p>
 
-<p><strong>Sample Code:</strong></p>
-
-<pre class="prettyprint"><code>/* Ensure that your custom application class is declared in the manifest file, for example:
-
-<pre><code>&amp;lt;application
-    android:name=".MyApp"
-    ... &amp;gt;
-    ...
-&amp;lt;/application&amp;gt;
-</code></pre>
-
-*/
-
-/* Global Context: Implementing a custom Application class allows the broadcast receiver to be registered globally, ensuring it remains active as long as the application process is running. This is useful for receiving intents that are relevant across the entire application. */
+<ul>
+<li>For applications with multiple activities or fragments:
 
 
-// Declare the HandlerThread and Handler
-private HandlerThread handlerThread;
-private Handler handler;
+<ul>
+<li>Register a broadcast receiver in the global context of the application to handle intents related to DataWedge status (e.g., API Result Notifications, Profile Switch, Scanner Status, DataWedge status). </li>
 
-@Override
-public void onCreate() {
-    super.onCreate();
+<li>Spawn a dedicated thread or coroutine in the global context to manage intent API calls.</li>
 
-<pre><code>// Initialize the HandlerThread
-handlerThread = new HandlerThread("DataWedgeHandlerThread");
-handlerThread.start();
-handler = new Handler(handlerThread.getLooper());
+<li>Execute Intent API calls through this dedicated thread.<br>
+<strong>Note:</strong> The application must handle intent results and application states to determine subsequent API calls. </li></ul>
 
-// Register the BroadcastReceiver
-IntentFilter filter = new IntentFilter();
-filter.addAction("com.symbol.datawedge.api.NOTIFICATION_ACTION");
-registerReceiver(broadcastReceiver, filter, RECEIVER_EXPORTED);
-</code></pre>
+<p></p></li><p></p>
 
-}
-
-// Send the notification to the DataWedge API in a Handler thread
-private void sendProfileSwitchNotification() {
-    handler.post(() -&gt; {
-        Bundle bundle = new Bundle();
-        bundle.putString("com.symbol.datawedge.api.APPLICATION_NAME", "com.example.intenttest");
-        bundle.putString("com.symbol.datawedge.api.NOTIFICATION_TYPE", "PROFILE_SWITCH");
-
-<pre><code>    Intent intent = new Intent();
-    intent.setAction("com.symbol.datawedge.api.ACTION");
-    intent.putExtra("com.symbol.datawedge.api.REGISTER_FOR_NOTIFICATION", bundle);
-    sendBroadcast(intent);
-});
-</code></pre>
-
-}
-
-// Initialize the BroadcastReceiver
-private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
-    @Override
-    public void onReceive(Context context, Intent intent) {
-        if (intent != null &amp;&amp; "com.symbol.datawedge.api.NOTIFICATION_ACTION".equals(intent.getAction())) {
-            handler.post(() -&gt; handleDataWedgeIntent(intent));
-        }
-    }
-};
-
-private void handleDataWedgeIntent(Intent intent) {
-    if (intent.hasExtra("com.symbol.datawedge.api.NOTIFICATION")) {
-        Bundle notificationBundle = intent.getBundleExtra("com.symbol.datawedge.api.NOTIFICATION");
-        if (notificationBundle != null) {
-            String notificationType = notificationBundle.getString("NOTIFICATION_TYPE");
-            if (notificationType != null &amp;&amp; notificationType.equals("PROFILE_SWITCH")) {
-                Log.d(TAG, "PROFILE_SWITCH: profileName: " + 
-                    notificationBundle.getString("PROFILE_NAME") + ", profileEnabled: " + 
-                    notificationBundle.getBoolean("PROFILE_ENABLED"));
-                // Handle the profile switch notification data in Main Thread
-            }
-        }
-    }
-}
-</code></pre></li>
+<p></p><li>In single-activity applications, intents can be dispatched via the main thread. Make sure to listen for results from the calling Intent API and update application states to decide which API to call next.</li><p></p></ul><p></p></li>
 </ul>
 
 <h3 id="datacapture" class="anchor"><a class="heading-anchor" href="#datacapture"><span></span></a>Data Capture</h3>
