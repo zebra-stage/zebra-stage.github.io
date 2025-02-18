@@ -295,13 +295,13 @@
 
   <tr>
        <td><a href="#setcurrentusersession">Set Current User Session</a></td>
-    <td>Notifies Identity Guardian of user check-in/check-out events when the Identity Guardian lock screen is not utilized.</td>
+    <td>Notifies Identity Guardian of user sign-in/sign-out events when third-party apps are used to block the device screen instead of Identity Guardian. This is applicable when <a href="../usage/#proxymode">Proxy Mode</a> is enabled.</td>
     <td>Applicable for organizations using custom blocking screen apps for device access, aiming to track user activity across Zebra apps.</td>
   </tr>
 
   <tr>
-       <td><a href="#authenticateuser">Authenticate User</a></td>
-    <td>Initiates Identity Guardian’s user authentication screen.</td>
+       <td><a href="#startauthentication">Start Authentication</a></td>
+    <td>Activates Identity Guardian’s user authentication screen to confirm user credentials for device access.</td>
     <td>Used when Identity Guardian is employed for application-level authentication instead of device-level.</td>
   </tr>
 
@@ -522,42 +522,337 @@
 
 <p><strong>Response:</strong> A Cursor object in JSON string format that contains the required bundle. A null or empty cursor indicates that no user is signed into the device.</p>
 
-<p>This table details the key/value pairs returned in the response. The "Applicable Mode" depends on the <strong>Application Mode</strong> configured for the <a href="../mc/#usagemode">Usage Mode</a> under Managed Configurations.</p>
+<p>This table details the key/value pairs returned in the response. The "Supported Mode" depends on the <strong>Application Mode</strong> configured for the <a href="../mc/#usagemode">Usage Mode</a> under Managed Configurations.</p>
 
 <table class="facelift" style="width:95%" border="1" padding="5px">
   <tbody><tr bgcolor="#dce8ef">
     <th>Key</th>
     <th>Type</th>
-    <th>Applicable Mode</th>
-    <th>Description/Value</th>
+    <th>Supported Mode</th>
+    <th>Description/Value (Authentication Mode)</th>
+    <th>Description/Value (Proxy Mode)</th>
   </tr>
 
   <tr>
        <td>authenticationFactors</td>
     <td>JSON object</td>
-    <td>Authentication</td>
+    <td>Authentication Mode</td>
     <td>[Returns authentication factor details. See <a href="#sampleauthenticationresults">Sample Authentication Results</a> below.]</td>
+    <td style="background-color:#d1cccb;">N/A</td>
+  </tr>
+
+  <tr>
+       <td>adminByPassFactors</td>
+    <td>Array</td>
+    <td>Authentication Mode</td>
+    <td></td>
+    <td style="background-color:#d1cccb;">N/A</td>
+  </tr>
+
+  <tr>
+       <td>alternateFactors</td>
+    <td>Array</td>
+    <td>Authentication Mode</td>
+    <td>[Returns authentication factor details. See <a href="#sampleauthenticationresults">Sample Authentication Results</a> below.]</td>
+    <td style="background-color:#d1cccb;">N/A</td>
+  </tr>
+
+  <tr>
+       <td>factor</td>
+    <td>String</td>
+    <td>Authentication Mode</td>
+    <td>Specifies the type of authentication used:<br>&nbsp;&nbsp;&nbsp;• <b>PASSCODE</b><br>&nbsp;&nbsp;&nbsp;• <b>FACE</b><br>&nbsp;&nbsp;&nbsp;• <b>SSO</b><br>&nbsp;&nbsp;&nbsp;</td>
+    <td style="background-color:#d1cccb;">N/A</td>
+  </tr>
+
+  <tr>
+       <td>factorType</td>
+    <td>String</td>
+    <td>Authentication Mode</td>
+    <td>Defines the level of authentication used: <br>&nbsp;&nbsp;&nbsp;• <b>PRIMARYPRIMARYFACTOR -</b> Primary authentication<br>&nbsp;&nbsp;&nbsp;• <b>PRIMARYSECONDARYFACTOR1 -</b> Secondary authentication<br>&nbsp;&nbsp;&nbsp;• <b>FALLBACKFACTOR1 -</b>Fallback authentication</td>
+    <td style="background-color:#d1cccb;">N/A</td>
+  </tr>
+
+  <tr>
+       <td>status</td>
+    <td>String</td>
+    <td>Both</td>
+    <td>Current authentication status: <br><b>&nbsp;&nbsp;&nbsp;• EXECUTED -</b>  Successful authentication<br><b>&nbsp;&nbsp;&nbsp;• EXECUTED BUT NOT CONSIDERED -</b> Primary authentication was successful but secondary authentication failed<br><b>&nbsp;&nbsp;&nbsp;• TIMEDOUT -</b> The authentication request timed out<br><b>&nbsp;&nbsp;&nbsp;• USERSKIPPED -</b>The user bypassed the SSO login prompt by pressing the back button, resulting to fallback authentication</td>
+    <td>Current authentication status: <br><b>&nbsp;&nbsp;&nbsp;• SUCCESS -</b> Successful authentication<br><b>&nbsp;&nbsp;&nbsp;• FAILED -</b> Unsuccessful authentication</td>
+  </tr>
+
+  <tr>
+       <td>eventType</td>
+    <td>String</td>
+    <td>Both</td>
+    <td>Specifies the event that occurred: <br><b>&nbsp;&nbsp;&nbsp;• Login -</b> The user logged in to the device<br><b>&nbsp;&nbsp;&nbsp;• Logout -</b> The user logged out from the device</td>
+    <td>Specifies the event that occurred: <br><b>&nbsp;&nbsp;&nbsp;• Login -</b> The user logged in to the device<br><b>&nbsp;&nbsp;&nbsp;• Logout -</b> The user logged out from the device</td>
+  </tr>
+
+  <tr>
+       <td>isSSOInformationAvailable</td>
+    <td>Boolean</td>
+    <td>Both</td>
+    <td>Availability of Single Sign-On (SSO) data: <b>&nbsp;&nbsp;&nbsp;• 1 -</b>  SSO information is available; <code>ssoInformation</code> can be parsed for details<br><b>&nbsp;&nbsp;&nbsp;• 0 -</b> SSO information is not available<br></td>
+    <td>[Empty value returned]</td>
+  </tr>
+
+  <tr>
+       <td>schemaVersion</td>
+    <td>String</td>
+    <td>Both</td>
+    <td>[Version of the authentication factors schema]</td>
+    <td>[Version of the authentication factors schema]</td>
+  </tr>
+
+  <tr>
+    <td>userLoggedInState</td>
+    <td>Integer</td>
+    <td>Both</td>
+    <td>User login status on the device: <br><b>&nbsp;&nbsp;&nbsp;• 1 -</b> The user is signed in or has checked out the device, updating the userLoginTime<br><b>&nbsp;&nbsp;&nbsp;• 0 -</b> The user is signed out or has checked in the device, updating the userLogoutTime<br></td>
+    <td>User login status on the device:<br><b>&nbsp;&nbsp;&nbsp;• 1 -</b> The user is signed in or has checked out the device, updating the userLoginTime<br><b>&nbsp;&nbsp;&nbsp;• 0 -</b> The user is signed out or has checked in the device, updating the userLogoutTime<br></td>
+  </tr>
+
+  <tr>
+    <td>userId</td>
+    <td>String</td>
+    <td>Both</td>
+    <td>[Identifier for the user signed into the device, e.g., user1@zebra.com]</td>
+    <td>[Identifier for the user signed into the device, e.g., user1@zebra.com]</td>
+  </tr>
+
+  <tr>
+    <td>enrollmentInformation</td>
+    <td>JSON object</td>
+    <td>Authentication Mode</td>
+    <td>[Parent key]</td>
+    <td style="background-color:#d1cccb;">N/A</td>
+  </tr>
+
+  <tr>
+    <td>enrollmentCreatedOn</td>
+    <td>Long</td>
+    <td>Authentication Mode</td>
+    <td>[Timestamp when the barcode was created, in EPOCH time, e.g., 1737983880029]</td>
+    <td style="background-color:#d1cccb;">N/A</td>
+  </tr>
+
+  <tr>
+    <td>enrollmentCreatedOnDeviceModel</td>
+    <td>String</td>
+    <td>Authentication Mode</td>
+    <td>[Device model on which the barcode was created, e.g., TC58]</td>
+    <td style="background-color:#d1cccb;">N/A</td>
+  </tr>
+
+  <tr>
+    <td>enrollmentCreatedOnDeviceSerialNo</td>
+    <td>String</td>
+    <td>Authentication Mode</td>
+    <td>[Serial number of device where the barcode was created]</td>
+    <td style="background-color:#d1cccb;">N/A</td>
+  </tr>
+
+  <tr>
+    <td>enrollmentExpiryDate</td>
+    <td>Long</td>
+    <td>Authentication Mode</td>
+    <td>[Expiration date of the barcode, in EPOCH time, e.g., 1738156680000]</td>
+    <td style="background-color:#d1cccb;">N/A</td>
+  </tr>
+
+  <tr>
+    <td>enrollmentId</td>
+    <td>String</td>
+    <td>Authentication Mode</td>
+    <td>[Unique identifier for the barcode, e.g., 1237983906027D4BA34E]</td>
+    <td style="background-color:#d1cccb;">N/A</td>
+  </tr>
+
+  <tr>
+    <td>enrollmentType</td>
+    <td>String</td>
+    <td>Authentication Mode</td>
+    <td>Type of enrollment: <br>&nbsp;&nbsp;&nbsp;• <b>BARCODE</b><br>&nbsp;&nbsp;&nbsp;• <b>DEVICE</b></td>
+    <td style="background-color:#d1cccb;">N/A</td>
+  </tr>
+
+  <tr>
+    <td>securityTypes</td>
+    <td>String</td>
+    <td>Authentication Mode</td>
+    <td>Types of security mechanism in use: <br>&nbsp;&nbsp;&nbsp;• <b>FACE</b><br>&nbsp;&nbsp;&nbsp;• <b>PASSCODE</b><br>&nbsp;&nbsp;&nbsp;• <b>SSO</b></td>
+    <td style="background-color:#d1cccb;">N/A</td>
+  </tr>
+
+  <tr>
+       <td>storageType</td>
+    <td>String</td>
+    <td>Authentication Mode</td>
+    <td>Type of storage used for authentication:<br>&nbsp;&nbsp;&nbsp;• <b>BARCODE -</b> For shared devices<br><b>&nbsp;&nbsp;&nbsp;• DEVICE -</b> For personal devices</td>
+    <td style="background-color:#d1cccb;">N/A</td>
+  </tr>
+
+  <tr>
+       <td>logOutInformation</td>
+    <td>JSON object</td>
+    <td>Both</td>
+    <td>[Parent key]</td>
+    <td>[Parent key - Visibly only when a user signs in under Proxy Mode]</td>
+  </tr>
+
+  <tr>
+    <td>logoutReason</td>
+    <td>String</td>
+    <td>Authentication Mode</td>
+    <td>Specifies the event that triggered the user logout: <br><b>&nbsp;&nbsp;&nbsp;• on_lock -</b> The user locked the device.<br><b>&nbsp;&nbsp;&nbsp;• manual_logout -</b> The user manually signed out using the <b>Sign out</b> button in Identity Guardian<br><b>&nbsp;&nbsp;&nbsp;• user_change -</b> The user signed out and another user signed in.<br><b>&nbsp;&nbsp;&nbsp;• onAcPowerConnect -</b>The device was connected to a power source.<br><b>&nbsp;&nbsp;&nbsp;• onACPowerDisconnect -</b>The device was disconnected from a power source.</td>
+    <td style="background-color:#d1cccb;">N/A</td>
+  </tr>
+
+  <tr>
+    <td>userLogoutTime</td>
+    <td>String</td>
+    <td>Both</td>
+    <td>[Timestamp when user logged out, in EPOCH format]</td>
+    <td>[Timestamp when user logged out, in EPOCH format]</td>
+  </tr>
+
+  <tr>
+    <td>loginInformation</td>
+    <td>JSON object</td>
+    <td>Both</td>
+    <td>[Parent key]</td>
+    <td>[Parent key - Visibly only when a user signs in under Proxy Mode]</td>
+  </tr>
+
+  <tr>
+    <td>userLoginTime</td>
+    <td>String</td>
+    <td>Both</td>
+    <td>[Timestamp when user logged in, in EPOCH format]</td>
+    <td>[Timestamp when user logged in, in EPOCH format]</td>
+  </tr>
+
+<tr>
+    <td>ssoInformation</td>
+    <td>JSON object</td>
+    <td>Both</td>
+    <td>[Parent key]</td>
+    <td>[Parent key]</td>
+  </tr>
+
+  <tr>
+    <td>ssoAccessToken</td>
+    <td>String</td>
+    <td>Authentication Mode</td>
+    <td>[Access token for Single Sign-On]</td>
+    <td style="background-color:#d1cccb;">N/A</td>
+  </tr>
+
+  <tr>
+    <td>ssoDataReceivedFromIDP</td>
+    <td>String</td>
+    <td>Authentication Mode</td>
+    <td>[Data received from Identity Provider]</td>
+    <td style="background-color:#d1cccb;">N/A</td>
+  </tr>
+
+  <tr>
+    <td>ssoIDToken</td>
+    <td>String</td>
+    <td>Authentication Mode</td>
+    <td>[Single Sign-On ID token]</td>
+    <td style="background-color:#d1cccb;">N/A</td>
+  </tr>
+
+  <tr>
+    <td>ssoProvider</td>
+    <td>string</td>
+    <td>Authentication Mode</td>
+    <td>Single Sign-On provider in use: <br><b>&nbsp;&nbsp;&nbsp;• PingId</b><br><b>&nbsp;&nbsp;&nbsp;• Microsoft</b><br><b>&nbsp;&nbsp;&nbsp;• OKTA</b></td>
+    <td style="background-color:#d1cccb;">N/A</td>
+  </tr>
+
+  <tr>
+    <td>status</td>
+    <td>String</td>
+    <td>Both</td>
+    <td>Indicates the API response outcome: <br><b>&nbsp;&nbsp;&nbsp;• SUCCESS</b><br><b>&nbsp;&nbsp;&nbsp;• FAILED</b></td>
+    <td>Indicates the API response outcome: <br><b>&nbsp;&nbsp;&nbsp;• SUCCESS</b><br><b>&nbsp;&nbsp;&nbsp;• FAILED</b></td>
+  </tr>
+
+  <tr>
+    <td>userInformation</td>
+    <td>JSON object</td>
+    <td>Both</td>
+    <td>[Parent key]</td>
+    <td>[Parent key with empty object]</td>
+  </tr>
+
+  <tr>
+    <td>userId</td>
+    <td>String</td>
+    <td>Both</td>
+    <td>Identifier for the user signed into the device, e.g., user1@zebra.com</td>
+    <td>Identifier for the user signed into the device, e.g., user1@zebra.com</td>
+  </tr>
+
+  <tr>
+    <td>userRole</td>
+    <td>String</td>
+    <td>Authentication Mode</td>
+    <td>[Role identifier based on data from the SSO provider]</td>
+    <td style="background-color:#d1cccb;">N/A</td>
+  </tr>
+
+  <tr>
+       <td>errorCode</td>
+    <td>Integer</td>
+    <td>Both</td>
+    <td>0</td>
+    <td>0</td>
+  </tr>
+
+</tbody></table>
+
+<!-- // Original table w/1st 2 rows altered
+
+<table class="facelift" style="width:95%" border="1" padding="5px">
+  <tr bgcolor="#dce8ef">
+    <th>Key</th>
+    <th>Type</th>
+    <th>Supported Mode</th>
+    <th>Description/Value (Authentication Mode)</th>
+    <th>Description/Value (Proxy Mode)</th>
+  </tr>
+
+  <tr>
+       <td>authenticationFactors</td>
+    <td>JSON object</td>
+    <td>Authentication Mode</td>
+    <td>[Returns authentication factor details. See <a href="#sampleauthenticationresults">Sample Authentication Results</a> below.]</td>
+    <td style="background-color:#d1cccb;">N/A</td>
   </tr>
 
   <tr>
        <td>factor</td>
     <td>string</td>
     <td>Authentication</td>
-    <td>Specifies the type of authentication used:<br>&nbsp;&nbsp;&nbsp;• <b>PASSCODE</b><br>&nbsp;&nbsp;&nbsp;• <b>FACE</b><br>&nbsp;&nbsp;&nbsp;• <b>SSO</b><br>&nbsp;&nbsp;&nbsp;• <b>ADMINBYPASS</b><br>&nbsp;&nbsp;&nbsp;• <b>NONE -</b> Applies to "PRIMARYSECONDARYFACTOR1" and "FALLBACKFACTOR1" FactorType<br>&nbsp;&nbsp;&nbsp;• <b>NO_COMPARISON - Applies to "PRIMARYPRIMARYFACTOR" FactorType</b></td>
+    <td>Specifies the type of authentication used:<br />&nbsp;&nbsp;&nbsp;• <b>PASSCODE</b><br />&nbsp;&nbsp;&nbsp;• <b>FACE</b><br />&nbsp;&nbsp;&nbsp;• <b>SSO</b><br />&nbsp;&nbsp;&nbsp;• <b>ADMINBYPASS</b><br />&nbsp;&nbsp;&nbsp;• <b>NONE -</b> Applies to "PRIMARYSECONDARYFACTOR1" and "FALLBACKFACTOR1" FactorType<br />&nbsp;&nbsp;&nbsp;• <b>NO_COMPARISON - Applies to "PRIMARYPRIMARYFACTOR" FactorType</b></td>
   </tr>
 
   <tr>
        <td>factorType</td>
     <td>String</td>
     <td>Authentication</td>
-    <td>Defines the level of authentication used: <br>&nbsp;&nbsp;&nbsp;• <b>PRIMARYPRIMARYFACTOR -</b> Primary authentication<br>&nbsp;&nbsp;&nbsp;• <b>PRIMARYSECONDARYFACTOR1 -</b> Secondary authentication<br>&nbsp;&nbsp;&nbsp;• <b>FALLBACKFACTOR1 -</b>Fallback authentication</td>
+    <td>Defines the level of authentication used: <br />&nbsp;&nbsp;&nbsp;• <b>PRIMARYPRIMARYFACTOR -</b> Primary authentication<br />&nbsp;&nbsp;&nbsp;• <b>PRIMARYSECONDARYFACTOR1 -</b> Secondary authentication<br />&nbsp;&nbsp;&nbsp;• <b>FALLBACKFACTOR1 -</b>Fallback authentication</td>
   </tr>
 
   <tr>
        <td>status</td>
     <td>string</td>
     <td>Authentication</td>
-    <td>Current authentication status: <br><b>&nbsp;&nbsp;&nbsp;• EXECUTED -</b>  Successful authentication<br><b>&nbsp;&nbsp;&nbsp;• EXECUTED BUT NOT CONSIDERED -</b> Primary authentication was successful but secondary authentication failed<br><b>&nbsp;&nbsp;&nbsp;• TIMEDOUT -</b> The authentication request timed out<br><b>&nbsp;&nbsp;&nbsp;• USERSKIPPED -</b>The user bypassed the SSO login prompt by pressing the back button, resulting to fallback authentication</td>
+    <td>Current authentication status: <br /><b>&nbsp;&nbsp;&nbsp;• EXECUTED -</b>  Successful authentication<br /><b>&nbsp;&nbsp;&nbsp;• EXECUTED BUT NOT CONSIDERED -</b> Primary authentication was successful but secondary authentication failed<br /><b>&nbsp;&nbsp;&nbsp;• TIMEDOUT -</b> The authentication request timed out<br /><b>&nbsp;&nbsp;&nbsp;• USERSKIPPED -</b>The user bypassed the SSO login prompt by pressing the back button, resulting to fallback authentication</td>
   </tr>
 
   <tr>
@@ -613,49 +908,49 @@
     <td>enrollmentType</td>
     <td>string</td>
     <td>Authentication</td>
-    <td>Type of enrollment: <br>&nbsp;&nbsp;&nbsp;• <b>BARCODE</b><br>&nbsp;&nbsp;&nbsp;• <b>DEVICE</b></td>
+    <td>Type of enrollment: <br />&nbsp;&nbsp;&nbsp;• <b>BARCODE</b><br />&nbsp;&nbsp;&nbsp;• <b>DEVICE</b></td>
   </tr>
 
   <tr>
     <td>securityTypes</td>
     <td>string</td>
     <td>Authentication</td>
-    <td>Types of security mechanism in use: <br>&nbsp;&nbsp;&nbsp;• <b>FACE</b><br>&nbsp;&nbsp;&nbsp;• <b>PASSCODE</b><br>&nbsp;&nbsp;&nbsp;• <b>SSO</b></td>
+    <td>Types of security mechanism in use: <br />&nbsp;&nbsp;&nbsp;• <b>FACE</b><br />&nbsp;&nbsp;&nbsp;• <b>PASSCODE</b><br />&nbsp;&nbsp;&nbsp;• <b>SSO</b></td>
   </tr>
 
   <tr>
        <td>storageType</td>
     <td>string</td>
     <td>Authentication</td>
-    <td>Type of storage used for authentication:<br>&nbsp;&nbsp;&nbsp;• <b>BARCODE -</b> For shared devices<br><b>&nbsp;&nbsp;&nbsp;• DEVICE -</b> For personal devices</td>
+    <td>Type of storage used for authentication:<br />&nbsp;&nbsp;&nbsp;• <b>BARCODE -</b> For shared devices<br /><b>&nbsp;&nbsp;&nbsp;• DEVICE -</b> For personal devices</td>
   </tr>
 
   <tr>
        <td>errorCode</td>
     <td>integer</td>
     <td>Proxy</td>
-    <td>Status code indicating success or failure: <br>&nbsp;&nbsp;&nbsp;• <b>0 -</b>Success<br>&nbsp;&nbsp;&nbsp;• <b>1 -</b> Failure</td>
+    <td>Status code indicating success or failure: <br />&nbsp;&nbsp;&nbsp;• <b>0 -</b>Success<br />&nbsp;&nbsp;&nbsp;• <b>1 -</b> Failure</td>
   </tr>
 
   <tr>
        <td>eventType</td>
     <td>string</td>
     <td>Proxy</td>
-    <td>Specifies the event that occurred: <br><b>&nbsp;&nbsp;&nbsp;• Login</b><br><b>&nbsp;&nbsp;&nbsp;• Logout</b></td>
+    <td>Specifies the event that occurred: <br /><b>&nbsp;&nbsp;&nbsp;• Login</b><br /><b>&nbsp;&nbsp;&nbsp;• Logout</b></td>
   </tr>
 
   <tr>
        <td>lockScreenEventType</td>
     <td>string</td>
     <td>Proxy</td>
-    <td>Specifies the event that triggered the lock screen: <br><b>&nbsp;&nbsp;&nbsp;• on_lock -</b> The user locked the device.<br><b>&nbsp;&nbsp;&nbsp;• manual_logout -</b> The user manually signed out using the <b>Sign out</b> button in Identity Guardian<br><b>&nbsp;&nbsp;&nbsp;• user_change -</b> The user signed out and another user signed in.<br><b>&nbsp;&nbsp;&nbsp;• onAcPowerConnect -</b>The device was connected to a power source.<br><b>&nbsp;&nbsp;&nbsp;• onACPowerDisconnect -</b>The device was disconnected from a power source.</td>
+    <td>Specifies the event that triggered the lock screen: <br /><b>&nbsp;&nbsp;&nbsp;• on_lock -</b> The user locked the device.<br /><b>&nbsp;&nbsp;&nbsp;• manual_logout -</b> The user manually signed out using the <b>Sign out</b> button in Identity Guardian<br /><b>&nbsp;&nbsp;&nbsp;• user_change -</b> The user signed out and another user signed in.<br /><b>&nbsp;&nbsp;&nbsp;• onAcPowerConnect -</b>The device was connected to a power source.<br /><b>&nbsp;&nbsp;&nbsp;• onACPowerDisconnect -</b>The device was disconnected from a power source.</td>
   </tr>
 
   <tr>
        <td>isSSOInformationAvailable</td>
     <td>integer</td>
     <td>Proxy</td>
-    <td>Availability of single sign-on (SSO) data: <br><b>&nbsp;&nbsp;&nbsp;• 1 -</b> SSO information is available;<code>ssoInformation</code> can be parsed for details<br><b>&nbsp;&nbsp;&nbsp;• 0 -</b> SSO information is not available</td>
+    <td>Availability of single sign-on (SSO) data: <br /><b>&nbsp;&nbsp;&nbsp;• 1 -</b> SSO information is available;<code>ssoInformation</code> can be parsed for details<br /><b>&nbsp;&nbsp;&nbsp;• 0 -</b> SSO information is not available</td>
   </tr>
 
   <tr>
@@ -669,7 +964,7 @@
     <td>logoutReason</td>
     <td>string</td>
     <td>Proxy</td>
-    <td>Specifies the event that triggered the user logout: <br><b>&nbsp;&nbsp;&nbsp;• on_lock -</b> The user locked the device.<br><b>&nbsp;&nbsp;&nbsp;• manual_logout -</b> The user manually signed out using the <b>Sign out</b> button in Identity Guardian<br><b>&nbsp;&nbsp;&nbsp;• user_change -</b> The user signed out and another user signed in.<br><b>&nbsp;&nbsp;&nbsp;• onAcPowerConnect -</b>The device was connected to a power source.<br><b>&nbsp;&nbsp;&nbsp;• onACPowerDisconnect -</b>The device was disconnected from a power source.</td>
+    <td>Specifies the event that triggered the user logout: <br /><b>&nbsp;&nbsp;&nbsp;• on_lock -</b> The user locked the device.<br /><b>&nbsp;&nbsp;&nbsp;• manual_logout -</b> The user manually signed out using the <b>Sign out</b> button in Identity Guardian<br /><b>&nbsp;&nbsp;&nbsp;• user_change -</b> The user signed out and another user signed in.<br /><b>&nbsp;&nbsp;&nbsp;• onAcPowerConnect -</b>The device was connected to a power source.<br /><b>&nbsp;&nbsp;&nbsp;• onACPowerDisconnect -</b>The device was disconnected from a power source.</td>
   </tr>
 
   <tr>
@@ -739,14 +1034,14 @@
     <td>ssoProvider</td>
     <td>string</td>
     <td>Proxy</td>
-    <td>Single Sign-On provider in use: <br><b>&nbsp;&nbsp;&nbsp;• PingId</b><br><b>&nbsp;&nbsp;&nbsp;• Microsoft</b><br><b>&nbsp;&nbsp;&nbsp;• OKTA</b></td>
+    <td>Single Sign-On provider in use: <br /><b>&nbsp;&nbsp;&nbsp;• PingId</b><br /><b>&nbsp;&nbsp;&nbsp;• Microsoft</b><br /><b>&nbsp;&nbsp;&nbsp;• OKTA</b></td>
   </tr>
 
   <tr>
     <td>status</td>
     <td>string</td>
     <td>Proxy</td>
-    <td>Indicates the API response outcome: <br><b>&nbsp;&nbsp;&nbsp;• SUCCESS</b><br><b>&nbsp;&nbsp;&nbsp;• FAILED</b></td>
+    <td>Indicates the API response outcome: <br /><b>&nbsp;&nbsp;&nbsp;• SUCCESS</b><br /><b>&nbsp;&nbsp;&nbsp;• FAILED</b></td>
   </tr>
 
   <tr>
@@ -774,10 +1069,12 @@
     <td>userLoggedInState</td>
     <td>string</td>
     <td>Proxy</td>
-    <td>User login status on the device: <br><b>&nbsp;&nbsp;&nbsp;• 1 -</b> User is signed in or has checked out the device, updating the userLoginTime <br><b>&nbsp;&nbsp;&nbsp;• 0 -</b> User is signed out or has checked in the device, updating the userLogoutTime</td>
+    <td>User login status on the device: <br /><b>&nbsp;&nbsp;&nbsp;• 1 -</b> User is signed in or has checked out the device, updating the userLoginTime <br /><b>&nbsp;&nbsp;&nbsp;• 0 -</b> User is signed out or has checked in the device, updating the userLogoutTime</td>
   </tr>
 
-</tbody></table>
+</table>
+
+-->
 
 <p><strong>Note:</strong> The following keys are returned in EPOCH date/time format: enrollmentCreatedOn, enrollmentExpiryDate and userLoginTime.</p>
 
@@ -889,103 +1186,63 @@ Example response for a user logged into the device:
 
 <h4 id="exampleresponses" class="anchor"><a class="heading-anchor" href="#exampleresponses"><span></span></a>Example Responses</h4>
 
-<ul>
-<li><p>Example response for "Get Current User Session" after invoking <a href="#setsessionsigninstate">Set Session Sign-In State</a> in <a href="../usage/#proxymode">Proxy Mode</a>:</p>
+<p>Sample response after a user authenticates and logs in to Identity Guardian in authentication mode:</p>
 
-<pre class="prettyprint"><code>{
-    "enrollmentInformation": {},
-    "errorCode": 0,
-    "eventType": "Login",
-    "isSSOInformationAvailable": 1,
-    "logOutInformation": {},
-    "loginInformation": {
-        "userLoginTime": "1738246644246"
-    },
-    "schemaVersion": "2.0",
-    "ssoInformation": {},
-    "status": "SUCCESS",
-    "userInformation": {
-        "userId": "user1@zebra.com"
-    },
-    "userLoggedInState": "1"
-}
-</code></pre></li>
+<pre class="prettyprint"><code>    {
+        "authenticationFactors":{   
+            "adminByPassFactors": [],
+            "alternateFactors": []
+            "factors":[
+                {
+                    "factor":"PASSCODE",
+                    "factorType":"PRIMARYPRIMARYFACTOR",
+                    "status":"EXECUTED"
+                },
+                {
+                    "factor":"SSO",
+                    "factorType":"PRIMARYSECONDARYFACTOR1",
+                    "status":"EXECUTED"
+                }
+            ],
+            "schemaVersion":"1.0"
+        },
+        "enrollmentInformation":{
+            "enrollmentCreatedOn":"1737983880029",
+            "enrollmentCreatedOnDeviceModel":"TC58",
+            "enrollmentCreatedOnDeviceSerialNo":"",
+            "enrollmentExpiryDate":"1738156680000",
+            "enrollmentId":"1737983906027D4BA34E",
+            "enrollmentType":"BARCODE",
+            "securityTypes":"PASSCODE",
+            "storageType":"BARCODE"
+        },
+        "errorCode":0,
+        "eventType":"Login",
+        "lockScreenEventType":””
+        "isSSOInformationAvailable":1,
+        "logOutInformation":{
+            " logoutReason ":""
+            "userLogoutTime":""
 
-<li><p>Example response for "Get Current User Session" after invoking <a href="#setsessionsignoutstate">Set Session Sign-Out State</a> in <a href="../usage/#proxymode">Proxy Mode</a>:</p>
-
-<pre class="prettyprint"><code>{
-    "enrollmentInformation": {},
-    "errorCode": 0,
-    "eventType": "Logout",
-    "isSSOInformationAvailable": 0,
-    "logOutInformation": {
-        "userLogoutTime": "1738246878110"
-    },
-    "loginInformation": {},
-    "schemaVersion": "2.0",
-    "ssoInformation": {},
-    "status": "SUCCESS",
-    "userInformation": {
-        "userId": "sujith.chakka@zebrablr.onmicrosoft.com"
-    },
-    "userLoggedInState": "0"
-}
-</code></pre></li>
-
-<li><p>Example response for "Get Current User Session" after invoking <a href="#logoutuser">Logout User</a> in non-Proxy Mode (authentication mode):</p>
-
-<pre class="prettyprint"><code>{
-    "authenticationFactors":{
-        "factors":[
-            {
-                "factor":"PASSCODE",
-                "factorType":"PRIMARYPRIMARYFACTOR",
-                "status":"EXECUTED"
-            },
-            {
-                "factor":"SSO",
-                "factorType":"PRIMARYSECONDARYFACTOR1",
-                "status":"EXECUTED"
-            }
-        ],
-        "schemaVersion":"1.0"
-    },
-    "enrollmentInformation":{
-        "enrollmentCreatedOn":"1737983880029",
-        "enrollmentCreatedOnDeviceModel":"TC58",
-        "enrollmentCreatedOnDeviceSerialNo":"",
-        "enrollmentExpiryDate":"1738156680000",
-        "enrollmentId":"1737983906027D4BA34E",
-        "enrollmentType":"BARCODE",
-        "securityTypes":"PASSCODE",
-        "storageType":"BARCODE"
-    },
-    "errorCode":0,
-    "eventType":"Logout",
-    "isSSOInformationAvailable":1,
-    "logOutInformation":{
-        "logoutReason":"on_device_manual_checkin",
-        "userLogoutTime":"1738248056233"
-    },
-    "loginInformation":{
-        "userLoginTime":"1738247487590"
-    },
-    "schemaVersion":"2.0",
-    "ssoInformation":{
-        "ssoAccessToken":"",
-        "ssoDataReceivedFromIDP:"",
-        "ssoIDToken":"",
-        "ssoProvider":"Microsoft"
-    },
-    "status":"SUCCESS",
-    "userInformation":{
-        "userId":"sujith.chakka@zebrablr.onmicrosoft.com",
-        "userRole":""
-    },
-    "userLoggedInState":"0"
-}
-</code></pre></li>
-</ul>
+        },
+        "loginInformation":{
+            "userLoginTime":"1738247487590"
+        },
+        "schemaVersion":"2.0",
+        "ssoInformation":{
+            "ssoAccessToken":"",
+            "ssoDataReceivedFromIDP:"",
+            "ssoIDToken":"",
+            "ssoProvider":"Microsoft"
+        },
+        "status":"SUCCESS",
+        "userInformation":{
+            "userId":"user1@zebra.com",
+            "userRole":""
+        },
+        "userLoggedInState":"1"
+    }
+</code></pre>
 
 <h4 id="sampleauthenticationresults" class="anchor"><a class="heading-anchor" href="#sampleauthenticationresults"><span></span></a>Sample Authentication Results</h4>
 
@@ -1252,7 +1509,7 @@ Example response for a user logged into the device:
 
 <p><strong>Note:</strong> The following keys are returned in date/time format as "yyyy-MM-dd HH:mm.sss": userLoginTime, userLogoutTime, and barcodeCreatedOn.</p>
 
-<p>Example response for a user logged into the device:</p>
+<p>Example response when a user logs into the device in authentication mode:</p>
 
 <pre class="prettyprint"><code>    {
         "code": 0,
@@ -1871,7 +2128,7 @@ The Response is received by the caller application in the form of a bundle:
 
 </tbody></table>
 
-<p>Example Response:</p>
+<p>Example response when a user logs into the device in authentication mode:</p>
 
 <pre class="prettyprint"><code>    {
         "code":0,
@@ -2123,11 +2380,11 @@ The `cursor` is given in JSON format where each key is accompanied by a series o
 
 <h2 id="setcurrentusersession" class="anchor"><a class="heading-anchor" href="#setcurrentusersession"><span></span></a>Set Current User Session</h2>
 
-<p><strong>Description:</strong> When <a href="../usage/#proxymode">Proxy Mode</a> is enabled - allowing third-party apps to act as screen blockers instead of Identity Guardian - the current user session must be set to either a Session Sign-In State or a Session Sign-out State. To determine whether Identity Guardian is in Proxy Mode, the <a href="../mc/#usagemode">Application Mode</a> should be configured as "Proxy."</p>
+<p><strong>Description:</strong> When third-party apps are used to block the device screen instead of Identity Guardian, the app informs Identity Guardian by invoking <strong>Session Sign-In State</strong> when a user signs in, or <strong>Session Sign-Out State</strong> when a user signs out. To function in this mode, Identity Guardian must be configured to <a href="../usage/#proxymode">Proxy Mode</a> by setting the <a href="../mc/#usagemode">Application Mode</a> to "Proxy.”</p>
 
 <h3 id="setsessionsigninstate" class="anchor"><a class="heading-anchor" href="#setsessionsigninstate"><span></span></a>Set Session Sign-In State</h3>
 
-<p><strong>Description:</strong> This API uses a content URI to configure data for the current user session and returns the result string from the bundle. If the result string is not empty, it should return a JSON object.</p>
+<p><strong>Description:</strong> This API uses a content URI to notify Identity Guardian when a user signs in through a third-party app that blocks the device screen in place of Identity Guardian. It informs Identity Guardian that a user session has started, ensuring user authentication and access control are effectively handled in Proxy Mode. The API returns a result string from the bundle and if the result string is not empty, it should be parsed as a JSON object.</p>
 
 <p><strong>Content URI:</strong> &nbsp;&nbsp;<span style="font-family:'Courier New'">content://com.zebra.mdna.els.provider/currentsession</span></p>
 
@@ -2190,7 +2447,7 @@ The `cursor` is given in JSON format where each key is accompanied by a series o
 
         // Creating a bundle to pass user session information
         Bundle bundle = new Bundle();
-        bundle.putString("user_id", "sujith.chakka@zebrablr.onmicrosoft.com");
+        bundle.putString("user_id", "user1@zebra.com");
         bundle.putBoolean("signed_in_state", true);
         bundle.putString("signin_time", getCurrentDateAndTimeFormat(System.currentTimeMillis()));
         bundle.putString("signout_time", ""); // Sign-out time is initially empty
@@ -2216,7 +2473,7 @@ The `cursor` is given in JSON format where each key is accompanied by a series o
 
 <h3 id="setsessionsignoutstate" class="anchor"><a class="heading-anchor" href="#setsessionsignoutstate"><span></span></a>Set Session Sign-Out State</h3>
 
-<p><strong>Description:</strong> This API uses a content URI to configure data for the current user session and returns the result string from the bundle. If the result string is not empty, it should return a JSON object.</p>
+<p><strong>Description:</strong> This API uses a content URI to notify Identity Guardian when a user signs out through a third-party app that blocks the device screen in place of Identity Guardian. It informs Identity Guardian that a user session has ended, ensuring user authentication and access control are effectively handled in Proxy Mode. The API returns a result string from the bundle and if the result string is not empty, it should be parsed as a JSON object.</p>
 
 <p><strong>Content URI:</strong> &nbsp;&nbsp;<span style="font-family:'Courier New'">content://com.zebra.mdna.els.provider/currentsession</span></p>
 
@@ -2238,9 +2495,9 @@ The `cursor` is given in JSON format where each key is accompanied by a series o
   </tr>
 
   <tr>
-       <td>signed_in_state</td>
+       <td>signed_out_state</td>
     <td>boolean</td>
-    <td>Indicates whether the user is signed in. Default = false.</td>
+    <td>Indicates whether the user is signed out. Default = false.</td>
     <td>Mandatory</td>
   </tr>
   <tr>
@@ -2278,7 +2535,7 @@ The `cursor` is given in JSON format where each key is accompanied by a series o
 
         // Creating a bundle to pass user session information
         Bundle bundle = new Bundle();
-        bundle.putString("user_id", "sujith.chakka@zebrablr.onmicrosoft.com");
+        bundle.putString("user_id", "user1@zebra.com");
         bundle.putBoolean("signed_in_state", false);
         bundle.putString("signin_time", ""); // Sign-in time is left empty for sign-out state
         bundle.putString("signout_time", getCurrentDateAndTimeFormat(System.currentTimeMillis())); // Setting the current sign-out time
@@ -2342,9 +2599,9 @@ The `cursor` is given in JSON format where each key is accompanied by a series o
 
 <hr>
 
-<h2 id="authenticateuser" class="anchor"><a class="heading-anchor" href="#authenticateuser"><span></span></a>Authenticate User</h2>
+<h2 id="startauthentication" class="anchor"><a class="heading-anchor" href="#startauthentication"><span></span></a>Start Authentication</h2>
 
-<p><strong>Description:</strong> This API uses a content URI to launches Identity Guardian and display it over any open apps, restricting device access until the user successfully logs in or authenticates to the device.</p>
+<p><strong>Description:</strong> This API uses a content URI to launch Identity Guardian and display its lock screen, restricting device access until the user successfully signs in and authenticates.</p>
 
 <p><strong>Content URI:</strong> &nbsp;&nbsp;<span style="font-family:'Courier New'">content://com.zebra.mdna.els.provider/lockscreenaction/startauthentication</span></p>
 
@@ -2404,7 +2661,7 @@ The `cursor` is given in JSON format where each key is accompanied by a series o
 
 <h2 id="getauthenticationstatus" class="anchor"><a class="heading-anchor" href="#getauthenticationstatus"><span></span></a>Get Authentication Status</h2>
 
-<p><strong>Description:</strong> After invoking <a href="#authenticateuser">Authenticate User</a>, monitor the Identity Guardian status of screen lock state and user sign in/out by registering for notifications for these state changes. For example, if Identity Guardian launched successfully, is about to launch or is launched by another application, listen for these notifications to determine if further action is needed.</p>
+<p><strong>Description:</strong> After invoking <a href="#startauthentication">Start Authentication</a>, monitor the Identity Guardian status of screen lock state and user sign in/out by registering for notifications for these state changes. For example, if Identity Guardian launched successfully, is about to launch or is launched by another application, listen for these notifications to determine if further action is needed.</p>
 
 <p><strong>Content URI:</strong> &nbsp;&nbsp;<span style="font-family:'Courier New'">content://com.zebra.mdna.els.provider/lockscreenaction/authenticationstatus</span></p>
 
@@ -2467,7 +2724,7 @@ The `cursor` is given in JSON format where each key is accompanied by a series o
 
 <h2 id="logoutuser" class="anchor"><a class="heading-anchor" href="#logoutuser"><span></span></a>Logout User</h2>
 
-<p><strong>Description:</strong> This API uses a content URI to logout the user following device authenticatiion when <a href="../usage/#proxymode">Proxy Mode</a> is not active. It interacts with a content provider perform the logout and processes the response from the provider.</p>
+<p><strong>Description:</strong> This API uses a content URI to log out the user who has authenticated on the device. It interacts with a content provider to execute the logout and returns a response from the provider. This is applicable when <a href="../usage/#proxymode">Proxy Mode</a> is not active.</p>
 
 <p><strong>Content URI:</strong> &nbsp;&nbsp;<span style="font-family:'Courier New'">content://com.zebra.mdna.els.provider/currentsession</span></p>
 
@@ -2564,6 +2821,8 @@ The `cursor` is given in JSON format where each key is accompanied by a series o
   </tr>
 
 </tbody></table>
+
+<p><strong>Response:</strong> None</p>
 
 <h4 id="samplecode-9" class="anchor"><a class="heading-anchor" href="#samplecode-9"><span></span></a>Sample Code</h4>
 
