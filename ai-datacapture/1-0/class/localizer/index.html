@@ -87,8 +87,13 @@
                             </a>
                         </li>
                         <li>
-                            <a href="/ai-datacapture/1-0/class/localizer">
+                            <a href="/ai-datacapture/1-0/localizer">
                                     Localizer
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/ai-datacapture/1-0/productrecognition">
+                                    Product Recognition
                             </a>
                         </li>
                         <li>
@@ -97,23 +102,13 @@
                             </a>
                         </li>
                         <li>
-                            <a href="/ai-datacapture/1-0/featureextractor">
-                                    Feature Extractor
-                            </a>
-                        </li>
-                        <li>
-                            <a href="/ai-datacapture/1-0/featurestorage">
-                                    Feature Storage
-                            </a>
-                        </li>
-                        <li>
-                            <a href="/ai-datacapture/1-0/class/recognizer">
-                                    Recognizer
-                            </a>
-                        </li>
-                        <li>
                             <a href="/ai-datacapture/1-0/textocr">
                                     Text OCR
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/ai-datacapture/1-0/samples">
+                                    Samples
                             </a>
                         </li>
                         <li>
@@ -248,57 +243,430 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>The <code>Localizer</code> class provides functionality for object detection within images, commonly known as localization. It processes input images and outputs a list of bounding boxes that indicate the locations of detected objects or barcodes. This is particularly useful for applications that require the identification and localization of specific objects within an image, such as detecting cats in a picture. The <code>Localizer</code> class can be configured using the <code>Settings</code> class, allowing for model parameters to be specified and, if necessary, overridden.</p>
-
-<ul>
-<li><strong>Input:</strong> Model and <a href="../../types/#image">Image</a></li>
-
-<li><strong>Output:</strong> <a href="../../types/#boundingbox">Bounding Boxes</a></li>
-</ul>
+<p>The <code>Localizer</code> class enables object detection within images, a process commonly referred to as localization. It processes input images and outputs a list of bounding boxes that indicate the locations of detected objects or barcodes. This functionality is particularly beneficial for applications that require the identification and localization of specific objects within an image. The <code>Localizer</code> class can be configured using the <code>Settings</code> class, allowing model parameters to be specified and, if needed, overridden.</p>
 
 <hr>
 
-<h2 id="initialization" class="anchor"><a class="heading-anchor" href="#initialization"><span></span></a>Initialization</h2>
+<h2 id="detectionmodels" class="anchor"><a class="heading-anchor" href="#detectionmodels"><span></span></a>Detection Models</h2>
 
-<p>The <code>Localizer</code> object is initialized via its configuration structure. There are 2 mandatory fields that need to be set:</p>
+<p>There are two types of supported detection models: Barcode Localizer and Shelf Localizer.</p>
+
+<h3 id="barcodelocalizer" class="anchor"><a class="heading-anchor" href="#barcodelocalizer"><span></span></a>Barcode Localizer</h3>
+
+<p>The <strong><a href="../about/#localizer">Barcode Localizer</a></strong> detects barcodes in images. Supported barcode types are: linear barcode (e.g. UPC nad EAN), 2D barcode, Data Matrix, QR Code, Aztec, PDF417, DotCode, postal code, MaxiCode, Composite Code, Han Xin Code, MicroPDF417, Micro QR Code, GridMatrix, and ArUco. After detection, the <a href="../barcodedecoder/">Barcode Decoder</a> can be used to decode the barcodes. </p>
+
+<p>The input image size (height and width) can be changed during runtime initialization. The default input size is 640x640. The output is <a href="#boundingboxexplained">bounding boxes</a> for the detected barcodes.</p>
+
+<h3 id="shelflocalizer" class="anchor"><a class="heading-anchor" href="#shelflocalizer"><span></span></a>Shelf Localizer</h3>
+
+<p>The <strong><a href="../about/#localizer">Shelf Localizer</a></strong> model detects and identifies objects on retail shelves, including products, shelf labels, peg labels, and the shelves themselves. </p>
+
+<p>The input image size can be adjusted during initialization based on the proximity of the camera to the shelf. The default size is 832x832. The output is <a href="#boundingboxexplained">bounding boxes</a> for the detected objects on the shelf.</p>
+
+<hr>
+
+<h4 id="boundingboxexplained" class="anchor"><a class="heading-anchor" href="#boundingboxexplained"><span></span></a>Bounding Box Explained</h4>
+
+<p>A <strong>Bounding Box</strong> is a rectangular frame that encloses a detected object within an image, defining its position and dimensions. Each bounding box provides:</p>
 
 <ul>
-<li><code>MODEL_ARCHIVE_FILEPATH</code> = fully qualified file path to the .crypt archive from which the localizer model is read </li>
+<li><strong>Coordinates -</strong> Specifies the object's location, width and height.</li>
 
-<li><code>MODEL_FILENAME</code> = file name of a localizer model (no extension) </li>
+<li><strong>Probability (Confidence) -</strong> Represents the confidence score of the detection.</li>
+
+<li><strong>Class -</strong> Displays the label of the detected object.</li>
 </ul>
-
-<p><strong>Optional:</strong> Users can override the default model input size (height and width) in <code>inferencerOptions</code>, as shown in the example below. Adjusting the input size impacts both accuracy and inference time. Smaller input sizes execute faster but may reduce accuracy, while larger input sizes may improve accuracy, especially for detecting smaller or distant objects. However, excessively large input sizes may lead to out-of-memory errors, potentially causing the application to crash at run-time. For ONNX models, specifying the height and width is mandatory, with the input sizes being in multiples of powers of two (e.g. 640).</p>
-
-<pre class="prettyprint"><code>    import com.zebra.AI.Vision.Localizer;
-
-    Localizer.Settings settings = new Localizer.Settings(MODEL_ARCHIVE_FILEPATH, MODEL_FILENAME);
-    # Optional model input size parameters
-    settings.inferencerOptions.defaultDims.height = 1600
-    settings.inferencerOptions.defaultDims.width  = 1600
-
-    // Initialize Localizer object
-    Localizer localizer = new Localizer(settings);
-</code></pre>
-
-<p>If required, advanced options are available; see <a href="../localizersettings/#settingsclassmemberdescription">Settings Class</a> for more information.</p>
 
 <hr>
 
 <h2 id="usage" class="anchor"><a class="heading-anchor" href="#usage"><span></span></a>Usage</h2>
 
-<p>Detect objects on a given image and output a collection of <a href="../../types/#boundingbox">bounding boxes</a> for each detected object.</p>
+<h3 id="step1initialization" class="anchor"><a class="heading-anchor" href="#step1initialization"><span></span></a>Step 1: Initialization</h3>
 
-<p><em>IMAGE</em> = Bitmap image</p>
+<p>To initialize, set the following fields:</p>
 
-<pre class="prettyprint"><code>    CompletableFuture &lt;BBox[]&gt; future = localizer.detect(IMAGE); // Return type is com.zebra.AI.Vision.BBox
+<ul>
+<li><p><strong>model_file_Path -</strong> Specify the fully qualified file path, including the directory and filename, such as <code>/path_to_model_file/xyz.tar.crypt</code>. </p></li>
+
+<li><p><strong>model_name -</strong> Provide the model name returned by the following API:</p>
+
+<pre class="prettyprint"><code>String Localizer.getModelName(int modelType);
+</code></pre>
+
+<p>Set the <code>modelType</code> parameter as follows:</p>
+
+<ul>
+<li>For Barcode Localizer, use <code>Localizer.Settings.MODEL_TYPE_BARCODE_LOCALIZER</code>.</li>
+
+<li>For Shelf Localizer, use <code>Localizer.Settings.MODEL_TYPE_SHELF_LOCALIZER</code>.</li></ul></li>
+</ul>
+
+<p>Optionally, the default model input size (height and width) can be overridden by specifying these dimensions in <a href="../class/inferenceroptions/">inferencerOptions</a>. The input size should be multiples of powers of two (e.g., 640). Adjust the model input size based on the camera resolution used for optimal detection results. </p>
+
+<h4 id="inputimageguidelines" class="anchor"><a class="heading-anchor" href="#inputimageguidelines"><span></span></a>Input Image Guidelines</h4>
+
+<p>For accurate detection of text and barcodes, input images must have sufficient pixel data to clearly represent the text or barcode. For instance, a 640x640 image may be suitable for scanning a parcel label that occupies the full width of the image, while a 1920x1920 image may be needed for capturing price tags on a shelf module.</p>
+
+<p>In real-time applications, consider the overall dimensions of the input images. Smaller images can be processed more quickly. To minimize latency, ensure that the text or barcodes occupy as much of the image as possible, and capture images at lower resolutions, while maintaining accuracy.</p>
+
+<p>Changing the input size involves a trade-off between accuracy and inference time. Smaller input sizes provide faster processing but may sacrifice accuracy, while larger sizes take longer but may improve detection accuracy for smaller or more distant objects. </p>
+
+<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>Caution:</strong> Selecting an input size that is too large may lead to out-of-memory errors and cause an application crash at runtime.</p>
+
+<h4 id="samplecode" class="anchor"><a class="heading-anchor" href="#samplecode"><span></span></a>Sample Code</h4>
+
+<pre class="prettyprint"><code>    import com.zebra.ai.vision.Localizer;
+
+    // Initialize SDK by calling this API. Context refers to application context object.
+    AIVisionSDK.getInstance(Context).init(); 
+
+    // For Barcode Detection
+    String modelPath = "path/to/model.crypt";
+    String modelName =  Localizer.Settings.getModelName(Localizer.Settings.MODEL_TYPE_BARCODE_LOCALIZER)
+    Localizer.Settings settings = new Localizer(modelPath, modelName)
+
+    // For Retail shelf/product detection, model Name is different and mentioned as below:
+    // String modelName = 
+    // Localizer.Settings.getModelName(Localizer.Settings.MODEL_TYPE_SHELF_LOCALIZER
+    // Optional model input size parameters
+    settings.inferencerOptions.defaultDims.height = 640;
+    settings.inferencerOptions.defaultDims.width = 640;
+
+    // Initialize Localizer object
+    Localizer localizer = null;
+
+    // Initialize Localizer and load the model asynchronously
+    // settings – Localizer.Settings object created above
+    // Executor –  An executor thread for processing API calls and returning results. 
+    // Ref: //https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Execu//tor.html 
+    CompletableFuture&lt;Localizer&gt; futureObject = Localizer.getLocalizer(settings,executor);
+
+    // Use the futureObject to implement the thenAccept() callback of CompletableFuture.
+    futureObject.thenAccept ( localizerInstance -&gt; {
+        // Use the localizer object returned here for detecting barcodes/shelves/products
+        localizer = localizerInstance;
+    }
+</code></pre>
+
+<h3 id="step2detection" class="anchor"><a class="heading-anchor" href="#step2detection"><span></span></a>Step 2: Detection</h3>
+
+<p>Detect barcodes or shelf items on a given image. The output is a collection of <a href="../class/bbox/">bounding boxes</a>  for each detected object.</p>
+
+<h4 id="samplecode-1" class="anchor"><a class="heading-anchor" href="#samplecode-1"><span></span></a>Sample Code</h4>
+
+<pre class="prettyprint"><code>    // When the camera image is available, detect the objects. The Detect API input params are a Bitmap image 
+    // and an executor thread object in which the detection happens. The results are then returned.
+
+    CompletableFuture &lt;BBox[]&gt; resultFutureObject = localizer.detect(Bitmap image, Executor executor); 
+
+    resultFutureObject.thenAccept ( bboxes -&gt; {
+        // Process the returned array of bounding boxes.
+    }
+
+    // After processing the localizer object, dispose it to release resources and memory used for detection.
+
+    Localizer.dispose();
 </code></pre>
 
 <hr>
 
-<h2 id="apis" class="anchor"><a class="heading-anchor" href="#apis"><span></span></a>APIs</h2>
+<h2 id="methods" class="anchor"><a class="heading-anchor" href="#methods"><span></span></a>Methods</h2>
+
+<h3 id="getlocalizersettingssettingsexecutorexecutor" class="anchor"><a class="heading-anchor" href="#getlocalizersettingssettingsexecutorexecutor"><span></span></a>getLocalizer(Settings settings, Executor executor)</h3>
+
+<pre class="prettyprint"><code>    Public static CompletableFuture&lt;Localizer&gt; Localizer.getLocalizer(Settings settings,Executor executor) throws InvalidInputException, RuntimeException
+</code></pre>
+
+<p><strong>Description:</strong> Constructs a new <code>Localizer</code> object using the provided settings and returns it via the <code>thenAccept()</code> callback of <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a>. The <code>thenAccept()</code> callback must be implemented. Ref: [Github code sample location]</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>Settings settings -</strong> Configuration settings for initializing the <code>Localizer</code></li>
+
+<li><strong>Executor executor -</strong> Executor object in which the result (<code>Localizer</code> object) is returned</li>
+</ul>
+
+<p><strong>Return Value:</strong> <code>CompletableFuture&lt;Localizer&gt;</code></p>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>InvalidInputException -</strong> Thrown if the settings object is null.</li>
+
+<li><strong>RuntimeException -</strong> Thrown if the SDK is not initialized by calling <code>AIVisionSDK.getInstance(Context).init()</code></li>
+</ul>
+
+<hr>
+
+<h3 id="detectbitmapbmpintorientationexecutorexecutor" class="anchor"><a class="heading-anchor" href="#detectbitmapbmpintorientationexecutorexecutor"><span></span></a>detect (Bitmap bmp, int orientation, Executor executor)</h3>
+
+<pre class="prettyprint"><code>    CompletableFuture&lt;BBox[]&gt; detect (Bitmap bmp, int orientation, Executor executor) throws InvalidInputException, IllegalStateException
+</code></pre>
+
+<p><strong>Description:</strong> Runs the model on an input image and returns a <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a> object with <a href="../class/bbox/">bounding boxes</a> for the detected objects (e.g., barcodes, shelves, labels, products). The <code>thenAccept()</code> callback must be implemented. Ref: [Github code sample location]</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>Bitmap bmp -</strong> The input image for detection. </li>
+
+<li><strong>int orientation -</strong> The orientation angle of the input image. The routine rotates the image clockwise by this angle for processing and then applies an anticlockwise rotation to the results for correction.</li>
+
+<li><strong>Executor executor -</strong> Executor object in which the results (Bounding Boxes) are returned.</li>
+</ul>
+
+<p><strong>Return Value:</strong> <code>CompletableFuture&lt;BBox[]&gt;</code> containing detected objects, locations, probability and class of objects.   </p>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong><a href="../class/invalidinputexception/">InvalidInputException</a> -</strong> Thrown when the Bitmap is null or the orientation angle is not one of the supported values:
+
+
+<ul>
+<li><strong>0 -</strong> 0 degrees</li>
+
+<li><strong>1 -</strong> 90 degrees</li>
+
+<li><strong>2 -</strong> 180 degrees</li>
+
+<li><strong>3 -</strong> 270 degrees</li></ul>
+</li>
+
+<li><strong>IllegalStateException -</strong> Thrown when the previous detect API call is still in process.</li>
+</ul>
+
+<hr>
+
+<h3 id="detectbitmapbmpexecutorexecutor" class="anchor"><a class="heading-anchor" href="#detectbitmapbmpexecutorexecutor"><span></span></a>detect (Bitmap bmp, Executor executor)</h3>
+
+<pre class="prettyprint"><code>    CompletableFuture&lt;BBox[]&gt; detect(Bitmap bmp, Executor executor ) throws InvalidInputException , IllegalStateException
+</code></pre>
+
+<p><strong>Description:</strong> Runs the model on an input image and returns a <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a> object with <a href="../class/bbox/">bounding boxes</a> for the detected objects (e.g., barcodes, shelves, labels, products). The <code>thenAccept()</code> callback must be implemented. Ref: [Github code sample location]</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>Bitmap bmp -</strong> The input image for detection. </li>
+
+<li><strong>Executor executor -</strong> Executor object in which the results (Bounding Boxes) are returned.</li>
+</ul>
+
+<p><strong>Return Value:</strong> <code>CompletableFuture&lt;BBox[]&gt;</code> containing detected objects, locations, probability and class of objects.   </p>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong><a href="../class/invalidinputexception/">InvalidInputException</a> -</strong> Thrown when <code>Bitmap</code> is null.</li>
+
+<li><strong>IllegalStateException -</strong> Thrown when the previous detect API call is still in process.</li>
+</ul>
+
+<hr>
+
+<h3 id="getdetectedclasses" class="anchor"><a class="heading-anchor" href="#getdetectedclasses"><span></span></a>getDetectedClasses()</h3>
+
+<pre class="prettyprint"><code>    String[] getDetectedClasses()
+</code></pre>
+
+<p><strong>Description:</strong> Retrieves a list of class names that the model can detect.</p>
+
+<p><strong>Return Value:</strong> An array of strings containing the names of the classes.</p>
+
+<hr>
+
+<h3 id="getmodelnameintmodeltype" class="anchor"><a class="heading-anchor" href="#getmodelnameintmodeltype"><span></span></a>getModelName(int modelType)</h3>
+
+<pre class="prettyprint"><code>    String getModelName(int modelType) throws InvalidInputException
+</code></pre>
+
+<p><strong>Description:</strong> Returns the model name for the specified localizer model type.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>int modelType -</strong> Specify one of the supported model types:
+
+
+<ul>
+<li>For Barcode Localizer, pass the modelType as Localizer.Settings.MODEL_TYPE_BARCODE_LOCALIZER.</li>
+
+<li>For Shelf Localizer, pass the modelType as Localizer.Settings.MODEL_TYPE_SHELF_LOCALIZER.</li></ul>
+</li>
+</ul>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>InvalidInputException -</strong> Thrown when modelType is not one of the supported values:
+
+
+<ul>
+<li><code>Localizer.Settings.MODEL_TYPE_BARCODE_LOCALIZER</code></li>
+
+<li><code>Localizer.Settings.MODEL_TYPE_SHELF_LOCALIZER</code></li></ul>
+</li>
+</ul>
+
+<hr>
+
+<h3 id="dispose" class="anchor"><a class="heading-anchor" href="#dispose"><span></span></a>dispose()</h3>
+
+<pre class="prettyprint"><code>    void dispose()
+</code></pre>
+
+<p><strong>Description:</strong> Releases all internal resources used by the <code>Localizer</code> object. This method should be called manually to free resources.</p>
+
+<hr>
+
+<h2 id="localizersettings" class="anchor"><a class="heading-anchor" href="#localizersettings"><span></span></a>Localizer.Settings</h2>
+
+<p>The <code>Localizer.Settings</code> class provides a comprehensive set of attributes and options to configure the behavior of the <code>Localizer</code>. This includes settings for tiling, padding, model thresholds, and more, allowing for fine-tuned control over the image processing and inference stages. The class encapsulates the configuration parameters required to initialize the <code>Localizer</code>, managing model execution, resource allocation, image processing, and result aggregation.</p>
+
+<hr>
+
+<h2 id="constructors" class="anchor"><a class="heading-anchor" href="#constructors"><span></span></a>Constructors</h2>
+
+<h3 id="settings" class="anchor"><a class="heading-anchor" href="#settings"><span></span></a>Settings()</h3>
+
+<pre class="prettyprint"><code>    Localizer.Settings()
+</code></pre>
+
+<p><strong>Description:</strong> Initiaalizes a new <code>Settings</code> object with default configurations.</p>
+
+<hr>
+
+<h3 id="settingsstringmodel_filepathstringmodel_nameintmodel_threads" class="anchor"><a class="heading-anchor" href="#settingsstringmodel_filepathstringmodel_nameintmodel_threads"><span></span></a>Settings(String model_filepath, String model_name, int model_threads)</h3>
+
+<pre class="prettyprint"><code>    Localizer.Settings(String model_filepath, String model_name, int model_threads)
+</code></pre>
+
+<p><strong>Description:</strong> Initializes a new <code>Settings</code> object with specified overrides.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>String model_filepath -</strong> Location of the model file.</li>
+
+<li><strong>String model_name -</strong> Name of the model.</li>
+
+<li><strong>int model_threads -</strong> Number of threads the inferencer may use to execute the model.</li>
+</ul>
+
+<hr>
+
+<h3 id="settingsstringmodel_filepathstringmodel_name" class="anchor"><a class="heading-anchor" href="#settingsstringmodel_filepathstringmodel_name"><span></span></a>Settings(String model_filepath, String model_name)</h3>
+
+<pre class="prettyprint"><code>    Localizer.Settings(String model_filepath, String model_name)
+</code></pre>
+
+<p><strong>Description:</strong> Initializes a new <code>Settings</code> object with specified overrides.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>String model_filepath -</strong> Location of the model file.</li>
+
+<li><strong>String model_name -</strong> Name of the model in the compressed file.</li>
+</ul>
+
+<hr>
+
+<h2 id="classmembers" class="anchor"><a class="heading-anchor" href="#classmembers"><span></span></a>Class Members</h2>
+
+<p>The <code>Localizer</code> output may include bounding boxes of different classes, such as barcodes and QR codes. In this case, 'class' refers to the type detected by the <code>Localizer</code>. Parameters can be configured individually for each class, such as setting different height/width thresholds for barcode and QR code boxes. These class-specific threshold values are passed as a list (vector), with each value corresponding to a specific class in sequence. For example, the first value applies to the first class, the second value to the second class, and so on. [Ref: Github Sample link to use per class settings]</p>
+
+<p><strong>Note:</strong> Each parameter that accepts a list of parameters also accepts a single value, which can be applied to each output class.</p>
+
+<h3 id="resourcename" class="anchor"><a class="heading-anchor" href="#resourcename"><span></span></a>resourceName</h3>
+
+<pre class="prettyprint"><code>    String resourceName
+</code></pre>
+
+<p><strong>Description:</strong> Specifies the file path (model_file_path) containing resources for the <code>Localizer</code>, such as model and meta files with configuration values.</p>
+
+<hr>
+
+<h3 id="modelname" class="anchor"><a class="heading-anchor" href="#modelname"><span></span></a>modelName</h3>
+
+<pre class="prettyprint"><code>    String modelName
+</code></pre>
+
+<p><strong>Description:</strong> Name of the model stored in the model archive, specific to the localizer. </p>
+
+<ul>
+<li><p>For Barcode Localizer, use the value returned by the following API call:</p>
+
+<pre class="prettyprint"><code>Localizer.Settings.getModelName(Localizer.Settings.MODEL_TYPE_BARCODE_LOCALIZER)
+</code></pre></li>
+
+<li><p>For Shelf Localizer, use the value returned by the following API call:</p>
+
+<pre class="prettyprint"><code>Localizer.Settings.getModelName(Localizer.Settings.MODEL_TYPE_SHELF_LOCALIZER)
+</code></pre></li>
+</ul>
+
+<hr>
+
+<h3 id="inferenceroptions" class="anchor"><a class="heading-anchor" href="#inferenceroptions"><span></span></a>InferencerOptions</h3>
+
+<pre class="prettyprint"><code>    InferencerOptions InferencerOptions
+</code></pre>
+
+<p><strong>Description:</strong> Provides options for the inferencer. Developers may primarily be interested in <code>defaultDims</code>, which allows resizing of the model’s input layer. More details are available in the <a href="../class/inferenceroptions/">Inferencer Options</a>.</p>
+
+<hr>
+
+<h3 id="setparametersforboundingboxes" class="anchor"><a class="heading-anchor" href="#setparametersforboundingboxes"><span></span></a>Set Parameters for Bounding Boxes</h3>
+
+<p>The Settings parameters provided in this section allow the user to tune how the bounding boxes are filtered based on their individual characteristics (e.g., probability, dimensions).</p>
+
+<hr>
+
+<h4 id="probthreshold" class="anchor"><a class="heading-anchor" href="#probthreshold"><span></span></a>probThreshold</h4>
+
+<pre class="prettyprint"><code>    float probThreshold[]
+</code></pre>
+
+<p><strong>Description:</strong> Only bounding boxes with a probability score higher than this value will be returned. This setting is applicable per detected class type. Increasing this value filters out boxes with lower probabilities if many low-probability boxes appear in the output. [Ref: Github sample code link] </p>
+
+<p><strong>Default Value:</strong> Varies based on the localizer</p>
+
+<p><strong>Value range:</strong> [0.0f, 1.0f]</p>
+
+<hr>
+
+<h4 id="minprodwidth" class="anchor"><a class="heading-anchor" href="#minprodwidth"><span></span></a>minProdWidth</h4>
+
+<pre class="prettyprint"><code>    int minProdWidth[]
+</code></pre>
+
+<p><strong>Description:</strong> This parameter, tuned along <code>minProdHeight</code>, ensures only boxes wider than this threshold are returned. Increasing this parameter filters out thin boxes. [] Ref: Github sample code link]</p>
+
+<p><strong>Default Value:</strong> 4</p>
+
+<p><strong>Value range:</strong> [0, max(int)]</p>
+
+<hr>
+
+<h4 id="minprodheight" class="anchor"><a class="heading-anchor" href="#minprodheight"><span></span></a>minProdHeight</h4>
+
+<pre class="prettyprint"><code>    int minProdHeight[]
+</code></pre>
+
+<p><strong>Description:</strong> Tuned along with <code>minProdWidth</code>, this parameter ensures only boxes taller than this threshold are returned. Increasing this parameter filters out short boxes.</p>
+
+<p><strong>Default Value:</strong> 4</p>
+
+<p><strong>Value Range:</strong> [0, max(int)]</p>
+
+<hr>
 
 <!-- 
+## Methods
+
 The following is a list of APIs supported by Localizer.
 
 Return Type                                             |  API Name
@@ -311,176 +679,83 @@ String[]      | [getDetectedClasses](Localizer.md#getdetectedclasses-) ()
 void  | [dispose](Localizer.md#dispose) 
 
 ## API Detailed Description
--->
 
-<h3 id="localizerconstructor" class="anchor"><a class="heading-anchor" href="#localizerconstructor"><span></span></a>Localizer Constructor</h3>
 
-<p>Constructs a new <code>Localizer</code> object by applying the specified settings and loading the detection model.</p>
+### Constructor
 
-<ul>
-<li><strong>Constructor:</strong> 
+Localizer ([Settings](../class/localizersettings/) settings) throws FileNotFoundException, IOException
 
+**Description:** Creates a new `Localizer` object with specified settings and loads the detection model.
 
-<ul>
-<li>Localizer.Localizer (<a href="../localizersettings/">Settings</a> settings)</li></ul>
-</li>
+**Parameters:** 
+* `settings` ([Settings](../class/localizersettings/)) - Configuration settings for initialization.
 
-<li><strong>Parameters:</strong> 
+**Exceptions:**
+- `FileNotFoundException` if the model file is not found.
+- `IOException` if the model is corrupted.
 
+<br />
 
-<ul>
-<li><code>settings</code> (Settings) - Configuration settings for initializing the Localizer.</li></ul>
-</li>
+### detect (Bitmap bmp, int orientation)
 
-<li><strong>Return Value:</strong>
+[CompletableFuture](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html)<[BBox](../class/bbox/)> detect (Bitmap bmp, int orientation) throws InvalidInputException
 
+**Description:** Runs the model on an input image to calculate bounding boxes, with optional image rotation for processing. Optionally including a depth map. The total number of supplied channels (primary image + depth) must match the model's input channel requirements.
 
-<ul>
-<li><code>Localizer</code> object</li></ul>
-</li>
+**Parameters:**
+- `bmp` (Bitmap) - Input image for detection. 
+- `orientation` (int) - Orientation angle for image rotation during processing. The image rotates clockwise by this angle for processing, then applies an anticlockwise rotation to the results for correction. Values?: Orientation.DEG_0, Orientation.DEG_90, Orientation.DEG_180, Orientation.DEG_270.
 
-<li><strong>Exceptions:</strong>
+**Return Value:** CompletableFuture&lt;BBox[ ]&gt; with detected objects, locations, probabilities and classes.   
 
+**Exceptions:**
+- [`InvalidInputException`](../class/invalidinputexception/) for invalid Bitmap (e.g., null) or orientation.
 
-<ul>
-<li><code>FileNotFoundException</code> - Thrown if the model file is not found in the archive.</li>
+<br />
 
-<li><code>IOException</code> - Thrown if the model archive is corrupted.</li></ul>
-</li>
-</ul>
+### detect (Bitmap bmp)
 
-<p><br></p>
+[CompletableFuture](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html)<[BBox](../class/bbox/)> detect (Bitmap bmp) throws InvalidInputException
 
-<h3 id="detectbitmapbmpintorientation" class="anchor"><a class="heading-anchor" href="#detectbitmapbmpintorientation"><span></span></a>detect (Bitmap bmp, int orientation)</h3>
+**Description:** Runs the model on an input image to calculate bounding boxes, with optional image rotation for processing. Optionally including a depth map. The total number of input channels (primary image + depth) must match the model's required input channels.
 
-<p>Runs the model on an input image, optionally including a depth map, to calculate bounding boxes. The total number of supplied channels (primary image + depth) must match the model's input channel requirements.</p>
+**Parameters:**
+- `bmp` (Bitmap) - Input image for detection.
 
-<ul>
-<li><strong>Method:</strong>
+**Return Value:** CompletableFuture &lt;BBox[ ]&gt; with detected objects, locations, probabilities and classes.
 
+**Exceptions:**
+- [`InvalidInputException`](../class/invalidinputexception/) for invalid Bitmap (e.g., null).
 
-<ul>
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a>&lt;<a href="../bbox/">BBox</a>&gt; com.zebra.AI.Vision.Localizer.detect (Bitmap bmp, int orientation)</li></ul>
-</li>
+<br />
 
-<li><strong>Parameters:</strong>
+### getModelVersion()
 
+String getModelVersion()
 
-<ul>
-<li><code>bmp</code> (Bitmap) - The input image for detection. </li>
+**Description:** Returns the version string of the model.
 
-<li><code>orientation</code> (int) - The orientation angle of the input image. The routine rotates the image clockwise by this angle for processing, then applies an anticlockwise rotation to the results for correction.</li></ul>
-</li>
+**Return Value:** String containing the model version.
 
-<li><strong>Return Value:</strong>
+<br />
 
+### getDetectedClasses()
 
-<ul>
-<li>CompletableFuture with BBox[ ] as output, where each BBox contains detectedObjects, locations, probability and class of objects.</li></ul>
-</li>
+String getDetectedClasses()
 
-<li><strong>Exceptions:</strong>
+**Description:** Retrieves the class names that the the model can detect. 
 
+**Return Value:** Array of class names.
 
-<ul>
-<li><a href="../invalidinputexception/"><code>InvalidInputException</code></a> - Thrown if Bitmap is null or orientation is not 0, 90, 180 or 270 degrees.</li></ul>
-</li>
-</ul>
+<br />
 
-<p><br></p>
+### Dispose()
 
-<h3 id="detectbitmapbmp" class="anchor"><a class="heading-anchor" href="#detectbitmapbmp"><span></span></a>detect (Bitmap bmp)</h3>
+void dispose()
 
-<p>Executes the model on an input image, optionally including a depth map, to calculate bounding boxes. The total number of input channels (primary image + depth) must match the model's required input channels.</p>
+**Description:** Releases all internal resources used by the `Localizer` object. It should be called manually to free resources.
 
-<ul>
-<li><strong>Constructor:</strong>
-
-
-<ul>
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a>&lt;<a href="../bbox/">BBox</a>&gt; Localizer.detect (Bitmap bmp)</li></ul>
-</li>
-
-<li><strong>Parameters:</strong>
-
-
-<ul>
-<li><code>bmp</code> (Bitmap) - The input image on which detection is performed.    </li></ul>
-</li>
-
-<li><strong>Return Value:</strong>
-
-
-<ul>
-<li>CompletableFuture with BBox[ ] as output. BBox contains detectedObjects, locations, probability and class of objects.    </li></ul>
-</li>
-
-<li><strong>Exceptions:</strong>
-
-
-<ul>
-<li><a href="../invalidinputexception/"><code>InvalidInputException</code></a> thrown when Bitmap is passed as null. </li></ul>
-</li>
-</ul>
-
-<p><br></p>
-
-<h3 id="getmodelversion" class="anchor"><a class="heading-anchor" href="#getmodelversion"><span></span></a>getModelVersion()</h3>
-
-<p>Get version string associated with model.</p>
-
-<ul>
-<li><strong>Method:</strong> 
-
-
-<ul>
-<li>String Localizer.getModelVersion()</li></ul>
-</li>
-
-<li><strong>Return Value:</strong>
-
-
-<ul>
-<li>A string containing the model version.</li></ul>
-</li>
-</ul>
-
-<p><br></p>
-
-<h3 id="getdetectedclasses" class="anchor"><a class="heading-anchor" href="#getdetectedclasses"><span></span></a>getDetectedClasses()</h3>
-
-<p>Retrieves the list of names representative of the classes the model can detect. </p>
-
-<ul>
-<li><strong>Method:</strong> 
-
-
-<ul>
-<li>String[ ] Localizer.getDetectedClasses()</li></ul>
-</li>
-
-<li><strong>Return Value:</strong>
-
-
-<ul>
-<li>An array of strings with names of classes.</li></ul>
-</li>
-</ul>
-
-<p><br></p>
-
-<h3 id="dispose" class="anchor"><a class="heading-anchor" href="#dispose"><span></span></a>Dispose()</h3>
-
-<p>Releases all internal resources used by the Localizer object. This method should be called manually to free resources.</p>
-
-<ul>
-<li><strong>Method:</strong>
-
-
-<ul>
-<li>void Localizer.dispose()</li></ul>
-</li>
-</ul><p></p>
+--><p></p>
                                         
 
 
@@ -514,7 +789,7 @@ void  | [dispose](Localizer.md#dispose)
             <div class="container-fluid">
                 <div class="row">
                     <div class="col-sm-10">
-                        ZEBRA and the stylized Zebra head are trademarks of Zebra Technologies Corp., registered in many jurisdictions worldwide. All other trademarks are the property of their respective owners. ©2024 Zebra Technologies Corp. and/or its affiliates.<br> <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal.html">Legal</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/compliance/information-privacy/terms-of-use.html">Terms of Use</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal/privacy-statement.html">Privacy Policy</a> 
+                        ZEBRA and the stylized Zebra head are trademarks of Zebra Technologies Corp., registered in many jurisdictions worldwide. All other trademarks are the property of their respective owners. ©2025 Zebra Technologies Corp. and/or its affiliates.<br> <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal.html">Legal</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/compliance/information-privacy/terms-of-use.html">Terms of Use</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal/privacy-statement.html">Privacy Policy</a> 
                     </div>
                      <!--
                      <div class="col-sm-2">
