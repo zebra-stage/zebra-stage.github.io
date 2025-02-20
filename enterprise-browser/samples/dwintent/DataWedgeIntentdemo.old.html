@@ -1,0 +1,3208 @@
+
+
+        
+
+    <title>EnterpriseBrowser DataWedge Intent Page</title>
+	<meta http-equiv="QuitButton" content="Visibility:Visible">
+    <script type="text/javascript" charset="utf-8" src="ebapi-modules.js"></script>
+    <script type="text/javascript">
+
+        var freeFormOCRClicked = false;
+		var licensePlatesOcrClicked =false;
+		var tinOcrClicked = false;
+        var vinocrclicked=false;
+        var dococrclicked=false;
+        var containerocrclicked=false;
+        var metocrclicked=false;
+		var travelocrclicked=false;
+
+		
+		   setInterval(function () {
+
+            EB.Intent.startListening(myIntentListenerCallback);
+            var ifConnected = window.navigator.onLine;
+            if (ifConnected) {
+                sessionStorage.setItem("isOfflineMsgShow", "no");
+                showOfflineToast = true;
+            } else {
+                if (showOfflineToast == true) {
+                    console.log("from setInterval")
+                    let getOfflineStat = sessionStorage.getItem("isOfflineMsgShow");
+                    <!-- EB.Intent.startListening(myIntentListenerCallback); -->
+                    if ((getOfflineStat == null || getOfflineStat == 'no') && showOfflineToast == true) {
+                        document.getElementById("toast").innerHTML = offlineText;
+                        offlineMsgTimer();
+                    }
+                    sessionStorage.setItem("isOfflineMsgShow", "yes");
+                    showOfflineToast = false;
+                }
+            
+            }
+        }, 300);
+		
+		   function offlineMsgTimer() {
+            var x = document.getElementById("toast");
+            x.className = "show";
+            setTimeout(function () { x.className = x.className.replace("show", "hiddenCls"); }, 3000);
+        }
+
+        function myIntentListenerCallback(myIntentData) 
+		{
+		              var ouptutDiv = document.getElementById("myIntentDataDiv");
+                        var tableData = document.getElementById('tableSimulScanData');
+            if ((myIntentData != null) && (myIntentData.action == "com.symbol.datawedge.api.RESULT_ACTION"))
+                        {
+                                var outputData = "";
+                                var dataWedgeScannedData = myIntentData.data;
+                                if(dataWedgeScannedData && dataWedgeScannedData["com.symbol.datawedge.api.RESULT_GET_ACTIVE_PROFILE"]){
+                                        text = "<BR/> <b> DataWedge Intent Output:</b> <BR/>" +
+                    "<BR/> Active DataWedge Profile:" + dataWedgeScannedData["com.symbol.datawedge.api.RESULT_GET_ACTIVE_PROFILE"]+"<BR/> ";
+                                }
+                ouptutDiv.innerHTML = text;
+                                tableData.innerHTML = "";
+            }
+                        
+		    if(freeFormOCRClicked){
+			var ouptutDiv = document.getElementById("myIntentDataDiv");
+			var tableData = document.getElementById('tableSimulScanData');
+			var ffoData = myIntentData['data']['com.symbol.datawedge.data'];
+			 
+
+                    var ffoParseData = JSON.parse(ffoData);
+					console.log("ffoParseData>>>"+ffoParseData)
+                    ffoParseData.push(ffoParseData.shift())
+                    console.log('ffoParseData', ffoParseData)
+
+                    var groupedFfo = groupBy(ffoParseData, 'group_id');
+                    var groupedFfoKeys = Object.keys(groupedFfo)
+
+                    var groupedFfoValues = Object.values(groupedFfo)
+
+                    const chars = { '<': '&lt;', '>': '&gt;' };
+					let text = "";
+					var idx = 0;
+					  var base64Arr = [];
+					  let i = 0;
+                    if (i == 0) {
+
+                        text += "<ul><li class='list_with_image imageEnlargeDoc'>";
+                        text += "<p><strong>Scan: " + Math.round(i + 1) + "</strong></p>";
+
+                        for (let j = 0; j < groupedFfoKeys.length; j++) {
+                            if (groupedFfoKeys[j] != 'Image') {
+                                var resultFfo = groupedFfo[groupedFfoKeys[j]].map(function (item) { return item.string_data; });
+                                var textFfo = resultFfo.join(" ");
+
+                                text += "<p>";
+                                text += textFfo.replace(/[<>]/g, m => chars[m]+"hari>");
+                                text += "</p>";
+
+                            } else {
+
+							     console.log('image',"Rajendra imageData Value : "+ JSON.stringify(groupedFfo[groupedFfoKeys[j]][0]));
+                                 var imageData =convertContenturiToBase64(JSON.stringify(groupedFfo[groupedFfoKeys[j]][0]))
+                                 readImageFromContentProviderToBase64(JSON.stringify(groupedFfo[groupedFfoKeys[j]][0]))
+  
+                                 text += "<img id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' style='object-fit: contain;width:200px;height:150px'>";
+						   }
+                        }
+                        text += '</li></ul>';
+                    }
+					
+					 document.getElementById("demoData").innerHTML = text; 
+				tableData.innerHTML = "";
+				}
+				else if(licensePlatesOcrClicked){
+				 var licensePlatesData = myIntentData['data']['com.symbol.datawedge.data'];
+                 var licensePlatesParseData = JSON.parse(licensePlatesData);
+				let text = "";
+					var idx = 0;
+					  var base64Arr = [];
+					  let i = 0;
+				 text += "<ul><li class='list_with_image imageEnlarge'>";
+                        text += "<p><strong>Scan: " + Math.round(i + 1) + "</strong></p>";
+						    for (let j = licensePlatesParseData.length - 1; j >= 0; j--) {
+
+                            if (licensePlatesParseData[j].hasOwnProperty('string_data') == true) {
+                                if (licensePlatesParseData[j]['label'] === 'plateText') {
+                                    text += "<p>Plate text: " + licensePlatesParseData[j]['string_data'] + "</p>";
+                                } else if (licensePlatesParseData[j]['label'] === 'country') {
+                                    text += "<p>Country: " + licensePlatesParseData[j]['string_data'] + "</p>";
+                                } else if (licensePlatesParseData[j]['label'] === 'state') {
+                                    text += "<p>State: " + licensePlatesParseData[j]['string_data'] + "</p>";
+                                } else {
+                                    text += "<p>" + licensePlatesParseData[j]['label'] + ": " + licensePlatesParseData[j]['string_data'] + "</p>";
+                                }
+
+                            } else {
+
+                               
+                                    convertContenturiToBase64(JSON.stringify(licensePlatesParseData[j]))
+                                    readImageFromContentProviderToBase64(JSON.stringify(licensePlatesParseData[j]))
+
+                                    text += "<img id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' style='object-fit: contain;width:200px;height:150px'>";
+
+
+                            }
+
+                        }
+                        text += '</li></ul>';
+						document.getElementById("demoData").innerHTML = text; 
+				tableData.innerHTML = "";
+				}
+			
+                 else if(tinOcrClicked){
+				  var tinData = myIntentData['data']['com.symbol.datawedge.data'];
+				   var tinParseData = JSON.parse(tinData);
+				   let text = "";
+				   var idx = 0;
+				   var base64Arr = [];
+				   let i = 0;
+				   
+				   text += "<ul><li class='list_with_image imageEnlarge'>";
+                   text += "<p><strong>Scan: " + Math.round(i + 1) + "</strong></p>";
+				     for (let j = tinParseData.length - 1; j >= 0; j--) {
+
+                            if (tinParseData[j].hasOwnProperty('string_data') == true) {
+                                text += "<p>";
+                                text += tinParseData[j]['string_data'];
+                                text += "</p>";
+                                text += "<span>String Length : " + tinParseData[j]['data_size'] + "</span>";
+
+                            } else {
+ 
+                                    convertContenturiToBase64(JSON.stringify(tinParseData[j]))
+                                    readImageFromContentProviderToBase64(JSON.stringify(tinParseData[j]))
+									 text += "<img id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' style='object-fit: contain;width:200px;height:150px'>";    
+                            
+							
+							}
+
+                        }
+                        text += '</li></ul>';
+						document.getElementById("demoData").innerHTML = text; 
+				tableData.innerHTML = "";
+				 }
+
+                 else if(vinocrclicked){
+                    var vinData = myIntentData['data']['com.symbol.datawedge.data'];
+                    var vinParseData = JSON.parse(vinData);
+                    let text = "";
+                    var idx = 0;
+                    var base64Arr = [];
+                    let i = 0;
+
+                    text += "<ul><li class='list_with_image imageEnlarge'>";
+                    text += "<p><strong>Scan: " + Math.round(i + 1) + "</strong></p>";
+                    for(let j = vinParseData.length - 1; j >= 0; j--) {
+
+                        if(vinParseData[j].hasOwnProperty('string_data') == true) {
+                            text += "<p>";
+                            text += vinParseData[j]['string_data'];
+                            text += "</p>";
+                            text += "<span>String Length : " + vinParseData[j]['data_size'] + "</span>";
+
+                        } else {
+
+                            convertContenturiToBase64(JSON.stringify(vinParseData[j]))
+                            readImageFromContentProviderToBase64(JSON.stringify(vinParseData[j]))
+                            text += "<img id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' style='object-fit: contain;width:200px;height:150px'>";
+
+                        }
+
+                    }
+                    text += '</li></ul>';
+                    document.getElementById("demoData").innerHTML = text;
+                tableData.innerHTML = "";
+                 }
+                 else if(dococrclicked){
+                    var docData = myIntentData['data']['com.symbol.datawedge.data'];
+                    var docParseData = JSON.parse(docData);
+                    let text = "";
+                    var idx = 0;
+                    var base64Arr = [];
+                    let i = 0;
+
+                    text += "<ul><li class='list_with_image imageEnlarge'>";
+                    text += "<p><strong>Scan: " + Math.round(i + 1) + "</strong></p>";
+                    for(let j = docParseData.length - 1; j >= 0; j--) {
+
+                        if(docParseData[j].hasOwnProperty('string_data') == true) {
+                           if(docParseData[j]['label'] === 'documentNumber') {
+                            text += "<p>";
+                                text += "<p>Document Number: " + docParseData[j]['string_data'] + "</p>";
+                            } else if(docParseData[j]['label'] === 'lastName') {
+                            text += docParseData[j]['string_data'];
+                                text += "<p>Last Name: " + docParseData[j]['string_data'] + "</p>";
+                            } else if(docParseData[j]['label'] === 'firstName') {
+                            text += "</p>";
+                                text += "<p>First Name: " + docParseData[j]['string_data'] + "</p>";
+                            }else if(docParseData[j]['label'] === 'dateofBirth') {
+                            text += "<span>String Length : " + docParseData[j]['data_size'] + "</span>";
+                                text += "<p>Date of Birth: " + docParseData[j]['string_data'] + "</p>";
+                            }else{
+                                text += "<p>" + docParseData[j]['label'] + ": " + docParseData[j]['string_data'] + "</p>";
+                            }
+                        } else {
+
+                            convertContenturiToBase64(JSON.stringify(docParseData[j]))
+                            readImageFromContentProviderToBase64(JSON.stringify(docParseData[j]))
+                            text += "<img id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' style='object-fit: contain;width:200px;height:150px'>";
+
+                        }
+
+                    }
+                    text += '</li></ul>';
+                    document.getElementById("demoData").innerHTML = text;
+                tableData.innerHTML = "";
+                 }
+                 else if(metocrclicked){
+                    var metData = myIntentData['data']['com.symbol.datawedge.data'];
+                    var metParseData = JSON.parse(metData);
+                    let text = "";
+                    var idx = 0;
+                    var base64Arr = [];
+                    let i = 0;
+
+                    text += "<ul><li class='list_with_image imageEnlarge'>";
+                    text += "<p><strong>Scan: " + Math.round(i + 1) + "</strong></p>";
+                    for(let j=metParseData.length-1;j>=0;j--){
+                        if(metParseData[j].hasOwnProperty('string_data') == true) {
+                            text += "<p>";
+                            text += metParseData[j]['string_data'];
+                            text += "</p>";
+                            text += "<span>String Length : " + metParseData[j]['data_size'] + "</span>";
+
+                        } else {
+
+                            convertContenturiToBase64(JSON.stringify(metParseData[j]))
+                            readImageFromContentProviderToBase64(JSON.stringify(metParseData[j]))
+                            text += "<img id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' style='object-fit: contain;width:200px;height:150px'>";
+
+                        }
+                    }
+                    text += '</li></ul>';
+                    document.getElementById("demoData").innerHTML = text;
+                tableData.innerHTML = "";
+                 }
+                 else if(containerocrclicked){
+                    var containerData = myIntentData['data']['com.symbol.datawedge.data'];
+                    var containerParseData = JSON.parse(containerData);
+                    let text = "";
+                    var idx = 0;
+                    var base64Arr = [];
+                    let i = 0;
+
+                    text += "<ul><li class='list_with_image imageEnlarge'>";
+                    text += "<p><strong>Scan: " + Math.round(i + 1) + "</strong></p>";
+                    for(let j=containerParseData.length-1;j>=0;j--){
+                        if(containerParseData[j].hasOwnProperty('string_data') == true) {
+                            text += "<p>";
+                            text += containerParseData[j]['string_data'];
+                            text += "</p>";
+                            text += "<span>String Length : " + containerParseData[j]['data_size'] + "</span>";
+
+                        } else {
+
+                            readImageFromContentProviderToBase64(JSON.stringify(containerParseData[j]))
+                            convertContenturiToBase64(JSON.stringify(containerParseData[j]))
+                            text += "<img id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' style='object-fit: contain;width:200px;height:150px'>";
+
+                        }
+                    }
+
+                    text += '</li></ul>';
+                    document.getElementById("demoData").innerHTML = text;
+                tableData.innerHTML = "";
+				}else if(travelocrclicked){
+                    var travelData = myIntentData['data']['com.symbol.datawedge.data'];
+                    var travelParseData = JSON.parse(travelData);
+                    let text = "";
+                    var idx = 0;
+                    var base64Arr = [];
+                    let i = 0;
+                    text += "<ul><li class='list_with_image imageEnlarge'>";
+                    text += "<p><strong>Scan: " + Math.round(i + 1) + "</strong></p>";
+                    for(let j=travelParseData.length-1;j>=0;j--){
+                        if(travelParseData[j].hasOwnProperty('string_data') == true) {
+                            if(travelParseData[j]['label'] === 'lastName') {
+                                text += "<p>Last Name: " + travelParseData[j]['string_data'] + "</p>";
+                            } else if(travelParseData[j]['label'] === 'firstName') {
+                                text += "<p>First Name: " + travelParseData[j]['string_data'] + "</p>";
+                            }else if(travelParseData[j]['label'] === 'dateofBirth') {
+                                text += "<p>Date of Birth: " + travelParseData[j]['string_data'] + "</p>";
+                            }else{
+                                text += "<p>" + travelParseData[j]['label'] + ": " + travelParseData[j]['string_data'] + "</p>";
+                            }
+                            
+                        } else {
+                            convertContenturiToBase64(JSON.stringify(travelParseData[j]))
+                            text += "<img id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' style='object-fit: contain;width:200px;height:150px'>";
+                        }
+                    }
+                 }
+				 
+        }
+
+
+		
+		    
+		    function startIntentDocumentCapture(inputMethod, FlashAssist, docHighlightMode, barcodePresent, barcodeColor) {
+
+            var params = {
+                intentType: EB.Intent.BROADCAST,
+                action: 'com.symbol.datawedge.api.ACTION',
+                data: {
+                    "com.symbol.datawedge.api.SET_CONFIG": {
+                        "PROFILE_NAME": "Sample Showcase",
+                        "PROFILE_ENABLED": "true",
+                        "CONFIG_MODE": "OVERWRITE",
+                        "APP_LIST": [{ "PACKAGE_NAME": "com.zebra.mdna.enterprisebrowser", "ACTIVITY_LIST": ["com.rhomobile.rhodes.RhodesActivity"] }],
+                        "PLUGIN_CONFIG": [
+                            [
+                                {
+                                    "PLUGIN_NAME": "INTENT",
+                                    "RESET_CONFIG": "true",
+                                    "PARAM_LIST": {
+                                        "intent_output_enabled": "true",
+                                        "intent_action": "com.symbol.dw.action",
+                                        "intent_category": "android.intent.category.DEFAULT",
+                                        "intent_delivery": "2",
+                                        "intent_use_content_provider": "true",
+                                    }
+                                }
+                            ],
+                            [
+                                {
+                                    "PLUGIN_NAME": "WORKFLOW",
+                                    "RESET_CONFIG": "true",
+                                    "selected_workflow_name": "document_capture",
+                                    "workflow_input_source": inputMethod,
+                                    "workflow_input_enabled": "true",
+                                    "PARAM_LIST": [
+                                        [{
+                                            "workflow_name": "document_capture",
+                                            "workflow_input_source": inputMethod,
+                                            "workflow_params":
+                                                [
+                                                    [{
+                                                        "module": "BarcodeTrackerModule",
+                                                        "module_params": {
+                                                            "highlight_mode": docHighlightMode,
+                                                            "barcode_presence": barcodePresent,
+                                                            "highlight_color": barcodeColor,
+                                                        }
+
+                                                    }],
+                                                    [{
+                                                        "module": "FeedbackModule",
+                                                        "module_params": {
+                                                            "decode_haptic_feedback": hapticFeedback,
+                                                            "decoding_led_feedback": ledFeedback,
+                                                            "decode_audio_feedback_uri": audioFeedbackImage
+                                                        }
+
+                                                    }],
+                                                    [{
+                                                        "module": "BarcodeTrackerModule",
+                                                        "module_params": {
+                                                            "illumination": FlashAssist
+                                                        }
+
+                                                    }]
+
+                                                ]
+                                        }]
+                                    ],
+
+                                }
+                            ]
+                        ]
+                    }
+                }
+            };
+            EB.Intent.send(params);
+
+        }
+
+
+		
+        function startIntentListener(){
+            var startListeningDiv = document.getElementById("intentMessageDiv");
+            startListeningDiv.innerHTML = "Enterprise Browser is listening the DataWedge Intent. <BR/>Scan any data using DataWedge.<BR/><BR/>";
+            EB.Intent.startListening(myIntentListenerCallback);
+			console.log("inside startIntentListener");
+        }
+
+        function registerIntent() {
+            startIntentListener();
+        }
+		
+		function switchToSimulScanProfile(){
+			var extras = {
+				"com.symbol.datawedge.api.SWITCH_TO_PROFILE":"simulscan",
+			};
+			sendIntentData(extras);	
+		}
+		
+		function switchToBarcodeProfile(){
+			var extras = {
+				"com.symbol.datawedge.api.SWITCH_TO_PROFILE":"barcode"
+			};
+			sendIntentData(extras);	
+		}
+		
+		function sendIntenttoGetActiveProfile(){
+			var extras = {
+				"com.symbol.datawedge.api.GET_ACTIVE_PROFILE":""
+			};
+			sendIntentData(extras);
+		}
+		
+		function sendIntentData(extraData)
+		{
+			var params = {
+				intentType: EB.Intent.BROADCAST,
+				action: 'com.symbol.datawedge.api.ACTION',
+				appName: 'com.symbol.datawedge',
+				data: extraData
+			};
+			EB.Intent.send(params);	
+		}
+
+		function sendIntent() {
+
+            var params = {
+                intentType: EB.Intent.BROADCAST,
+                action: 'com.symbol.datawedge.api.ACTION',
+                data: {
+                    "com.symbol.datawedge.api.SET_CONFIG": {
+                        "PROFILE_NAME": "Sample Showcase",
+                        "PROFILE_ENABLED": "true",
+                        "CONFIG_MODE": "CREATE_IF_NOT_EXIST",
+                        "APP_LIST": [{ "PACKAGE_NAME": "com.zebra.mdna.enterprisebrowser", "ACTIVITY_LIST": ["com.rhomobile.rhodes.RhodesActivity"] }],
+                        "PLUGIN_CONFIG": [
+                            [
+                                {
+                                    "PLUGIN_NAME": "INTENT",
+                                    "RESET_CONFIG": "true",
+                                    "PARAM_LIST": {
+                                        "intent_output_enabled": "true",
+                                        "intent_action": "com.symbol.dw.action",
+                                        "intent_delivery": "2"
+                                    }
+                                }
+                            ],
+                            [
+                                {
+                                    "PLUGIN_NAME": "BARCODE",
+                                    "RESET_CONFIG": "true",
+                                    "PARAM_LIST": {
+                                        "scanner_selection": "auto",
+                                        "scanner_input_enabled": "true",
+                                        "barcode_highlighting_enabled": "false",
+                                    }
+                                }
+                            ],
+                        
+                        ]
+                    }
+                }
+            };
+
+            EB.Intent.send(params);
+			
+			 setTimeout(() => {
+
+                      switchToSimulScanProfile();
+
+                    }, 3000);
+			//
+
+        }
+
+		function getScannerStatus() {
+            console.log("from getScannerStatus")
+            if (!['freeFormOCR', 'tireIdentificationNumber', 'vehicleIdentificationNumber', 'licensePlates', 'identificationDocuments', 'ocrBTravelDocuments', 'meterReading', 'shippingContainerID', 'freeFromImageCapture', 'documentCapture'].includes(getCurentApp['foldername'])) {
+                var params = {
+                    intentType: EB.Intent.BROADCAST,
+                    action: 'com.symbol.datawedge.api.ACTION',
+                    package: "com.symbol.datawedge",
+                    data: {
+                        "com.symbol.datawedge.api.GET_SCANNER_STATUS": "",
+                        "SEND_RESULT": "true",
+                        "APPLICATION_PACKAGE": "com.zebra.mdna.enterprisebrowser"
+                    }
+                };
+                EB.Intent.send(params);
+            } else {
+                var cntTimer = 1500;
+
+                if (['freeFromImageCapture'].includes(getCurentApp['foldername'])) {
+
+                    cntTimer = 2000;
+
+                }
+
+                    console.log("isFirst",isFirst)
+                if (isFirst) {
+
+                    setTimeout(() => {
+
+                        isFirst = false
+
+                        startBarCode()
+
+                    }, cntTimer);
+
+                }
+
+            }
+
+        }
+
+		function startBarCode() {
+
+            console.log("start scan")
+            isScanPage = true
+            scanStart++
+            getScannerStatus()
+
+            console.log("before scanning")
+            var params = {
+                intentType: EB.Intent.BROADCAST,
+                action: 'com.symbol.datawedge.api.ACTION',
+                data: {
+                    "com.symbol.datawedge.api.SOFT_SCAN_TRIGGER": "START_SCANNING",
+                }
+            };
+            EB.Intent.send(params);
+
+            setTimeout(() => {
+                document.querySelector('.parentNodedemo').scrollIntoView(true)
+				alert("Scanning time out");
+            }, 200)
+
+            displayResult();
+            if (newDemoArr.length > 0) {
+               
+                isScanPage = true
+            }
+
+        }
+	
+		
+           
+
+        function convertContenturiToBase64(contenturi) {
+				<!-- to the proper working scenario, convertContenturiToBase64 function then comment the code inside the readImageFromContentProviderToBase64 function and vice versa -->
+
+                <!-- var uriJson = JSON.parse(contenturi) -->
+                <!-- EB.Camera.convertContentUriToBase64(contenturi, function (results) { -->
+			
+				<!-- let data = '/data/user/0/com.zebra.mdna.enterprisebrowser/files/scanningImages/'+results['data'] -->
+                <!-- document.querySelectorAll('[id="imgTag0"]')[0].src = data ; -->
+			
+                <!-- }); -->
+				
+        }
+		
+		
+		function readImageFromContentProviderToBase64(contenturi){
+				<!--Supported destination paths-->	
+				<!-- let destinationPathData = '/enterprise/device/enterprisebrowser/' -->
+				<!-- let destinationPathData = '/sdcard/Android/data/com.zebra.mdna.enterprisebrowser/files/scanningImages/' -->
+				<!-- let destinationPathData = 'file://%PERSISTCONFDIR%/' -->
+				
+				let destinationPathData = 'file://%INSTALLDIR%/files/'
+				var imageDataMap = {
+                    imageDetailsJson: contenturi,
+                    destinationPath: destinationPathData
+                };
+				EB.Camera.readImageFromContentProviderToBase64(imageDataMap, function (results) {
+					let finalImagePath=results['imagePath'];
+					alert(""+finalImagePath);
+					
+					document.getElementById("imgTag0").src = finalImagePath;
+				});
+		}
+					
+        function deleteOCRimagesFolder() {
+			<!--Supported deletion folder paths-->	
+			<!-- let deletionFolderPath = 'file://%INSTALLDIR%/files/' -->
+			<!-- let deletionFolderPath = '/enterprise/device/enterprisebrowser/' -->
+			
+			let deletionFolderPath = '/sdcard/Android/data/com.zebra.mdna.enterprisebrowser/files'
+            var isDelete=EB.RhoFile.deleteDir(deletionFolderPath);
+		}
+
+        function postClick(event) {
+
+            const el = event.target;
+            const parent = el.parentNode;
+            parent.classList.add("inactive");
+        }
+
+        function postClose(event) {
+            console.log('event', event)
+            const el = event.target;
+            console.log('event el', el)
+            const parent = el.parentNode;
+            console.log('event parent', parent)
+            parent.classList.remove("inactive");
+        }
+
+		function scanReceived(params) {
+            console.log(params)
+            if (params.action == 'com.symbol.datawedge.api.RESULT_ACTION') {
+                if (params.data['com.symbol.datawedge.api.RESULT_SCANNER_STATUS'] == 'DISABLED') {
+                    startBarCode()
+                }
+                
+            } else {
+                if (newDemoArr.length == 10) {
+                    newDemoArr.pop()
+                }
+                if (params['intentType'] != 'startActivity') {
+                    if (getCurentApp['foldername'] === 'variableQuantity') {
+                        if (params['data'].hasOwnProperty('com.symbol.datawedge.barcodes') == true) {
+                            params['data']['com.symbol.datawedge.barcodes'].map((ele => ele.scanTime = scanStart))
+                        }
+                    }
+                    if ((getCurentApp['foldername'] === 'variableQuantity' && instantReportingGlobal == 'checked') || (getCurentApp['foldername'] === 'anyBarcode' && anyBarcodecontinuousScanning) || (getCurentApp['foldername'] === 'UDI' && UDIcontinuousScanning)) {
+                        isScanPage = true
+                    } else {
+                        isScanPage = true
+                    }
+                    isFirst = false
+                    newDemoArr.unshift(params)
+                }
+                sessionStorage.setItem("demoResult", JSON.stringify(newDemoArr));
+                displayResult();
+            }
+        }
+        
+        function displayResult() {
+            if (newDemoArr.length > 0) {
+                if (getCurentApp['foldername'] === 'variableQuantity' && instantReportingGlobal == 'checked') {
+                    isScanPage = true
+                } else if ((getCurentApp['foldername'] === 'anyBarcode' && anyBarcodecontinuousScanning) || (getCurentApp['foldername'] === 'UDI' && UDIcontinuousScanning)) {
+                    isScanPage = true
+                } else {
+                    isScanPage = false
+                }
+                document.getElementById('noDemoData').style.display = 'none';
+                document.getElementById('deleteDemoData').style.display = 'none';
+                document.getElementById('demoData').style.display = '';
+                document.getElementById('deleteIcon').style.display = '';
+            }
+            var idx = 0;
+            let text = "";
+
+            if (getCurentApp['foldername'] === 'anyBarcode' || getCurentApp['foldername'] === 'picklistMode') {
+                text = text + "<ul>"
+                for (let i = 0; i < newDemoArr.length; i++) {
+                    if (newDemoArr[i]['data'].hasOwnProperty('com.symbol.datawedge.data') == false) {
+                        let symb = newDemoArr[i]['data']['com.symbol.datawedge.label_type'];
+                        let symbSplit = symb.split('-');
+                        let symbData = symbSplit[symbSplit.length - 1];
+
+
+                        if (i == 0) {
+                            text += "<li><p>" + newDemoArr[i]['data']['com.symbol.datawedge.data_string'] + " <span class='card_anybarcode_header_small'>" + symbData + "</span></p></li>";
+                        } else {
+                            text += "<li class='inactive'>";
+                            if (i == 1) {
+                                text = text + "<h5>Previous Scans:</h5>";
+                            }
+
+                            text += "<p>" + newDemoArr[i]['data']['com.symbol.datawedge.data_string'] + " <span class='card_anybarcode_header_small'>" + symbData + "</span></p>";
+                            text += "</li>";
+                        }
+                    } else {
+                        var multiCaptureData = newDemoArr[i]['data']['com.symbol.datawedge.data'];
+
+                        var multiParseData = JSON.parse(multiCaptureData);
+
+                        if (i == 0) {
+
+                            for (let j = multiParseData.length - 1; j >= 0; j--) {
+
+                                if (multiParseData[j].hasOwnProperty('string_data') == true) {
+                                    text += "<li><p>" + multiParseData[j]['string_data'] + "</p></li>";
+                                } else {
+
+                                    var index = base64Arr.map((el) => el.uri).indexOf(multiParseData[j].uri);
+                                    text += "<li class='list_with_image imageEnlarge'>";
+                                    if (index == -1) {
+                                        readImageFromContentProviderToBase64(JSON.stringify(multiParseData[j]))
+                                        convertContenturiToBase64(JSON.stringify(multiParseData[j]))
+
+                                        text += "<img id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' style='object-fit: cover;'>";
+
+                                        text += "<div id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'></div></div>";
+
+
+                                    } else {
+
+                                        text += "<img id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' src = '../../../../scanningImages/" + base64Arr[index].url + "' style='object-fit: cover;'>";
+
+                                        text += "<div id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'  src = '../../../../scanningImages/" + base64Arr[index].url + "'></div></div>";
+
+                                    }
+                                    text += '</li>';
+                                    idx++;
+                                }
+
+                            }
+
+
+                        }
+                        else {
+
+                            for (let j = multiParseData.length - 1; j >= 0; j--) {
+
+                                if (multiParseData[j].hasOwnProperty('string_data') == true) {
+                                    text += "<li class='inactive'>";
+                                    if (i == 1 && j == multiParseData.length - 1) {
+                                        text = text + "<h5>Previous Scans:</h5>";
+                                    }
+                                    text += "<p>" + multiParseData[j]['string_data'] + "</p>";
+
+                                    text += "</li>";
+                                } else {
+
+                                    var index = base64Arr.map((el) => el.uri).indexOf(multiParseData[j].uri);
+                                    text += "<li class='inactive list_with_image imageEnlarge'>";
+                                    if (index == -1) {
+                                        readImageFromContentProviderToBase64(JSON.stringify(multiParseData[j]))
+                                        convertContenturiToBase64(JSON.stringify(multiParseData[j]))
+
+
+                                        text += "<img onclick='postClose(event)' id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' style='object-fit: cover;'>";
+
+                                        text += "<div onclick='postClick(event)' id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'></div></div>";
+
+
+                                    } else {
+
+                                        text += "<img onclick='postClose(event)' id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' src = '../../../../scanningImages/" + base64Arr[index].url + "' style='object-fit: cover;'>";
+
+                                        text += "<div onclick='postClick(event)' id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'  src = '../../../../scanningImages/" + base64Arr[index].url + "'></div></div>";
+
+                                    }
+                                    text += '</li>';
+                                    idx++;
+                                }
+
+                            }
+                        }
+
+                    }
+                }
+                text = text + '</ul>';
+            }
+
+            if (getCurentApp['foldername'] === 'variableQuantity') {
+                var instantReporting = mydata[5].webapp[0].checked;
+                instantReportingGlobal = mydata[5].webapp[0].checked;
+                for (let i = 0; i < newDemoArr.length; i++) {
+                    if (newDemoArr[i]['data'].hasOwnProperty('com.symbol.datawedge.barcodes') == true) {
+                        var multiDataVQ = newDemoArr[i]['data']['com.symbol.datawedge.barcodes'];
+                        if (instantReporting == 'checked') {
+
+                            if (scanStart == multiDataVQ[0].scanTime) {
+                                prev = true
+                                text = text + " <ul class='anyBarcodeList'>";
+                                for (let j = 0; j < multiDataVQ.length; j++) {
+                                    let symb = multiDataVQ[j]['com.symbol.datawedge.label_type'];
+                                    let symbSplit = symb.split('-');
+                                    let symbData = symbSplit[symbSplit.length - 1];
+                                    text += "<li><div class='row'><div class='col-4'><label>" + symbData + "</label></div><div class='col-8'><p>" + multiDataVQ[j]['com.symbol.datawedge.data_string'] + "</p></div></div></li>";
+                                }
+                                text = text + "</ul>";
+                            } else {
+                                if (prev) {
+                                    text = text + "<h5>Previous Scans:</h5>";
+                                    prev = false
+                                }
+                                text = text + " <ul class='anyBarcodeList opacity_low'>";
+                                for (let j = 0; j < multiDataVQ.length; j++) {
+                                    let symb = multiDataVQ[j]['com.symbol.datawedge.label_type'];
+                                    let symbSplit = symb.split('-');
+                                    let symbData = symbSplit[symbSplit.length - 1];
+                                    text += "<li><div class='row'><div class='col-4'><label>" + symbData + "</label></div><div class='col-8'><p>" + multiDataVQ[j]['com.symbol.datawedge.data_string'] + "</p></div></div></li>";
+                                }
+                                text = text + "</ul>";
+                            }
+                        } else {
+                            console.log("from normal", i)
+                            if (i == 0) {
+                                text = text + " <ul class='anyBarcodeList'>";
+                                for (let j = 0; j < multiDataVQ.length; j++) {
+                                    let symb = multiDataVQ[j]['com.symbol.datawedge.label_type'];
+                                    let symbSplit = symb.split('-');
+                                    let symbData = symbSplit[symbSplit.length - 1];
+                                    text += "<li><div class='row'><div class='col-4'><label>" + symbData + "</label></div><div class='col-8'><p>" + multiDataVQ[j]['com.symbol.datawedge.data_string'] + "</p></div></div></li>";
+                                }
+                                text = text + "</ul>";
+                            } else {
+                                if (i == 1) {
+                                    text = text + "<h5>Previous Scans:</h5>";
+                                }
+                                text = text + " <ul class='anyBarcodeList opacity_low'>";
+                                for (let j = 0; j < multiDataVQ.length; j++) {
+                                    let symb = multiDataVQ[j]['com.symbol.datawedge.label_type'];
+                                    let symbSplit = symb.split('-');
+                                    let symbData = symbSplit[symbSplit.length - 1];
+                                    text += "<li><div class='row'><div class='col-4'><label>" + symbData + "</label></div><div class='col-8'><p>" + multiDataVQ[j]['com.symbol.datawedge.data_string'] + "</p></div></div></li>";
+                                }
+                                text = text + "</ul>";
+                            }
+                        }
+
+
+                    }
+                    else {
+
+
+                        if (i == 0) {
+                            // text = text + "<h5>Quantity: 1</h5>"
+                            text = text + " <ul class='anyBarcodeList'>";
+
+                            let symb = newDemoArr[i]['data']['com.symbol.datawedge.label_type'];
+                            let symbSplit = symb.split('-');
+                            let symbData = symbSplit[symbSplit.length - 1];
+                            text += "<li><div class='row'><div class='col-4'><label>" + symbData + "</label></div><div class='col-8'><p>" + newDemoArr[i]['data']['com.symbol.datawedge.data_string'] + "</p></div></div></li>";
+
+                            text = text + "</ul>";
+                        }
+                        else {
+                            if (i == 1) {
+                                text = text + "<h5>Previous Scans:</h5>";
+                            }
+                            // text = text + "<h5>Quantity: 1</h5>";
+                            text = text + " <ul class='anyBarcodeList opacity_low'>";
+
+                            let symb = newDemoArr[i]['data']['com.symbol.datawedge.label_type'];
+                            let symbSplit = symb.split('-');
+                            let symbData = symbSplit[symbSplit.length - 1];
+                            text += "<li><div class='row'><div class='col-4'><label>" + symbData + "</label></div><div class='col-8'><p>" + newDemoArr[i]['data']['com.symbol.datawedge.data_string'] + "</p></div></div></li>";
+
+                            text = text + "</ul>";
+                        }
+
+                    }
+                }
+
+
+            }
+
+            if (getCurentApp['foldername'] === 'freeFromImageCapture') {
+                //text = text + "<ul>";
+                for (let i = 0; i < newDemoArr.length; i++) {
+                    var freeFromImageCaptureData = newDemoArr[i]['data']['com.symbol.datawedge.data'];
+
+                    var freeFromImageCaptureParseData = JSON.parse(freeFromImageCaptureData);
+                    const chars = { '<': '&lt;', '>': '&gt;' };
+
+                    console.log(freeFromImageCaptureParseData)
+
+                    if (i == 0) {
+
+                        text += "<ul><li class='list_with_image '>";
+
+                        for (let j = 0; j < freeFromImageCaptureParseData.length; j++) {
+
+                            if (freeFromImageCaptureParseData[j].hasOwnProperty('string_data') == true) {
+                                text += "<p>"
+                                text += freeFromImageCaptureParseData[j]['string_data'].replace(/[<>]/g, m => chars[m]);
+                                text += "</p>";
+
+                            } 
+                            else {
+                                var index = base64Arr.map((el) => el.uri).indexOf(freeFromImageCaptureParseData[j].uri);
+                                if (index == -1) {
+
+                                    convertContenturiToBase64(JSON.stringify(freeFromImageCaptureParseData[j]))
+                                    readImageFromContentProviderToBase64(JSON.stringify(freeFromImageCaptureParseData[j]))
+
+
+                                    text += "<img id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' style='object-fit: contain;'>";
+
+                                    text += "<div id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'></div></div>";
+
+                                    text += "<span id='btnenlarge' class='imageEnlargeDoc' style='float:right;margin:0px;'></span>"
+
+
+                                } else {
+
+                                    text += "<img id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' src = '../../../../scanningImages/" + base64Arr[index].url + "' style='object-fit: contain;'>";
+
+                                    text += "<div id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'  src = '../../../../scanningImages/" + base64Arr[index].url + "'></div></div>";
+
+                                }
+                                idx++;
+                            }
+
+                        }
+                        text += '</li></ul>';
+
+
+                    }
+                    else {
+                        if (i == 1) {
+                            text = text + "<h5>Previous Scans:</h5>";
+                        }
+
+                        text += "<ul><li class='inactive list_with_image '>";
+                        for (let j = 0; j < freeFromImageCaptureParseData.length; j++) {
+
+                            if (freeFromImageCaptureParseData[j].hasOwnProperty('string_data') == true) {
+                                text += "<p>"
+                                text += freeFromImageCaptureParseData[j]['string_data'].replace(/[<>]/g, m => chars[m]);
+                                text += "</p>";
+                            } else {
+
+                                var index = base64Arr.map((el) => el.uri).indexOf(freeFromImageCaptureParseData[j].uri);
+
+                                if (index == -1) {
+                                    convertContenturiToBase64(JSON.stringify(freeFromImageCaptureParseData[j]))
+                                    readImageFromContentProviderToBase64(JSON.stringify(freeFromImageCaptureParseData[j]))
+
+                                    text += "<img onclick='postClose(event)' id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' style='object-fit: contain;'>";
+
+                                    text += "<div onclick='postClick(event)' id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'></div></div>";
+
+
+
+                                } else {
+                                    text += "<img onclick='postClose(event)' id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' src = '../../../../scanningImages/" + base64Arr[index].url + "' style='object-fit: contain;'>";
+
+                                    text += "<div onclick='postClick(event)' id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'  src = '../../../../scanningImages/" + base64Arr[index].url + "'></div></div>";
+                                    text += "<span id='btnenlarge' class='imageEnlargeDoc' style='float:right;margin:0px;'></span>"
+
+                                }
+                                idx++;
+                            }
+
+                        }
+                        text += '</li></ul>';
+
+                    }
+
+                }
+                //text = text + '</ul>';
+            }
+
+            if (getCurentApp['foldername'] === 'UDI') {
+
+                for (let i = 0; i < newDemoArr.length; i++) {
+                    if (newDemoArr[i]['data'].hasOwnProperty('com.symbol.datawedge.tokenized_data') == true) {
+                        var multiDataUDI = newDemoArr[i]['data']['com.symbol.datawedge.tokenized_data'];
+                        if (i == 0) {
+                            text = text + " <ul class='anyBarcodeList'>";
+                            text += "<li><div class='row' style='display: flex;flex-direction: row;justify-content: space-between;align-items: center;'><div class='col-5'><label>Key</label></div><div class='col-7'><p>Value</p></div></div></li>";
+                            for (let j = 0; j < multiDataUDI.length; j++) {
+
+                                text += "<li><div class='row' style='display: flex;flex-direction: row;justify-content: space-between;align-items: center;'><div class='col-5'><label>" + getUDIMapping(multiDataUDI[j]['token_id'].replace(/[_]/g, ' ')) + "</label></div><div class='col-7'><p>" + multiDataUDI[j]['token_string_data'] + "</p></div></div></li>";
+                            }
+                            text = text + "</ul> ";
+                        } else {
+                            if (i == 1) {
+                                text = text + "<h5>Previous Scans:</h5>";
+                            }
+                            text = text + " <ul class='anyBarcodeList opacity_low'>";
+                            text += "<li><div class='row' style='display: flex;flex-direction: row;justify-content: space-between;align-items: center;'><div class='col-5'><label>Key</label></div><div class='col-7'><p>Value</p></div></div></li>";
+                            for (let j = 0; j < multiDataUDI.length; j++) {
+
+                                text += "<li><div class='row' style='display: flex;flex-direction: row;justify-content: space-between;align-items: center;'><div class='col-5'><label>" + getUDIMapping(multiDataUDI[j]['token_id'].replace(/[_]/g, ' ')) + "</label></div><div class='col-7'><p>" + multiDataUDI[j]['token_string_data'] + "</p></div></div></li>";
+                            }
+                            text = text + "</ul>";
+                        }
+                    }
+                    else if (newDemoArr[i]['data'].hasOwnProperty('com.symbol.datawedge.barcodes') == true) {
+                        var multiDataUDI1 = newDemoArr[i]['data']['com.symbol.datawedge.barcodes'];
+
+                        if (i == 0) {
+
+                            text = text + " <ul class='anyBarcodeList'>";
+                            text += "<li><div class='row' style='display: flex;flex-direction: row;justify-content: space-between;align-items: center;'><div class='col-5'><label>Key</label></div><div class='col-7'><p>Value</p></div></div></li>";
+                            for (let j = 0; j < multiDataUDI1.length; j++) {
+
+                                let symb = multiDataUDI1[j]['com.symbol.datawedge.label_type'];
+                                let symbSplit = symb.split('-');
+                                let symbData = symbSplit[symbSplit.length - 1];
+
+                                text += "<li><div class='row' style='display: flex;flex-direction: row;justify-content: space-between;align-items: center;'><div class='col-5'><label>Data </label></div><div class='col-7'><p>" + multiDataUDI1[j]['com.symbol.datawedge.data_string'] + "</p></div></div></li>";
+                                text += "<li><div class='row' style='display: flex;flex-direction: row;justify-content: space-between;align-items: center;'><div class='col-5'><label>Symbology </label></div><div class='col-7'><p>" + symbData + "</p></div></div></li>";
+                            }
+                            text = text + "</ul> ";
+
+                        } else {
+
+                            if (i == 1) {
+                                text = text + "<h5>Previous Scans:</h5>";
+                            }
+                            text = text + " <ul class='anyBarcodeList opacity_low'>";
+                            text += "<li><div class='row' style='display: flex;flex-direction: row;justify-content: space-between;align-items: center;'><div class='col-5'><label>Key</label></div><div class='col-7'><p>Value</p></div></div></li>";
+                            for (let j = 0; j < multiDataUDI1.length; j++) {
+
+                                let symb = multiDataUDI1[j]['com.symbol.datawedge.label_type'];
+                                let symbSplit = symb.split('-');
+                                let symbData = symbSplit[symbSplit.length - 1];
+
+                                text += "<li><div class='row' style='display: flex;flex-direction: row;justify-content: space-between;align-items: center;'><div class='col-5'><label>Data </label></div><div class='col-7'><p>" + multiDataUDI1[j]['com.symbol.datawedge.data_string'] + "</p></div></div></li>";
+                                text += "<li><div class='row' style='display: flex;flex-direction: row;justify-content: space-between;align-items: center;'><div class='col-5'><label>Symbology </label></div><div class='col-7'><p>" + symbData + "</p></div></div></li>";
+                            }
+                            text = text + "</ul> ";
+                        }
+
+                    }
+                    else {
+                        let symbUDI = newDemoArr[i]['data']['com.symbol.datawedge.label_type'];
+                        let symbSplitUDI = symbUDI.split('-');
+                        let symbDataUDI = symbSplitUDI[symbSplitUDI.length - 1];
+
+                        if (i == 0) {
+                            text = text + "<ul class='anyBarcodeList'>"
+                            text += "<li><div class='row' style='display: flex;flex-direction: row;justify-content: space-between;align-items: center;'><div class='col-5'><label>Key</label></div><div class='col-7'><p>Value</p></div></div></li>";
+                            text += "<li><div class='row' style='display: flex;flex-direction: row;justify-content: space-between;align-items: center;'><div class='col-5'><label>Data </label></div><div class='col-7'><p>" + newDemoArr[i]['data']['com.symbol.datawedge.data_string'] + "</p></div></div></li>";
+                            text += "<li><div class='row' style='display: flex;flex-direction: row;justify-content: space-between;align-items: center;'><div class='col-5'><label>Symbology </label></div><div class='col-7'><p>" + symbDataUDI + "</p></div></div></li>";
+                            text = text + "</ul> ";
+                        } else {
+                            if (i == 1) {
+                                text = text + "<h5>Previous Scans:</h5>";
+                            }
+                            text = text + " <ul class='anyBarcodeList opacity_low'>";
+                            text += "<li><div class='row' style='display: flex;flex-direction: row;justify-content: space-between;align-items: center;'><div class='col-5'><label>Key</label></div><div class='col-7'><p>Value</p></div></div></li>";
+                            text += "<li><div class='row' style='display: flex;flex-direction: row;justify-content: space-between;align-items: center;'><div class='col-5'><label>Data </label></div><div class='col-7'><p>" + newDemoArr[i]['data']['com.symbol.datawedge.data_string'] + "</p></div></div></li>";
+                            text += "<li><div class='row' style='display: flex;flex-direction: row;justify-content: space-between;align-items: center;'><div class='col-5'><label>Symbology </label></div><div class='col-7'><p>" + symbDataUDI + "</p></div></div></li>";
+                            text = text + "</ul> ";
+                        }
+
+                    }
+
+                }
+
+            }
+
+            if (getCurentApp['foldername'] === 'tireIdentificationNumber') {
+                //text = text + "<ul>";
+                for (let i = 0; i < newDemoArr.length; i++) {
+                    var tinData = newDemoArr[i]['data']['com.symbol.datawedge.data'];
+                    var tinParseData = JSON.parse(tinData);
+                    
+                    tinParseData.push(tinData.shift());
+
+                    var groupedTin = groupBy(tinParseData, 'group_id');
+                    var groupedTinKeys = Object.keys(groupedTin);
+
+                    alert(tinParseData);
+                    if (i == 0) {
+
+                        text += "<ul><li class='list_with_image imageEnlarge'>";
+                        text += "<p><strong>Scan: " + Math.round(i + 1) + "</strong></p>";
+                        for (let j = 0; j < groupedTinKeys.length; j++) {
+
+                             if (groupedTinKeys[j] != 'Image') {
+                                var resultTin = groupedTin[groupedTinKeys[j]].map(function (item) { return item.string_data; });
+                                var textTin = resultTin.join(" ");
+
+                                text += "<p>";
+                                text += textTin;
+                                text += "</p>";
+
+                                text += "<span> Length : " + resultTin[0].length + "</span>";
+                            } else {
+                                var index = base64Arr.map((el) => el.uri).indexOf(tinParseData[j].uri);
+                                if (index == -1) {
+                                    convertContenturiToBase64(JSON.stringify(tinParseData[j]))
+                                    readImageFromContentProviderToBase64(JSON.stringify(tinParseData[j]))
+
+                                    text += "<img id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' style='object-fit: cover;'>";
+
+                                    text += "<div id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'></div></div>";
+
+
+                                } else {
+
+                                    text += "<img id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' src = '../../../../scanningImages/" + base64Arr[index].url + "' style='object-fit: cover;'>";
+
+                                    text += "<div id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'  src = '../../../../scanningImages/" + base64Arr[index].url + "'></div></div>";
+
+                                }
+                                idx++;
+                            }
+
+                        }
+                        text += '</li></ul>';
+                    }
+                    else {
+                        if (i == 1) {
+                            text = text + "<h5>Previous Scans:</h5>";
+                        }
+                        text += "<ul><li class='inactive list_with_image imageEnlarge'>";
+                        text += "<p><strong>Scan: " + Math.round(i + 1) + "</strong></p>";
+                        for (let j = tinParseData.length - 1; j >= 0; j--) {
+
+                            if (tinParseData[j].hasOwnProperty('string_data') == true) {
+                                text += "<p>";
+                                text += tinParseData[j]['string_data'];
+                                text += "</p>";
+                                text += "<span>String Length : " + tinParseData[j]['data_size'] + "</span>";
+                                alert(tinParseData[j]['data_size']);
+                            } else {
+                                var index = base64Arr.map((el) => el.uri).indexOf(tinParseData[j].uri);
+
+                                if (index == -1) {
+                                    convertContenturiToBase64(JSON.stringify(tinParseData[j]))
+                                    readImageFromContentProviderToBase64(JSON.stringify(tinParseData[j]))
+
+                                    text += "<img onclick='postClose(event)' id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' style='object-fit: cover;'>";
+
+                                    text += "<div onclick='postClick(event)' id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'></div></div>";
+
+
+                                } else {
+
+                                    text += "<img onclick='postClose(event)' id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' src = '../../../../scanningImages/" + base64Arr[index].url + "' style='object-fit: cover;'>";
+
+                                    text += "<div onclick='postClick(event)' id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'  src = '../../../../scanningImages/" + base64Arr[index].url + "'></div></div>";
+
+                                }
+                                idx++;
+                            }
+
+                        }
+                        text += '</li></ul>';
+                    }
+
+                }
+                //text = text + '</ul>';
+            }
+
+            if (getCurentApp['foldername'] === 'vehicleIdentificationNumber') {
+                //text = text + "<ul>";
+                for (let i = 0; i < newDemoArr.length; i++) {
+                    var vinData = newDemoArr[i]['data']['com.symbol.datawedge.data'];
+
+                    var vinParseData = JSON.parse(vinData);
+
+                    if (i == 0) {
+
+                        text += "<ul><li class='list_with_image imageEnlarge'>";
+                        text += "<p><strong>Scan: " + Math.round(i + 1) + "</strong></p>";
+                        for (let j = vinParseData.length - 1; j >= 0; j--) {
+
+                            if (vinParseData[j].hasOwnProperty('string_data') == true) {
+                                text += "<p>";
+                                text += vinParseData[j]['string_data'];
+                                text += "</p>";
+                            } else {
+
+                                var index = base64Arr.map((el) => el.uri).indexOf(vinParseData[j].uri);
+                                if (index == -1) {
+                                    convertContenturiToBase64(JSON.stringify(vinParseData[j]))
+                                    readImageFromContentProviderToBase64(JSON.stringify(vinParseData[j]))
+
+                                    text += "<img id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' style='object-fit: cover;'>";
+
+                                    text += "<div id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'></div></div>";
+
+
+                                } else {
+
+                                    text += "<img id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' src = '../../../../scanningImages/" + base64Arr[index].url + "' style='object-fit: cover;'>";
+
+                                    text += "<div id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'  src = '../../../../scanningImages/" + base64Arr[index].url + "'></div></div>";
+
+                                }
+                                idx++;
+                            }
+
+                        }
+                        text += '</li></ul>';
+                    } else {
+                        if (i == 1) {
+                            text = text + "<h5>Previous Scans:</h5>";
+                        }
+                        text += "<ul><li class='inactive list_with_image imageEnlarge'>";
+                        text += "<p><strong>Scan: " + Math.round(i + 1) + "</strong></p>";
+                        for (let j = vinParseData.length - 1; j >= 0; j--) {
+
+                            if (vinParseData[j].hasOwnProperty('string_data') == true) {
+                                text += "<p>";
+                                text += vinParseData[j]['string_data'];
+                                text += "</p>";
+                            } else {
+
+                                var index = base64Arr.map((el) => el.uri).indexOf(vinParseData[j].uri);
+
+                                if (index == -1) {
+                                    convertContenturiToBase64(JSON.stringify(vinParseData[j]))
+                                    readImageFromContentProviderToBase64(JSON.stringify(vinParseData[j]))
+
+                                    text += "<img onclick='postClose(event)' id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' style='object-fit: cover;'>";
+
+                                    text += "<div onclick='postClick(event)' id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'></div></div>";
+
+                                } else {
+
+                                    text += "<img onclick='postClose(event)' id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' src = '../../../../scanningImages/" + base64Arr[index].url + "' style='object-fit: cover;'>";
+
+                                    text += "<div onclick='postClick(event)' id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'  src = '../../../../scanningImages/" + base64Arr[index].url + "'></div></div>";
+
+                                }
+
+                                idx++;
+                            }
+
+                        }
+                        text += '</li></ul>';
+                    }
+
+                }
+                //text = text + '</ul>';
+            }
+
+            if (getCurentApp['foldername'] === 'licensePlates') {
+                //text = text + "<ul>";
+                for (let i = 0; i < newDemoArr.length; i++) {
+                    var licensePlatesData = newDemoArr[i]['data']['com.symbol.datawedge.data'];
+
+                    var licensePlatesParseData = JSON.parse(licensePlatesData);
+
+                    if (i == 0) {
+                        text += "<ul><li class='list_with_image imageEnlarge'>";
+                        text += "<p><strong>Scan: " + Math.round(i + 1) + "</strong></p>";
+                        for (let j = licensePlatesParseData.length - 1; j >= 0; j--) {
+
+                            if (licensePlatesParseData[j].hasOwnProperty('string_data') == true) {
+                                if (licensePlatesParseData[j]['label'] === 'plateText') {
+                                    text += "<p>Plate text: " + licensePlatesParseData[j]['string_data'] + "</p>";
+                                } else if (licensePlatesParseData[j]['label'] === 'country') {
+                                    text += "<p>Country: " + licensePlatesParseData[j]['string_data'] + "</p>";
+                                } else if (licensePlatesParseData[j]['label'] === 'state') {
+                                    text += "<p>State: " + licensePlatesParseData[j]['string_data'] + "</p>";
+                                } else {
+                                    text += "<p>" + licensePlatesParseData[j]['label'] + ": " + licensePlatesParseData[j]['string_data'] + "</p>";
+                                }
+
+                            } else {
+
+                                var index = base64Arr.map((el) => el.uri).indexOf(licensePlatesParseData[j].uri);
+                                if (index == -1) {
+                                    convertContenturiToBase64(JSON.stringify(licensePlatesParseData[j]))
+                                    readImageFromContentProviderToBase64(JSON.stringify(licensePlatesParseData[j]))
+
+                                    text += "<img id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "'- style='object-fit: cover;'>";
+
+                                    text += "<div id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'></div></div>";
+
+
+                                } else {
+
+                                    text += "<img id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' src = '../../../../scanningImages/" + base64Arr[index].url + "' style='object-fit: cover;'>";
+
+                                    text += "<div id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'  src = '../../../../scanningImages/" + base64Arr[index].url + "'></div></div>";
+
+                                }
+                                idx++;
+                            }
+
+                        }
+                        text += '</li></ul>';
+                    } else {
+                        if (i == 1) {
+                            text = text + "<h5>Previous Scans:</h5>";
+                        }
+                        text += "<ul><li class='inactive list_with_image imageEnlarge'>";
+                        text += "<p><strong>Scan: " + Math.round(i + 1) + "</strong></p>";
+                        for (let j = licensePlatesParseData.length - 1; j >= 0; j--) {
+
+                            if (licensePlatesParseData[j].hasOwnProperty('string_data') == true) {
+                                if (licensePlatesParseData[j]['label'] === 'plateText') {
+                                    text += "<p>Plate text: " + licensePlatesParseData[j]['string_data'] + "</p>";
+                                } else if (licensePlatesParseData[j]['label'] === 'country') {
+                                    text += "<p>Country: " + licensePlatesParseData[j]['string_data'] + "</p>";
+                                } else if (licensePlatesParseData[j]['label'] === 'state') {
+                                    text += "<p>State: " + licensePlatesParseData[j]['string_data'] + "</p>";
+                                } else {
+                                    text += "<p>" + licensePlatesParseData[j]['label'] + ": " + licensePlatesParseData[j]['string_data'] + "</p>";
+                                }
+                            } else {
+                                var index = base64Arr.map((el) => el.uri).indexOf(licensePlatesParseData[j].uri);
+
+                                if (index == -1) {
+                                    convertContenturiToBase64(JSON.stringify(licensePlatesParseData[j]))
+                                    readImageFromContentProviderToBase64(JSON.stringify(licensePlatesParseData[j]))
+
+                                    text += "<img onclick='postClose(event)' id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' style='object-fit: cover;'>";
+
+                                    text += "<div onclick='postClick(event)' id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'></div></div>";
+
+                                } else {
+
+                                    text += "<img onclick='postClose(event)' id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' src = '../../../../scanningImages/" + base64Arr[index].url + "' style='object-fit: cover;'>";
+
+                                    text += "<div onclick='postClick(event)' id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'  src = '../../../../scanningImages/" + base64Arr[index].url + "'></div></div>";
+
+                                }
+                                idx++;
+                            }
+
+                        }
+                        text += '</li></ul>';
+                    }
+
+                }
+                //text = text + '</ul>';
+            }
+
+            if (getCurentApp['foldername'] === 'identificationDocuments') {
+                for (let i = 0; i < newDemoArr.length; i++) {
+                    var idData = newDemoArr[i]['data']['com.symbol.datawedge.data'];
+
+                    var idParseData = JSON.parse(idData);
+
+                    console.log("idParseData", idParseData)
+
+                    if (i == 0) {
+
+                        text += "<ul><li class='list_with_image imageEnlarge'>";
+                        text += "<p><strong>Scan: " + Math.round(i + 1) + "</strong></p>";
+                        for (let j = idParseData.length - 1; j >= 0; j--) {
+
+                            if (idParseData[j].hasOwnProperty('string_data') == true) {
+
+                                text += "<p><strong>" + getIDMapping(idParseData[j]['label']) + ": </strong>" + idParseData[j]['string_data'] + "</p>";
+                            } else {
+
+                                var index = base64Arr.map((el) => el.uri).indexOf(idParseData[j].uri);
+                                if (index == -1) {
+                                    convertContenturiToBase64(JSON.stringify(idParseData[j]))
+                                    readImageFromContentProviderToBase64(JSON.stringify(idParseData[j]))
+
+                                    text += "<img id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' style='object-fit: cover;'>";
+
+                                    text += "<div id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'></div></div>";
+
+
+                                } else {
+
+                                    text += "<img id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' src = '../../../../scanningImages/" + base64Arr[index].url + "' style='object-fit: cover;'>";
+
+                                    text += "<div id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'  src = '../../../../scanningImages/" + base64Arr[index].url + "'></div></div>";
+
+                                }
+
+                                idx++;
+                            }
+
+                        }
+                        text += '</li></ul>';
+
+                    } else {
+                        if (i == 1) {
+                            text = text + "<h5>Previous Scans:</h5>";
+                        }
+                        text += "<ul><li class='inactive list_with_image imageEnlarge'>";
+                        text += "<p><strong>Scan: " + Math.round(i + 1) + "</strong></p>";
+                        for (let j = idParseData.length - 1; j >= 0; j--) {
+
+                            if (idParseData[j].hasOwnProperty('string_data') == true) {
+
+                                text += "<p><strong>" + idParseData[j]['label'] + ": </strong>" + idParseData[j]['string_data'] + "</p>";
+                            } else {
+
+                                var index = base64Arr.map((el) => el.uri).indexOf(idParseData[j].uri);
+
+                                if (index == -1) {
+                                    convertContenturiToBase64(JSON.stringify(idParseData[j]))
+                                    readImageFromContentProviderToBase64(JSON.stringify(idParseData[j]))
+
+                                    text += "<img onclick='postClose(event)' id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' style='object-fit: cover;'>";
+
+                                    text += "<div onclick='postClick(event)' id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'></div></div>";
+
+                                } else {
+
+                                    text += "<img onclick='postClose(event)' id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' src = '../../../../scanningImages/" + base64Arr[index].url + "' style='object-fit: cover;'>";
+
+                                    text += "<div onclick='postClick(event)' id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'  src = '../../../../scanningImages/" + base64Arr[index].url + "'></div></div>";
+
+                                }
+                                idx++;
+                            }
+
+                        }
+                        text += '</li></ul>';
+                    }
+
+                }
+            }
+
+            if (getCurentApp['foldername'] === 'meterReading') {
+                //text = text + "<ul>";
+                for (let i = 0; i < newDemoArr.length; i++) {
+                    var mrData = newDemoArr[i]['data']['com.symbol.datawedge.data'];
+
+                    var mrParseData = JSON.parse(mrData);
+
+                    if (i == 0) {
+
+                        text += "<ul><li class='list_with_image imageEnlarge'>";
+                        text += "<p><strong>Scan: " + Math.round(i + 1) + "</strong></p>";
+                        for (let j = mrParseData.length - 1; j >= 0; j--) {
+
+                            if (mrParseData[j].hasOwnProperty('string_data') == true) {
+                                text += "<p>";
+                                text += mrParseData[j]['string_data'];
+                                text += "</p>";
+                            } else {
+
+                                var index = base64Arr.map((el) => el.uri).indexOf(mrParseData[j].uri);
+                                if (index == -1) {
+                                    convertContenturiToBase64(JSON.stringify(mrParseData[j]))
+                                    readImageFromContentProviderToBase64(JSON.stringify(mrParseData[j]))
+
+                                    text += "<img id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' style='object-fit: cover;'>";
+
+                                    text += "<div id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'></div></div>";
+
+
+                                } else {
+
+                                    text += "<img id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' src = '../../../../scanningImages/" + base64Arr[index].url + "' style='object-fit: cover;'>";
+
+                                    text += "<div id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'  src = '../../../../scanningImages/" + base64Arr[index].url + "'></div></div>";
+
+                                }
+                                idx++;
+                            }
+
+                        }
+                        text += '</li></ul>';
+                    }
+                    else {
+                        if (i == 1) {
+                            text = text + "<h5>Previous Scans:</h5>";
+                        }
+                        text += "<ul><li class='inactive list_with_image imageEnlarge'>";
+                        text += "<p><strong>Scan: " + Math.round(i + 1) + "</strong></p>";
+                        for (let j = mrParseData.length - 1; j >= 0; j--) {
+
+
+                            if (mrParseData[j].hasOwnProperty('string_data') == true) {
+                                text += "<p>";
+                                text += mrParseData[j]['string_data'];
+                                text += "</p>";
+                            } else {
+
+                                var index = base64Arr.map((el) => el.uri).indexOf(mrParseData[j].uri);
+
+                                if (index == -1) {
+                                    convertContenturiToBase64(JSON.stringify(mrParseData[j]))
+                                    readImageFromContentProviderToBase64(JSON.stringify(mrParseData[j]))
+
+                                    text += "<img onclick='postClose(event)' id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' style='object-fit: cover;'>";
+
+                                    text += "<div onclick='postClick(event)' id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'></div></div>";
+
+                                } else {
+
+                                    text += "<img onclick='postClose(event)' id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' src = '../../../../scanningImages/" + base64Arr[index].url + "' style='object-fit: cover;'>";
+
+                                    text += "<div onclick='postClick(event)' id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'  src = '../../../../scanningImages/" + base64Arr[index].url + "'></div></div>";
+
+                                }
+                                idx++;
+                            }
+
+                        }
+                        text += '</li></ul>';
+                    }
+
+                }
+                //text = text + '</ul>';
+            }
+
+            if (getCurentApp['foldername'] === 'shippingContainerID') {
+                //text = text + "<ul>";
+                for (let i = 0; i < newDemoArr.length; i++) {
+                    var sciData = newDemoArr[i]['data']['com.symbol.datawedge.data'];
+
+                    var sciParseData = JSON.parse(sciData);
+
+                    if (i == 0) {
+
+                        text += "<ul><li class='list_with_image imageEnlarge'>";
+                        for (let j = sciParseData.length - 1; j >= 0; j--) {
+
+                            if (sciParseData[j].hasOwnProperty('string_data') == true) {
+                                text += "<p><strong>Container</strong></p><p>" + sciParseData[j]['string_data'] + "</p>";
+                            } else {
+                                var index = base64Arr.map((el) => el.uri).indexOf(sciParseData[j].uri);
+                                if (index == -1) {
+                                    convertContenturiToBase64(JSON.stringify(sciParseData[j]))
+                                    readImageFromContentProviderToBase64(JSON.stringify(sciParseData[j]))
+
+                                    text += "<img id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' style='object-fit: cover;'>";
+
+                                    text += "<div id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'></div></div>";
+
+
+                                } else {
+
+                                    text += "<img id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' src = '../../../../scanningImages/" + base64Arr[index].url + "' style='object-fit: cover;'>";
+
+                                    text += "<div id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'  src = '../../../../scanningImages/" + base64Arr[index].url + "'></div></div>";
+
+                                }
+                                idx++;
+                            }
+
+                        }
+                        text += '</li></ul>';
+
+                    } else {
+                        if (i == 1) {
+                            text = text + "<h5>Previous Scans:</h5>";
+                        }
+                        text += "<ul><li class='inactive list_with_image imageEnlarge'>";
+                        for (let j = sciParseData.length - 1; j >= 0; j--) {
+
+                            if (sciParseData[j].hasOwnProperty('string_data') == true) {
+                                text += "<p><strong>Container</strong></p><p>" + sciParseData[j]['string_data'] + "</p>";
+                            } else {
+
+                                var index = base64Arr.map((el) => el.uri).indexOf(sciParseData[j].uri);
+
+                                if (index == -1) {
+                                    convertContenturiToBase64(JSON.stringify(sciParseData[j]))
+                                    readImageFromContentProviderToBase64(JSON.stringify(sciParseData[j]))
+
+                                    text += "<img onclick='postClose(event)' id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' style='object-fit: cover;'>";
+
+                                    text += "<div onclick='postClick(event)' id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'></div></div>";
+
+                                } else {
+
+                                    text += "<img onclick='postClose(event)' id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' src = '../../../../scanningImages/" + base64Arr[index].url + "' style='object-fit: cover;'>";
+
+                                    text += "<div onclick='postClick(event)' id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'  src = '../../../../scanningImages/" + base64Arr[index].url + "'></div></div>";
+
+                                }
+                                idx++;
+                            }
+
+                        }
+                        text += '</li></ul>';
+                    }
+
+                }
+            }
+
+            if (getCurentApp['foldername'] === 'documentCapture') {
+                //text = text + "<ul>";
+                for (let i = 0; i < newDemoArr.length; i++) {
+                    var dcData = newDemoArr[i]['data']['com.symbol.datawedge.data'];
+
+                    var dcParseData = JSON.parse(dcData);
+                    const chars = { '<': '&lt;', '>': '&gt;' };
+
+                    if (i == 0) {
+
+                        text += "<ul><li class='list_with_image imageEnlargeDoc'>";
+                        for (let j = 0; j < dcParseData.length; j++) {
+
+                            if (dcParseData[j].hasOwnProperty('string_data') == true) {
+                                text += "<p>";
+                                text += dcParseData[j]['string_data'].replace(/[<>]/g, m => chars[m]);
+                                text += "</p>";
+                            } else {
+
+                                var index = base64Arr.map((el) => el.uri).indexOf(dcParseData[j].uri);
+                                if (index == -1) {
+                                    convertContenturiToBase64(JSON.stringify(dcParseData[j]))
+                                    readImageFromContentProviderToBase64(JSON.stringify(dcParseData[j]))
+
+                                    text += "<img id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' style='object-fit: contain;'>";
+
+                                    text += "<div id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'></div></div>";
+
+                                } else {
+
+                                    text += "<img id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' src = '../../../../scanningImages/" + base64Arr[index].url + "' style='object-fit: contain;'>";
+
+                                    text += "<div id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'  src = '../../../../scanningImages/" + base64Arr[index].url + "'></div></div>";
+
+                                }
+                                idx++;
+                            }
+
+                        }
+                        text += '</li></ul>';
+
+                    } else {
+                        if (i == 1) {
+                            text = text + "<h5>Previous Scans:</h5>";
+                        }
+                        text += "<ul><li class='inactive list_with_image imageEnlargeDoc'>";
+                        for (let j = 0; j < dcParseData.length; j++) {
+
+                            if (dcParseData[j].hasOwnProperty('string_data') == true) {
+                                text += "<p>";
+                                text += dcParseData[j]['string_data'].replace(/[<>]/g, m => chars[m]);
+                                text += "</p>";
+                            } else {
+
+                                var index = base64Arr.map((el) => el.uri).indexOf(dcParseData[j].uri);
+
+                                if (index == -1) {
+                                    convertContenturiToBase64(JSON.stringify(dcParseData[j]))
+                                    readImageFromContentProviderToBase64(JSON.stringify(dcParseData[j]))
+
+                                    text += "<img onclick='postClose(event)' id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' style='object-fit: contain;'>";
+
+                                    text += "<div onclick='postClick(event)' id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'></div></div>";
+
+                                } else {
+
+                                    text += "<img onclick='postClose(event)' id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' src = '../../../../scanningImages/" + base64Arr[index].url + "' style='object-fit: contain;'>";
+
+                                    text += "<div onclick='postClick(event)' id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'  src = '../../../../scanningImages/" + base64Arr[index].url + "'></div></div>";
+
+                                }
+                                idx++;
+                            }
+
+                        }
+                        text += '</li></ul>';
+                    }
+
+                }
+                //text = text + '</ul>';
+            }
+
+            if (getCurentApp['foldername'] === 'ocrBTravelDocuments') {
+
+                //text = text + "<ul>";
+                for (let i = 0; i < newDemoArr.length; i++) {
+                    let symb = newDemoArr[i]['data']['com.symbol.datawedge.label_type'];
+                    let symbSplit = symb.split('-');
+                    let symbData = symbSplit[symbSplit.length - 1];
+                    const chars = { '<': '&lt;', '>': '&gt;' };
+
+                    if (i == 0) {
+                        text += '<ul><li>';
+                        text += '<p style="margin-bottom: 10px;">';
+                        text += newDemoArr[i]["data"]["com.symbol.datawedge.data_string"].replace(/[<>]/g, m => chars[m]);
+                        text += '</p>';
+                        text += '</li></ul>';
+                    } else {
+                        if (i == 1) {
+                            text = text + "<h5>Previous Scans:</h5>";
+                        }
+                        text += '<ul><li class="inactive">';
+                        text += '<p style="margin-bottom: 10px;">';
+                        text += newDemoArr[i]["data"]["com.symbol.datawedge.data_string"].replace(/[<>]/g, m => chars[m]);
+                        text += '</p>';
+                        text += '</li></ul>';
+                    }
+                }
+                //text = text + "</ul>";
+
+            }
+			
+			
+			function scanReceived(params) {
+            console.log(params)
+            if (params.action == 'com.symbol.datawedge.api.RESULT_ACTION') {
+                if (params.data['com.symbol.datawedge.api.RESULT_SCANNER_STATUS'] == 'DISABLED') {
+                    startBarCode()
+                }
+            } else {
+                if (newDemoArr.length == 10) {
+                    newDemoArr.pop()
+                }
+                if (params['intentType'] != 'startActivity') {
+                    if (getCurentApp['foldername'] === 'variableQuantity') {
+                        if (params['data'].hasOwnProperty('com.symbol.datawedge.barcodes') == true) {
+                            params['data']['com.symbol.datawedge.barcodes'].map((ele => ele.scanTime = scanStart))
+                        }
+                    }
+                    if ((getCurentApp['foldername'] === 'variableQuantity' && instantReportingGlobal == 'checked') || (getCurentApp['foldername'] === 'anyBarcode' && anyBarcodecontinuousScanning) || (getCurentApp['foldername'] === 'UDI' && UDIcontinuousScanning)) {
+                        isScanPage = true
+                    } else {
+                        isScanPage = true
+                    }
+                    isFirst = false
+                    newDemoArr.unshift(params)
+                }
+                sessionStorage.setItem("demoResult", JSON.stringify(newDemoArr));
+                displayResult();
+            }
+        }
+
+
+            if (getCurentApp['foldername'] === 'freeFormOCR') {
+                //text = text + "<ul>";
+                for (let i = 0; i < newDemoArr.length; i++) {
+                    var ffoData = newDemoArr[i]['data']['com.symbol.datawedge.data'];
+
+                    var ffoParseData = JSON.parse(ffoData);
+                    ffoParseData.push(ffoParseData.shift())
+                    console.log('ffoParseData', ffoParseData)
+
+                    var groupedFfo = groupBy(ffoParseData, 'group_id');
+                    var groupedFfoKeys = Object.keys(groupedFfo)
+
+                    var groupedFfoValues = Object.values(groupedFfo)
+
+                    const chars = { '<': '&lt;', '>': '&gt;' };
+                    if (i == 0) {
+
+                        text += "<ul><li class='list_with_image imageEnlargeDoc'>";
+                        text += "<p><strong>Scan: " + Math.round(i + 1) + "</strong></p>";
+
+                        for (let j = 0; j < groupedFfoKeys.length; j++) {
+                            if (groupedFfoKeys[j] != 'Image') {
+                                var resultFfo = groupedFfo[groupedFfoKeys[j]].map(function (item) { return item.string_data; });
+                                var textFfo = resultFfo.join(" ");
+
+                                text += "<p>";
+                                text += textFfo.replace(/[<>]/g, m => chars[m]);
+                                text += "</p>";
+
+                            } else {
+                                console.log('image', groupedFfo[groupedFfoKeys[j]][0])
+                                var index = base64Arr.map((el) => el.uri).indexOf(groupedFfo[groupedFfoKeys[j]][0].uri);
+                                if (index == -1) {
+                                    convertContenturiToBase64(JSON.stringify(groupedFfo[groupedFfoKeys[j]][0]))
+                                    readImageFromContentProviderToBase64(JSON.stringify(groupedFfo[groupedFfoKeys[j]][0]))
+
+                                    text += "<img id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' style='object-fit: contain;'>";
+
+                                    text += "<div id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'></div></div>";
+
+
+                                } else {
+
+                                    text += "<img id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' src = '../../../../scanningImages/" + base64Arr[index].url + "' style='object-fit: contain;'>";
+
+                                    text += "<div id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'  src = '../../../../scanningImages/" + base64Arr[index].url + "'></div></div>";
+
+                                }
+                                idx++;
+
+                            }
+                        }
+
+                        // for (let j = 0; j < ffoParseData.length; j++) {
+
+                        //     if (ffoParseData[j].hasOwnProperty('string_data') == true) {
+                        //         text += "<p>";
+                        //         text += ffoParseData[j]['string_data'].replace(/[<>]/g, m => chars[m]);
+                        //         text += "</p>";
+                        //     } else {
+                        //         var index = base64Arr.map((el) => el.uri).indexOf(ffoParseData[j].uri);
+                        //         if (index == -1) {
+                        //             convertContenturiToBase64(JSON.stringify(ffoParseData[j]))
+
+                        //             text += "<img id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' style='object-fit: contain;'>";
+
+                        //             text += "<div id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'></div></div>";
+
+
+                        //         } else {
+
+                        //             text += "<img id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' src = '../../../../scanningImages/" + base64Arr[index].url + "' style='object-fit: contain;'>";
+
+                        //             text += "<div id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'  src = '../../../../scanningImages/" + base64Arr[index].url + "'></div></div>";
+
+                        //         }
+                        //         idx++;
+                        //     }
+
+                        // }
+
+                        text += '</li></ul>';
+                    } else {
+                        if (i == 1) {
+                            text = text + "<h5>Previous Scans:</h5>";
+                        }
+                        text += "<ul><li class='inactive list_with_image imageEnlargeDoc'>";
+                        text += "<p><strong>Scan: " + Math.round(i + 1) + "</strong></p>";
+
+                        for (let j = 0; j < groupedFfoKeys.length; j++) {
+                            if (groupedFfoKeys[j] != 'Image') {
+                                var resultFfo = groupedFfo[groupedFfoKeys[j]].map(function (item) { return item.string_data; });
+                                var textFfo = resultFfo.join(" ");
+                                text += "<p>";
+                                text += textFfo.replace(/[<>]/g, m => chars[m]);
+                                text += "</p>";
+
+                            } else {
+                                console.log('image1', groupedFfo[groupedFfoKeys[j]][0])
+                                var index = base64Arr.map((el) => el.uri).indexOf(groupedFfo[groupedFfoKeys[j]][0].uri);
+
+                                if (index == -1) {
+                                    convertContenturiToBase64(JSON.stringify(groupedFfo[groupedFfoKeys[j]][0]))
+                                    readImageFromContentProviderToBase64(JSON.stringify(groupedFfo[groupedFfoKeys[j]][0]))
+
+                                    text += "<img onclick='postClose(event)' id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' style='object-fit: contain;'>";
+
+                                    text += "<div onclick='postClick(event)' id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'></div></div>";
+
+
+                                } else {
+
+                                    text += "<img onclick='postClose(event)' id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' src = '../../../../scanningImages/" + base64Arr[index].url + "' style='object-fit: contain;'>";
+
+                                    text += "<div onclick='postClick(event)' id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'  src = '../../../../scanningImages/" + base64Arr[index].url + "'></div></div>";
+
+                                }
+                                idx++;
+
+                            }
+                        }
+
+
+                        // for (let j = 0; j < ffoParseData.length; j++) {
+                        //     if (ffoParseData[j].hasOwnProperty('string_data') == true) {
+                        //         text += "<p>";
+                        //         text += ffoParseData[j]['string_data'].replace(/[<>]/g, m => chars[m]);
+                        //         text += "</p>";
+                        //     } else {
+                        //         var index = base64Arr.map((el) => el.uri).indexOf(ffoParseData[j].uri);
+
+                        //         if (index == -1) {
+                        //             convertContenturiToBase64(JSON.stringify(ffoParseData[j]))
+
+                        //             text += "<img onclick='postClose(event)' id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' style='object-fit: contain;'>";
+
+                        //             text += "<div onclick='postClick(event)' id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'></div></div>";
+
+                        //         } else {
+
+                        //             text += "<img onclick='postClose(event)' id='imgTag" + idx + "' class='myImg' data-toggle='modal' data-target='#myModal" + idx + "' src = '../../../../scanningImages/" + base64Arr[index].url + "' style='object-fit: contain;'>";
+
+                        //             text += "<div onclick='postClick(event)' id='myModal" + idx + "' class='modal fade' role='dialog' style='padding-left: 0 !important;z-index: 999999;'><div class='modal-dialog modal-dialog-centered'><button type='button' class='close' data-dismiss='modal'>&times;</button><img class='modal-content-image' id='img" + idx + "'  src = '../../../../scanningImages/" + base64Arr[index].url + "'></div></div>";
+
+                        //         }
+                        //         idx++;
+                        //     }
+
+                        // }
+
+                        text += '</li></ul>';
+                    }
+                }
+                //text = text + '</ul>';
+            }
+
+            if (getCurentApp['foldername'] === 'specificBarcodes') {
+                console.log(newDemoArr)
+                for (let i = 0; i < newDemoArr.length; i++) {
+
+                    var multiDataSB = newDemoArr[i]['data']['com.symbol.datawedge.barcodes'];
+                    if (i == 0) {
+                        text = text + "<h5><strong>Scan: " + Math.round(i + 1) + "</strong></h5>"
+                        text = text + " <ul class='anyBarcodeList'>";
+                        for (let j = 0; j < multiDataSB.length; j++) {
+                            let symb = multiDataSB[j]['com.symbol.datawedge.label_type'];
+                            let symbSplit = symb.split('-');
+                            let symbData = symbSplit[symbSplit.length - 1];
+
+                            var labelInput = '';
+                            if (multiDataSB[j]['com.symbol.datawedge.data_string'].startsWith('1P') == true || multiDataSB[j]['com.symbol.datawedge.data_string'].startsWith('P') == true) {
+                                labelInput = 'Part #';
+                            }
+                            else if (multiDataSB[j]['com.symbol.datawedge.data_string'].startsWith('S') == true) {
+                                labelInput = 'Serial #';
+                            }
+                            else if (multiDataSB[j]['com.symbol.datawedge.data_string'].startsWith('2P') == true) {
+                                labelInput = 'Rev Level';
+                            }
+                            else if (multiDataSB[j]['com.symbol.datawedge.data_string'].length == 2) {
+                                labelInput = 'Country';
+                            }
+
+                            text += "<li><div class='row'><div class='col-4'><label>" + labelInput + "</label></div><div class='col-8'><p>" + multiDataSB[j]['com.symbol.datawedge.data_string'] + "</p></div></div></li>";
+                        }
+                        text = text + "</ul>";
+                    }
+                    else {
+                        if (i == 1) {
+                            text = text + "<h5>Previous Scans:</h5>";
+                        }
+                        text = text + "<h5><strong>Scan: " + Math.round(i + 1) + "</strong></h5>";
+                        text = text + " <ul class='anyBarcodeList opacity_low'>";
+                        for (let j = 0; j < multiDataSB.length; j++) {
+                            let symb = multiDataSB[j]['com.symbol.datawedge.label_type'];
+                            let symbSplit = symb.split('-');
+                            let symbData = symbSplit[symbSplit.length - 1];
+
+                            var labelInput = '';
+                            if (multiDataSB[j]['com.symbol.datawedge.data_string'].startsWith('1P') == true || multiDataSB[j]['com.symbol.datawedge.data_string'].startsWith('P') == true) {
+                                labelInput = 'Part #';
+                            }
+                            else if (multiDataSB[j]['com.symbol.datawedge.data_string'].startsWith('S') == true) {
+                                labelInput = 'Serial #';
+                            }
+                            else if (multiDataSB[j]['com.symbol.datawedge.data_string'].startsWith('2P') == true) {
+                                labelInput = 'Rev Level';
+                            }
+                            else if (multiDataSB[j]['com.symbol.datawedge.data_string'].length == 2) {
+                                labelInput = 'Country';
+                            }
+
+                            text += "<li><div class='row'><div class='col-4'><label>" + labelInput + "</label></div><div class='col-8'><p>" + multiDataSB[j]['com.symbol.datawedge.data_string'] + "</p></div></div></li>";
+                        }
+                        text = text + "</ul>";
+                    }
+                }
+            }
+
+            if (getCurentApp['foldername'] === 'autoGroupIdentification') {
+
+                for (let i = 0; i < newDemoArr.length; i++) {
+
+                    var multiDataAG = newDemoArr[i]['data']['com.symbol.datawedge.barcodes'];
+                    if (i == 0) {
+                        text = text + "<h5>Quantity: " + multiDataAG.length + "</h5>"
+                        text = text + " <ul class='anyBarcodeList'>";
+                        for (let j = 0; j < multiDataAG.length; j++) {
+
+                            text += "<li><div class='row'><div class='col-2'><label>" + Math.round(j + 1) + ".</label></div><div class='col-10'><p>" + multiDataAG[j]['com.symbol.datawedge.data_string'] + "</p></div></div></li>";
+                        }
+                        text = text + "</ul>";
+                    }
+                    else {
+                        if (i == 1) {
+                            text = text + "<h5>Previous Scans:</h5>";
+                        }
+                        text = text + "<h5>Quantity: " + multiDataAG.length + "</h5>"
+                        text = text + " <ul class='anyBarcodeList opacity_low'>";
+                        for (let j = 0; j < multiDataAG.length; j++) {
+                            text += "<li><div class='row'><div class='col-2'><label>" + Math.round(j + 1) + ".</label></div><div class='col-10'><p>" + multiDataAG[j]['com.symbol.datawedge.data_string'] + "</p></div></div></li>";
+                        }
+                        text = text + "</ul>";
+                    }
+                }
+            }
+
+			if (getCurentApp['foldername'] === 'ocrBTravelDocuments') {
+                var FlashAssist = ''
+                var functionalityOcrBTravelDocuments = mydata[0].webapp
+                console.log(functionalityOcrBTravelDocuments[0])
+                if (functionalityOcrBTravelDocuments[0].checked === 'checked') {
+                    FlashAssist = "torch";
+                } else {
+                    FlashAssist = "off";
+                }
+                startIntentTravelDocument(FlashAssist);
+            }
+
+            if (getCurentApp['foldername'] === 'tireIdentificationNumber') {
+                var inputMethodTIN = '';
+                var FlashAssist = ''
+
+                var barcodeTypeTIN = mydata[1].webapp;
+                var barcodeTypeTINFunctionality = mydata[0].webapp;
+
+                if (barcodeTypeTINFunctionality[0].checked === 'checked') {
+                    FlashAssist = "on";
+                } else {
+                    FlashAssist = "off";
+                }
+
+                for (let i = 0; i < barcodeTypeTIN.length; i++) {
+
+                    if (barcodeTypeTIN[i].checked === 'checked') {
+                        if (barcodeTypeTIN[i].title === 'DOT 1') {
+                            inputMethodTIN = 'DOT_STRICT';
+                        }
+                        else if (barcodeTypeTIN[i].title === 'DOT 2') {
+                            inputMethodTIN = 'DOT';
+                        }
+                        else if (barcodeTypeTIN[i].title === 'Commercial TIN') {
+                            inputMethodTIN = 'COMMERCIAL_TIRE';
+                        }
+                        else if (barcodeTypeTIN[i].title === 'Universal TIN') {
+                            inputMethodTIN = 'UNIVERSAL';
+                        }
+                        else if (barcodeTypeTIN[i].title === 'Tire Size') {
+                            inputMethodTIN = 'TIRE_SIZE';
+                        }
+
+                    }
+
+                    if (i == barcodeTypeTIN.length - 1) {
+                        startIntentTIN(inputMethodTIN, FlashAssist);
+                    }
+                }
+
+            }
+
+
+            document.getElementById("demoData").innerHTML = text;
+            // setTimeout(() => {
+            //     //top.location.href = '#resultFirst';
+            //     //document.getElementById('demoData').scrollIntoView();
+            // }, 500)
+
+        }
+
+
+
+
+			function startIntentAnyBarcode(type, FlashAssist, dcpInput, aimType, digimarc, additionalSymbology) {
+
+            console.log("digimarc", digimarc)
+            var params = {
+                intentType: EB.Intent.BROADCAST,
+                action: 'com.symbol.datawedge.api.ACTION',
+                data: {
+                    "com.symbol.datawedge.api.SET_CONFIG": {
+                        "PROFILE_NAME": "Sample Showcase",
+                        "PROFILE_ENABLED": "true",
+                        "CONFIG_MODE": "OVERWRITE",
+                        "APP_LIST": [{ "PACKAGE_NAME": "com.zebra.mdna.enterprisebrowser", "ACTIVITY_LIST": ["com.rhomobile.rhodes.RhodesActivity"] }],
+                        "DCP": {
+                            "PARAM_LIST": {
+                                "dcp_input_enabled": dcpInput,
+
+                            }
+                        },
+                        "PLUGIN_CONFIG": [
+                            [
+                                {
+                                    "PLUGIN_NAME": "INTENT",
+                                    "RESET_CONFIG": "true",
+                                    "PARAM_LIST": {
+                                        "intent_output_enabled": "true",
+                                        "intent_action": "com.symbol.dw.action",
+                                        "intent_delivery": "2"
+                                    }
+                                }
+                            ],
+                            [
+                                {
+                                    "PLUGIN_NAME": "BARCODE",
+                                    "RESET_CONFIG": "true",
+                                    "PARAM_LIST": {
+                                        "scanner_selection_by_identifier": type,
+                                        "illumination_mode": FlashAssist,
+                                        "scanner_input_enabled": "true",
+                                        "decoding_led_feedback": ledFeedback,
+                                        "decode_haptic_feedback": hapticFeedback,
+                                        "decode_audio_feedback_uri": audioFeedback,
+                                        "decoder_australian_postal": additionalSymbology['AustralianPostal'],
+                                        "decoder_aztec": additionalSymbology['Aztec'],
+                                        "decoder_canadian_postal": additionalSymbology['CanadianPostal'],
+                                        "decoder_chinese_2of5": additionalSymbology['Chinese2of5'],
+                                        "decoder_codabar": additionalSymbology['Codabar'],
+                                        "decoder_code11": additionalSymbology['Code11'],
+                                        "decoder_code39": additionalSymbology['Code39'],
+                                        "decoder_code93": additionalSymbology['Code93'],
+                                        "decoder_code128": additionalSymbology['Code128'],
+                                        "decoder_composite_ab": additionalSymbology['CompositeAB'],
+                                        "decoder_composite_c": additionalSymbology['CompositeC'],
+                                        "decoder_datamatrix": additionalSymbology['Datamatrix'],
+                                        "decoder_d2of5": additionalSymbology['Discrete2of5'],
+                                        "decoder_dotcode": additionalSymbology['DotCode'],
+                                        "decoder_dutch_postal": additionalSymbology['DutchPostal'],
+                                        "decoder_ean8": additionalSymbology['EAN8'],
+                                        "decoder_ean13": additionalSymbology['EAN13'],
+                                        "decoder_finnish_postal_4s": additionalSymbology['FinnishPostal4S'],
+                                        "decoder_grid_matrix": additionalSymbology['GridMatrix'],
+                                        "decoder_gs1_databar": additionalSymbology['GS1DataBar'],
+                                        "decoder_gs1_databar_lim": additionalSymbology['GS1DataBarLimited'],
+                                        "decoder_gs1_databar_exp": additionalSymbology['GS1DataBarExpanded'],
+                                        "decoder_gs1_datamatrix": additionalSymbology['GS1DataMatrix'],
+                                        "decoder_gs1_qrcode": additionalSymbology['GS1QRCode'],
+                                        "decoder_hanxin": additionalSymbology['HanXin'],
+                                        "decoder_i2of5": additionalSymbology['Interleaved2of5'],
+                                        "decoder_japanese_postal": additionalSymbology['JapanesePostal'],
+                                        "decoder_korean_3of5": additionalSymbology['Korean3of5'],
+                                        "decoder_mailmark": additionalSymbology['Mailmark'],
+                                        "decoder_matrix_2of5": additionalSymbology['Matrix2of5'],
+                                        "decoder_maxicode": additionalSymbology['Maxicode'],
+                                        "decoder_micropdf": additionalSymbology['MicroPDF'],
+                                        "decoder_microqr": additionalSymbology['MicroQR'],
+                                        "decoder_msi": additionalSymbology['MSI'],
+                                        "decoder_pdf417": additionalSymbology['PDF417'],
+                                        "decoder_qrcode": additionalSymbology['QRCode'],
+                                        "decoder_signature": additionalSymbology['Signature'],
+                                        "decoder_tlc39": additionalSymbology['TLC39'],
+                                        "decoder_trioptic39": additionalSymbology['Trioptic39'],
+                                        "decoder_uk_postal": additionalSymbology['UKPostal'],
+                                        "decoder_upca": additionalSymbology['UPCA'],
+                                        "decoder_upce0": additionalSymbology['UPCE0'],
+                                        "decoder_upce1": additionalSymbology['UPCE1'],
+                                        "decoder_us4state": additionalSymbology['US4state'],
+                                        "decoder_us4state_fics": additionalSymbology['US4stateFICS'],
+                                        "decoder_usplanet": additionalSymbology['USPlanet'],
+                                        "decoder_uspostnet": additionalSymbology['USPostnet'],
+                                        "aim_type": aimType,
+                                        "digimarc_decoding": digimarc,
+                                    }
+                                }
+                            ]
+                        ]
+                    }
+                }
+            };
+
+            EB.Intent.send(params);
+        }
+		
+			
+		
+	
+		function startIntentFreeFormOCR(inputMethodDC, FlashAssist, ZoomValue, scriptVal) {
+			var inputMethodDC = "2";
+			var FlashAssist = "off";
+			var ZoomValue = "1";
+			var scriptVal = "Latin";
+	    	var hapticFeedback = 'true';
+  	    	var ledFeedback = 'true';
+			var audioFeedbackImage = 'optimized-beep';
+			
+			freeFormOCRClicked = true;
+			licensePlatesOcrClicked = false;
+			tinOcrClicked = false;
+            vinocrclicked=false;
+            dococrclicked=false;
+            containerocrclicked=false;
+            metocrclicked=false;
+            travelocrclicked=false;
+
+            var params = {
+                intentType: EB.Intent.BROADCAST,
+                action: 'com.symbol.datawedge.api.ACTION',
+                data: {
+                    "com.symbol.datawedge.api.SET_CONFIG": {
+                        "PROFILE_NAME": "Sample Showcase",
+                        "PROFILE_ENABLED": "true",
+                        "CONFIG_MODE": "OVERWRITE",
+                        "APP_LIST": [{ "PACKAGE_NAME": "com.zebra.mdna.enterprisebrowser", "ACTIVITY_LIST": ["com.rhomobile.rhodes.RhodesActivity"] }],
+                        "PLUGIN_CONFIG": [
+                            [
+                                {
+                                    "PLUGIN_NAME": "BARCODE",
+                                    "RESET_CONFIG": "true",
+                                    "PARAM_LIST": {
+                                        "scanner_selection": "auto",
+                                        "scanner_input_enabled": "false",
+                                        "barcode_highlighting_enabled": "false",
+                                    }
+                                }
+                            ],
+                            [
+                                {
+                                    "PLUGIN_NAME": "INTENT",
+                                    "RESET_CONFIG": "true",
+                                    "PARAM_LIST": {
+                                        "intent_output_enabled": "true",
+                                        "intent_action": "com.symbol.dw.action",
+                                        "intent_category": "android.intent.category.DEFAULT",
+                                        "intent_delivery": "2",
+                                        "intent_use_content_provider": "true",
+                                    }
+                                }
+                            ],
+                            [
+                                {
+                                    "PLUGIN_NAME": "WORKFLOW",
+                                    "RESET_CONFIG": "true",
+                                    "selected_workflow_name": "free_form_ocr",
+                                    "workflow_input_source": inputMethodDC,
+                                    "workflow_input_enabled": "true",
+                                    "PARAM_LIST": [
+                                        [{
+                                            "workflow_name": "free_form_ocr",
+                                            "workflow_input_source": inputMethodDC,
+                                            "workflow_params":
+                                                [
+                                                    [{
+                                                        "module": "FeedbackModule",
+                                                        "module_params": {
+                                                            "decode_haptic_feedback": hapticFeedback,
+                                                            "decoding_led_feedback": ledFeedback,
+                                                            "decode_audio_feedback_uri": audioFeedbackImage
+                                                        }
+
+                                                    }],
+                                                    [{
+                                                        "module": "CameraModule",
+                                                        "module_params": {
+                                                            "illumination": FlashAssist,
+                                                            'zoom': ZoomValue
+                                                        }
+
+                                                    }],
+                                                    [{
+                                                        "module": "MLKitModule",
+                                                        "module_params": {
+                                                            'zoom': ZoomValue,
+                                                            'script': scriptVal
+                                                        }
+                                                    }]
+
+
+                                                ]
+                                        }]
+                                    ],
+
+                                }
+                            ]
+                        ]
+                    }
+                }
+            };
+            EB.Intent.send(params);
+			    count=0;
+			    setTimeout(() => {
+                startBarCode();
+                 }, 3000);
+        }
+
+	    function switchToSimulScanProfile(){
+					var extras = {
+						"com.symbol.datawedge.api.SWITCH_TO_PROFILE":"Sample Showcase",
+					};
+					sendIntentData(extras);	
+		}
+
+        function startIntentLicensePlates() {
+			
+			freeFormOCRClicked = false;
+			licensePlatesOcrClicked = true;
+			tinOcrClicked = false;
+            vinocrclicked=false;
+            dococrclicked=false;
+            containerocrclicked=false;
+            driverocrclicked=false;
+			metocrclicked=false;
+            travelocrclicked=false;
+
+			var FlashAssist = "off";
+			var mode = 'auto';
+			var hapticFeedback = 'true';
+  	    	var ledFeedback = 'true';
+			var audioFeedbackImage = 'optimized-beep';
+
+            var params = {
+                intentType: EB.Intent.BROADCAST,
+                action: 'com.symbol.datawedge.api.ACTION',
+                data: {
+                    "com.symbol.datawedge.api.SET_CONFIG": {
+                        "PROFILE_NAME": "Sample Showcase",
+                        "PROFILE_ENABLED": "true",
+                        "CONFIG_MODE": "OVERWRITE",
+                        "APP_LIST": [{ "PACKAGE_NAME": "com.zebra.mdna.enterprisebrowser", "ACTIVITY_LIST": ["com.rhomobile.rhodes.RhodesActivity"] }],
+                        "PLUGIN_CONFIG": [
+                            [
+                                {
+                                    "PLUGIN_NAME": "BARCODE",
+                                    "RESET_CONFIG": "true",
+                                    "PARAM_LIST": {
+                                        "scanner_selection": "auto",
+                                        "scanner_input_enabled": "false",
+                                        "barcode_highlighting_enabled": "false",
+                                    }
+                                }
+                            ],
+                            [
+                                {
+                                    "PLUGIN_NAME": "INTENT",
+                                    "RESET_CONFIG": "true",
+                                    "PARAM_LIST": {
+                                        "intent_output_enabled": "true",
+                                        "intent_action": "com.symbol.dw.action",
+                                        "intent_category": "android.intent.category.DEFAULT",
+                                        "intent_delivery": "2",
+                                        "intent_use_content_provider": "true",
+                                    }
+                                }
+                            ],
+                            [
+                                {
+                                    "PLUGIN_NAME": "WORKFLOW",
+                                    "RESET_CONFIG": "true",
+                                    "selected_workflow_name": "license_plate",
+                                    "workflow_input_source": "2",
+                                    "workflow_input_enabled": "true",
+                                    "PARAM_LIST": [
+                                        [{
+                                            "workflow_name": "license_plate",
+                                            "workflow_input_source": "2",
+                                            "workflow_params":
+                                                [
+                                                    [{
+                                                        "module": "LicenseDecoderModule",
+                                                        "module_params": {
+                                                            "scanMode": mode
+                                                        }
+
+                                                    }],
+                                                    [{
+                                                        "module": "CameraModule",
+                                                        "module_params": {
+                                                            "illumination": FlashAssist
+                                                        }
+
+                                                    }],
+                                                    [{
+                                                        "module": "FeedbackModule",
+                                                        "module_params": {
+                                                            "decode_haptic_feedback": hapticFeedback,
+                                                            "decoding_led_feedback": ledFeedback,
+                                                            "decode_audio_feedback_uri": audioFeedbackImage
+                                                        }
+
+                                                    }]
+                                                ]
+                                        }]
+                                    ],
+
+                                }
+                            ]
+                        ]
+                    }
+                }
+            };
+
+            EB.Intent.send(params);
+			count=0;
+	        setTimeout(() => {
+            alert("Please scan Now.");
+            }, 1000);
+			setTimeout(() => {
+                startBarCode();
+            }, 3000);
+
+        }
+
+        function startIntentVIN(FlashAssist) {
+            freeFormOCRClicked = false;
+			licensePlatesOcrClicked = false;
+			tinOcrClicked = false;
+            vinocrclicked=true;
+            dococrclicked=false;
+            containerocrclicked=false;
+            metocrclicked=false;
+            travelocrclicked=false;
+
+
+            var FlashAssist="off";
+            var hapticFeedback = 'true';
+            var ledFeedback = 'true';
+            var audioFeedbackImage = 'optimized-beep';
+          
+
+            var params = {
+                intentType: EB.Intent.BROADCAST,
+                action: 'com.symbol.datawedge.api.ACTION',
+                data: {
+                    "com.symbol.datawedge.api.SET_CONFIG": {
+                        "PROFILE_NAME": "Zebra Showcase",
+                        "PROFILE_ENABLED": "true",
+                        "CONFIG_MODE": "OVERWRITE",
+                        "APP_LIST": [{ "PACKAGE_NAME": "com.zebra.mdna.enterprisebrowser", "ACTIVITY_LIST": ["com.rhomobile.rhodes.RhodesActivity"] }],
+                        "PLUGIN_CONFIG": [
+                            [
+                                {
+                                    "PLUGIN_NAME": "BARCODE",
+                                    "RESET_CONFIG": "true",
+                                    "PARAM_LIST": {
+                                        "scanner_selection": "auto",
+                                        "scanner_input_enabled": "false",
+                                        "barcode_highlighting_enabled": "false",
+                                    }
+                                }
+                            ],
+                            [
+                                {
+                                    "PLUGIN_NAME": "INTENT",
+                                    "RESET_CONFIG": "true",
+                                    "PARAM_LIST": {
+                                        "intent_output_enabled": "true",
+                                        "intent_action": "com.symbol.dw.action",
+                                        "intent_category": "android.intent.category.DEFAULT",
+                                        "intent_delivery": "2",
+                                        "intent_use_content_provider": "true",
+                                    }
+                                }
+                            ],
+                            [
+                                {
+                                    "PLUGIN_NAME": "WORKFLOW",
+                                    "RESET_CONFIG": "true",
+                                    "selected_workflow_name": "vin_number",
+                                    "workflow_input_source": "2",
+                                    "workflow_input_enabled": "true",
+                                    "PARAM_LIST": [
+                                        [{
+                                            "workflow_name": "vin_number",
+                                            "workflow_input_source": "2",
+                                            "workflow_params":
+                                                [
+                                                    [{
+                                                        "module": "FeedbackModule",
+                                                        "module_params": {
+                                                            "decode_haptic_feedback": hapticFeedback,
+                                                            "decoding_led_feedback": ledFeedback,
+                                                            "decode_audio_feedback_uri": audioFeedbackImage
+                                                        }
+
+                                                    }],
+                                                    [{
+                                                        "module": "CameraModule",
+                                                        "module_params": {
+                                                            "illumination": FlashAssist
+                                                        }
+
+                                                    }]
+                                                ]
+
+
+                                        }]
+                                    ],
+
+                                }
+                            ]
+                        ]
+                    }
+                }
+            };
+            EB.Intent.send(params);
+			count=0;
+			setTimeout(() => {
+			alert("Please scan Now.");
+            }, 1000);
+            setTimeout(() => {
+                startBarCode();
+            }, 3000);
+
+        }
+
+        function startIntentID(FlashAssist) {
+            freeFormOCRClicked = false;
+			licensePlatesOcrClicked = false;
+			tinOcrClicked = false;
+            vinocrclicked=false;
+            dococrclicked=true;
+            containerocrclicked=false;
+            metocrclicked=false;
+           travelocrclicked=false;
+            var FlashAssist="off";
+            var hapticFeedback = 'true';
+            var ledFeedback = 'true';
+            var audioFeedbackImage = 'optimized-beep';
+
+            var params = {
+                intentType: EB.Intent.BROADCAST,
+                action: 'com.symbol.datawedge.api.ACTION',
+                data: {
+                    "com.symbol.datawedge.api.SET_CONFIG": {
+                        "PROFILE_NAME": "Zebra Showcase",
+                        "PROFILE_ENABLED": "true",
+                        "CONFIG_MODE": "OVERWRITE",
+                        "APP_LIST": [{ "PACKAGE_NAME": "com.zebra.mdna.enterprisebrowser", "ACTIVITY_LIST": ["com.rhomobile.rhodes.RhodesActivity"] }],
+                        "PLUGIN_CONFIG": [
+                            [
+                                {
+                                    "PLUGIN_NAME": "BARCODE",
+                                    "RESET_CONFIG": "true",
+                                    "PARAM_LIST": {
+                                        "scanner_selection": "auto",
+                                        "scanner_input_enabled": "false",
+                                        "barcode_highlighting_enabled": "false",
+                                    }
+                                }
+                            ],
+                            [
+                                {
+                                    "PLUGIN_NAME": "INTENT",
+                                    "RESET_CONFIG": "true",
+                                    "PARAM_LIST": {
+                                        "intent_output_enabled": "true",
+                                        "intent_action": "com.symbol.dw.action",
+                                        "intent_category": "android.intent.category.DEFAULT",
+                                        "intent_delivery": "2",
+                                        "intent_use_content_provider": "true",
+                                    }
+                                }
+                            ],
+                            [
+                                {
+                                    "PLUGIN_NAME": "WORKFLOW",
+                                    "RESET_CONFIG": "true",
+                                    "selected_workflow_name": "id_scanning",
+                                    "workflow_input_source": "2",
+                                    "workflow_input_enabled": "true",
+                                    "PARAM_LIST": [
+                                        [{
+                                            "workflow_name": "id_scanning",
+                                            "workflow_input_source": "2",
+                                            "workflow_params":
+                                                [
+                                                    [{
+                                                        "module": "FeedbackModule",
+                                                        "module_params": {
+                                                            "decode_haptic_feedback": hapticFeedback,
+                                                            "decoding_led_feedback": ledFeedback,
+                                                            "decode_audio_feedback_uri": audioFeedbackImage
+                                                        }
+
+                                                    }],
+                                                    [{
+                                                        "module": "CameraModule",
+                                                        "module_params": {
+                                                            "illumination": FlashAssist
+                                                        }
+
+                                                    }]
+                                                ]
+                                        }]
+                                    ],
+
+                                }
+                            ]
+                        ]
+                    }
+                }
+            };
+
+            EB.Intent.send(params);
+			count=0;
+            setTimeout(() => {
+            alert("Please scan Now.");
+            }, 1000);
+            setTimeout(() => {
+                startBarCode();
+                 }, 3000);
+
+
+        }
+
+        function startIntentSCI(mode, FlashAssist, ZoomValue) {
+            freeFormOCRClicked = false;
+			licensePlatesOcrClicked = false;
+			tinOcrClicked = false;
+            vinocrclicked=false;
+            dococrclicked=false;
+            containerocrclicked=false;
+            metocrclicked=true;
+            travelocrclicked=false;
+
+           var mode ="auto";
+            var FlashAssist ="off";
+            var ZoomValue ="0";
+            var hapticFeedback = 'true';
+            var ledFeedback = 'true';
+            var audioFeedbackImage = 'optimized-beep';
+
+            var params = {
+                intentType: EB.Intent.BROADCAST,
+                action: 'com.symbol.datawedge.api.ACTION',
+                data: {
+                    "com.symbol.datawedge.api.SET_CONFIG": {
+                        "PROFILE_NAME": "Zebra Showcase",
+                        "PROFILE_ENABLED": "true",
+                        "CONFIG_MODE": "OVERWRITE",
+                        "APP_LIST": [{ "PACKAGE_NAME": "com.zebra.mdna.enterprisebrowser", "ACTIVITY_LIST": ["com.rhomobile.rhodes.RhodesActivity"] }],
+                        "PLUGIN_CONFIG": [
+                            [
+                                {
+                                    "PLUGIN_NAME": "BARCODE",
+                                    "RESET_CONFIG": "true",
+                                    "PARAM_LIST": {
+                                        "scanner_selection": "auto",
+                                        "scanner_input_enabled": "false",
+                                        "barcode_highlighting_enabled": "false",
+                                    }
+                                }
+                            ],
+                            [
+                                {
+                                    "PLUGIN_NAME": "INTENT",
+                                    "RESET_CONFIG": "true",
+                                    "PARAM_LIST": {
+                                        "intent_output_enabled": "true",
+                                        "intent_action": "com.symbol.dw.action",
+                                        "intent_category": "android.intent.category.DEFAULT",
+                                        "intent_delivery": "2",
+                                        "intent_use_content_provider": "true",
+                                    }
+                                }
+                            ],
+                            [
+                                {
+                                    "PLUGIN_NAME": "WORKFLOW",
+                                    "RESET_CONFIG": "true",
+                                    "workflow_input_enabled": "true",
+                                    "selected_workflow_name": "container_scanning",
+                                    "workflow_input_source": "2",
+
+                                    "PARAM_LIST": [
+                                        [{
+                                            "workflow_name": "container_scanning",
+                                            "workflow_input_source": "2",
+
+                                            "workflow_params":
+                                                [
+                                                    [{
+                                                        "module": "ContainerDecoderModule",
+
+                                                        "module_params": {
+                                                            "scanMode": mode
+                                                        }
+
+                                                    }],
+                                                    [{
+                                                        "module": "FeedbackModule",
+                                                        "module_params": {
+                                                            "decode_haptic_feedback": hapticFeedback,
+                                                            "decoding_led_feedback": ledFeedback,
+                                                            "decode_audio_feedback_uri": audioFeedbackImage
+                                                        }
+
+                                                    }],
+                                                    [{
+                                                        "module": "CameraModule",
+                                                        "module_params": {
+                                                            "illumination": FlashAssist,
+                                                            'zoom': ZoomValue
+                                                        }
+
+                                                    }]
+                                                ]
+                                        }]
+                                    ],
+
+                                }
+                            ]
+                        ]
+                    }
+                }
+            };
+            EB.Intent.send(params);
+			count=0;
+          
+            setTimeout(() => {
+            alert("Please scan Now.");
+            }, 1000);
+			
+            setTimeout(() => {
+                startBarCode();
+                 }, 3000);
+
+
+        }
+
+
+        function startIntentMeterReading(mode, FlashAssist) {
+            freeFormOCRClicked = false;
+			licensePlatesOcrClicked = false;
+			tinOcrClicked = false;
+            vinocrclicked=false;
+            dococrclicked=false;
+            containerocrclicked=false;
+            metocrclicked=true;
+            travelocrclicked=false;
+
+        
+           var mode="auto";
+            var FlashAssist="off";
+            var hapticFeedback = 'true';
+            var ledFeedback = 'true';
+            var audioFeedbackImage = 'optimized-beep';
+            
+
+            var params = {
+                intentType: EB.Intent.BROADCAST,
+                action: 'com.symbol.datawedge.api.ACTION',
+                data: {
+                    "com.symbol.datawedge.api.SET_CONFIG": {
+                        "PROFILE_NAME": "Zebra Showcase",
+                        "PROFILE_ENABLED": "true",
+                        "CONFIG_MODE": "OVERWRITE",
+                        "APP_LIST": [{ "PACKAGE_NAME": "com.zebra.mdna.enterprisebrowser", "ACTIVITY_LIST": ["com.rhomobile.rhodes.RhodesActivity"] }],
+                        "PLUGIN_CONFIG": [
+                            [
+                                {
+                                    "PLUGIN_NAME": "BARCODE",
+                                    "RESET_CONFIG": "true",
+                                    "PARAM_LIST": {
+                                        "scanner_selection": "auto",
+                                        "scanner_input_enabled": "false",
+                                        "barcode_highlighting_enabled": "false",
+                                    }
+                                }
+                            ],
+                            [
+                                {
+                                    "PLUGIN_NAME": "INTENT",
+                                    "RESET_CONFIG": "true",
+                                    "PARAM_LIST": {
+                                        "intent_output_enabled": "true",
+                                        "intent_action": "com.symbol.dw.action",
+                                        "intent_category": "android.intent.category.DEFAULT",
+                                        "intent_delivery": "2",
+                                        "intent_use_content_provider": "true",
+                                    }
+                                }
+                            ],
+                            [
+                                {
+                                    "PLUGIN_NAME": "WORKFLOW",
+                                    "RESET_CONFIG": "true",
+                                    "selected_workflow_name": "meter_reading",
+                                    "workflow_input_source": "2",
+                                    "workflow_input_enabled": "true",
+                                    "PARAM_LIST": [
+                                        [{
+                                            "workflow_name": "meter_reading",
+                                            "workflow_input_source": "2",
+                                            "workflow_params":
+                                                [
+                                                    [{
+                                                        "module": "MeterReaderModule",
+                                                        "module_params": {
+                                                            "scanMode": mode
+                                                        }
+
+                                                    }],
+                                                    [{
+                                                        "module": "FeedbackModule",
+                                                        "module_params": {
+                                                            "decode_haptic_feedback": hapticFeedback,
+                                                            "decoding_led_feedback": ledFeedback,
+                                                            "decode_audio_feedback_uri": audioFeedbackImage
+                                                        }
+
+                                                    }],
+                                                    [{
+                                                        "module": "CameraModule",
+                                                        "module_params": {
+                                                            "illumination": FlashAssist
+                                                        }
+
+                                                    }]
+                                                ]
+                                        }]
+                                    ],
+
+                                }
+                            ]
+                        ]
+                    }
+                }
+            };
+
+            EB.Intent.send(params);
+			 count=0;
+            setTimeout(() => {
+            alert("Please scan Now.");
+            }, 1000);
+            
+            setTimeout(() => {
+                startBarCode();
+                 }, 3000);
+
+        }
+
+
+
+
+        function startBarCode() {
+
+            console.log("start scan")
+            isScanPage = true
+           
+           
+            console.log("before scanning")
+            var params = {
+                intentType: EB.Intent.BROADCAST,
+                action: 'com.symbol.datawedge.api.ACTION',
+                data: {
+                    "com.symbol.datawedge.api.SOFT_SCAN_TRIGGER": "START_SCANNING",
+                }
+            };
+            EB.Intent.send(params);
+
+		}
+          
+		  function startIntentTravelDocument(FlashAssist) {
+            freeFormOCRClicked = false;
+                        licensePlatesOcrClicked = false;
+                        tinOcrClicked = true;
+            vinocrclicked=false;
+            dococrclicked=false;
+            containerocrclicked=false;
+            metocrclicked=false;
+            travelocrclicked=true;
+                        var FlashAssist = "off";
+                        var hapticFeedback = 'true';
+                      var ledFeedback = 'true';
+                        var audioFeedbackImage = 'optimized-beep';
+            
+            var params = {
+                intentType: EB.Intent.BROADCAST,
+                action: 'com.symbol.datawedge.api.ACTION',
+                data: {
+                    "com.symbol.datawedge.api.SET_CONFIG": {
+                        "PROFILE_NAME": "Zebra Showcase",
+                        "PROFILE_ENABLED": "true",
+                        "CONFIG_MODE": "OVERWRITE",
+                        "APP_LIST": [{ "PACKAGE_NAME": "com.zebra.mdna.enterprisebrowser", "ACTIVITY_LIST": ["com.rhomobile.rhodes.RhodesActivity"] }],
+                        "PLUGIN_CONFIG": [
+                            [
+                                {
+                                    "PLUGIN_NAME": "INTENT",
+                                    "RESET_CONFIG": "true",
+                                    "PARAM_LIST": {
+                                        "intent_output_enabled": "true",
+                                        "intent_action": "com.symbol.dw.action",
+                                        "intent_delivery": "2"
+                                    }
+                                }
+                            ],
+                            [
+                                {
+                                    "PLUGIN_NAME": "BARCODE",
+                                    "RESET_CONFIG": "true",
+                                    "PARAM_LIST": {
+                                        "scanner_selection": 'auto',
+                                        "scanner_input_enabled": "true",
+                                        "decoder_ocr_b": "true",
+                                        "ocr_b_variant": "11",
+                                        "illumination_mode": FlashAssist,
+                                        "decoding_led_feedback": ledFeedback,
+                                        "decode_haptic_feedback": hapticFeedback,
+                                        "decode_audio_feedback_uri": audioFeedback,
+                                    }
+                                }
+                            ]
+                        ]
+                    }
+                }
+            };
+            EB.Intent.send(params);
+            count=0;
+            setTimeout(() => {
+            alert("Please scan Now.");
+            }, 1000);
+            
+            
+            setTimeout(()=> {
+            startBarCode();
+            }, 3000);
+            
+        }
+		
+		function startIntentTIN() {
+		
+		    freeFormOCRClicked = false;
+			licensePlatesOcrClicked = false;
+			tinOcrClicked = true;
+            vinocrclicked=false;
+			 dococrclicked=false;
+            containerocrclicked=false;
+            metocrclicked=false;
+            travelocrclicked=false;
+			
+              var scanMode =   'UNIVERSAL';
+			  var FlashAssist = "off";
+			  var hapticFeedback = 'true';
+  	    	var ledFeedback = 'true';
+			var audioFeedbackImage = 'optimized-beep';
+            var params = {
+                intentType: EB.Intent.BROADCAST,
+                action: 'com.symbol.datawedge.api.ACTION',
+                data: {
+                    "com.symbol.datawedge.api.SET_CONFIG": {
+                        "PROFILE_NAME": "Zebra Showcase",
+                        "PROFILE_ENABLED": "true",
+                        "CONFIG_MODE": "OVERWRITE",
+                        "APP_LIST": [{ "PACKAGE_NAME": "com.zebra.mdna.enterprisebrowser", "ACTIVITY_LIST": ["com.rhomobile.rhodes.RhodesActivity"] }],
+                        "PLUGIN_CONFIG": [
+                            [
+                                {
+                                    "PLUGIN_NAME": "BARCODE",
+                                    "RESET_CONFIG": "true",
+                                    "PARAM_LIST": {
+                                        "scanner_selection": "auto",
+                                        "scanner_input_enabled": "false",
+                                        "barcode_highlighting_enabled": "false",
+                                    }
+                                }
+                            ],
+                            [
+                                {
+                                    "PLUGIN_NAME": "INTENT",
+                                    "RESET_CONFIG": "true",
+                                    "PARAM_LIST": {
+                                        "intent_output_enabled": "true",
+                                        "intent_action": "com.symbol.dw.action",
+                                        "intent_category": "android.intent.category.DEFAULT",
+                                        "intent_delivery": "2",
+                                        "intent_use_content_provider": "true",
+                                    }
+                                }
+                            ],
+                            [
+                                {
+                                    "PLUGIN_NAME": "WORKFLOW",
+                                    "RESET_CONFIG": "true",
+                                    "selected_workflow_name": "tin_number",
+                                    "workflow_input_source": "2",
+                                    "workflow_input_enabled": "true",
+                                    "PARAM_LIST": [
+                                        [{
+                                            "workflow_name": "tin_number",
+                                            "workflow_input_source": "2",
+                                            "workflow_params":
+                                                [
+                                                    [{
+                                                        "module": "TinDecoderModule",
+                                                        "module_params": {
+                                                            "scanMode": scanMode
+                                                        }
+
+                                                    }],
+                                                    [{
+                                                        "module": "CameraModule",
+                                                        "module_params": {
+                                                            "illumination": FlashAssist,
+                                                        }
+
+                                                    }],
+                                                    [{
+                                                        "module": "FeedbackModule",
+                                                        "module_params": {
+                                                            "decode_haptic_feedback": hapticFeedback,
+                                                            "decoding_led_feedback": ledFeedback,
+                                                            "decode_audio_feedback_uri": audioFeedbackImage
+                                                        }
+
+                                                    }]
+                                                ]
+                                        }]
+                                    ],
+
+                                }
+                            ]
+                        ]
+                    }
+                }
+            };
+
+            EB.Intent.send(params);
+			count=0;
+            setTimeout(() => {
+            alert("Please scan Now.");
+            }, 1000);
+			
+			    setTimeout(() => {
+                startBarCode();
+                 }, 3000);
+
+        }
+		
+		function startBarCode() {
+
+            console.log("start scan")
+            isScanPage = true
+           
+           
+            console.log("before scanning")
+            var params = {
+                intentType: EB.Intent.BROADCAST,
+                action: 'com.symbol.datawedge.api.ACTION',
+                data: {
+                    "com.symbol.datawedge.api.SOFT_SCAN_TRIGGER": "START_SCANNING",
+                }
+            };
+            EB.Intent.send(params);
+
+		}
+
+		function OVERWRITEintent() {
+
+            var params = {
+                intentType: EB.Intent.BROADCAST,
+                action: 'com.symbol.datawedge.api.ACTION',
+                data: {
+                    "com.symbol.datawedge.api.SET_CONFIG": {
+                        "PROFILE_NAME": "Sample Showcase",
+                        "PROFILE_ENABLED": "true",
+                        "CONFIG_MODE": "OVERWRITE",
+                        "APP_LIST": [{ "PACKAGE_NAME": "com.zebra.mdna.enterprisebrowser", "ACTIVITY_LIST": ["com.rhomobile.rhodes.RhodesActivity"] }],
+                        "PLUGIN_CONFIG": [
+
+                            [
+                                {
+                                    "PLUGIN_NAME": "INTENT",
+                                    "RESET_CONFIG": "true",
+                                    "PARAM_LIST": {
+                                        "intent_output_enabled": "true",
+                                        "intent_action": "com.symbol.dw.action",
+                                        "intent_delivery": "2"
+                                    }
+                                }
+                            ],
+                            [
+                                {
+                                    "PLUGIN_NAME": "BARCODE",
+                                    "RESET_CONFIG": "true",
+                                    "PARAM_LIST": {
+                                        "scanner_selection": "auto",
+                                        "scanner_input_enabled": "true",
+                                        "barcode_highlighting_enabled": "false",
+                                    }
+                                }
+                            ]
+                        ]
+                    }
+                }
+            };
+
+            EB.Intent.send(params);
+
+        }
+
+		function goToPreviousPage() {
+            console.log("from Prev")
+            // var getNavPath = localStorage.getItem("navPath");
+            // if (getNavPath == 'home.html') {
+            //     window.location.href = "home.html";
+            // } else {
+            //     window.location.href = "info.html?app=" + getCurentApp['foldername'];
+            // }
+            isScanPage = false
+
+            history.back();
+        }
+
+
+        
+        function captureKeyPressed(dispatchValue) {
+            EB.KeyCapture.captureKey(dispatchValue, "ALL", MyCallBack);
+        }
+
+        function MyCallBack(myJsObject) {
+
+            var x = myJsObject.keyValue;
+            console.log(isScanPage)
+            if (x == 4) {
+
+                if (isScanPage) {
+                    isScanPage = false
+                    isFirst = false
+                    if (['freeFormOCR', 'tireIdentificationNumber', 'vehicleIdentificationNumber', 'licensePlates', 'identificationDocuments', 'ocrBTravelDocuments', 'meterReading', 'shippingContainerID', 'freeFromImageCapture', 'documentCapture'].includes(getCurentApp['foldername'])) {
+                        window.location.href = "home.html"
+                    } else {
+                        window.location.href = "demo.html?app=" + getCurentApp['foldername'];
+                    }
+
+
+                } else {
+                    goToPreviousPage()
+                }
+            }
+
+
+        }
+
+        var showOfflineToast = true;
+        var offlineText = "<div class='toast'><div><p>Internet connection required to check for updates / new demos</p></div><div><button class='btn btn-link' onclick='toastClick()''>Dismiss</button></div></div>";
+
+     
+
+        function offlineMsgTimer() {
+            var x = document.getElementById("toast");
+            x.className = "show";
+            setTimeout(function () { x.className = x.className.replace("show", "hiddenCls"); }, 3000);
+        }
+
+        function deleteImgs() {
+            EB.RhoFile.deleteRecursive('/data/user/0/com.zebra.mdna.enterprisebrowser/files/scanningImages', true)
+        }
+
+        function groupBy(objectArray, property) {
+            return objectArray.reduce(function (acc, obj) {
+                var key = obj[property];
+                if (!acc[key]) {
+                    acc[key] = [];
+                }
+                acc[key].push(obj);
+                return acc;
+            }, {});
+        }
+
+
+
+
+</script>
+
+
+
+    <h1 style="text-align: center;" id="enterprisebrowser-datawedge-intent-page" class="anchor"><a class="heading-anchor" href="#enterprisebrowser-datawedge-intent-page"><span></span></a>EnterpriseBrowser DataWedge Intent Page</h1>
+	<br><br><input type="button" class="barcodeProfile" onclick="sendIntent()" value="Create Profile">
+	<br><br><input type="button" class="barcodeProfile" onclick="sendIntenttoGetActiveProfile()" value="Get Active Profile">
+    <br><br><input type="button" class="barcodeProfile" onclick="startBarCode()" value="Start Scanning">
+	<br><br><input type="button" class="barcodeProfile" onclick="startIntentFreeFormOCR()" value="FreeForm OCR">
+	<br><br><input type="button" class="barcodeProfile" onclick="startIntentLicensePlates()" value="licensePlates OCR">
+    <br><br><input type="button" class="barcodeProfile" onclick="startIntentSCI()" value="Shipping Container ID">
+    <br><br><input type="button" class="barcodeProfile" onclick="startIntentMeterReading()" value="Meter Reading">
+    <br><br><input type="button" class="barcodeProfile" onclick="startIntentTIN()" value="Tire Identification Number">
+    <br><br><input type="button" class="barcodeProfile" onclick="startIntentID()" value="Identification Documents">
+    <br><br><input type="button" class="barcodeProfile" onclick="startIntentVIN()" value="Vehicle Identification Number">
+	<br><br><input type="button" class="barcodeProfile" onclick="deleteOCRimagesFolder()" value="Delete OCR Images">
+
+		
+	
+	<br><hr>
+	<div id="intentMessageDiv"></div>
+    <div id="myIntentDataDiv"><b>Scanned Data:</b></div>
+	
+	<table id="tableSimulScanData"></table>
+	
+	<div id="demoData">
+
+<img class="image1" src="image1.jpg" alt="image"><br><br>
+                    </div>
+<style>
+input[type=text]{
+	width: 60%;
+	height: 40px;
+	font-weight: bold;
+	font-style: normal;
+	font-size: 18px;
+	border: 1px solid;
+}
+
+input[type=button]{
+	width: 60%;
+	height: 40px;
+	font-weight: bold;
+	font-style: normal;
+	font-size: 18px;
+}
+
+#myModal {
+  padding-left: 0 !important;
+  z-index: 99999;
+}
+</style>
+
+
+
+
