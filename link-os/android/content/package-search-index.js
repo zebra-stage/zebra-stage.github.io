@@ -1,1 +1,0 @@
-packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"com.zebra.sdk.btleComm"},{"l":"com.zebra.sdk.certificate"},{"l":"com.zebra.sdk.comm"},{"l":"com.zebra.sdk.device"},{"l":"com.zebra.sdk.graphics"},{"l":"com.zebra.sdk.printer"},{"l":"com.zebra.sdk.printer.discovery"},{"l":"com.zebra.sdk.settings"},{"l":"com.zebra.sdk.weblink"}];updateSearchResults();
