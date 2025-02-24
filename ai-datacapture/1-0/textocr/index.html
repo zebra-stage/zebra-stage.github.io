@@ -243,43 +243,110 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>The <code>TextOCR</code> class detects and recognizes text within images using Optical Character Recognition (OCR) technology. It provides methods for identifying text, words, and paragraphs across various image formats. Various methods and options allow customization of output behavior, such as grouping detected words into ‘lines’ or ‘paragraphs.’ </p>
+<p>The <code>TextOCR</code> class uses Optical Character Recognition (OCR) to detect and recognize text within images. It offers methods for identifying text, words, and paragraphs in various image formats, with customizable output options, such as grouping detected words into "lines" or "paragraphs." </p>
 
-<p>Supported characters:</p>
+<p><strong>Text OCR</strong> operates through a two-stage process:  </p>
+
+<ol>
+<li><strong>Detection Stage -</strong> Processes the input image to produce <a href="../class/bbox/">bounding boxes</a>, or text boxes, which are rotated rectangles not necessarily perpendicular to the image’s edges. </li>
+
+<li><strong>Recognition Stage -</strong> Analyzes each text box to generate a list of possible text decodes. </li>
+</ol>
+
+<p>Although these stages are streamlined for the end user, developers can fine-tune them using parameters outlined in this guide.</p>
+
+<p>The initial instructions in this guide provide the basic setup of OCR. A comprehensive list of OCR settings, along with their effects on detection and recognition, is provided in the subsequent sections. For atypical use cases, developers are encouraged to experiment with and adjust these parameters.</p>
+
+<hr>
+
+<h2 id="capabilities" class="anchor"><a class="heading-anchor" href="#capabilities"><span></span></a>Capabilities</h2>
+
+<h3 id="supportedcharacters" class="anchor"><a class="heading-anchor" href="#supportedcharacters"><span></span></a>Supported Characters</h3>
+
+<p>TextOCR recognizes a range of characters, including:</p>
 
 <pre class="prettyprint"><code>    *0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!\"#$%&amp;'()*+,-./:;&lt;=&gt;?@[\\]^_`{|}~*
 </code></pre>
 
-<p>By default, a maximum word length of approximately 15 characters is supported, although this limit may decrease with uncommon fonts. Enabling <a href="../textocr/#tilingoptions">tiling</a> removes this restriction.</p>
+<p>By default, it supports a maximum word length of approximately 15 characters, though this limit may decrease with the use of uncommon fonts. Enabling <a href="../textocr/#tilingoptions">tiling</a> removes this restriction.</p>
 
-<p><strong>Input Parameters:</strong> The default model input size is 640x640. The input size can be changed during runtime initialization. </p>
+<h3 id="inputoutput" class="anchor"><a class="heading-anchor" href="#inputoutput"><span></span></a>Input/Output</h3>
+
+<p><strong>Input Parameters:</strong> The default model input size is 640x640 pixels, but this can be adjusted during runtime initialization. 
+<strong>Output Parameters:</strong> The output consists of a list of text detections, each accompanied by a list of bounding boxes that define the location and content of the detected text.</p>
+
+<hr>
+
+<h2 id="developerguide" class="anchor"><a class="heading-anchor" href="#developerguide"><span></span></a>Developer Guide</h2>
+
+<h3 id="step1initialization" class="anchor"><a class="heading-anchor" href="#step1initialization"><span></span></a>Step 1: Initialization</h3>
+
+<p>Set up and initialize a TextOCR object:</p>
+
+<ol>
+<li><strong>Import the TextOCR class</strong> using <code>com.zebra.ai.vision.TextOCR</code>.</li>
+
+<li><strong>Configure OCR Settings:</strong> 
+
 
 <ul>
-<li><strong>Larger Input Sizes -</strong> Improves accuracy for smaller or more distant text, but results to increased inference time.</li>
+<li>Set <code>model_file_path</code> with the fully qualified file path to the .crypt file from which the OCR model is read. </li>
 
-<li><strong>Smaller Input Sizes -</strong> Less data is being processed, leading to faster inference speed but with less accuracy. Typically yields better results for larger or closer text.</li>
+<li>Create a <code>TextOCR.Settings</code> object with this specified file path.</li>
+
+<li>(Optional) Override the default input size - The width and height sizes should be multiples of 32 (e.g., 640). 
+
+
+<ul>
+<li><strong>Smaller Input Sizes -</strong> Reduces processing time, improving speed, but may decrease accuracy. This is better suited for larger or closer text.</li>
+
+<li><strong>Larger Input Sizes -</strong> Improves accuracy for smaller or more distant text, but results to increased inference time. An input size that is too large may cause an out-of-memory situation and crash your application at run-time.<br>
+<i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>Caution:</strong> Selecting an input size that is too large may lead to out-of-memory errors and cause an application crash at runtime.</li></ul>
+</li></ul>
+</li>
+
+<li><strong>Initialize the OCR object -</strong> Declare a <code>TextOCR</code>object. Use <code>CompletableFuture</code> to initialize the <code>TextOCR</code> object asynchronously with an <code>Executor</code> for concurrent processing.</li>
+
+<li><strong>Callback Handling -</strong> Use <code>thenAccept()</code> to assign the initialized <code>TextOCR</code> object to the <code>textocr</code> variable, enabling it for text detection tasks like barcodes and products in images.</li>
+</ol>
+
+<p>For more advanced inferencer options, refer to <a href="#inferenceroptions">Inferencer Options</a>. </p>
+
+<p>Processing an image
+After initialization, use one of the following methods to detect text on a given image:</p>
+
+<ul>
+<li><strong><a href="#detectwords">DetectWords</a> –</strong> The output is an array of Words.</li>
+
+<li><strong><a href="#detectparagraphs">DetectParagraphs</a> -</strong> The output is a hierarchical structure of Paragraphs. This function uses the grouping mechanism described in Grouping Options.</li>
 </ul>
 
-<p><strong>Output Parameters:</strong> A list of text detections, each with a list of bounding boxes outlining the detection and the text contained within.</p>
+<h4 id="samplecode" class="anchor"><a class="heading-anchor" href="#samplecode"><span></span></a>Sample Code</h4>
 
-<!-- 
-## Table of Contents
-- [Text OCR](#text-ocr)
-  - [Table of Contents](#table-of-contents)
-  - [Initialization](#initialization)
-  - [Usage](#usage)
-  - [Options](#options)
-    - [Available Options](#available-options)
-      - [Model Configuration](#model-configuration)
-      - [Inferencer Options](#inferencer-options)
-      - [Detection Parameters](#detection-parameters)
-      - [Decoding Options](#decoding-options)
-      - [Grouping Options](#grouping-options)
-      - [Tiling Options](#tiling-options)
-  - [APIs](TextOCR.md#apis) 
--->
+<pre class="prettyprint"><code>    import com.zebra.ai.vision.TextOCR;
 
-<h2 id="initialization" class="anchor"><a class="heading-anchor" href="#initialization"><span></span></a>Initialization</h2>
+    TextOCR.Settings settings = new TextOCR.Settings(model_file_path);
+
+    // Override the default model input size
+    settings.detectionInferencerOptions.defaultDims.width = 640;
+    settings.detectionInferencerOptions.defaultDims.height = 480;
+
+    // Initialize OCR object
+    TextOCR textocr = null;
+
+    //Initialize textocr
+    //settings – TextOCR.Settings object created above
+    //Executor – An executor thread in which the processing of API call happens, and the results are returned.
+    CompletableFuture&lt;TextOCR&gt; futureObject = getTextOCR(settings, executor);
+
+    //Use the futureObject to implement thenAccept() callback of CompletableFuture. 
+    futureObject.thenAccept (OCRInstance -&gt; { 
+        //Use the textocr object returned here for the detection of barcodes/Shelves/products 
+        textocr = OCRInstance; 
+    })
+</code></pre>
+
+<hr>
 
 <p>The <code>TextOCR</code> object is initialized via its configuration structure. Users can optionally override the default model input size (height and width) via <code>inferencerOptions</code>; see the examples below. Sizes should be expressed in powers of two (e.g., 640). Larger sizes improve accuracy for smaller text (further away) but increase inference time. Smaller sizes improve speed, but may decrease accuracy. Minimum and maximum dimensions can be set for processing varied image sizes. <strong>Note:</strong> Model input can only be overridden if <code>resizeDetectorToImage</code> is set to false in <a href="#detectionparameters">Detection Parameters</a>.</p>
 
