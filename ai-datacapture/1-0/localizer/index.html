@@ -243,7 +243,7 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>The <code>Localizer</code> class enables object detection within images, a process commonly referred to as localization. It processes input images and outputs a list of <a href="../class/bbox/">bounding boxes</a> that indicate the locations of detected objects or barcodes. This functionality is particularly beneficial for applications that require the identification and localization of specific objects within an image. The <code>Localizer</code> class can be configured using the <code>Settings</code> class, allowing model parameters to be specified and, if needed, overridden.</p>
+<p>The <code>Localizer</code> class enables object detection within images, a process commonly referred to as localization. It processes input images and outputs a list of <a href="../class/bbox/">bounding boxes</a> that indicate the locations of detected objects or barcodes. This functionality is particularly beneficial for applications that require the identification and localization of specific objects within an image. The <code>Localizer</code> class can be configured through the <a href="#localizersettings">Settings</a> class, allowing specification and modification of model parameters as needed.</p>
 
 <hr>
 
@@ -253,15 +253,23 @@
 
 <h3 id="barcodelocalizer" class="anchor"><a class="heading-anchor" href="#barcodelocalizer"><span></span></a>Barcode Localizer</h3>
 
-<p>The <strong><a href="../about/#localizer">Barcode Localizer</a></strong> detects barcodes in images. Supported barcode types are: linear barcode (e.g. UPC nad EAN), 2D barcode, Data Matrix, QR Code, Aztec, PDF417, DotCode, postal code, MaxiCode, Composite Code, Han Xin Code, MicroPDF417, Micro QR Code, GridMatrix, and ArUco. After detection, the <a href="../barcodedecoder/">Barcode Decoder</a> can be used to decode the barcodes. </p>
+<p>The <strong><a href="../about/#localizer">Barcode Localizer</a></strong> detects barcodes within images. It supported a wide range of barcode types, including: linear barcode (e.g., UPC nad EAN), Data Matrix, QR Code, Aztec, PDF417, DotCode, postal code, MaxiCode, Composite Code, Han Xin Code, MicroPDF417, Micro QR Code, GridMatrix, and ArUco. After detection, the <a href="../barcodedecoder/">Barcode Decoder</a> can be used to decode the barcodes. </p>
 
-<p>The input image size (height and width) can be changed during runtime initialization. The default input size is 640x640. The output is <a href="../class/bbox/">bounding boxes</a> for the detected barcodes.</p>
+<ul>
+<li><strong>Input image size:</strong> The dimensions (height and width) can be changed during runtime initialization. The default is 640x640. </li>
+
+<li><strong>Output:</strong> The model outputs <a href="../class/bbox/">bounding boxes</a> around detected barcodes.</li>
+</ul>
 
 <h3 id="shelflocalizer" class="anchor"><a class="heading-anchor" href="#shelflocalizer"><span></span></a>Shelf Localizer</h3>
 
 <p>The <strong><a href="../about/#localizer">Shelf Localizer</a></strong> model detects and identifies objects on retail shelves, including products, shelf labels, peg labels, and the shelves themselves. </p>
 
-<p>The input image size can be adjusted during initialization based on the proximity of the camera to the shelf. The default size is 832x832. The output is <a href="#boundingboxexplained">bounding boxes</a> for the detected objects on the shelf.</p>
+<ul>
+<li><strong>Input image size:</strong> The size can be adjusted during initialization based on the proximity of the camera to the shelf. The default size is 832x832 pixels. </li>
+
+<li><strong>Output:</strong> The model outputs <a href="#boundingboxexplained">bounding boxes</a> for the detected objects on the shelf.</li>
+</ul>
 
 <hr>
 
@@ -282,8 +290,8 @@
 
 <li><p><strong>Optional: Set model input dimensions -</strong> If needed, customize the model input height and width through <a href="../class/inferenceroptions/">inferencerOptions</a>:</p>
 
-<pre class="prettyprint"><code>settings.inferencerOptions.defaultDims.height = [your value]
-settings.inferencerOptions.defaultDims.width = [your value]
+<pre class="prettyprint"><code>settings.inferencerOptions.defaultDims.height = [your value];
+settings.inferencerOptions.defaultDims.width = [your value];
 </code></pre>
 
 <p>The input size should be multiples of powers of two (e.g., 640). Adjust these dimensions based on the camera resolution for optimal detection results. See <a href="#inputimageguidelines">Input Image Guidelines</a>.</p></li>
@@ -319,8 +327,7 @@ settings.inferencerOptions.defaultDims.width = [your value]
 
 <pre class="prettyprint"><code>    import com.zebra.ai.vision.Localizer;
 
-    // Initialize SDK by calling this API. 
-    // Context refers to application context object.
+    // Initialize SDK. Context refers to application context object.
     AIVisionSDK.getInstance(Context).init(); 
 
     String modelPath = "file_path/model.crypt";
@@ -332,7 +339,9 @@ settings.inferencerOptions.defaultDims.width = [your value]
     // uncomment the line below and comment out Barcode Detection above.
     // String modelName = Localizer.Settings.getModelName(Localizer.Settings.MODEL_TYPE_SHELF_LOCALIZER);
 
-    // Optional model input size parameters
+    Localizer.Settings settings = new Localizer(modelPath, modelName);
+
+    // Optional - set model input size
     settings.inferencerOptions.defaultDims.height = 640;
     settings.inferencerOptions.defaultDims.width = 640;
 
@@ -340,24 +349,26 @@ settings.inferencerOptions.defaultDims.width = [your value]
     Localizer localizer = null;
 
     // Initialize Localizer and load the model asynchronously
-    // settings – Localizer.Settings object created above
-    // Executor –  An executor thread for processing API calls and returning results.  
+    // settings = Localizer.Settings object created above
+    // Executor = An executor thread for processing API calls and returning results
     CompletableFuture&lt;Localizer&gt; futureObject = Localizer.getLocalizer(settings,executor);
 
-    // Use the futureObject to implement the thenAccept() callback of CompletableFuture.
+    // Use the futureObject to implement the thenAccept() callback of CompletableFuture
     futureObject.thenAccept ( localizerInstance -&gt; {
         // Use the localizer object returned here for detecting barcodes/shelves/products
         localizer = localizerInstance;
-    })
+    });
 </code></pre>
 
-<h3 id="step2detection" class="anchor"><a class="heading-anchor" href="#step2detection"><span></span></a>Step 2: Detection</h3>
+<h3 id="step2captureimage" class="anchor"><a class="heading-anchor" href="#step2captureimage"><span></span></a>Step 2: Capture Image</h3>
 
-<p>When the image is ready, follow these steps to prepare it for object detection:</p>
+<p>Capture the image and ensure the image is in the form of a <code>Bitmap</code>.</p>
+
+<h3 id="step3detectobject" class="anchor"><a class="heading-anchor" href="#step3detectobject"><span></span></a>Step 3: Detect Object</h3>
+
+<p>To detect the object in the image:</p>
 
 <ol>
-<li><strong>Prepare for image detection -</strong> Ensure the image is in the form of a <code>Bitmap</code>.</li>
-
 <li><strong>Set up an Executor -</strong> Have an <code>Executor</code> ready to handle the asynchronous processing of the detection call. This is crucial for managing the execution of tasks without blocking the main application thread.</li>
 
 <li><strong>Initialize the Localizer and detect -</strong> Use an initialized <code>Localizer</code> object to call the <a href="#detectbitmapbmpexecutorexecutor">detect</a> method. Pass in the Bitmap image and the executor to perform the detection of barcodes or shelf items. The output is a collection of <a href="../class/bbox/">bounding boxes</a> for each detected object.</li>
@@ -367,12 +378,12 @@ settings.inferencerOptions.defaultDims.width = [your value]
 
 <h4 id="samplecode-1" class="anchor"><a class="heading-anchor" href="#samplecode-1"><span></span></a>Sample Code</h4>
 
-<pre class="prettyprint"><code>    // 
+<pre class="prettyprint"><code>    // Perform the detection
     CompletableFuture &lt;BBox[]&gt; resultFutureObject = localizer.detect(Bitmap image, Executor executor); 
 
     resultFutureObject.thenAccept ( bboxes -&gt; {
-        // Process the returned array of bounding boxes.
-    }
+        // Process the returned array of bounding boxes
+    });
 
     // Release resources
     Localizer.dispose();
@@ -380,7 +391,7 @@ settings.inferencerOptions.defaultDims.width = [your value]
 
 <hr>
 
-<h2 id="methods" class="anchor"><a class="heading-anchor" href="#methods"><span></span></a>Methods</h2>
+<h2 id="apis" class="anchor"><a class="heading-anchor" href="#apis"><span></span></a>APIs</h2>
 
 <h3 id="getlocalizersettingssettingsexecutorexecutor" class="anchor"><a class="heading-anchor" href="#getlocalizersettingssettingsexecutorexecutor"><span></span></a>getLocalizer(Settings settings, Executor executor)</h3>
 

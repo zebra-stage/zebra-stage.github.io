@@ -255,7 +255,7 @@
 
 <p>Although these stages are streamlined for the end user, developers can fine-tune them using parameters outlined in this guide.</p>
 
-<p>The initial instructions in this guide provide the basic setup of OCR. A comprehensive list of OCR settings, along with their effects on detection and recognition, is provided in the subsequent sections. For atypical use cases, developers are encouraged to experiment with and adjust these parameters.</p>
+<p>The initial instructions in this guide provide the basic setup of TextOCR. A comprehensive list of OCR settings, along with their effects on detection and recognition, is provided in the subsequent sections. For atypical use cases, developers are encouraged to experiment with and adjust these parameters. </p><p style="color:red;">UPDATE NEEDED</p><p></p>
 
 <hr>
 
@@ -273,7 +273,7 @@
 <h3 id="inputoutput" class="anchor"><a class="heading-anchor" href="#inputoutput"><span></span></a>Input/Output</h3>
 
 <p><strong>Input Parameters:</strong> The default model input size is 640x640 pixels, but this can be adjusted during runtime initialization. 
-<strong>Output Parameters:</strong> The output consists of a list of text detections, each accompanied by a list of bounding boxes that define the location and content of the detected text.</p>
+<strong>Output Parameters:</strong> The output consists of a list of text detections, each accompanied by a list of <a href="../class/bbox/">bounding boxes</a> that define the location and content of the detected text.</p>
 
 <hr>
 
@@ -284,42 +284,32 @@
 <p>Set up and initialize a TextOCR object:</p>
 
 <ol>
-<li><strong>Import the TextOCR class</strong> using <code>com.zebra.ai.vision.TextOCR</code>.</li>
+<li><p><strong>Import the TextOCR class</strong> using <code>com.zebra.ai.vision.TextOCR</code>.</p></li>
 
-<li><strong>Configure OCR Settings:</strong> 
+<li><p><strong>Configure OCR Settings:</strong> </p>
 
+<p></p><ul>
+<li>Set <code>model_file_path</code> with the fully qualified file path to the .crypt file containing the OCR model. </li></ul><p></p>
+
+<p></p></li><li>Create a <code>TextOCR.Settings</code> object with the specified file path.</li><p></p>
+
+<li><p><strong>Optional: Set model input dimensions:</strong> If needed, customize the model input dimensions (height and width). These should be multiples of 32 (e.g., 640). </p>
+
+<pre class="prettyprint"><code>settings.detectionInferencerOptions.defaultDims.width = [your value];
+settings.detectionInferencerOptions.defaultDims.height = [your value];
+</code></pre>
 
 <ul>
-<li>Set <code>model_file_path</code> with the fully qualified file path to the .crypt file from which the OCR model is read. </li>
+<li><strong>Smaller Input Sizes -</strong> Reduce processing time and increase speed, but may decrease accuracy. Ideal for larger or closer text.</li>
 
-<li>Create a <code>TextOCR.Settings</code> object with this specified file path.</li>
+<li><strong>Larger Input Sizes -</strong> Improve accuracy for smaller or more distant text, but increase inference time. An input size that is too large may cause out-of-memory errors and potentially cause an application crash at run-time.</li></ul></li>
 
-<li>(Optional) Override the default input size - The width and height sizes should be multiples of 32 (e.g., 640). 
+<li><p><strong>Initialize the OCR object -</strong> Declare a <code>TextOCR</code> object. Use <code>CompletableFuture</code> to initialize it asynchronously with an <code>Executor</code> for concurrent processing.</p></li>
 
-
-<ul>
-<li><strong>Smaller Input Sizes -</strong> Reduces processing time, improving speed, but may decrease accuracy. This is better suited for larger or closer text.</li>
-
-<li><strong>Larger Input Sizes -</strong> Improves accuracy for smaller or more distant text, but results to increased inference time. An input size that is too large may cause an out-of-memory situation and crash your application at run-time.<br>
-<i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>Caution:</strong> Selecting an input size that is too large may lead to out-of-memory errors and cause an application crash at runtime.</li></ul>
-</li></ul>
-</li>
-
-<li><strong>Initialize the OCR object -</strong> Declare a <code>TextOCR</code>object. Use <code>CompletableFuture</code> to initialize the <code>TextOCR</code> object asynchronously with an <code>Executor</code> for concurrent processing.</li>
-
-<li><strong>Callback Handling -</strong> Use <code>thenAccept()</code> to assign the initialized <code>TextOCR</code> object to the <code>textocr</code> variable, enabling it for text detection tasks like barcodes and products in images.</li>
+<li><p><strong>Callback Handling -</strong> Use <code>thenAccept()</code> to assign the initialized <code>TextOCR</code> object to the <code>textocr</code> variable, enabling it for text detection tasks like barcodes and products in images.</p></li>
 </ol>
 
 <p>For more advanced inferencer options, refer to <a href="#inferenceroptions">Inferencer Options</a>. </p>
-
-<p>Processing an image
-After initialization, use one of the following methods to detect text on a given image:</p>
-
-<ul>
-<li><strong><a href="#detectwords">DetectWords</a> –</strong> The output is an array of Words.</li>
-
-<li><strong><a href="#detectparagraphs">DetectParagraphs</a> -</strong> The output is a hierarchical structure of Paragraphs. This function uses the grouping mechanism described in Grouping Options.</li>
-</ul>
 
 <h4 id="samplecode" class="anchor"><a class="heading-anchor" href="#samplecode"><span></span></a>Sample Code</h4>
 
@@ -327,325 +317,766 @@ After initialization, use one of the following methods to detect text on a given
 
     TextOCR.Settings settings = new TextOCR.Settings(model_file_path);
 
-    // Override the default model input size
+    // Optional: Override the default model input size
     settings.detectionInferencerOptions.defaultDims.width = 640;
     settings.detectionInferencerOptions.defaultDims.height = 480;
 
     // Initialize OCR object
     TextOCR textocr = null;
 
-    //Initialize textocr
-    //settings – TextOCR.Settings object created above
-    //Executor – An executor thread in which the processing of API call happens, and the results are returned.
+    // Initialize textocr
+    // settings = TextOCR.Settings object created above
+    // Executor = An executor thread for processing API calls and returning results
     CompletableFuture&lt;TextOCR&gt; futureObject = getTextOCR(settings, executor);
 
-    //Use the futureObject to implement thenAccept() callback of CompletableFuture. 
+    // Use the futureObject to implement the thenAccept() callback of CompletableFuture
     futureObject.thenAccept (OCRInstance -&gt; { 
-        //Use the textocr object returned here for the detection of barcodes/Shelves/products 
+        // Use the Textocr object returned here for detecting barcodes/Shelves/products 
         textocr = OCRInstance; 
-    })
+    });
+</code></pre>
+
+<h3 id="step2captureimage" class="anchor"><a class="heading-anchor" href="#step2captureimage"><span></span></a>Step 2: Capture Image</h3>
+
+<p>Capture the image and ensure the image is in the form of a Bitmap.</p>
+
+<h3 id="step3detecttext" class="anchor"><a class="heading-anchor" href="#step3detecttext"><span></span></a>Step 3: Detect Text</h3>
+
+<p>Use one of the following methods to detect text within an image, based on generic text, words or paragraphs:</p>
+
+<ul>
+<li><p style="color:red;">UPDATE NEEDED</p></li>
+
+<li><strong><a href="#detectwords">DetectWords</a> –</strong> Outputs an array of words. A word is a discrete unit of text identified within an image, typically separated by spaces or punctuation.</li>
+
+<li><strong><a href="#detectparagraphs">DetectParagraphs</a> -</strong>  Outputs a hierarchical structure of paragraphs. It employs a grouping mechanism as outlined in the <a href="#ADD LINK">Grouper Settings</a>. A paragraph consists of a collection of words, where words on the same line are grouped together. These lines are further organized into paragraphs. The entire process is parameterized, with relevant parameters detailed in the Grouper Settings.</li>
+</ul>
+
+<p style="color:red;">UPDATE NEEDED - LINK</p>
+
+<h4 id="samplecode-1" class="anchor"><a class="heading-anchor" href="#samplecode-1"><span></span></a>Sample Code</h4>
+
+<p>To detect generic text:</p>
+
+<pre class="prettyprint"><code>    Bitmap image = ... // Your bitmap image here       
+
+    // Initialize executor 
+    Executor executor = Executors.newFixedThreadPool(1); 
+
+    // Input parameters include a bitmap image and an executor thread object for performing detections
+    CompletableFuture&lt;OCRResult[]&gt; futureResult = textocr.detect(bitmap,executor);  
+
+    futureResult.thenAccept (ocrResults -&gt; {    
+        // Process the returned output that contains bounding boxes and text within
+    }); 
+
+    // Once finished with the textOCR object, dispose of it to release resources and memory used during detection. 
+    textOCR.dispose(); 
+</code></pre>
+
+<p>To detect words:</p>
+
+<pre class="prettyprint"><code>    Bitmap image = ... // Your bitmap image here 
+
+    // Initialize executor 
+    Executor executor = Executors.newFixedThreadPool(1); 
+
+    // Input parameters include a bitmap image and an executor thread object for performing detections
+    CompletableFuture&lt;Word[]&gt; futureWords = textocr.detectWords(bitmap,executor); 
+
+    futureWords.thenAccept (words -&gt; {   
+        // Process the returned array of detected words   
+    }); 
+
+    // Once finished with the textOCR object, dispose of it to release resources and memory used during detection
+    textOCR.dispose(); 
+</code></pre>
+
+<p>To detect paragraphs:</p>
+
+<pre class="prettyprint"><code>    Bitmap image = ... // Your bitmap image here 
+
+    // Initialize executor 
+    Executor executor = Executors.newFixedThreadPool(1); 
+
+    // Input parameters include a bitmap image and an executor thread object for performing detection
+    CompletableFuture&lt;TextParagraph[]&gt; futureTextParagraph = textOCR.detectParagraphs(bitmap,executor); 
+
+    futureTextParagraph.thenAccept (paragraphs -&gt; {   
+        // Process the returned array of detected paragraphs.   
+    }); 
+
+    // Once finished with the textOCR object, dispose of it to release resources and memory used during detection
+    textOCR.dispose(); 
 </code></pre>
 
 <hr>
 
-<p>The <code>TextOCR</code> object is initialized via its configuration structure. Users can optionally override the default model input size (height and width) via <code>inferencerOptions</code>; see the examples below. Sizes should be expressed in powers of two (e.g., 640). Larger sizes improve accuracy for smaller text (further away) but increase inference time. Smaller sizes improve speed, but may decrease accuracy. Minimum and maximum dimensions can be set for processing varied image sizes. <strong>Note:</strong> Model input can only be overridden if <code>resizeDetectorToImage</code> is set to false in <a href="#detectionparameters">Detection Parameters</a>.</p>
+<h2 id="apis" class="anchor"><a class="heading-anchor" href="#apis"><span></span></a>APIs</h2>
 
-<p><strong>For ONNX models:</strong> Specifying the default height and width is mandatory. If image sizes are outside the min/max range, detection fails. If not explicitly set, the min/max dimensions are set to defaults. <strong>Note:</strong> Excessive input size may cause out-of-memory error and crash the application.</p>
+<h3 id="textocrsettingssettings" class="anchor"><a class="heading-anchor" href="#textocrsettingssettings"><span></span></a>TextOCR (Settings settings)</h3>
 
-<p>For advanced inferencer options, refer to <a href="../class/inferenceroptions/">Inferencer Options</a>. Additional OCR options are available in <a href="#options">Options</a>.</p>
-
-<pre class="prettyprint"><code>    import com.zebra.AI.Vision.TextOCR;
-    &nbsp;
-    TextOCR.Settings settings = new TextOCR.Settings(MODEL_ARCHIVE_FILEPATH);
-    settings.detectionInferencerOptions.defaultDims.width = 640;
-    settings.detectionInferencerOptions.defaultDims.height = 480;
-    settings.detectionInferencerOptions.maxDims.width = 1920;
-    settings.detectionInferencerOptions.maxDims.height = 1920;
-    &nbsp;
-    // Initialize OCR object
-    TextOCR textocr = new TextOCR(settings);
+<pre class="prettyprint"><code>    TextOCR.TextOCR(Settings settings) throws IOException 
 </code></pre>
 
-<p><code>MODEL_ARCHIVE_FILEPATH</code> represents the fully qualified file path to the .tar or .crypt archive from which the OCR model is read.</p>
+<p><strong>Description:</strong> Initializes the OCR engine with the specified settings, allowing subsequent text detection and analysis on image inputs. It checks for the necessary model file and verifies the integrity of the archive. If issues are detected, appropriate exceptions are thrown. </p>
 
-<h2 id="usage" class="anchor"><a class="heading-anchor" href="#usage"><span></span></a>Usage</h2>
-
-<p>Detect text in an image, outputting words or paragraphs. A paragraph is a collection of words with additional hierarchical structure, where words on the same line are grouped into lines, and lines into paragraphs. This process is parameterized, with relevant parameters described in <a href="#options">Options</a>.</p>
-
-<p>Sample API calls to retrieve both words and paragraphs:</p>
-
-<pre class="prettyprint"><code>    CompletableFuture&lt;Word[]&gt; words = textocr.detectWords(IMAGE); // com.zebra.AI.Vision.Word[]
-    CompletableFuture&lt;TextParagraph[]&gt; paragraphs = textocr.detectParagraphs(IMAGE); // com.zebra.AI.Vision.TextParagraph[]
-</code></pre>
-
-<p><code>IMAGE</code> represents the bitmap image.</p>
-
-<h3 id="definitions" class="anchor"><a class="heading-anchor" href="#definitions"><span></span></a>Definitions</h3>
-
-<p>Definitions for key terms:</p>
+<p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>Bounding box -</strong> A list of points forming a rectangle, which may not be perpendicular to the bottom and sides of the screen. More than 4 points can be present if the rectangle is clipped at the edges of the screen. Each bounding box includes:
-
-
-<ul>
-<li><strong>Coordinates of the bounding rectangle -</strong> Defines the position and size of the detected object.</li>
-
-<li><strong>Probability (Confidence) -</strong> Indicates the certainty of the detection.</li>
-
-<li><strong>Class -</strong> Specifies the type of object detected.</li></ul>
-</li>
-
-<li><strong>Paragraph -</strong> Contains a complex bounding box and an array of lines.</li>
-
-<li><strong>Line -</strong> Contains a complex bounding box and an array of words.</li>
-
-<li><strong>Word -</strong> Contains a complex bounding box and an array of decodes.</li>
-
-<li><strong>Decode -</strong> Contains decoded text strings (referred to as content) and their confidence.</li>
+<li><strong>settings TextOCR.Settings -</strong> An instance of the <code>Settings</code> class containing configuration options for the OCR engine, such as model path, language preferences, and performance settings. </li>
 </ul>
 
-<h2 id="options" class="anchor"><a class="heading-anchor" href="#options"><span></span></a>Options</h2>
+<p><strong>Return Value:</strong> <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a>&lt;TextOCR&gt; </p>
 
-<p>The <code>Options</code> structure provides configuration settings for the <code>TextOCR</code> library, containing a detection and recognition stage. These settings customize OCR behavior.</p>
+<p><strong>Exceptions:</strong></p>
 
-<h3 id="modelconfiguration" class="anchor"><a class="heading-anchor" href="#modelconfiguration"><span></span></a>Model Configuration</h3>
+<ul>
+<li><strong>IOException -</strong> Thrown if the archive is corrupted. </li>
+</ul>
+
+<hr>
+
+<h3 id="detectbitmapsrcimgexecutorexecutor" class="anchor"><a class="heading-anchor" href="#detectbitmapsrcimgexecutorexecutor"><span></span></a>detect (Bitmap srcImg, Executor executor)</h3>
+
+<pre class="prettyprint"><code>    CompletableFuture&lt;OCRResult[]&gt; detect (Bitmap srcImg, Executor executor) throws InvalidInputException, IllegalStateException 
+</code></pre>
+
+<p><strong>Description:</strong> Performs Optical Character Recognition (OCR) on the provided Bitmap image, using the specified executor for asynchronous execution. </p>
+
+<p><strong>Parameters:</strong> </p>
+
+<ul>
+<li><strong>srcImg (Bitmap srcImg) -</strong> The Bitmap image to perform OCR on. </li>
+
+<li><strong>executor -</strong> Manages asynchronous task execution. </li>
+</ul>
+
+<p><strong>Return Value:</strong> A <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a> that resolves to an array of <code>OCRResult</code>, each containing <a href="../class/bbox/">bounding boxes</a> and recognized text. </p>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>InvalidInputException -</strong> Thrown if the Bitmap is null. </li>
+
+<li><strong>IllegalStateException -</strong> Thrown if the OCR engine is in an invalid state for detection. </li>
+</ul>
+
+<hr>
+
+<h3 id="detectwordsbitmapsrcimgexecutorexecutor" class="anchor"><a class="heading-anchor" href="#detectwordsbitmapsrcimgexecutorexecutor"><span></span></a>detectWords (Bitmap srcImg, Executor executor)</h3>
+
+<pre class="prettyprint"><code>    CompletableFuture&lt;Word[]&gt; TextOCR.detectWords (Bitmap srcImg, Executor executor) throws InvalidInputException, IllegalStateException 
+</code></pre>
+
+<p><strong>Description:</strong> Detects individual words in the provided Bitmap image using the specified executor for asynchronous execution. </p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>srcImg (Bitmap srcImg) -</strong> The image to analyze for word detection. </li>
+
+<li><strong>Executor -</strong> Manages asynchronous task execution. </li>
+</ul>
+
+<p><strong>Return Value:</strong> A <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a> that resolves to an array of Word objects, each containing <a href="../class/bbox/">bounding boxes</a> and possible text decodes. </p>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>InvalidInputException -</strong> Thrown if the Bitmap is null. </li>
+
+<li><strong>IllegalStateException -</strong> Thrown if the OCR engine is in an invalid state for performing word detection. </li>
+</ul>
+
+<hr>
+
+<h3 id="detectparagraphsbitmapsrcimgexecutorexecutor" class="anchor"><a class="heading-anchor" href="#detectparagraphsbitmapsrcimgexecutorexecutor"><span></span></a>detectParagraphs (Bitmap srcImg, Executor executor)</h3>
+
+<pre class="prettyprint"><code>    CompletableFuture&lt;TextParagraph[]&gt; detectParagraphs(Bitmap srcImg, Executor executor) 
+</code></pre>
+
+<p><strong>Description:</strong> Detects paragraphs in the provided Bitmap image using the specified executor for asynchronous execution. </p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>srcImg (Bitmap srcImg) -</strong> The image to analyze for paragraph detection. </li>
+
+<li><strong>executor -</strong> Manages asynchronous task execution. </li>
+</ul>
+
+<p><strong>Return Value:</strong> A <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a> that resolves to an array of TextParagraph objects, representing detected paragraphs. </p>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>InvalidInputException -</strong> Thrown if the Bitmap is null. </li>
+
+<li><strong>IllegalStateException -</strong> Thrown if the OCR engine is in an invalid state for performing paragraph detection. </li>
+</ul>
+
+<hr>
+
+<h3 id="gettextocrsettingssettingsexecutorexecutor" class="anchor"><a class="heading-anchor" href="#gettextocrsettingssettingsexecutorexecutor"><span></span></a>getTextOCR (Settings settings, Executor executor)</h3>
+
+<pre class="prettyprint"><code>    CompletableFuture&lt;TextOCR&gt; getTextOCR(Settings settings, Executor executor) 
+</code></pre>
+
+<p><strong>Description:</strong> Asynchronously initializes and retrieves a TextOCR instance using the specified settings and executor. </p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>Settings -</strong> An instance of <code>TextOCR.Settings</code> containing configuration options for the OCR engine. </li>
+
+<li><strong>executor -</strong> Manages asynchronous task execution. </li>
+</ul>
+
+<p><strong>Return Value:</strong> A <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a> that resolves to an initialized TextOCR instance. </p>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>InvalidInputException -</strong> Thrown if the settings are invalid or null. </li>
+
+<li><strong>RuntimeException -</strong> Thrown if an unexpected error occurs during initialization. </li>
+</ul>
+
+<hr>
+
+<h3 id="dispose" class="anchor"><a class="heading-anchor" href="#dispose"><span></span></a>Dispose()</h3>
+
+<pre class="prettyprint"><code>    void dispose() 
+</code></pre>
+
+<p><strong>Description:</strong> Releases all internal resources used by the TextOCR object. This function must be called manually to free up resources. </p>
+
+<hr>
+
+<h2 id="textocrsettings" class="anchor"><a class="heading-anchor" href="#textocrsettings"><span></span></a>TextOCR.Settings</h2>
+
+<p>The <code>Settings</code> class is a nested class within the <code>TextOCR</code> class, designed to configure various parameters required for performing Optical Character Recognition (OCR). It allows for fine-tuning of the OCR process through settings related to detection, recognition, and decoding. </p>
+
+<hr>
+
+<h2 id="constructors" class="anchor"><a class="heading-anchor" href="#constructors"><span></span></a>Constructors</h2>
+
+<h3 id="settings" class="anchor"><a class="heading-anchor" href="#settings"><span></span></a>Settings()</h3>
+
+<pre class="prettyprint"><code>    TextOCR.Settings settings = new TextOCR.Settings();
+</code></pre>
+
+<p><strong>Description:</strong> Constructs a new <code>Settings</code> object with default values for all parameters.</p>
+
+<hr>
+
+<h3 id="settingsstringresource_filename" class="anchor"><a class="heading-anchor" href="#settingsstringresource_filename"><span></span></a>Settings(String resource_filename)</h3>
+
+<pre class="prettyprint"><code>    TextOCR.Settings settings = new TextOCR.Settings(String resource_filename);
+</code></pre>
+
+<p><strong>Description:</strong> Constructs a new <code>Settings</code> object with a specified resource file path.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>resource_filename -</strong> The path to the resource file containing the OCR model.</li>
+</ul>
+
+<hr>
+
+<h3 id="settingsstringresource_filenamestringdetector_model_namestringrecognition_model_name" class="anchor"><a class="heading-anchor" href="#settingsstringresource_filenamestringdetector_model_namestringrecognition_model_name"><span></span></a>Settings(String resource_filename, String detector_model_name, String recognition_model_name)</h3>
+
+<pre class="prettyprint"><code>    TextOCR.Settings settings = new TextOCR.Settings(String resource_filename, String detector_model_name, String recognition_model_name);
+</code></pre>
+
+<p><strong>Description:</strong> Constructs a new <code>Settings</code> object with a specified resource file, detector model name, and recognition model name.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>resource_filename -</strong> Path to the resource file containing the OCR model.</li>
+
+<li><strong>detector_model_name -</strong> Name of the detector model in the archive file.</li>
+
+<li><strong>recognition_model_name -</strong> Name of the recognition model in the archive file.</li>
+</ul>
+
+<hr>
+
+<h2 id="recognitionparametersettings" class="anchor"><a class="heading-anchor" href="#recognitionparametersettings"><span></span></a>Recognition Parameter Settings</h2>
+
+<h3 id="decodingmaxwordcombinations" class="anchor"><a class="heading-anchor" href="#decodingmaxwordcombinations"><span></span></a>decodingMaxWordCombinations</h3>
+
+<pre class="prettyprint"><code>    int TextOCR.Settings.decodingMaxWordCombinations
+</code></pre>
+
+<p><strong>Description:</strong> Specifies the maximum number of possible text decodes returned in the output. This parameter helps balance the quantity and confidence of text outputs. It is applicable for the following scenarios:</p>
+
+<ul>
+<li><strong>Detailed Text Analysis -</strong> Increase this parameter for applications that require a thorough analysis of text.</li>
+
+<li><strong>Data Extraction -</strong> Adjust this parameter to optimize the extraction of comprehensive data from documents with complex or ambiguous text.</li>
+</ul>
+
+<p><strong>Tuning effect:</strong> Increasing this number returns more decodes, but potentially with lower confidence.</p>
+
+<p><strong>Default:</strong> 10</p>
+
+<p><strong>Valid range:</strong> [1, max(int)]</p>
+
+<hr>
+
+<h3 id="decodingtotalprobthreshold" class="anchor"><a class="heading-anchor" href="#decodingtotalprobthreshold"><span></span></a>decodingTotalProbThreshold</h3>
+
+<pre class="prettyprint"><code>    float TextOCR.Settings.decodingTotalProbThreshold
+</code></pre>
+
+<p><strong>Description:</strong> Sets the minimum cumulative confidence score required for character decodes to be considered valid. This is crucial in the Total decoding strategy of the OCR recognition process, balancing accuracy and coverage in text recognition. If this threshold is not reached, no high-confidence decode exists, and a placeholder (�) appears in the output.</p><p style="color:red;">UPDATE NEEDED - char</p> This parameter is relevant in the following scenarios:<p></p>
+
+<ul>
+<li><strong>Improving Decode Coverage -</strong> Lower the threshold in scenarios where critical text characters are missing to capture more potential decodes.</li>
+
+<li><strong>Complex Document Analysis -</strong> Apply this setting in documents with ambiguous or low-quality text to ensure more comprehensive character recognition.</li>
+
+<li><strong>Adaptive Recognition -</strong> Adjust dynamically based on the quality and complexity of input documents to optimize OCR performance for specific needs.</li>
+</ul>
+
+<p><strong>Tuning effect:</strong> Lowering this value may help if many characters are not decoded (indicated by multiple � characters), . </p>
+
+<p style="color:red;">UPDATE NEEDED - char</p>
+
+<p><strong>Default:</strong> 0.9f</p>
+
+<p><strong>Valid range:</strong> [0.0f, 1.0f]</p>
+
+<hr>
+
+<h3 id="decodingtopkignorecutoff" class="anchor"><a class="heading-anchor" href="#decodingtopkignorecutoff"><span></span></a>decodingTopkIgnoreCutoff</h3>
+
+<pre class="prettyprint"><code>    int TextOCR.Settings.decodingTopkIgnoreCutoff
+</code></pre>
+
+<p><strong>Description:</strong> Sets the maximum number of decodes considered for each character before calculating the cumulative probability, impacting the accuracy and completeness of text recognition. It is used specifically within the Total decoding strategy of the OCR recognition process. This parameter is applicable for the following scenarios:</p>
+
+<ul>
+<li><strong>Complex Text Recognition -</strong> Increase this parameter for documents with complex or ambiguous text where capturing all character variations is crucial.</li>
+
+<li><strong>Improving Character Accuracy -</strong> Use this setting in scenarios where critical text components are consistently missing, ensuring thorough character analysis.</li>
+
+<li><strong>Adaptive Text Processing -</strong> Adjust dynamically based on the complexity and quality of input text to optimize OCR performance.</li>
+</ul>
+
+<p><strong>Tuning effect:</strong> Generally, keep this at the default value. If the expected character does not appear in the OCR output, increasing this value allows for more less confident decodes.</p>
+
+<p><strong>Default:</strong> 4</p>
+
+<p><strong>Valid range:</strong> [1, max(int)]</p>
+
+<hr>
+
+<h3 id="samplecode-2" class="anchor"><a class="heading-anchor" href="#samplecode-2"><span></span></a>Sample Code</h3>
+
+<p>Sample code demonstrating use of Recognition Parameters:</p>
 
 <ol>
-<li><strong>modelFileLocator</strong>
+<li><p><strong>Initialize Settings:</strong> Configure the OCR settings, including the model path and additional parameters such as <code>heatmapThreshold</code> and <code>tiling</code>.</p></li>
 
+<li><p><strong>Create TextOCR Instance:</strong> Use an executor to initialize the <code>TextOCR</code> instance asynchronously with the configured settings.</p></li>
 
-<ul>
-<li><strong>Description</strong>: Location of the file containing resources for the models and meta values.</li>
+<li><p><strong>Load Bitmap Image:</strong> Prepare the bitmap image that you want to analyze using OCR.</p></li>
 
-<li><strong>Type</strong>: <code>FileLocator</code></li></ul>
-</li>
+<li><p><strong>Perform OCR:</strong> Invoke the <code>detect</code> method on the <code>TextOCR</code> instance to analyze the bitmap image, managing the asynchronous processing with the executor.</p></li>
 
-<li><strong>detectionModelName</strong>
+<li><p><strong>Process OCR Results:</strong> Handle the results, which include bounding boxes and recognized text.</p></li>
 
+<li><p><strong>Dispose Resources:</strong> After completing OCR operations, call the <code>dispose</code> method on the <code>TextOCR</code> instance to release resources and prevent memory leaks.</p>
 
-<ul>
-<li><strong>Description</strong>: Name of the detection model in the compressed file.</li>
+<pre class="prettyprint"><code>import com.zebra.ai.vision.TextOCR;
+import com.zebra.ai.vision.TextOCR.Settings;
+import android.graphics.Bitmap;
 
-<li><strong>Type</strong>: <code>string</code></li>
+// Initialize settings 
+TextOCR.Settings textOCRSettings = new TextOCR.Settings ("path_to_model/text_ocr_snpe_tar.crypt");            
+textOCRSettings.heatmapThreshold = 0.5f;
+textOCRSettings.decodingTotalProbThreshold = 0.9f;
+textOCRSettings.tiling.enable = true;
 
-<li><strong>Default</strong>: <code>"det"</code></li></ul>
-</li>
+// Instantiate TextOCR with the configured settings
+// settings = TextOCR.Settings object created above 
+// Executor = An executor thread for processing API calls and returning results
 
-<li><strong>recognitionModelName</strong>
+// Initialize executor
+Executor executor = Executors.newFixedThreadPool(1);
 
+CompletableFuture&lt;TextOCR&gt; futureObject = getTextOCR(textOCRSettings, executor);
 
-<ul>
-<li><strong>Description</strong>: Name of the recognition model in the compressed file.</li>
+// Use the futureObject to implement thenAccept() callback of CompletableFuture.  
+futureObject.thenAccept (OCRInstance -&gt; {  
+    // Use the textocr object returned here detecting barcodes, shelves, or products  
+    textocr = OCRInstance;  
+});
 
-<li><strong>Type</strong>: <code>string</code></li>
+// Load your Bitmap image
+Bitmap image = ...; 
 
-<li><strong>Default</strong>: <code>"rec"</code></li></ul>
-</li>
+// Perform OCR
+CompletableFuture&lt;OCRResult[]&gt; futureResult = textocr.detect(bitmap,executor);  
+futureResult.thenAccept (ocrResults -&gt; {    
+    // Process the returned output that contains bounding boxes and recognized text
+});
+
+// Dispose resources
+// Once done using the textOCR object, dispose it to release resources and memory used for detection.  
+textOCR.dispose()
+</code></pre></li>
 </ol>
 
-<h3 id="inferenceroptions" class="anchor"><a class="heading-anchor" href="#inferenceroptions"><span></span></a>Inferencer Options</h3>
+<hr>
 
-<p>Advanced options for inferencer can be found in <a href="../class/inferenceroptions/">inferencer options</a>.</p>
+<h2 id="detectionparametersettings" class="anchor"><a class="heading-anchor" href="#detectionparametersettings"><span></span></a>Detection Parameter Settings</h2>
+
+<h3 id="detectionmodelname" class="anchor"><a class="heading-anchor" href="#detectionmodelname"><span></span></a>detectionModelName</h3>
+
+<pre class="prettyprint"><code>    TextOCR.Settings.detectionModelName
+</code></pre>
+
+<p><strong>Description:</strong> Name of the detector model within the OCR resource archive.</p>
+
+<hr>
+
+<h3 id="flip" class="anchor"><a class="heading-anchor" href="#flip"><span></span></a>flip</h3>
+
+<pre class="prettyprint"><code>    boolean TextOCR.Settings.flip
+</code></pre>
+
+<p><strong>Description:</strong> If set to true, performs recognition twice - once in the regular orientation and once rotated by 180 degrees.</p>
+
+<hr>
+
+<h3 id="recognitionmodelname" class="anchor"><a class="heading-anchor" href="#recognitionmodelname"><span></span></a>recognitionModelName</h3>
+
+<pre class="prettyprint"><code>    TextOCR.Settings.recognitionModelName
+</code></pre>
+
+<p><strong>Description:</strong> Name of the recognition model within the OCR resource archive.</p>
+
+<hr>
+
+<h3 id="resourcename" class="anchor"><a class="heading-anchor" href="#resourcename"><span></span></a>resourceName</h3>
+
+<pre class="prettyprint"><code>    TextOCR.Settings.resourceName
+</code></pre>
+
+<p><strong>Description:</strong> File path to the OCR resources, including models.</p>
+
+<hr>
+
+<h3 id="detectioninferenceroptions" class="anchor"><a class="heading-anchor" href="#detectioninferenceroptions"><span></span></a>detectionInferencerOptions</h3>
+
+<pre class="prettyprint"><code>    InferencerOptions TextOCR.Settings.detectionInferencerOptions = new InferencerOptions()
+</code></pre>
+
+<p><strong>Description:</strong> Allows developers to specify a different input shape for the detection stage inferencer.</p>
+
+<hr>
+
+<h3 id="recognitioninferenceroptions" class="anchor"><a class="heading-anchor" href="#recognitioninferenceroptions"><span></span></a>recognitionInferencerOptions</h3>
+
+<pre class="prettyprint"><code>    InferencerOptions TextOCR.Settings.recognitionInferencerOptions = new InferencerOptions()
+</code></pre>
+
+<p><strong>Description:</strong> Typically remains unchanged as the input size is fixed for the recognition model. Developers can adjust recognition results using parameters in the Recognition Options section. TensorRT users might use the caching mechanism available here.
+<strong>Note:</strong> These options should not be changed by the developer. </p><p style="color:red;">UPDATE NEEDED: Recognition Options? TensorRT?</p><p></p>
+
+<hr>
+
+<h3 id="heatmapthreshold" class="anchor"><a class="heading-anchor" href="#heatmapthreshold"><span></span></a>heatmapThreshold</h3>
+
+<pre class="prettyprint"><code>    float TextOCR.Settings.heatmapThreshold
+</code></pre>
+
+<p><strong>Description:</strong> Internally, the detector model creates a grayscale image (heatmap) that represents text confidence. This parameter sets a cutoff to identify potential areas likely to contain text, converting them into text boxes.</p>
+
+<p><strong>Tuning effect:</strong></p>
+
+<ul>
+<li><strong>Increase Threshold -</strong> Reduces areas identified as text, useful for high-contrast images like scanned documents.</li>
+
+<li><strong>Decrease Threshold -</strong> Expands areas identified as text, useful for low-contrast or barely visible text.</li>
+</ul>
+
+<p><strong>Default:</strong> 0.5f</p>
+
+<p><strong>Valid range:</strong> [0.0f, 1.0f]</p>
+
+<hr>
+
+<h3 id="minboxarea" class="anchor"><a class="heading-anchor" href="#minboxarea"><span></span></a>minBoxArea</h3>
+
+<pre class="prettyprint"><code>    int TextOCR.Settings.minBoxArea
+</code></pre>
+
+<p><strong>Description:</strong> Filters out small, unimportant boxes from the OCR output.</p>
+
+<p><strong>Tuning effect:</strong> Increasing this parameter filters out boxes with small areas.</p>
+
+<p><strong>Default:</strong> 10
+<strong>Valid range:</strong> [0, max(int)]</p>
+
+<hr>
+
+<h3 id="boxthreshold" class="anchor"><a class="heading-anchor" href="#boxthreshold"><span></span></a>boxThreshold</h3>
+
+<pre class="prettyprint"><code>    float TextOCR.Settings.boxThreshold
+</code></pre>
+
+<p><strong>Description:</strong> Sets the minimum confidence score required for a text box to be included in the OCR output. Boxes with confidence scores below this threshold are excluded, helping to filter out less certain text detections.</p>
+
+<p><strong>Tuning effect:</strong></p>
+
+<ul>
+<li><strong>Increase Threshold:</strong> Excludes less-confident text boxes, useful when too many boxes are detected.</li>
+
+<li><strong>Decrease Threshold:</strong> Includes more text boxes, which might be necessary when important text is being missed.</li>
+</ul>
+
+<p><strong>Default:</strong> 0.85f</p>
+
+<p><strong>Valid range:</strong> [0, 1.0]</p>
+
+<hr>
+
+<h3 id="minboxsize" class="anchor"><a class="heading-anchor" href="#minboxsize"><span></span></a>minBoxSize</h3>
+
+<pre class="prettyprint"><code>    int TextOCR.Settings.minBoxSize
+</code></pre>
+
+<p><strong>Description:</strong> Filters out very narrow boxes (low height or width) that likely do not contain real text.</p>
+
+<p><strong>Tuning effect:</strong> Increasing this parameter filters out very narrow boxes.</p>
+
+<p><strong>Default:</strong> 1</p>
+
+<p><strong>Valid range:</strong> [0, max(int)]</p>
+
+<hr>
+
+<h3 id="minratioforrotation" class="anchor"><a class="heading-anchor" href="#minratioforrotation"><span></span></a>minRatioForRotation</h3>
+
+<pre class="prettyprint"><code>    float TextOCR.Settings.minRatioForRotation
+</code></pre>
+
+<p><strong>Description:</strong> Rotates vertically oriented text boxes to horizontal to improve recognition. Adjust this value for images with significant rotated text. <strong>Note:</strong> Words are generally wider than they are tall, so their ratio should exceed the default value. Therefore, avoid changing this parameter for words, since word bounding boxes should be horizontally oriented before recognition.</p>
+
+<p><strong>Tuning effect:</strong> Setting this parameter to 0 disables rotation. Otherwise, rotate boxes with a height-to-width ratio exceeding this value 90 degrees counterclockwise before recognition.</p>
+
+<p><strong>Default:</strong> 1.5f</p>
+
+<p><strong>Valid range:</strong> [0.0f, inf]</p>
+
+<hr>
+
+<h3 id="unclipratio" class="anchor"><a class="heading-anchor" href="#unclipratio"><span></span></a>unclipRatio</h3>
+
+<pre class="prettyprint"><code>    float TextOCR.Settings.unclipRatio
+</code></pre>
+
+<p><strong>Description:</strong> Slightly stretches text boxes before recognition to improve results. Tight-fitting boxes might benefit from some extra background for better decoding.</p>
+
+<p><strong>Tuning effect:</strong> Increasing this parameter enlarges text boxes, potentially improving recognition. An unclipRatio of 1 keeps boxes unchanged, while 1.5 enlarges them by 50%.</p>
+
+<p><strong>Default:</strong> 1.5f</p>
+
+<p><strong>Valid range:</strong> [1.0f, inf]</p>
+
+<hr>
+
+<h3 id="samplecode-3" class="anchor"><a class="heading-anchor" href="#samplecode-3"><span></span></a>Sample Code</h3>
+
+<p>This sample code demonstrates how to adjust detection parameter settings:</p>
 
 <ol>
-<li><strong>recognitionInferencerOptions</strong>
+<li><p><strong>Configure Settings:</strong> Set up the OCR model and adjust parameters such as <code>heatmapThreshold</code> and <code>boxThreshold</code> to improve detection accuracy based on your specific needs.</p></li>
 
+<li><p><strong>Instantiate TextOCR:</strong> Create a <code>TextOCR</code> object using the settings. This object will handle text detection and recognition tasks.</p></li>
 
-<ul>
-<li><strong>Description</strong>: Options for the recognition inferencer.</li>
+<li><p><strong>Load Bitmap Image:</strong> Prepare the image you want to process by converting it to a Bitmap object.</p></li>
 
-<li><strong>Type</strong>: <a href="../class/inferenceroptions/"><code>Inferencer::Options</code></a></li></ul>
-</li>
+<li><p><strong>Detect Text:</strong> Call the <code>detect</code> method to analyze the image and retrieve an array of <code>OCRResult</code> objects containing the detected text.</p></li>
 
-<li><strong>detectionInferencerOptions</strong>
+<li><p><strong>Print Results:</strong> Iterate over the <code>OCRResult</code> array to output the recognized text to the console.</p></li>
 
+<li><p><strong>Dispose Resources:</strong> Free up system resources by calling the <code>dispose</code> method on the <code>TextOCR</code> object after usage.</p>
 
-<ul>
-<li><strong>Description</strong>: Options for the detection inferencer. The same as for recognition inferencer.</li>
+<pre class="prettyprint"><code>import com.zebra.ai.vision.TextOCR;
+import com.zebra.ai.vision.TextOCR.Settings;
+import android.graphics.Bitmap;
 
-<li><strong>Type</strong>: <a href="../class/inferenceroptions/"><code>Inferencer::Options</code></a></li></ul>
-</li>
+// Initialize settings with a custom heatmap threshold
+TextOCR.Settings textOCRSettings = new TextOCR.Settings ("path_to_model/text_ocr_snpe_tar.crypt");
+settings.heatmapThreshold = 0.3f; // Lower threshold for low-contrast text
+settings.boxThreshold = 0.9f; // Higher threshold for more confident text boxes
+settings.minBoxSize = 10; // Set minimum box size to 10 pixels
+settings.minBoxArea = 50; // Set minimum box area to 50 pixels
+settings.resizeDetectorToImage = true; // Enable full-resolution processing
+settings.unclipRatio = 2.0f; // Enlarge text boxes by 100%
+settings.minRatioForRotation = 2.0f; // Rotate boxes with height-to-width ratio exceeding 2.0
+
+// Initialize executor
+Executor executor = Executors.newFixedThreadPool(1);
+
+CompletableFuture&lt;TextOCR&gt; futureObject = getTextOCR(textOCRSettings, executor);
+
+// Use the futureObject to implement thenAccept() callback of CompletableFuture.  
+futureObject.thenAccept (OCRInstance -&gt; {  
+    // Use the Textocr object returned here for the detection of barcodes/shelves/products  
+    textocr = OCRInstance;  
+});
+
+// Load your Bitmap image
+Bitmap image = ...; // This is your input image
+
+// Perform OCR
+CompletableFuture&lt;OCRResult[]&gt; futureResult = textocr.detect(bitmap,executor);  
+futureResult.thenAccept (ocrResults -&gt; {    
+    // Process the returned output that contains bounding boxes and recognized text    
+});
+
+// Dispose resources
+// Once done using the textOCR object, dispose of it to release resources and memory used for detection
+textOCR.dispose();
+</code></pre></li>
 </ol>
 
-<h3 id="detectionparameters" class="anchor"><a class="heading-anchor" href="#detectionparameters"><span></span></a>Detection Parameters</h3>
-
-<ol>
-<li><strong>heatmapThreshold</strong>
-
-
-<ul>
-<li><strong>Description</strong>: Threshold for detector model output heatmap. The detector model's output is a grayscale image of [0, 1.0] real values, representing the confidence that a given pixel contains text. Raising this threshold value results in fewer areas being classified as text.</li>
-
-<li><strong>Type</strong>: <code>float</code></li>
-
-<li><strong>Default</strong>: <code>0.5f</code></li></ul>
-</li>
-
-<li><strong>boxThreshold</strong>
-
-
-<ul>
-<li><strong>Description</strong>: Minimum confidence for a box from heatmap. After thresholding, the resulting bounding boxes are filtered based on their confidence. Raising this parameter will result in fewer bounding boxes being used by OCR.</li>
-
-<li><strong>Type</strong>: <code>float</code></li>
-
-<li><strong>Default</strong>: <code>0.85f</code></li></ul>
-</li>
-
-<li><strong>minBoxSize</strong>
-
-
-<ul>
-<li><strong>Description</strong>: Minimum size of box side from heatmap. Raising this parameter will filter out the boxes with small width or height.</li>
-
-<li><strong>Type</strong>: <code>int</code></li>
-
-<li><strong>Default</strong>: <code>1</code></li></ul>
-</li>
-
-<li><strong>minBoxArea</strong>
-
-
-<ul>
-<li><strong>Description</strong>: Minimum area of box from heatmap. Raising this parameter will filter out boxes with small area.</li>
-
-<li><strong>Type</strong>: <code>int</code></li>
-
-<li><strong>Default</strong>: <code>10</code></li></ul>
-</li>
-
-<li><strong>resizeDetectorToImage</strong>
-
-
-<ul>
-<li><strong>Description</strong>: Indicates whether to use dynamic detector resolution. Setting this to true will result in the detector being resized to match the input data, not the other way around. This way, even large images can be processed without loss of information.</li>
-
-<li><strong>Type</strong>: <code>bool</code></li>
-
-<li><strong>Default</strong>: <code>false</code> for SNPE models and <code>true</code> for onnx and openvino models.</li>
-
-<li><strong>Example</strong>: If the input image is 1024x1024 and <code>resizeDetectorToImage</code> is true, the detector will resize to 1024x1024. If false, the image will resize to the detector's default size.</li></ul>
-</li>
-
-<li><strong>unclipRatio</strong>
-
-
-<ul>
-<li><strong>Description</strong>: A factor of unclipping bounding boxes before the recognition stage. Before doing the OCR, a border is added at the edges of each bounding box to provide better recognition results. Raising this parameter will increase this border and can result in better recognition.</li>
-
-<li><strong>Type</strong>: <code>float</code></li>
-
-<li><strong>Default</strong>: <code>1.5f</code></li></ul>
-</li>
-
-<li><strong>minRatioForRotation</strong>
-
-
-<ul>
-<li><strong>Description</strong>: Minimum ratio of height to width for the word crop to rotate. If <code>0</code>, no rotation will be performed. Otherwise, the boxes with a height to width ratio higher than this value will be rotated 90 degrees (counterclockwise) before recognition.</li>
-
-<li><strong>Type</strong>: <code>float</code></li>
-
-<li><strong>Default</strong>: <code>1.5f</code></li></ul>
-</li>
-</ol>
-
-<h3 id="decodingoptions" class="anchor"><a class="heading-anchor" href="#decodingoptions"><span></span></a>Decoding Options</h3>
-
-<ol>
-<li><strong>decoderType</strong>
-
-
-<ul>
-<li><strong>Description</strong>: Recognition stage decoding strategy. The OCR algorithm works at the character level. For each character in an image, it predicts multiple characters and their confidences. The decoding strategy decides which of those predictions to choose for each character. Words are created by combining the chosen predictions. All the words along with their corresponding confidences are provided as output.</li>
-
-<li><strong>Type</strong>: <code>OcrDecoderType</code> (see below)</li>
-
-<li><strong>Default</strong>: <code>OcrDecoderType::Total</code></li></ul>
-</li>
-
-<li><strong>OcrDecoderType</strong>
-
-
-<ul>
-<li><strong>Description</strong>: Types of decoding strategies available.</li>
-
-<li><strong>Enum Values</strong>:
-
-
-<ul>
-<li><code>Cutoff</code>: Use cutoff decoding strategy. The characters with confidence below a threshold are ignored. This decoding strategy produces only one output.</li>
-
-<li><code>TopK</code>: Use TopK decoding strategy. The decoding is done by considering the top-k predictions for each character and then calculating all possible combinations of the characters along with their joint probabilities.</li>
-
-<li><code>Total</code>: Use total decoding strategy. The decoding is done by considering the characters with cumulative probability greater than a threshold. The characters with cumulative probability below the threshold are ignored. Then, all possible combinations of the characters along with their joint probabilities are calculated.</li></ul>
-</li></ul>
-</li>
-
-<li><strong>decodingCharacterConfidenceThreshold</strong>
-
-
-<ul>
-<li><strong>Description</strong>: Confidence threshold for single characters (for Cutoff and TopK decodings only). The characters with confidence below a threshold are ignored. Raising the threshold will pick only characters with high confidence. It returns an empty string if it can't find any above the threshold.</li>
-
-<li><strong>Type</strong>: <code>float</code></li>
-
-<li><strong>Default</strong>: <code>0.9f</code></li></ul>
-</li>
-
-<li><strong>decodingMaxWordCombinations</strong>
-
-
-<ul>
-<li><strong>Description</strong>: The maximum number of possible word outcomes returned in the output. Increasing the number will consider less confident words.</li>
-
-<li><strong>Type</strong>: <code>int</code></li>
-
-<li><strong>Default</strong>: <code>10</code></li></ul>
-</li>
-
-<li><strong>decodingTopKCharacters</strong>
-
-
-<ul>
-<li><strong>Description</strong>: The number of characters to consider for TopK decoding. Increasing the number will consider less confident characters.</li>
-
-<li><strong>Type</strong>: <code>int</code></li>
-
-<li><strong>Default</strong>: <code>3</code></li></ul>
-</li>
-
-<li><strong>decodingTopkIgnoreCutoff</strong>
-
-
-<ul>
-<li><strong>Description</strong>: The maximum number of characters to consider for total decoding. Increasing the value will increase the number of decodes considered for each character.</li>
-
-<li><strong>Type</strong>: <code>int</code></li>
-
-<li><strong>Default</strong>: <code>4</code></li></ul>
-</li>
-
-<li><strong>decodingTotalProbThreshold</strong>
-
-
-<ul>
-<li><strong>Description</strong>: The minimum cumulative sum score of characters required for total decoding. If this threshold is not reached, all characters will be ignored. Increasing the threshold will consider only characters with high cumulative probability.</li>
-
-<li><strong>Type</strong>: <code>float</code></li>
-
-<li><strong>Default</strong>: <code>0.9f</code></li></ul>
-</li>
-</ol>
-
-<p><br></p>
-
-<h3 id="groupingoptions" class="anchor"><a class="heading-anchor" href="#groupingoptions"><span></span></a>Grouping Options</h3>
-
-<p>Grouping works in two stages. Words detected by OCR are grouped into lines that are further grouped into paragraphs as shown in the schema below. Words, lines and paragraphs in the graphics below are represented by blue, green and fuchsia colored borders respectively.</p>
-
-<img alt="image" style="height:300px" src="../about/assets/schema.png">
+<hr>
+
+<!-- 
+---
+
+## Usage
+
+Detect text in an image, outputting words or paragraphs. A paragraph is a collection of words with additional hierarchical structure, where words on the same line are grouped into lines, and lines into paragraphs. This process is parameterized, with relevant parameters described in [Options](#options).
+
+Sample API calls to retrieve both words and paragraphs:
+
+        CompletableFuture<Word[]> words = textocr.detectWords(IMAGE); // com.zebra.AI.Vision.Word[]
+        CompletableFuture<TextParagraph[]> paragraphs = textocr.detectParagraphs(IMAGE); // com.zebra.AI.Vision.TextParagraph[]
+
+`IMAGE` represents the bitmap image.
+
+### Definitions
+
+Definitions for key terms:
+* **Bounding box -** A list of points forming a rectangle, which may not be perpendicular to the bottom and sides of the screen. More than 4 points can be present if the rectangle is clipped at the edges of the screen. Each bounding box includes:
+    - **Coordinates of the bounding rectangle -** Defines the position and size of the detected object.
+    - **Probability (Confidence) -** Indicates the certainty of the detection.
+    - **Class -** Specifies the type of object detected.
+* **Paragraph -** Contains a complex bounding box and an array of lines.
+* **Line -** Contains a complex bounding box and an array of words.
+* **Word -** Contains a complex bounding box and an array of decodes.
+* **Decode -** Contains decoded text strings (referred to as content) and their confidence.
+
+## Options
+
+The `Options` structure provides configuration settings for the `TextOCR` library, containing a detection and recognition stage. These settings customize OCR behavior.
+
+### Model Configuration
+
+1. **modelFileLocator**
+   - **Description**: Location of the file containing resources for the models and meta values.
+   - **Type**: `FileLocator`
+2. **detectionModelName**
+   - **Description**: Name of the detection model in the compressed file.
+   - **Type**: `string`
+   - **Default**: `"det"`
+3. **recognitionModelName**
+   - **Description**: Name of the recognition model in the compressed file.
+   - **Type**: `string`
+   - **Default**: `"rec"`
+
+### Inferencer Options
+Advanced options for inferencer can be found in [inferencer options](../class/inferenceroptions/).
+
+1. **recognitionInferencerOptions**
+   - **Description**: Options for the recognition inferencer.
+   - **Type**: [`Inferencer::Options`](../class/inferenceroptions/)
+2. **detectionInferencerOptions**
+   - **Description**: Options for the detection inferencer. The same as for recognition inferencer.
+   - **Type**: [`Inferencer::Options`](../class/inferenceroptions/)
+
+### Detection Parameters
+
+1. **heatmapThreshold**
+   - **Description**: Threshold for detector model output heatmap. The detector model's output is a grayscale image of [0, 1.0] real values, representing the confidence that a given pixel contains text. Raising this threshold value results in fewer areas being classified as text.
+   - **Type**: `float`
+   - **Default**: `0.5f`
+2. **boxThreshold**
+   - **Description**: Minimum confidence for a box from heatmap. After thresholding, the resulting bounding boxes are filtered based on their confidence. Raising this parameter will result in fewer bounding boxes being used by OCR.
+   - **Type**: `float`
+   - **Default**: `0.85f`
+3. **minBoxSize**
+   - **Description**: Minimum size of box side from heatmap. Raising this parameter will filter out the boxes with small width or height.
+   - **Type**: `int`
+   - **Default**: `1`
+4. **minBoxArea**
+   - **Description**: Minimum area of box from heatmap. Raising this parameter will filter out boxes with small area.
+   - **Type**: `int`
+   - **Default**: `10`
+5. **resizeDetectorToImage**
+    - **Description**: Indicates whether to use dynamic detector resolution. Setting this to true will result in the detector being resized to match the input data, not the other way around. This way, even large images can be processed without loss of information.
+    - **Type**: `bool`
+    - **Default**: `false` for SNPE models and `true` for onnx and openvino models.
+    - **Example**: If the input image is 1024x1024 and `resizeDetectorToImage` is true, the detector will resize to 1024x1024. If false, the image will resize to the detector's default size.
+6. **unclipRatio**
+    - **Description**: A factor of unclipping bounding boxes before the recognition stage. Before doing the OCR, a border is added at the edges of each bounding box to provide better recognition results. Raising this parameter will increase this border and can result in better recognition.
+    - **Type**: `float`
+    - **Default**: `1.5f`
+7. **minRatioForRotation**
+    - **Description**: Minimum ratio of height to width for the word crop to rotate. If `0`, no rotation will be performed. Otherwise, the boxes with a height to width ratio higher than this value will be rotated 90 degrees (counterclockwise) before recognition.
+    - **Type**: `float`
+    - **Default**: `1.5f`
+
+### Decoding Options
+
+1. **decoderType**
+    - **Description**: Recognition stage decoding strategy. The OCR algorithm works at the character level. For each character in an image, it predicts multiple characters and their confidences. The decoding strategy decides which of those predictions to choose for each character. Words are created by combining the chosen predictions. All the words along with their corresponding confidences are provided as output.
+    - **Type**: `OcrDecoderType` (see below)
+    - **Default**: `OcrDecoderType::Total`
+2. **OcrDecoderType**
+    - **Description**: Types of decoding strategies available.
+    - **Enum Values**:
+      - `Cutoff`: Use cutoff decoding strategy. The characters with confidence below a threshold are ignored. This decoding strategy produces only one output.
+      - `TopK`: Use TopK decoding strategy. The decoding is done by considering the top-k predictions for each character and then calculating all possible combinations of the characters along with their joint probabilities.
+      - `Total`: Use total decoding strategy. The decoding is done by considering the characters with cumulative probability greater than a threshold. The characters with cumulative probability below the threshold are ignored. Then, all possible combinations of the characters along with their joint probabilities are calculated.
+3. **decodingCharacterConfidenceThreshold**
+    - **Description**: Confidence threshold for single characters (for Cutoff and TopK decodings only). The characters with confidence below a threshold are ignored. Raising the threshold will pick only characters with high confidence. It returns an empty string if it can't find any above the threshold.
+    - **Type**: `float`
+    - **Default**: `0.9f`
+4. **decodingMaxWordCombinations**
+    - **Description**: The maximum number of possible word outcomes returned in the output. Increasing the number will consider less confident words.
+    - **Type**: `int`
+    - **Default**: `10`
+5. **decodingTopKCharacters**
+    - **Description**: The number of characters to consider for TopK decoding. Increasing the number will consider less confident characters.
+    - **Type**: `int`
+    - **Default**: `3`
+6. **decodingTopkIgnoreCutoff**
+    - **Description**: The maximum number of characters to consider for total decoding. Increasing the value will increase the number of decodes considered for each character.
+    - **Type**: `int`
+    - **Default**: `4`
+7. **decodingTotalProbThreshold**
+    - **Description**: The minimum cumulative sum score of characters required for total decoding. If this threshold is not reached, all characters will be ignored. Increasing the threshold will consider only characters with high cumulative probability.
+    - **Type**: `float`
+    - **Default**: `0.9f`
+
+<br />
+
+### Grouping Options
+Grouping works in two stages. Words detected by OCR are grouped into lines that are further grouped into paragraphs as shown in the schema below. Words, lines and paragraphs in the graphics below are represented by blue, green and fuchsia colored borders respectively.
+
+<img alt="image" style="height:300px"  src="../about/assets/schema.png" />
 <!-- ![schema](../about/assets/schema.png) -->
 
 <ul>
@@ -667,8 +1098,7 @@ After initialization, use one of the following methods to detect text on a given
 
 <li><strong>Example</strong>: If the average width of words is 90 pixels, setting <code>widthDistanceRatio</code> to 2.0 will allow words up to 180 pixels apart to be grouped into the same line.</li></ul>
 
-<img alt="image" style="height:75px" src="../about/assets/widthDistanceRatio.jpg">
-<!-- ![widthDistanceRatio](../about/assets/widthDistanceRatio.jpg) --></li>
+<p><img alt="image" style="height:75px" src="../about/assets/widthDistanceRatio.jpg"></p></li>
 
 <li><p><strong>heightDistanceRatio</strong></p>
 
@@ -681,8 +1111,7 @@ After initialization, use one of the following methods to detect text on a given
 
 <li><strong>Example</strong>: <code>heightDistanceRatio</code> to 4.0 will allow words with heights in the range of from approximately 0.25 and 4 times the height to be grouped into the same line.</li></ul>
 
-<img alt="image" style="height:75px" src="../about/assets/heightDistanceRatio.jpg">
-<!-- ![heightDistanceRatio](../about/assets/heightDistanceRatio.jpg) --></li>
+<p><img alt="image" style="height:75px" src="../about/assets/heightDistanceRatio.jpg"></p></li>
 
 <li><p><strong>centerDistanceRatio</strong></p>
 
@@ -695,8 +1124,7 @@ After initialization, use one of the following methods to detect text on a given
 
 <li><strong>Example</strong>: If the average height of words is 20 pixels, setting <code>centerDistanceRatio</code> to 1.0 will allow words with centers up to 20 pixels apart vertically to be grouped into the same line.</li></ul>
 
-<img alt="image" style="height:75px" src="../about/assets/centerDistanceRatio.jpg">
-<!-- ![centerDistanceRatio](../about/assets/centerDistanceRatio.jpg) --></li>
+<p><img alt="image" style="height:75px" src="../about/assets/centerDistanceRatio.jpg"></p></li>
 
 <li><p><strong>paragraphHeightDistance</strong></p>
 
@@ -709,8 +1137,7 @@ After initialization, use one of the following methods to detect text on a given
 
 <li><strong>Example</strong>: If the average height of lines is 30 pixels, setting <code>paragraphHeightDistance</code> to 2 will allow lines with centers up to 60 pixels apart vertically to be grouped into the same paragraph.</li></ul>
 
-<img alt="image" style="height:125px" src="../about/assets/paragraphHeightDistance.jpg">
-<!-- ![paragraphHeightDistance](../about/assets/paragraphHeightDistance.jpg) --></li>
+<p><img alt="image" style="height:125px" src="../about/assets/paragraphHeightDistance.jpg"></p></li>
 
 <li><p><strong>paragraphHeightRatioThreshold</strong></p>
 
@@ -723,8 +1150,7 @@ After initialization, use one of the following methods to detect text on a given
 
 <li><strong>Example</strong>: If the average height of lines is 50 pixels, setting <code>paragraphHeightRatioThreshold</code> to 0.2 will allow lines with heights ranging from approximately 10 pixels to 250 pixels to be grouped into the same paragraph.</li></ul>
 
-<img alt="image" style="height:125px" src="../about/assets/paragraphHeightRatioThreshold.jpg">
-<!-- ![paragraphHeightRatioThreshold](../about/assets/paragraphHeightRatioThreshold.jpg) --></li></ol></li>
+<p><img alt="image" style="height:125px" src="../about/assets/paragraphHeightRatioThreshold.jpg"></p></li></ol></li>
 </ul>
 
 <h3 id="tilingoptions" class="anchor"><a class="heading-anchor" href="#tilingoptions"><span></span></a>Tiling Options</h3>
@@ -823,25 +1249,11 @@ After initialization, use one of the following methods to detect text on a given
 
 <p><br></p>
 
-<!-- TextOCR.md#textocrsettingssettings -->
-
-<!-- 
-## APIs
-The following is a list of APIs supported by TextOCR.
-Return Type                          |  API Name
--------------------------------------| --------------------------------------
-TextOCR       | [TextOCR](TextOCR.md#textocrsettingssettings)   ([Settings](TextOCRSettings.md) settings) throws FileNotFoundException, IOException
-CompletableFuture<[OCRResult](OCRResult.md)[]> | [detect](TextOCR.md#detect-bitmapsrcimg) (Bitmap srcImg) throws InvalidInputException
-CompletableFuture<[Word](Word.md)[]> |    [detectWords](TextOCR.md#detectwordsbitmapsrcimg) (Bitmap srcImg) throws InvalidInputException
-CompletableFuture<[TextParagraph](TextParagraph.md)[]> |    [detectParagraphs](TextOCR.md#detectparagraphs-bitmapsrcimg) (Bitmap srcImg) throws InvalidInputException
-void      | [dispose](TextOCR.md#dispose-) ()
--->
-
-<h2 id="apis" class="anchor"><a class="heading-anchor" href="#apis"><span></span></a>APIs</h2>
+<h2 id="apis-1" class="anchor"><a class="heading-anchor" href="#apis-1"><span></span></a>APIs</h2>
 
 <p>The <code>TextOCR</code> class is part of the <code>com.zebra.AI.Vision</code> package and is used for detecting and recognizing text in images. It provides methods for detecting text at different granularities, including words and paragraphs. This class is essential for applications that require text extraction from images, such as document scanning, automated data entry, and more.</p>
 
-<h3 id="textocrsettingssettings" class="anchor"><a class="heading-anchor" href="#textocrsettingssettings"><span></span></a>TextOCR(Settings settings)</h3>
+<h3 id="textocrsettingssettings-1" class="anchor"><a class="heading-anchor" href="#textocrsettingssettings-1"><span></span></a>TextOCR(Settings settings)</h3>
 
 <p>Initializes the OCR engine with the specified settings, allowing subsequent text detection and analysis on image inputs. It validates the availability of required model files and ensures the integrity of the archive. If any issues are detected, appropriate exceptions are thrown.</p>
 
@@ -973,7 +1385,7 @@ An instance of the <code>Settings</code> class, containing configuration options
 </li>
 </ul>
 
-<h3 id="dispose" class="anchor"><a class="heading-anchor" href="#dispose"><span></span></a>dispose ()</h3>
+<h3 id="dispose-1" class="anchor"><a class="heading-anchor" href="#dispose-1"><span></span></a>dispose ()</h3>
 
 <p>Releases all internal resources used by the <code>TextOCR</code> object. This function needs to be called manually to free up resources.</p>
 
@@ -984,7 +1396,9 @@ An instance of the <code>Settings</code> class, containing configuration options
 <ul>
 <li>void dispose()</li></ul>
 </li>
-</ul><p></p>
+</ul>
+
+<p>--&gt;</p><p></p>
                                         
 
 
