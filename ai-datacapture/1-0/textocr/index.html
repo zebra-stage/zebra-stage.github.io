@@ -288,10 +288,10 @@
 
 <li><p><strong>Configure OCR Settings:</strong> </p>
 
-<p></p><ul>
-<li>Set <code>model_file_path</code> with the fully qualified file path to the .crypt file containing the OCR model. </li></ul><p></p>
+<ul>
+<li>Set <code>model_file_path</code> with the fully qualified file path to the .crypt file containing the OCR model. </li>
 
-<p></p></li><li>Create a <code>TextOCR.Settings</code> object with the specified file path.</li><p></p>
+<li>Create a <code>TextOCR.Settings</code> object with the specified file path.</li></ul></li>
 
 <li><p><strong>Optional: Set model input dimensions:</strong> If needed, customize the model input dimensions (height and width). These should be multiples of 32 (e.g., 640). </p>
 
@@ -412,7 +412,7 @@ settings.detectionInferencerOptions.defaultDims.height = [your value];
 
 <hr>
 
-<h2 id="apis" class="anchor"><a class="heading-anchor" href="#apis"><span></span></a>APIs</h2>
+<h2 id="methods" class="anchor"><a class="heading-anchor" href="#methods"><span></span></a>Methods</h2>
 
 <h3 id="textocrsettingssettings" class="anchor"><a class="heading-anchor" href="#textocrsettingssettings"><span></span></a>TextOCR (Settings settings)</h3>
 
@@ -737,6 +737,16 @@ textOCR.dispose()
 
 <h2 id="detectionparametersettings" class="anchor"><a class="heading-anchor" href="#detectionparametersettings"><span></span></a>Detection Parameter Settings</h2>
 
+<p>Adjust Detection Parameter Settings according to these scenarios:</p>
+
+<ul>
+<li><strong>Document Scanning:</strong> Use a higher threshold for clear, high-contrast documents to minimize noise. </li>
+
+<li><strong>Low-Contrast Images:</strong> Decrease the threshold to enhance text detection in images with low contrast, such as faded or poorly lit photos. </li>
+
+<li><strong>Dynamic Environments:</strong> Adjust the threshold dynamically based on real-time image analysis to optimize OCR performance across various lighting and contrast conditions. </li>
+</ul>
+
 <h3 id="detectionmodelname" class="anchor"><a class="heading-anchor" href="#detectionmodelname"><span></span></a>detectionModelName</h3>
 
 <pre class="prettyprint"><code>    TextOCR.Settings.detectionModelName
@@ -787,7 +797,7 @@ textOCR.dispose()
 <pre class="prettyprint"><code>    InferencerOptions TextOCR.Settings.recognitionInferencerOptions = new InferencerOptions()
 </code></pre>
 
-<p><strong>Description:</strong> Typically remains unchanged as the input size is fixed for the recognition model. Developers can adjust recognition results using parameters in the Recognition Options section. TensorRT users might use the caching mechanism available here.
+<p><strong>Description:</strong> Typically remains unchanged as the input size is fixed for the recognition model. Recognition results can be adjusted using parameters in the Recognition Options section. TensorRT users might use the caching mechanism available here.
 <strong>Note:</strong> These options should not be changed by the developer. </p><p style="color:red;">UPDATE NEEDED: Recognition Options? TensorRT?</p><p></p>
 
 <hr>
@@ -797,7 +807,7 @@ textOCR.dispose()
 <pre class="prettyprint"><code>    float TextOCR.Settings.heatmapThreshold
 </code></pre>
 
-<p><strong>Description:</strong> Internally, the detector model creates a grayscale image (heatmap) that represents text confidence. This parameter sets a cutoff to identify potential areas likely to contain text, converting them into text boxes.</p>
+<p><strong>Description:</strong> Sets a cutoff to identify potential areas likely to contain text, converting them into text boxes. (Internally, the detector model creates a grayscale image, or heatmap, that represents text confidence.) </p>
 
 <p><strong>Tuning effect:</strong></p>
 
@@ -885,7 +895,7 @@ textOCR.dispose()
 
 <p><strong>Description:</strong> Slightly stretches text boxes before recognition to improve results. Tight-fitting boxes might benefit from some extra background for better decoding.</p>
 
-<p><strong>Tuning effect:</strong> Increasing this parameter enlarges text boxes, potentially improving recognition. An unclipRatio of 1 keeps boxes unchanged, while 1.5 enlarges them by 50%.</p>
+<p><strong>Tuning effect:</strong> Increasing this parameter enlarges text boxes, potentially improving recognition. An <code>unclipRatio</code> of 1 keeps boxes unchanged, while 1.5 enlarges them by 50%.</p>
 
 <p><strong>Default:</strong> 1.5f</p>
 
@@ -952,453 +962,365 @@ textOCR.dispose();
 
 <hr>
 
-<!-- 
----
+<h2 id="textocrgroupersettings" class="anchor"><a class="heading-anchor" href="#textocrgroupersettings"><span></span></a>TextOCR.GrouperSettings</h2>
 
-## Usage
+<p>The <code>GrouperSettings</code> class provides essential parameters for customizing the behavior of the OCR text grouping algorithm. It offers control over how text elements are spatially organized based on their geometric properties. By adjusting these settings, developers can fine-tune how text boxes are grouped into lines, paragraphs, or other structures based on their spatial relationships. </p>
 
-Detect text in an image, outputting words or paragraphs. A paragraph is a collection of words with additional hierarchical structure, where words on the same line are grouped into lines, and lines into paragraphs. This process is parameterized, with relevant parameters described in [Options](#options).
+<p>Grouping occurs in two stages. Words detected by OCR are grouped into lines that are further grouped into paragraphs. In the graphic representation below, words, lines and paragraphs are represented by blue, green and fuchsia borders, respectively.</p>
 
-Sample API calls to retrieve both words and paragraphs:
+<p><img alt="image" style="height:350px" src="../about/assets/schema.png"></p>
 
-        CompletableFuture<Word[]> words = textocr.detectWords(IMAGE); // com.zebra.AI.Vision.Word[]
-        CompletableFuture<TextParagraph[]> paragraphs = textocr.detectParagraphs(IMAGE); // com.zebra.AI.Vision.TextParagraph[]
+<h3 id="widthdistanceratio" class="anchor"><a class="heading-anchor" href="#widthdistanceratio"><span></span></a>widthDistanceRatio</h3>
 
-`IMAGE` represents the bitmap image.
+<pre class="prettyprint"><code>    float TextOCR.Settings.GrouperSettings.widthDistanceRatio
+</code></pre>
 
-### Definitions
+<p><strong>Description:</strong> Determines if the distance between the centers of two words along the x-axis is large enough to join into a line. It is expressed as a fraction of the average width of two adjacent boxes. For example, if the average word width is 90 pixels, setting this parameter to 2.0 allows words with centers up to 180 pixels apart to group into the same Line.</p>
 
-Definitions for key terms:
-* **Bounding box -** A list of points forming a rectangle, which may not be perpendicular to the bottom and sides of the screen. More than 4 points can be present if the rectangle is clipped at the edges of the screen. Each bounding box includes:
-    - **Coordinates of the bounding rectangle -** Defines the position and size of the detected object.
-    - **Probability (Confidence) -** Indicates the certainty of the detection.
-    - **Class -** Specifies the type of object detected.
-* **Paragraph -** Contains a complex bounding box and an array of lines.
-* **Line -** Contains a complex bounding box and an array of words.
-* **Word -** Contains a complex bounding box and an array of decodes.
-* **Decode -** Contains decoded text strings (referred to as content) and their confidence.
+<p><strong>Tuning effect:</strong> Increasing this parameter causes horizontally spaced words to join into a Line.</p>
 
-## Options
+<p><strong>Default:</strong> 1.5f</p>
 
-The `Options` structure provides configuration settings for the `TextOCR` library, containing a detection and recognition stage. These settings customize OCR behavior.
+<p><strong>Valid range:</strong> [0.0f, inf]</p>
 
-### Model Configuration
+<p><img alt="image" style="height:150px" src="../about/assets/widthDistanceRatio.png"></p>
 
-1. **modelFileLocator**
-   - **Description**: Location of the file containing resources for the models and meta values.
-   - **Type**: `FileLocator`
-2. **detectionModelName**
-   - **Description**: Name of the detection model in the compressed file.
-   - **Type**: `string`
-   - **Default**: `"det"`
-3. **recognitionModelName**
-   - **Description**: Name of the recognition model in the compressed file.
-   - **Type**: `string`
-   - **Default**: `"rec"`
+<hr>
 
-### Inferencer Options
-Advanced options for inferencer can be found in [inferencer options](../class/inferenceroptions/).
+<h3 id="heightdistanceratio" class="anchor"><a class="heading-anchor" href="#heightdistanceratio"><span></span></a>heightDistanceRatio</h3>
 
-1. **recognitionInferencerOptions**
-   - **Description**: Options for the recognition inferencer.
-   - **Type**: [`Inferencer::Options`](../class/inferenceroptions/)
-2. **detectionInferencerOptions**
-   - **Description**: Options for the detection inferencer. The same as for recognition inferencer.
-   - **Type**: [`Inferencer::Options`](../class/inferenceroptions/)
+<pre class="prettyprint"><code>    float TextOCR.Settings.GrouperSettings.heightDistanceRatio 
+</code></pre>
 
-### Detection Parameters
+<p><strong>Description:</strong> Determines if there is a significant difference in the height of two words. For example, setting this parameter to 4.0 allows words with height differences up to 4 times to be grouped into a Line.</p>
 
-1. **heatmapThreshold**
-   - **Description**: Threshold for detector model output heatmap. The detector model's output is a grayscale image of [0, 1.0] real values, representing the confidence that a given pixel contains text. Raising this threshold value results in fewer areas being classified as text.
-   - **Type**: `float`
-   - **Default**: `0.5f`
-2. **boxThreshold**
-   - **Description**: Minimum confidence for a box from heatmap. After thresholding, the resulting bounding boxes are filtered based on their confidence. Raising this parameter will result in fewer bounding boxes being used by OCR.
-   - **Type**: `float`
-   - **Default**: `0.85f`
-3. **minBoxSize**
-   - **Description**: Minimum size of box side from heatmap. Raising this parameter will filter out the boxes with small width or height.
-   - **Type**: `int`
-   - **Default**: `1`
-4. **minBoxArea**
-   - **Description**: Minimum area of box from heatmap. Raising this parameter will filter out boxes with small area.
-   - **Type**: `int`
-   - **Default**: `10`
-5. **resizeDetectorToImage**
-    - **Description**: Indicates whether to use dynamic detector resolution. Setting this to true will result in the detector being resized to match the input data, not the other way around. This way, even large images can be processed without loss of information.
-    - **Type**: `bool`
-    - **Default**: `false` for SNPE models and `true` for onnx and openvino models.
-    - **Example**: If the input image is 1024x1024 and `resizeDetectorToImage` is true, the detector will resize to 1024x1024. If false, the image will resize to the detector's default size.
-6. **unclipRatio**
-    - **Description**: A factor of unclipping bounding boxes before the recognition stage. Before doing the OCR, a border is added at the edges of each bounding box to provide better recognition results. Raising this parameter will increase this border and can result in better recognition.
-    - **Type**: `float`
-    - **Default**: `1.5f`
-7. **minRatioForRotation**
-    - **Description**: Minimum ratio of height to width for the word crop to rotate. If `0`, no rotation will be performed. Otherwise, the boxes with a height to width ratio higher than this value will be rotated 90 degrees (counterclockwise) before recognition.
-    - **Type**: `float`
-    - **Default**: `1.5f`
+<p><strong>Tuning effect:</strong> Increasing this parameter causes words of different heights to join into a Line. </p>
 
-### Decoding Options
+<p><strong>Default</strong>: <code>2.0f</code></p>
 
-1. **decoderType**
-    - **Description**: Recognition stage decoding strategy. The OCR algorithm works at the character level. For each character in an image, it predicts multiple characters and their confidences. The decoding strategy decides which of those predictions to choose for each character. Words are created by combining the chosen predictions. All the words along with their corresponding confidences are provided as output.
-    - **Type**: `OcrDecoderType` (see below)
-    - **Default**: `OcrDecoderType::Total`
-2. **OcrDecoderType**
-    - **Description**: Types of decoding strategies available.
-    - **Enum Values**:
-      - `Cutoff`: Use cutoff decoding strategy. The characters with confidence below a threshold are ignored. This decoding strategy produces only one output.
-      - `TopK`: Use TopK decoding strategy. The decoding is done by considering the top-k predictions for each character and then calculating all possible combinations of the characters along with their joint probabilities.
-      - `Total`: Use total decoding strategy. The decoding is done by considering the characters with cumulative probability greater than a threshold. The characters with cumulative probability below the threshold are ignored. Then, all possible combinations of the characters along with their joint probabilities are calculated.
-3. **decodingCharacterConfidenceThreshold**
-    - **Description**: Confidence threshold for single characters (for Cutoff and TopK decodings only). The characters with confidence below a threshold are ignored. Raising the threshold will pick only characters with high confidence. It returns an empty string if it can't find any above the threshold.
-    - **Type**: `float`
-    - **Default**: `0.9f`
-4. **decodingMaxWordCombinations**
-    - **Description**: The maximum number of possible word outcomes returned in the output. Increasing the number will consider less confident words.
-    - **Type**: `int`
-    - **Default**: `10`
-5. **decodingTopKCharacters**
-    - **Description**: The number of characters to consider for TopK decoding. Increasing the number will consider less confident characters.
-    - **Type**: `int`
-    - **Default**: `3`
-6. **decodingTopkIgnoreCutoff**
-    - **Description**: The maximum number of characters to consider for total decoding. Increasing the value will increase the number of decodes considered for each character.
-    - **Type**: `int`
-    - **Default**: `4`
-7. **decodingTotalProbThreshold**
-    - **Description**: The minimum cumulative sum score of characters required for total decoding. If this threshold is not reached, all characters will be ignored. Increasing the threshold will consider only characters with high cumulative probability.
-    - **Type**: `float`
-    - **Default**: `0.9f`
+<p><strong>Valid range:</strong> [1.0f, inf] </p>
 
-<br />
+<p><img alt="image" style="height:150px" src="../about/assets/heightDistanceRatio.png"></p>
 
-### Grouping Options
-Grouping works in two stages. Words detected by OCR are grouped into lines that are further grouped into paragraphs as shown in the schema below. Words, lines and paragraphs in the graphics below are represented by blue, green and fuchsia colored borders respectively.
+<hr>
 
-<img alt="image" style="height:300px"  src="../about/assets/schema.png" />
-<!-- ![schema](../about/assets/schema.png) -->
+<h3 id="centerdistanceratio" class="anchor"><a class="heading-anchor" href="#centerdistanceratio"><span></span></a>centerDistanceRatio</h3>
 
-<ul>
-<li><p><strong>Description</strong>: A structure containing parameters for the word into line and line into paragraph grouping.</p></li>
+<pre class="prettyprint"><code>float TextOCR.Settings.GrouperSettings.centerDistanceRatio 
+</code></pre>
 
-<li><p><strong>Type</strong>: <code>TextOCRGrouper::Options</code></p></li>
+<p><strong>Description:</strong> Determines if the vertical distance between the centers of two boxes along the y-axis is large enough to group them into the same line. For example, if the average word height is 20 pixels, setting this parameter to 1.0 allows words with centers up to 20 pixels apart vertically to be grouped into the same Line.</p>
 
-<li><p><strong>Fields</strong>:</p>
+<p><strong>Tuning effect:</strong> Increasing this parameter causes words that are not misaligned on the y-axis to be joined into a Line.</p>
+
+<p><strong>Default:</strong> <code>0.6f</code></p>
+
+<p><img alt="image" style="height:150px" src="../about/assets/centerDistanceRatio.png"></p>
+
+<hr>
+
+<h3 id="paragraphheightdistance" class="anchor"><a class="heading-anchor" href="#paragraphheightdistance"><span></span></a>paragraphHeightDistance</h3>
+
+<pre class="prettyprint"><code>    float TextOCR.Settings.GrouperSettings.paragraphHeightDistance 
+</code></pre>
+
+<p><strong>Description:</strong> Determines the difference in vertical spacing between the center of two Lines to determine if the lines should be grouped into a Paragraph. For example, if the average height of lines is 30 pixels, setting this parameter to 2 allows lines with centers up to 60 pixels apart vertically to be grouped into a paragraph.</p>
+
+<p><strong>Tuning effect:</strong> Increasing this parameter causes vertically spaced Lines to be joined into a Paragraph.</p>
+
+<p><strong>Default:</strong> <code>1.0f</code></p>
+
+<p><strong>Valid range:</strong> [0.0f, inf] </p>
+
+<p><img alt="image" style="height:300px" src="../about/assets/paragraphHeightDistance.png"></p>
+
+<hr>
+
+<h3 id="paragraphheightratiothreshold" class="anchor"><a class="heading-anchor" href="#paragraphheightratiothreshold"><span></span></a>paragraphHeightRatioThreshold</h3>
+
+<pre class="prettyprint"><code>    float TextOCR.Settings.GrouperSettings.paragraphHeightRatioThreshold 
+</code></pre>
+
+<p><strong>Description:</strong> Determines if there is a significant height difference between two rows, expressed as a ratio of the heights of two adjacent Lines, to decide whether to join them into a Paragraph. For example, if the average line height is 50 pixels, setting this parameter to 0.2 allows Lines with heights ranging from approximately 10 pixels to 250 pixels to be grouped into the same Paragraph.</p>
+
+<p><strong>Tuning effect:</strong> Decreasing this parameter causes Lines with greater height difference to join into a Paragraph.</p>
+
+<p><strong>Default:</strong> <code>0.33f</code></p>
+
+<p><strong>Valid range:</strong> [0.0f, 1.0f] </p>
+
+<p><img alt="image" style="height:300px" src="../about/assets/paragraphHeightRatioThreshold.png"></p>
+
+<hr>
+
+<h3 id="samplecode-4" class="anchor"><a class="heading-anchor" href="#samplecode-4"><span></span></a>Sample Code</h3>
+
+<p style="color:red;">UPDATE NEEDED - Steps need to match sample code</p>
+
+<p>To utilize the OCR capabilities of the TextOCR library, follow these steps to configure settings, prepare your image, and perform text detection:</p>
 
 <ol>
-<li><p><strong>widthDistanceRatio</strong></p>
+<li><p><strong>Initialize Settings:</strong> Begin by creating a <code>TextOCR.Settings</code> instance, specifying the path to your OCR model. </p></li>
+
+<li><p><strong>Configure GrouperSettings:</strong> Access <code>GrouperSettings</code> within the <code>TextOCR.Settings</code> instance and set custom values for the grouping parameters to control how text elements are grouped. </p></li>
+
+<li><p><strong>Instantiate TextOCR:</strong> Use the configured settings to create a <code>TextOCR</code> instance. This object will handle the text detection and recognition processes. </p></li>
+
+<li><p><strong>Load Bitmap Image:</strong> Prepare the image for OCR by converting it to a <code>Bitmap</code> object. </p></li>
+
+<li><p><strong>Perform Detection:</strong> Use the <code>detect</code> method to analyze the image and retrieve an array of <code>OCRResult</code> objects containing the detected text. </p></li>
+
+<li><p><strong>Print Results:</strong> Iterate over the <code>OCRResult</code> array to output the recognized text to the console. </p></li>
+
+<li><p><strong>Dispose Resources:</strong> Free up system resources by calling the <code>dispose</code> method on the <code>TextOCR</code> object after usage. </p>
+
+<pre class="prettyprint"><code>import com.zebra.ai.vision.TextOCR; 
+
+// Initialize TextOCR settings 
+TextOCR.Settings.GrouperSettings grouperSettings = new TextOCR.Settings.GrouperSettings();             
+
+// Access the GrouperSettings and Set custom values for grouping parameters 
+textOCRSettings.grouping.widthDistanceRatio = 1.5f; 
+textOCRSettings.grouping.heightDistanceRatio = 2.0f; 
+textOCRSettings.grouping.centerDistanceRatio = 0.6f; 
+textOCRSettings.grouping.paragraphHeightDistance = 1.0f; 
+textOCRSettings.grouping.paragraphHeightRatioThreshold = 0.33f;      
+
+// Input params are bitmap image (image to perform detection on); an executor thread object in which the detection happens, and the results are returned.   
+// Initialize executor 
+Executor executor = Executors.newFixedThreadPool(1); 
+
+CompletableFuture&lt;OCRResult[]&gt; futureResult = textocr.detect(bitmap,executor);   
+
+futureResult.thenAccept (ocrResults -&gt; {     
+    // Process the returned output that contains bounding boxes and text in it.     
+}); 
+
+// Dispose resources
+// Once done using the textOCR object, dispose it to release resources and memory used for detection.  
+textOCR.dispose()
+</code></pre></li>
+</ol>
+
+<hr>
+
+<h2 id="textocrtilersettings" class="anchor"><a class="heading-anchor" href="#textocrtilersettings"><span></span></a>TextOCR.TilerSettings</h2>
+
+<p>The <code>TilerSettings</code> class provides a comprehensive set of parameters for controlling the tiling behavior of the <code>TextOCR</code> system. These settings are important for optimizing the detection and recognition of text in images, allowing for adjustments based on specific application needs and dataset characteristics. By fine-tuning these parameters, developers can significantly impact the performance and reliability of OCR processes. </p>
+
+<p>Configure <code>TilerSettings</code> in the following scenarios:</p>
 
 <ul>
-<li><strong>Description</strong>: Determines whether the distance between the centers of two words along the x-axis is significantly large. Raising this parameter will cause words that are spaced out horizontally to be joined into a line.</li>
+<li><strong>Large Document Processing:</strong> Enable tiling to process large documents efficiently, especially when sections require individual handling due to size limitations.</li>
 
-<li><strong>Type</strong>: <code>float</code></li>
+<li><strong>Complex Layout Handling:</strong> Adjust tiling settings for documents with complex layouts to improve the accuracy of text recognition.</li>
 
-<li><strong>Default</strong>: <code>1.5f</code></li>
-
-<li><strong>Example</strong>: If the average width of words is 90 pixels, setting <code>widthDistanceRatio</code> to 2.0 will allow words up to 180 pixels apart to be grouped into the same line.</li></ul>
-
-<p><img alt="image" style="height:75px" src="../about/assets/widthDistanceRatio.jpg"></p></li>
-
-<li><p><strong>heightDistanceRatio</strong></p>
-
-<ul>
-<li><strong>Description</strong>: Determines whether there is a significant difference in the height of two words. Raising this parameter will cause words of different heights to be joined into a line.</li>
-
-<li><strong>Type</strong>: <code>float</code></li>
-
-<li><strong>Default</strong>: <code>2.0f</code></li>
-
-<li><strong>Example</strong>: <code>heightDistanceRatio</code> to 4.0 will allow words with heights in the range of from approximately 0.25 and 4 times the height to be grouped into the same line.</li></ul>
-
-<p><img alt="image" style="height:75px" src="../about/assets/heightDistanceRatio.jpg"></p></li>
-
-<li><p><strong>centerDistanceRatio</strong></p>
-
-<ul>
-<li><strong>Description</strong>: Determines whether the distance between the centers of two boxes along the y-axis is significantly large. Raising this parameter will cause words that are not strictly aligned in a straight line to be joined into a line object.</li>
-
-<li><strong>Type</strong>: <code>float</code></li>
-
-<li><strong>Default</strong>: <code>0.6f</code></li>
-
-<li><strong>Example</strong>: If the average height of words is 20 pixels, setting <code>centerDistanceRatio</code> to 1.0 will allow words with centers up to 20 pixels apart vertically to be grouped into the same line.</li></ul>
-
-<p><img alt="image" style="height:75px" src="../about/assets/centerDistanceRatio.jpg"></p></li>
-
-<li><p><strong>paragraphHeightDistance</strong></p>
-
-<ul>
-<li><strong>Description</strong>: Determines the difference in the distance between the centers of two rows along the y-axis. Raising this parameter will cause lines that are spaced out vertically to be joined into a paragraph.</li>
-
-<li><strong>Type</strong>: <code>float</code></li>
-
-<li><strong>Default</strong>: <code>1.0f</code></li>
-
-<li><strong>Example</strong>: If the average height of lines is 30 pixels, setting <code>paragraphHeightDistance</code> to 2 will allow lines with centers up to 60 pixels apart vertically to be grouped into the same paragraph.</li></ul>
-
-<p><img alt="image" style="height:125px" src="../about/assets/paragraphHeightDistance.jpg"></p></li>
-
-<li><p><strong>paragraphHeightRatioThreshold</strong></p>
-
-<ul>
-<li><strong>Description</strong>: Determines whether there is a significant difference in the heights of two rows. Lowering this parameter will cause lines with higher difference in heights to be joined into a paragraph.</li>
-
-<li><strong>Type</strong>: <code>float</code></li>
-
-<li><strong>Default</strong>: <code>1.0f/3.0f</code></li>
-
-<li><strong>Example</strong>: If the average height of lines is 50 pixels, setting <code>paragraphHeightRatioThreshold</code> to 0.2 will allow lines with heights ranging from approximately 10 pixels to 250 pixels to be grouped into the same paragraph.</li></ul>
-
-<p><img alt="image" style="height:125px" src="../about/assets/paragraphHeightRatioThreshold.jpg"></p></li></ol></li>
+<li><strong>Performance Tuning:</strong> Fine-tune parameters to achieve an optimal balance between processing speed and accuracy, based on specific application requirements.</li>
 </ul>
 
-<h3 id="tilingoptions" class="anchor"><a class="heading-anchor" href="#tilingoptions"><span></span></a>Tiling Options</h3>
+<h3 id="tiling" class="anchor"><a class="heading-anchor" href="#tiling"><span></span></a>Tiling</h3>
 
-<ul>
-<li><strong>Description</strong>: A structure containing parameters related to handling very long text boxes.</li>
+<pre class="prettyprint"><code>    TilerSettings TextOCR.Settings.tiling 
+</code></pre>
 
-<li><strong>Type</strong>: <code>OpenCVOcrTiler::Options</code></li>
+<p><strong>Description:</strong> Tiling involves dividing a large image into smaller, manageable sections called "tiles" to analyze text more accurately. This structure contains parameters for handling very long text boxes. </p>
 
-<li><strong>Fields</strong>:
+<h3 id="enable" class="anchor"><a class="heading-anchor" href="#enable"><span></span></a>enable</h3>
 
+<pre class="prettyprint"><code>    boolean TextOCR.Settings.TilerSettings.enable 
+</code></pre>
+
+<p><strong>Description:</strong> Enables or disables the tiling feature. When true, <code>TextOCR</code> performs tiling operations on detected text regions, splitting boxes that meet aspect ratio criteria into multiple tiles, recognizing text, and merging results using a correlation method.</p>
+
+<p><strong>Default:</strong> false </p>
+
+<hr>
+
+<h3 id="topcorrelationthr" class="anchor"><a class="heading-anchor" href="#topcorrelationthr"><span></span></a>topCorrelationThr</h3>
+
+<pre class="prettyprint"><code>    float TextOCR.Settings.TilerSettings.topCorrelationThr 
+</code></pre>
+
+<p><strong>Description:</strong> Limits the number of potential merging points used internally based on their correlation score. </p>
+
+<p><strong>Tuning effect:</strong> Increasing this value restricts the merging mechanism to points with a correlation score higher than this value. Setting it to 0 removes the limit. If incorrect tiling occurs, increasing this parameter may help. </p>
+
+<p><strong>Default:</strong> 0.0f</p>
+
+<p><strong>Valid range:</strong> <code>[0.0f, 1.0f]</code></p>
+
+<hr>
+
+<h3 id="mergepointscutoff" class="anchor"><a class="heading-anchor" href="#mergepointscutoff"><span></span></a>mergePointsCutoff</h3>
+
+<pre class="prettyprint"><code>    int TextOCR.Settings.TilerSettings.mergePointsCutoff 
+</code></pre>
+
+<p><strong>Description:</strong> Limits the number of possible combinations used for tile merging. </p>
+
+<p><strong>Tuning effect:</strong> Increasing this value results in more combinations being used, increasing processing time but potentially generating more accurate results. </p>
+
+<p><strong>Default:</strong> 5</p>
+
+<p><strong>Valid range:</strong> [1, max(int)] </p>
+
+<hr>
+
+<h3 id="splitmarginfactor" class="anchor"><a class="heading-anchor" href="#splitmarginfactor"><span></span></a>splitMarginFactor</h3>
+
+<pre class="prettyprint"><code>    float TextOCR.Settings.TilerSettings.splitMarginFactor 
+</code></pre>
+
+<p><strong>Description:</strong> Scales the confidence values for characters at the borders of consecutive tiles, assuming character deformation due to tiling. This value should not be modified. </p>
+
+<p><strong>Default</strong>: 0.1f</p>
+
+<p><strong>Valid range</strong>: <code>[0.0f, 1.0f]</code></p>
+
+<hr>
+
+<h3 id="aspectratiolowerthr" class="anchor"><a class="heading-anchor" href="#aspectratiolowerthr"><span></span></a>aspectRatioLowerThr</h3>
+
+<pre class="prettyprint"><code>    float TextOCR.Settings.TilerSettings.aspectRatioLowerThr 
+</code></pre>
+
+<p><strong>Description:</strong> Controls which text boxes will be tiled. Generally, only elongated boxes (high width/height aspect ratio) are tiled, since they likely contain long text strings. Only boxes with an aspect ratio higher than this threshold will be tiled. Tune this parameter together with <code>aspectRatioUpperThr</code>. </p>
+
+<p><strong>Tuning effect:</strong> Decreasing this threshold results in more rectangular-shaped (low-aspect ratio) boxes being tiled. If the desired text box is not tiled, decreasing this parameter may help. </p>
+
+<p><strong>Default:</strong> 10.0f</p>
+
+<p><strong>Valid range:</strong> [1.0f, inf]</p>
+
+<hr>
+
+<h3 id="aspectratioupperthr" class="anchor"><a class="heading-anchor" href="#aspectratioupperthr"><span></span></a>aspectRatioUpperThr</h3>
+
+<pre class="prettyprint"><code>    float TextOCR.Settings.TilerSettings.aspectRatioUpperThr 
+</code></pre>
+
+<p><strong>Description:</strong> Filters boxes with very high aspect ratios, may rarely occur and be false positives from the text detector model. Tune this parameter together with <code>aspectRatioLowerThr</code>. A similar effect can be achieved with the <code>minBoxSize</code> parameter. </p>
+
+<p><strong>Tuning effect:</strong> Increasing this parameter allows tiling of more long and narrow boxes. </p>
+
+<p><strong>Default:</strong> 40.0f</p>
+
+<p><strong>Valid range:</strong> [1.0f, inf] </p>
+
+<hr>
+
+<h3 id="topkmergedpredictions" class="anchor"><a class="heading-anchor" href="#topkmergedpredictions"><span></span></a>topkMergedPredictions</h3>
+
+<pre class="prettyprint"><code>int TextOCR.Settings.TilerSettings.topkMergedPredictions 
+</code></pre>
+
+<p><strong>Description:</strong> Limits the number of decodes returned based on confidence scores. </p>
+
+<p><strong>Default:</strong> 5</p>
+
+<p><strong>Valid range:</strong> [1, max(int)] </p>
+
+<hr>
+
+<h3 id="samplecode-5" class="anchor"><a class="heading-anchor" href="#samplecode-5"><span></span></a>Sample Code</h3>
+
+<p>The <code>TilerSettings</code> object is part of the <code>TextOCR.Settings</code> configuration. Access and modify <code>TilerSettings</code> through the <code>TextOCR.Settings</code> object.</p>
+
+<p>This sample code demonstrates how to configure <code>TilerSettings</code> and process the image for text detection and recognition:</p>
 
 <ol>
-<li><strong>enable</strong>
+<li><p><strong>Initialize Settings:</strong> Begin by creating a <code>TextOCR.Settings</code> instance, specifying the path to your OCR model. </p></li>
 
+<li><p><strong>Configure TilerSettings:</strong> Access the <code>TilerSettings</code> within the <code>TextOCR.Settings</code> instance and set custom values for tiling parameters to control how the image is divided and processed. </p></li>
 
-<ul>
-<li><strong>Description</strong>: Enable tiling of elongated text boxes. Boxes that match aspect ratio criteria will be split into multiple images (tiles) and recognition will be performed on each of them. After that, a correlation method will be used to merge the results of recognition into a single set of decodes. Enabling this option may help recognize text in long strings of characters.</li>
+<li><p><strong>Instantiate TextOCR:</strong> Use the configured settings to create a <code>TextOCR</code> instance. This object will handle the text detection and recognition processes. </p></li>
 
-<li><strong>Type</strong>: <code>bool</code></li>
+<li><p><strong>Load Bitmap Image:</strong> Prepare the image for OCR by converting it to a <code>Bitmap</code> object. </p></li>
 
-<li><strong>Default</strong>: <code>false</code></li></ul>
-</li>
+<li><p><strong>Perform Detection:</strong> Use the detect method to analyze the image and retrieve an array of <code>OCRResult</code> objects containing the detected text. </p></li>
 
-<li><strong>topCorrelationThr</strong>
+<li><p><strong>Print Results:</strong> Iterate over the <code>OCRResult</code> array to output the recognized text to the console. </p></li>
 
+<li><p><strong>Dispose Resources:</strong> Free up system resources by calling the dispose method on the TextOCR object after usage. </p>
 
-<ul>
-<li><strong>Description</strong>: Increasing this value will reduce the number of combinations used internally to perform tiling based on their confidence. Tuning this value may increase/decrease tiling result accuracy. Setting it to 0 will turn this feature off.</li>
+<pre class="prettyprint"><code>import com.zebra.aivision.TextOCR; 
+import com.zebra.aivision.TextOCR.Settings; 
+import com.zebra.aivision.TextOCR.Settings.TilerSettings; 
+import android.graphics.Bitmap; 
 
-<li><strong>Type</strong>: <code>float</code></li>
+// Initialize settings with custom tiling options 
+TextOCR.Settings.TilerSettings tilerSettings = new TextOCR.Settings.TilerSettings(); 
+textOCRSettings.tiling.enable = true; 
+textOCRSettings.tiling.aspectRatioLowerThr = 8.0f; 
+textOCRSettings.tiling.aspectRatioUpperThr = 35.0f; 
+textOCRSettings.tiling.mergePointsCutoff = 10; 
 
-<li><strong>Default</strong>: <code>0.0f</code></li>
+// Input params are bitmap image (image to perform detection on); an executor thread object in which the detection happens, and the results are returned.   
 
-<li><strong>Valid range</strong>: <code>[0.0f, 1.0f]</code></li></ul>
-</li>
+// Initialize executor 
+Executor executor = Executors.newFixedThreadPool(1); 
 
-<li><strong>mergePointsCutoff</strong>
+CompletableFuture&lt;OCRResult[]&gt; futureResult = textocr.detect(bitmap,executor);   
 
+futureResult.thenAccept (ocrResults -&gt; {     
+    //Process the returned output that contains bounding boxes and text in it.     
+}); 
 
-<ul>
-<li><strong>Description</strong>: This is an internal parameter used to limit the number of possible combinations used for tile merging. Raising this value will result in more combinations being used internally and will increase the processing time but can also generate more accurate results.</li>
+// Dispose resources
+// Once done using the textOCR object, dispose it to release resources and memory used for detection.  
+textOCR.dispose()
+</code></pre></li>
+</ol>
 
-<li><strong>Type</strong>: <code>int</code></li>
+<hr>
 
-<li><strong>Default</strong>: <code>5</code></li></ul>
-</li>
+<h2 id="inferenceroptions" class="anchor"><a class="heading-anchor" href="#inferenceroptions"><span></span></a>Inferencer Options</h2>
 
-<li><strong>splitMarginFactor</strong>
+<h3 id="inferenceroptions-1" class="anchor"><a class="heading-anchor" href="#inferenceroptions-1"><span></span></a>InferencerOptions()</h3>
 
+<pre class="prettyprint"><code>    InferencerOptions.InferencerOptions ()
+</code></pre>
 
-<ul>
-<li><strong>Description</strong>: This parameter scales the confidence values for characters that are at the borders of consecutive tiles, assuming that characters that these characters could be deformed due to cutting the image into tiles. It's not recommended to modify this value.</li>
+<p><strong>Description:</strong> Constructs a new <code>InferencerOptions</code> object.</p>
 
-<li><strong>Type</strong>: <code>float</code></li>
+<h3 id="runtimedependencies" class="anchor"><a class="heading-anchor" href="#runtimedependencies"><span></span></a>runtimeDependencies</h3>
 
-<li><strong>Default</strong>: <code>0.1f</code></li>
+<pre class="prettyprint"><code>    String InferencerOptions.runtimeDependencies
+</code></pre>
 
-<li><strong>Valid range</strong>: <code>[0.0f, 1.0f]</code></li></ul>
-</li>
+<p><strong>Description:</strong> Path to any required runtime dependencies.</p>
 
-<li><strong>aspectRatioLowerThr</strong>
+<p><strong>Default:</strong> ""</p>
 
+<h3 id="runtimeprocessororder" class="anchor"><a class="heading-anchor" href="#runtimeprocessororder"><span></span></a>runtimeProcessorOrder</h3>
 
-<ul>
-<li><strong>Description</strong>: Tiling algorithm decides which boxes should be tiled and which not. Lowering this threshold will result with more boxes, with smaller aspect ratio (width/height) being tiled. Lowering this value can result in increased processing time.</li>
+<pre class="prettyprint"><code>    int InferencerOptions.runtimeProcessorOrder[]
+</code></pre>
 
-<li><strong>Type</strong>: <code>float</code></li>
-
-<li><strong>Default</strong>: <code>10.0f</code></li></ul>
-</li>
-
-<li><strong>aspectRatioUpperThr</strong>
-
-
-<ul>
-<li><strong>Description</strong>: This threshold alows filtering of boxes with very high aspect ratio. Such boxes rarely occur naturally and sometimes are a false positive of text detector model. Lowering this value will result in less boxes being tiled.</li>
-
-<li><strong>Type</strong>: <code>float</code></li>
-
-<li><strong>Default</strong>: <code>40.0f</code></li></ul>
-</li>
-
-<li><strong>topkMergedPredictions</strong>
-
+<p><strong>Description:</strong> Preferred processor for running the model:</p>
 
 <ul>
-<li><strong>Description</strong>: The final tiling result - the decodes, are sorted based on their confidence score. This setting allows the user to limit the number of decodes being returned from the OCR.</li>
+<li><strong>CPU =</strong> 0</li>
 
-<li><strong>Type</strong>: <code>int</code></li>
+<li><strong>GPU =</strong> 1</li>
 
-<li><strong>Default</strong>: <code>5</code></li></ul>
-</li></ol>
-</li>
+<li><strong>DSP =</strong> 2</li>
 </ul>
 
-<p><br></p>
+<p><strong>Default:</strong> {0} (CPU)</p>
 
-<h2 id="apis-1" class="anchor"><a class="heading-anchor" href="#apis-1"><span></span></a>APIs</h2>
+<h3 id="defaultdims" class="anchor"><a class="heading-anchor" href="#defaultdims"><span></span></a>defaultDims</h3>
 
-<p>The <code>TextOCR</code> class is part of the <code>com.zebra.AI.Vision</code> package and is used for detecting and recognizing text in images. It provides methods for detecting text at different granularities, including words and paragraphs. This class is essential for applications that require text extraction from images, such as document scanning, automated data entry, and more.</p>
+<pre class="prettyprint"><code>    DynamicDimensions InferencerOptions.defaultDims
+</code></pre>
 
-<h3 id="textocrsettingssettings-1" class="anchor"><a class="heading-anchor" href="#textocrsettingssettings-1"><span></span></a>TextOCR(Settings settings)</h3>
+<p><strong>Description:</strong> Default dimensions of the input image. If <code>runtimeProcessorOrder</code> is specified, the batch size must be set to 1.</p>
 
-<p>Initializes the OCR engine with the specified settings, allowing subsequent text detection and analysis on image inputs. It validates the availability of required model files and ensures the integrity of the archive. If any issues are detected, appropriate exceptions are thrown.</p>
+<p><strong>Type:</strong> {width, height}</p>
 
-<ul>
-<li><strong>Constructor:</strong>
+<p><strong>Default</strong> { -1, -1}</p>
 
-
-<ul>
-<li>TextOCR.TextOCR (<a href="../textocr/textocrsettings/">Settings</a> settings) throws FileNotFoundException, IOException</li></ul>
-</li>
-
-<li><strong>Parameters:</strong>
-
-
-<ul>
-<li><code>settings</code> - <a href="../textocr/textocrsettings/">TextOCR.Settings settings</a> to construct an OCR object with.
-An instance of the <code>Settings</code> class, containing configuration options for the OCR engine. These settings include model paths, language preferences, and performance configurations.</li></ul>
-</li>
-
-<li><strong>Exceptions:</strong>
-
-
-<ul>
-<li><code>FileNotFoundException</code> - Thrown if the required model file is not found in the archive.</li>
-
-<li><code>IOException</code> - Thrown if the archive is corrupted.</li></ul>
-</li>
-</ul>
-
-<h3 id="detectbitmapsrcimg" class="anchor"><a class="heading-anchor" href="#detectbitmapsrcimg"><span></span></a>detect (Bitmap srcImg)</h3>
-
-<p>Performs Optical Character Recognition (OCR) on the provided Bitmap image.</p>
-
-<ul>
-<li><strong>Method:</strong>
-
-
-<ul>
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a>&lt;<a href="../class/ocrresult/">OCRResult</a>[ ]&gt; TextOCR.detect (Bitmap srcImg) throws <a href="../class/invalidinputexception/">InvalidInputException</a></li></ul>
-</li>
-
-<li><strong>Parameters:</strong>
-
-
-<ul>
-<li><code>srcImg</code> (Bitmap srcImg) - A <code>Bitmap</code> image to perform OCR detection on.</li></ul>
-</li>
-
-<li><strong>Return Value:</strong>
-
-
-<ul>
-<li>An array of <a href="../class/ocrresult/">OCRResult</a> containing bounding boxes and recognized text.</li></ul>
-</li>
-
-<li><strong>Exceptions:</strong>
-
-
-<ul>
-<li><code>InvalidInputException</code> - Thrown when Bitmap is passed as null. </li></ul>
-</li>
-</ul>
-
-<h3 id="detectwordsbitmapsrcimg" class="anchor"><a class="heading-anchor" href="#detectwordsbitmapsrcimg"><span></span></a>detectWords(Bitmap    srcImg)</h3>
-
-<p>Detects individual words in the given Bitmap image. Each word may have multiple possible readings with associated confidence scores.</p>
-
-<ul>
-<li><strong>Method:</strong> 
-
-
-<ul>
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a>&lt;<a href="../class/word/">Word</a>[ ]&gt; TextOCR.detectWords(Bitmap    srcImg) throws <a href="../class/invalidinputexception/">InvalidInputException</a></li></ul>
-</li>
-
-<li><strong>Parameters:</strong>
-
-
-<ul>
-<li><code>srcImg</code> (Bitmap srcImg) - The image to analyze for word detection.</li></ul>
-</li>
-
-<li><strong>Exceptions:</strong>
-
-
-<ul>
-<li><code>InvalidInputException</code> thrown when Bitmap is passed as null. </li></ul>
-</li>
-
-<li><strong>Return Value:</strong>
-
-
-<ul>
-<li>An array of <code>Words</code> objects containing bounding boxes and possible text decodes.</li></ul>
-</li>
-</ul>
-
-<h3 id="detectparagraphsbitmapsrcimg" class="anchor"><a class="heading-anchor" href="#detectparagraphsbitmapsrcimg"><span></span></a>detectParagraphs (Bitmap    srcImg)</h3>
-
-<p>Detects paragraphs in the given Bitmap image. Words are grouped into lines and paragraphs based on layout.</p>
-
-<ul>
-<li><strong>Prototype:</strong>
-
-
-<ul>
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a>&lt;<a href="../class/textparagraph/">TextParagraph</a>[ ]&gt; TextOCR.detectParagraphs (Bitmap    srcImg) throws <a href="../class/invalidinputexception/">InvalidInputException</a></li></ul>
-</li>
-
-<li><strong>Parameters:</strong>
-
-
-<ul>
-<li><code>srcImg</code> (Bitmap srcImg): The image to analyze for paragraph detection.</li></ul>
-</li>
-
-<li><strong>Return Value:</strong>
-
-
-<ul>
-<li>An array of <code>TextParagraph</code> objects representing detected paragraphs.</li></ul>
-</li>
-
-<li><strong>Exceptions:</strong> 
-
-
-<ul>
-<li><code>InvalidInputException</code> - Thrown when Bitmap is passed as null. </li></ul>
-</li>
-</ul>
-
-<h3 id="dispose-1" class="anchor"><a class="heading-anchor" href="#dispose-1"><span></span></a>dispose ()</h3>
-
-<p>Releases all internal resources used by the <code>TextOCR</code> object. This function needs to be called manually to free up resources.</p>
-
-<ul>
-<li><strong>Constructor:</strong>
-
-
-<ul>
-<li>void dispose()</li></ul>
-</li>
-</ul>
-
-<p>--&gt;</p><p></p>
+<hr><p></p>
                                         
 
 
