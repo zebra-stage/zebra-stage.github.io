@@ -243,7 +243,19 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>The <code>BarcodeDecoder</code> class is designed to decode various types of barcodes from images. It supports decoding from either entire images or specific regions defined by <a href="../class/bbox/">bounding boxes</a>. The <code>BarcodeDecoder</code> class can decode a single barcode or multiple barcodes within a single image by using detections provided by the <a href="../localizer/">Localizer</a> class.</p>
+<p>The <code>BarcodeDecoder</code> class is designed to decode various types of barcodes detected in images. Initially, the <a href="../localizer/">Localizer</a> class is used to identify the location of barcodes in captured images. The <code>BarcodeDecoder</code> class then decodes barcodes from entire images or specific regions defined by <a href="../class/bbox/">bounding boxes</a>. It is capable of decoding a single barcode or multiple barcodes within a single image. </p>
+
+<p>Common applications:</p>
+
+<ul>
+<li><strong>Retail and Inventory Management -</strong> Automate product identification and inventory management by decoding barcodes on shelves, labels, or packaging.</li>
+
+<li><strong>Mobile Applications -</strong> Integrate scanning capabilities for QR codes and other barcodes in mobile apps.</li>
+
+<li><strong>Logistics and Supply Chain -</strong> Track packages and shipments by decoding barcodes on boxes and pallets.</li>
+
+<li><strong>Healthcare -</strong> Scan barcodes on medical supplies and patient wristbands for inventory management and patient tracking.</li>
+</ul>
 
 <hr>
 
@@ -252,530 +264,813 @@
 <h3 id="step1initialization" class="anchor"><a class="heading-anchor" href="#step1initialization"><span></span></a>Step 1: Initialization</h3>
 
 <ol>
-<li><strong>Import the BarcodeDecoder class</strong> using <code>com.zebra.ai.vision.BarcodeDecoder</code>.</li>
+<li><p><strong>Import the BarcodeDecoder class</strong> using <code>com.zebra.ai.vision.BarcodeDecoder</code>.</p></li>
 
-<li><strong>Initialize BarcodeDecoder Settings:</strong> Create an instance of <code>BarcodeDecoder.Settings</code>, which will hold any configurations needed to set for the barcode decoding process.</li>
+<li><p><strong>Initialize BarcodeDecoder Settings:</strong> Create an instance of <code>BarcodeDecoder.Settings</code>, which will hold any configurations needed to set for the barcode decoding process.</p></li>
+
+<li><p><strong>Configure Barcode Symbologies:</strong> Enable the desired barcode symbologies to recognize and set its parameters; refer to the <a href="#supportedbarcodesymbologies">Supported Barcode Symbologies</a>.</p></li>
+
+<li><p><strong>Initialize and load the model asynchronously -</strong> Declare a <code>BarcodeDecoder</code> object and use a <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a> to load the model asynchronously. Ensure an <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Executor.html">Executor</a> is available to manage asynchronous processing.</p></li>
+
+<li><p><strong>Handle synchronous initialization -</strong> Implement the <code>thenAccept()</code> callback to use the decoder instance once it is available. </p>
+
+<pre class="prettyprint"><code>import com.zebra.ai.vision.BarcodeDecoder;
+
+// Initialize BarcodeDecoder settings object
+BarcodeDecoder.Settings settings = new BarcodeDecoder.Settings();
+
+// Enable Code 128 and its parameters or other desired symbologies
+settings.Symbology.CODE128.enable(true);
+settings.Symbology.CODE128.setLength1(1);
+settings.Symbology.CODE128.setLength2(10);
+
+// Initialize BarcodeDecoder object
+BarcodeDecoder decoder = null; 
+
+// Executor = An executor thread in which the processing of API call happens, and the results are returned
+CompletableFuture&lt;BarcodeDecoder&gt; futureObject = getBarcodeDecoder(settings, executor);
+
+//Use the futureObject to implement thenAccept() callback of CompletableFuture.
+futureObject.thenAccept (decoderInstance -&gt; {
+    //Use the decoder object returned here for decoding the barcodes
+    decoder = decoderInstance;
+});
+</code></pre></li>
 </ol>
 
-<p>Set model_file_path with the fully qualified file path to the .crypt file containing the OCR model.
-Create a TextOCR.Settings object with the specified file path.
-Optional: Set model input dimensions: If needed, customize the model input dimensions (height and width). These should be multiples of 32 (e.g., 640).</p>
+<h3 id="step2decode" class="anchor"><a class="heading-anchor" href="#step2decode"><span></span></a>Step 2: Decode</h3>
 
-<p>settings.detectionInferencerOptions.defaultDims.width = [your value];
-settings.detectionInferencerOptions.defaultDims.height = [your value];
-Smaller Input Sizes - Reduce processing time and increase speed, but may decrease accuracy. Ideal for larger or closer text.
-Larger Input Sizes - Improve accuracy for smaller or more distant text, but increase inference time. An input size that is too large may cause out-of-memory errors and potentially cause an application crash at run-time.
-Initialize the OCR object - Declare a TextOCR object. Use CompletableFuture to initialize it asynchronously with an Executor for concurrent processing.</p>
+<p>Select one of the following methods to decode:</p>
 
-<p>Callback Handling - Use thenAccept() to assign the initialized TextOCR object to the textocr variable, enabling it for text detection tasks like barcodes and products in images.</p>
+<h4 id="method1decodefullimage" class="anchor"><a class="heading-anchor" href="#method1decodefullimage"><span></span></a>Method 1: Decode Full Image</h4>
 
-<hr>
+<p>This method runs the decoder over the entire image, attempting to find and decode a barcode. Typically, this applies for decoding a single barcode.</p>
 
-<h2 id="barcodedecodersettings" class="anchor"><a class="heading-anchor" href="#barcodedecodersettings"><span></span></a>BarcodeDecoder Settings</h2>
+<ol>
+<li><strong>Prepare Inputs:</strong> Obtain a Bitmap image that contains the barcode. Use an Executor to manage the asynchronous decoding operation.</li>
 
-<p>The <code>BarcodeDecoder Settings</code> class provides configuration settings necessary for customizing the barcode decoding process.</p>
+<li><strong>Decode Barcode:</strong> Call the decode method on the BarcodeDecoder instance, passing the image and executor.</li>
 
-<h3 id="barcodedecodersettingstype" class="anchor"><a class="heading-anchor" href="#barcodedecodersettingstype"><span></span></a>BarcodeDecoder Settings.Type</h3>
+<li><strong>Handle Results:</strong> Process the decoded barcode when the CompletableFuture completes.</li>
 
-<p>The following table provides each symbology supported by the BarcodeDecoder.</p>
+<li><strong>Dispose Decoder:</strong> After decoding is complete and the decoder instance is no longer needed, dispose of the decoder to release resources.</li>
+</ol>
 
-<table class="facelift" style="width:20" border="1" padding="5px">
-  <tbody><tr bgcolor="#dce8ef">
-    <th style="text-align:center">Symbologies</th>
-    <th style="text-align:center">Value</th>
-  </tr>
-  <tr>
-    <td>Aztec</td>
-    <td>0</td>
-  </tr>
-  <tr>
-    <td>Codabar</td>
-    <td>1</td>
-  </tr>
-  <tr>
-    <td>Code128</td>
-    <td>2</td>
-  </tr>
-  <tr>
-    <td>Code39</td>
-    <td>3</td>
-  </tr>
-  <tr>
-    <td>Datamatrix</td>
-    <td>4</td>
-  </tr>
-  <tr>
-    <td>EAN13</td>
-    <td>5</td>
-  </tr>
-  <tr>
-    <td>EAN8</td>
-    <td>6</td>
-  </tr>
-  <tr>
-    <td>GS1 DataBar</td>
-    <td>7</td>
-  </tr>
-  <tr>
-    <td>GS1 DataBar Expanded</td>
-    <td>8</td>
-  </tr>
-  <tr>
-    <td>MAIL MARK</td>
-    <td>9</td>
-  </tr>
-  <tr>
-    <td>Maxicode</td>
-    <td>10</td>
-  </tr>
-  <tr>
-    <td>PDF417</td>
-    <td>11</td>
-  </tr>
-  <tr>
-    <td>QRCode</td>
-    <td>12</td>
-  </tr>
-  <tr>
-    <td>UPCA</td>
-    <td>13</td>
-  </tr>
-  <tr>
-    <td>UPCE0</td>
-    <td>14</td>
-  </tr>
-</tbody></table>
+<p>Code: 
+        // Decoding starts once the bitmap image is available. Note that the Decode API accepts Bitmap image. <br>
+        // Input params: bitmap image and an executor thread object (in which the decode happens and the results are returned). 
+        CompletableFuture<result> resultFutureObject = barcodeDecoder.decode(bitmap, executor); <br>
+        resultFutureObject.thenAccept (results -&gt; { 
+            //Process the returned result of decoded barcode. 
+        });</result></p>
 
-<!-- 
-|  Symbologies           |  Value
-| -----------------------|  --------------
-| Aztec                  |  0
-| Codabar                |  1
-| Code128                |  2
-| Code39                 |  3
-| Datamatrix             |  4
-| EAN13                  |  5
-| EAN8                   |  6
-| GS1 DataBar            |  7
-| GS1 DataBar Expanded   |  8
-| MAIL MARK              |  9
-| Maxicode               |  10
-| PDF417                 |  11
-| QRCode                 |  12
-| UPCA                   |  13
-| UPCE0                  |  14
-
--->
-
-<hr>
-
-<h3 id="initialization" class="anchor"><a class="heading-anchor" href="#initialization"><span></span></a>Initialization</h3>
-
-<pre class="prettyprint"><code>    import com.zebra.AI.Vision.BarcodeDecoder;
-    BarcodeDecoder.Settings settings = new BarcodeDecoder.Settings();
-    // Initialize BarcodeDecoder object
-    BarcodeDecoder barcodeDecoder = new BarcodeDecoder(settings);
+<pre class="prettyprint"><code>    // Once done with using the decoder object, dispose the object to release the resources and memory used for decoding
+    decoder.dispose();
 </code></pre>
 
+<h4 id="method2decoderegionsofimage" class="anchor"><a class="heading-anchor" href="#method2decoderegionsofimage"><span></span></a>Method 2: Decode Regions of Image</h4>
+
+<p>This method runs the decoder over specific areas of an image, defined by <a href="../class/bbox/">bounding boxes</a>. This is typically used when these bounding boxes are determined by a separate localization process, such as a Localizer. Typically applies when decoding multiple barcodes.</p>
+
+<ol>
+<li><p><strong>Prepare Inputs:</strong> Obtain a Bitmap image containing the barcodes. Use an array of BBox (<a href="../class/bbox/">bounding boxes</a>) indicating the regions of interest in the image where barcodes are expected. Use an Executor to manage asynchronous decoding operations.</p></li>
+
+<li><p><strong>Decode Barcodes:</strong> Call the decode method on the BarcodeDecoder instance, passing the image, bounding boxes, and executor.</p></li>
+
+<li><p><strong>Handle the Results:</strong> Process the decoded barcodes when the CompletableFuture completes.</p></li>
+
+<li><p><strong>Dispose the Decoder:</strong> Once decoding is complete and no further use of the decoder instance is needed, dispose of the decoder to release resources.</p>
+
+<pre class="prettyprint"><code>// Decoding starts once bounding boxes are available. 
+// Input params: bitmap image, array of bounding boxes, an executor thread object (in which the decode happens and the results are returned) 
+CompletableFuture&lt;Result[]&gt; resultFutureObject = barcodeDecoder.decode(bitmap, bboxes, executor);  
+resultFutureObject.thenAccept (results -&gt; { 
+    //Process the returned result of decoded barcodes. 
+});
+
+// Once use of the decoder object is done, dispose the object to release the resources and memory used for decoding
+decoder.dispose();
+</code></pre></li>
+</ol>
+
 <hr>
 
-<h3 id="usage" class="anchor"><a class="heading-anchor" href="#usage"><span></span></a>Usage</h3>
+<h2 id="methods" class="anchor"><a class="heading-anchor" href="#methods"><span></span></a>Methods</h2>
 
-<h4 id="method1decodeusingboundingboxes" class="anchor"><a class="heading-anchor" href="#method1decodeusingboundingboxes"><span></span></a>Method 1: Decode Using Bounding Boxes</h4>
+<h3 id="getbarcodedecodersettingssettingsexecutorexecutor" class="anchor"><a class="heading-anchor" href="#getbarcodedecodersettingssettingsexecutorexecutor"><span></span></a>getBarcodeDecoder (Settings settings, Executor executor)</h3>
 
-<p>This method runs the decoder over specific areas of an image, defined by bounding boxes. This is typically used when these bounding boxes are determined by a separate localization process, such as a <code>Localizer</code>.</p>
-
-<pre class="prettyprint"><code>    String[] decodedBarcodes = barcodeDecoder.decode(IMAGE, DETECTIONS);
+<pre class="prettyprint"><code>    CompletableFuture&lt;BarcodeDecoder&gt; getBarcodeDecoder (Settings settings, Executor executor) throws InvalidInputException, RuntimeException
 </code></pre>
 
-<ul>
-<li><strong>Parameters:</strong>
+<p><strong>Description:</strong> Asynchronously initializes and returns a <code>BarcodeDecoder</code> object.</p>
 
-
-<ul>
-<li><code>IMAGE</code> - A <code>Bitmap</code> object representing the image from which barcodes need to be decoded.</li>
-
-<li><code>DETECTIONS</code> - A list of bounding boxes. Each bounding box is a detected region within the image that potentially contains a barcode. </li></ul>
-</li>
-
-<li><strong>Return Type:</strong>
-
+<p><strong>Parameters:</strong></p>
 
 <ul>
-<li>A CompletableFuture object with an array of result types. See <a href="#barcodedecoderresult">Result Types</a></li></ul>
-</li>
+<li><strong>Settings settings -</strong> Configurable options for the Barcode Decoder. </li>
+
+<li><strong>Executor executor -</strong> The <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Executor.html">executor</a> used to create the <code>BarcodeDecoder</code> object.</li>
 </ul>
 
-<h4 id="method2decodefullimage" class="anchor"><a class="heading-anchor" href="#method2decodefullimage"><span></span></a>Method 2: Decode Full Image</h4>
-
-<p>This method runs the decoder over the entire image, attempting to find and decode a barcode.</p>
-
-<pre class="prettyprint"><code>    String decodedBarcode = barcodeDecoder.decode(IMAGE);
-</code></pre>
+<p><strong>Exceptions:</strong></p>
 
 <ul>
-<li><p><strong>Parameters:</strong></p>
+<li><strong>InvalidInputException -</strong> Thrown if the settings object is null.</li>
 
-<ul>
-<li><code>IMAGE</code> - A <code>Bitmap</code> object representing the full image to be scanned for a barcode.</li></ul></li>
-
-<li><p><strong>Return Type:</strong></p>
-
-<p></p><ul>
-<li>A CompletableFuture of result.</li></ul><p></p></li>
-</ul>
-
-<hr>
-
-<h3 id="apis" class="anchor"><a class="heading-anchor" href="#apis"><span></span></a>APIs</h3>
-
-<!-- 
-The following is a list of APIs supported by BarcodeDecoder.
-
-Return Type                                             |  API Name
-------------------------------------------------------------| ---------------
-[BarcodeDecoder](BarcodeDecoder.md#barcodedecoder-1)         |  ([Settings](BarcodeDecoder.md#settings-class-members) settings) throws FileNotFoundException, IOException
-CompletableFuture<[Result](BarcodeDecoder.md#barcodedecoderresult)> | [decode](BarcodeDecoder.md#decode-bitmap-bmp)  (Bitmap bmp) throws [InvalidInputException](InvalidInputException.md)
-CompletableFuture<[Result](BarcodeDecoder.md#barcodedecoderresult)[]>     |  [decode](BarcodeDecoder.md#decodebitmapbmp-bbox-detections)   (Bitmap bmp, [BBox](BBox.md)[] detections) throws [InvalidInputException](InvalidInputException.md)
-void                                                        |  [dispose](BarcodeDecoder.md#dispose) ()
-
-## API Detailed Description -->
-
-<h3 id="barcodedecoder" class="anchor"><a class="heading-anchor" href="#barcodedecoder"><span></span></a>BarcodeDecoder</h3>
-
-<p>Initializes a new instance of the <code>BarcodeDecoder</code> class using the provided settings. This constructor loads necessary resources and configurations for barcode decoding.</p>
-
-<p><strong>NOTE</strong>: Call the dispose() API for every object of BarcodeDecoder when it is no longer needed.</p>
-
-<ul>
-<li><strong>Constructor:</strong>
-
-
-<ul>
-<li>BarcodeDecoder (<a href="#settingsclassmembers">Settings</a>    settings) throws FileNotFoundException, IOException</li></ul>
-</li>
-
-<li><strong>Parameters:</strong>
-
-
-<ul>
-<li><code>Settings</code> - Configurable options for the Barcode Decoder object.</li></ul>
-</li>
-
-<li><strong>Exceptions:</strong>
-
-
-<ul>
-<li><code>FileNotFoundException</code> - Thrown if required resource files are missing or cannot be located.</li>
-
-<li><code>IOException</code> - Thrown if the archive is corrupted.</li></ul>
-</li>
+<li><strong>IllegalStateException -</strong> Thrown if the AI Data Capture SDK is not initialized.</li>
 </ul>
 
 <hr>
 
 <h3 id="decodebitmapbmp" class="anchor"><a class="heading-anchor" href="#decodebitmapbmp"><span></span></a>decode (Bitmap bmp)</h3>
 
-<p>Runs barcode decoding on the entire input Bitmap image.</p>
+<pre class="prettyprint"><code>    CompletableFuture&lt;Result&gt; BarcodeDecoder. decode (Bitmap bmp, Executor executor) throws InvalidInputException, IllegalStateException
+</code></pre>
+
+<p><strong>Description:</strong> Asynchronously decodes a barcode from the provided bitmap image. Runs the decoding process in the specified executor thread.</p>
+
+<p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>Method:</strong>
+<li><strong>Bitmap bmp -</strong> Image to decode.</li>
 
+<li><strong>Executor executor -</strong>  The executor for running the decoding process.</li>
+</ul>
 
-<ul>
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a>&lt;<a href="#barcodedecoderresult">Result</a>&gt; BarcodeDecoder.decode (Bitmap    bmp) throws <a href="../class/invalidinputexception/">InvalidInputException</a></li></ul>
-</li>
+<p><strong>Return Value -</strong> A <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a> returing a String representing the decoded barcode.</p>
 
-<li><strong>Parameters:</strong>
-
-
-<ul>
-<li><code>bmp</code> (Bitmap bmp) - Image to decode</li></ul>
-</li>
-
-<li><strong>Return Value:</strong>
-
+<p><strong>Exceptions:</strong></p>
 
 <ul>
-<li>CompletableFuture with String as output. A string representing the decoded barcode.</li></ul>
-</li>
+<li><strong>InvalidInputException -</strong> Thrown when the Bitmap is null.</li>
 
-<li><strong>Exceptions:</strong>
-
-
-<ul>
-<li><code>InvalidInputException</code> - Thrown when Bitmap is passed as null. </li></ul>
-</li>
+<li><strong>IllegalStateException -</strong> Thrown if the previous decoding task is still in progress.</li>
 </ul>
 
 <hr>
 
-<h3 id="decodebitmapbmpbboxdetections" class="anchor"><a class="heading-anchor" href="#decodebitmapbmpbboxdetections"><span></span></a>decode (Bitmap bmp, BBox [ ] detections)</h3>
+<h3 id="decodebitmapbmpbboxdetectionsexecutorexecutor" class="anchor"><a class="heading-anchor" href="#decodebitmapbmpbboxdetectionsexecutorexecutor"><span></span></a>decode (Bitmap bmp, BBox[] detections, Executor executor)</h3>
 
-<p>Runs barcode decoding on specific locations (Bounding Box returned by localizer) within the input image.</p>
+<pre class="prettyprint"><code>    CompletableFuture&lt;Result[]&gt; BarcodeDecoder.decode (Bitmap bmp, BBox[] detections, Executor executor) throws InvalidInputException, IllegalStateException
+</code></pre>
 
-<ul>
-<li><strong>Method:</strong>
+<p><strong>Description:</strong> Decodes barcodes at specific locations (<a href="../class/bbox/">bounding boxes</a> returned by <a href="../localizer/">Localizer</a>) within the input image.</p>
 
-
-<ul>
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a>&lt;<a href="#barcodedecoderresult">Result</a>[ ]&gt; BarcodeDecoder.decode (Bitmap bmp, <a href="../class/bbox/">BBox</a>[ ] detections) throws <a href="../class/invalidinputexception/">InvalidInputException</a></li></ul>
-</li>
-
-<li><strong>Parameters:</strong>
-
+<p><strong>Parameters:</strong></p>
 
 <ul>
-<li><code>bmp</code>(Bitmap bmp) - Image to decode</li>
+<li><strong>Bitmap  bmp -</strong> Image to decode.</li>
 
-<li><code>detections</code> - Bounding boxes indicating the barcode locations</li></ul>
-</li>
+<li><strong>BBox[] detections -</strong> Bounding boxes indicating the barcode locations.</li>
 
-<li><strong>Return Value:</strong>
+<li><strong>Executor executor -</strong> The executor for running the decoding process.</li>
+</ul>
 
+<p><strong>Return Value:</strong> A <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a> returning an array of <code>Result</code> objects representing the decoded barcodes.</p>
 
-<ul>
-<li>A CompletableFuture with Result[] array representing the decoded barcodes.</li></ul>
-</li>
-
-<li><strong>Exceptions:</strong>
-
+<p><strong>Exceptions:</strong></p>
 
 <ul>
-<li><a href="../class/invalidinputexception/"><code>InvalidInputException</code></a> - Thrown when Bitmap or detections array are passed as null. </li></ul>
-</li>
+<li><strong>InvalidInputException -</strong> Thrown when Bitmap or detections array is null.</li>
+
+<li><strong>IllegalStateException -</strong> Thrown if the previous decoding task is still in progress.</li>
 </ul>
 
 <hr>
 
 <h3 id="dispose" class="anchor"><a class="heading-anchor" href="#dispose"><span></span></a>dispose()</h3>
 
-<p>Frees or releases resources. </p>
+<pre class="prettyprint"><code>    void dispose()
+</code></pre>
 
-<ul>
-<li><strong>Constructor:</strong>
-
-
-<ul>
-<li>BarcodeDecoder.dispose()</li></ul>
-</li>
-</ul>
-
-<p><strong>NOTE</strong>: Needs to be called manually to release all internal resources. Call dispose() when the new object of BarcodeDecoder is created.</p>
+<p><strong>Description:</strong> Frees or releases resources. This method must be called manually to release all internal resources when a new <code>BarcodeDecoder</code> object is created.</p>
 
 <hr>
 
-<h2 id="barcodedecodertypes" class="anchor"><a class="heading-anchor" href="#barcodedecodertypes"><span></span></a>BarcodeDecoder Types</h2>
+<h2 id="barcodedecodersettings" class="anchor"><a class="heading-anchor" href="#barcodedecodersettings"><span></span></a>BarcodeDecoder.Settings</h2>
 
-<h3 id="barcodedecoderresult" class="anchor"><a class="heading-anchor" href="#barcodedecoderresult"><span></span></a>BarcodeDecoder.Result</h3>
+<p>The <code>BarcodeDecoder.Settings</code> class configures the barcode symbologies and related settings required for decoding barcodes from images. This class allows users to customize decoding parameters to optimize performance for specific use cases.</p>
 
-<p>The <code>BarcodeDecoder.Result</code> class provides a comprehensive representation of the decoded barcode data, including the symbology type and the bounding box coordinates.</p>
-
-<!-- 
-### Data Members
-Return Type                          |  API Name
--------------------------------------| -----------------------------
-int             |    [symbologytype](#symbologytype)
-String          |    [value](#value)
-[BBox](../class//bbox/) |    [bboxData](#bboxdata)
--->
-
-<h3 id="detaileddescription" class="anchor"><a class="heading-anchor" href="#detaileddescription"><span></span></a>Detailed Description</h3>
-
-<p>The <code>BarcodeDecoder.Result</code> class encapsulates the result of a barcode decoding operation. It provides information on the decoded data value, the type of symbology used, and the bounding box data that indicates the position and dimensions of the barcode within an image.</p>
-
-<hr>
-
-<h2 id="resultclassmembers" class="anchor"><a class="heading-anchor" href="#resultclassmembers"><span></span></a>Result Class Members</h2>
-
-<h3 id="symbologytype" class="anchor"><a class="heading-anchor" href="#symbologytype"><span></span></a>symbologytype</h3>
-
-<p>int  BarcodeDecoder.Result.symbologytype</p>
-
-<h4 id="description" class="anchor"><a class="heading-anchor" href="#description"><span></span></a>Description</h4>
-
-<p>This integer member represents the type of symbology that the decoded barcode corresponds to. The symbology type is essential for understanding the format of the barcode, such as QR code, UPC, EAN, etc. Each symbology type is typically associated with a specific integer value that can be cross-referenced with a symbology type enumeration or reference guide.</p>
-
-<p>The following table provides each symbology supported by the BarcodeDecoder.</p>
-
-<table class="facelift" style="width:20%" border="1" padding="5px">
-  <tbody><tr bgcolor="#dce8ef">
-    <th style="text-align:center">Symbologies</th>
-    <th style="text-align:center">Value</th>
-  </tr>
-  <tr>
-    <td>Aztec</td>
-    <td>0</td>
-  </tr>
-  <tr>
-    <td>Codabar</td>
-    <td>1</td>
-  </tr>
-  <tr>
-    <td>Code128</td>
-    <td>2</td>
-  </tr>
-  <tr>
-    <td>Code39</td>
-    <td>3</td>
-  </tr>
-  <tr>
-    <td>Datamatrix</td>
-    <td>4</td>
-  </tr>
-  <tr>
-    <td>EAN13</td>
-    <td>5</td>
-  </tr>
-  <tr>
-    <td>EAN8</td>
-    <td>6</td>
-  </tr>
-  <tr>
-    <td>GS1 DataBar</td>
-    <td>7</td>
-  </tr>
-  <tr>
-    <td>GS1 DataBar Expanded</td>
-    <td>8</td>
-  </tr>
-  <tr>
-    <td>MAIL MARK</td>
-    <td>9</td>
-  </tr>
-  <tr>
-    <td>Maxicode</td>
-    <td>10</td>
-  </tr>
-  <tr>
-    <td>PDF417</td>
-    <td>11</td>
-  </tr>
-  <tr>
-    <td>QRCode</td>
-    <td>12</td>
-  </tr>
-  <tr>
-    <td>UPCA</td>
-    <td>13</td>
-  </tr>
-  <tr>
-    <td>UPCE0</td>
-    <td>14</td>
-  </tr>
-</tbody></table>
-
-<!-- 
-|  Symbologies           |  Value
-| -----------------------|  --------------
-| Aztec                  |  0
-| Codabar                |  1
-| Code128                |  2
-| Code39                 |  3
-| Datamatrix             |  4
-| EAN13                  |  5
-| EAN8                   |  6
-| GS1 DataBar            |  7
-| GS1 DataBar Expanded   |  8
-| MAIL MARK              |  9
-| Maxicode               |  10
-| PDF417                 |  11
-| QRCode                 |  12
-| UPCA                   |  13
-| UPCE0                  |  14
-
--->
-
-<h3 id="value" class="anchor"><a class="heading-anchor" href="#value"><span></span></a>value</h3>
-
-<p>String  BarcodeDecoder.Result.value</p>
-
-<h4 id="description-1" class="anchor"><a class="heading-anchor" href="#description-1"><span></span></a>Description</h4>
-
-<p>This string member contains the decoded value of the barcode. It is the actual data encoded within the barcode, such as a product number, URL, or any other encoded information. This value is extracted during the decoding process and is the primary output of the barcode decoding operation.</p>
-
-<h3 id="bboxdata" class="anchor"><a class="heading-anchor" href="#bboxdata"><span></span></a>bboxData</h3>
-
-<p>BBox  BarcodeDecoder.Result.bboxData</p>
-
-<h4 id="description-2" class="anchor"><a class="heading-anchor" href="#description-2"><span></span></a>Description</h4>
-
-<p>This member holds the bounding box data of the decoded barcode. The BBox class typically contains information about the position and dimensions of the barcode in the image, such as coordinates of the bounding box corners. This is useful for identifying the exact location of the barcode within a scanned image.</p>
-
-<hr>
-
-<h2 id="barcodedecodertypes-1" class="anchor"><a class="heading-anchor" href="#barcodedecodertypes-1"><span></span></a>BarcodeDecoder Types</h2>
-
-<h3 id="barcodedecodersettings-1" class="anchor"><a class="heading-anchor" href="#barcodedecodersettings-1"><span></span></a>BarcodeDecoder.Settings</h3>
-
-<p>The <code>BarcodeDecoder.Settings</code> class provides the necessary configuration options required for decoding barcodes using the Zebra AI Vision Barcode Decoder. This class allows users to customize decoding parameters to optimize performance for specific use cases.</p>
-
-<!--
-### Settings Class Members
-Return Type                          |  API Name
--------------------------------------| -------------------------------
-Optional<String>     |  [resourceName](BarcodeDecoder.md#resourcename)
-int[]                |    [barcodeTypes](BarcodeDecoder.md#barcodeTypes)
-int                     |  [extraMarginPercent](BarcodeDecoder.md#extraMarginPercent)
--->
-
-<h2 id="description-3" class="anchor"><a class="heading-anchor" href="#description-3"><span></span></a>Description</h2>
-
-<p>The <code>BarcodeDecoder.Settings</code> class is essential for configuring the parameters used in barcode decoding tasks. It provides flexibility to adjust settings such as the types of barcodes to decode, additional margin for detection accuracy, and the resource file location for configuration overrides.</p>
-
-<hr>
-
-<h2 id="settingsclassmembers" class="anchor"><a class="heading-anchor" href="#settingsclassmembers"><span></span></a>Settings Class Members</h2>
+<h3 id="classmembers" class="anchor"><a class="heading-anchor" href="#classmembers"><span></span></a>Class Members</h3>
 
 <h4 id="settings" class="anchor"><a class="heading-anchor" href="#settings"><span></span></a>Settings()</h4>
 
-<p>BarcodeDecoder.Settings.Settings ()    </p>
+<pre class="prettyprint"><code>    BarcodeDecoder.Settings())    
+</code></pre>
 
-<h4 id="description-4" class="anchor"><a class="heading-anchor" href="#description-4"><span></span></a>Description</h4>
+<p><strong>Description:</strong> Constructs a new Settings object with default values. Use this when no specific configuration is needed.</p>
 
-<p>Constructs a new <code>Settings</code> object with default values. Use this when no specific configuration is needed.</p>
+<h4 id="barcodesettingmap" class="anchor"><a class="heading-anchor" href="#barcodesettingmap"><span></span></a>barcodeSettingMap</h4>
 
-<h4 id="settingsstringfn" class="anchor"><a class="heading-anchor" href="#settingsstringfn"><span></span></a>Settings(String fn)</h4>
+<pre class="prettyprint"><code>    Map&lt;SymbologyType, Boolean&gt; barcodeSettingMap = new HashMap&lt;&gt;();
+</code></pre>
 
-<p>BarcodeDecoder.Settings.Settings (String fn)    </p>
-
-<h4 id="description-5" class="anchor"><a class="heading-anchor" href="#description-5"><span></span></a>Description</h4>
-
-<p>Construct a new Settings object with overrides.</p>
-
-<h4 id="parameters" class="anchor"><a class="heading-anchor" href="#parameters"><span></span></a>Parameters</h4>
-
-<ul>
-<li><code>resource_filename</code> - A string specifying the location of the resource file for custom configuration.</li>
-</ul>
+<p><strong>Description:</strong> Defines a map where <code>Symbologytype</code> is the key and its status (enable/disable) is the value, allowing to specify which symbologies to use.</p>
 
 <hr>
 
-<h2 id="settingsmembers" class="anchor"><a class="heading-anchor" href="#settingsmembers"><span></span></a>Settings Members</h2>
+<h2 id="samplecode" class="anchor"><a class="heading-anchor" href="#samplecode"><span></span></a>Sample Code</h2>
 
-<h3 id="resourcename" class="anchor"><a class="heading-anchor" href="#resourcename"><span></span></a>resourceName</h3>
+<h3 id="decodebarcodesfromafullimage" class="anchor"><a class="heading-anchor" href="#decodebarcodesfromafullimage"><span></span></a>Decode Barcodes from a Full Image</h3>
 
-<p>Optional<string> BarcodeDecoder.Settings.resourceName</string></p>
+<p>This sample code demonstrates how to detect and decodes barcodes from a full bitmap image:</p>
 
-<h4 id="description-6" class="anchor"><a class="heading-anchor" href="#description-6"><span></span></a>Description</h4>
+<ol>
+<li><strong>Initialize Settings Object -</strong> Create an instance of <code>BarcodeDecoder.Settings</code> to configure the decoder with default or custom settings.</li>
 
-<p>Represents the file path to the configuration resources for the decoder. This is optional and used for loading specific configuration settings from a file.</p>
+<li><strong>Define Executor -</strong> Use an <code>Executor</code> to handle asynchronous execution. This allows the decoding process to run in a separate thread, improving application responsiveness.</li>
 
-<h3 id="barcodetypes" class="anchor"><a class="heading-anchor" href="#barcodetypes"><span></span></a>barcodeTypes</h3>
+<li><strong>Initialize BarcodeDecoder -</strong> Call <code>getBarcodeDecoder()</code> with the settings and executor to asynchronously create a <code>BarcodeDecoder</code> instance. This method returns a <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a>.</li>
 
-<p>int  BarcodeDecoder.Settings.barcodeTypes</p>
+<li><strong>Handle CompletableFuture -</strong> Use the <code>thenAccept()</code> method to obtain and use the <code>BarcodeDecoder</code> instance once it is ready.</li>
 
-<h4 id="description-7" class="anchor"><a class="heading-anchor" href="#description-7"><span></span></a>Description</h4>
+<li><strong>Load Image -</strong> Load the image containing the barcodes to be decoded into a Bitmap object. </li>
 
-<p>Specifies the types of barcodes the decoder will attempt to decode. </p>
+<li><strong>Perform Decoding -</strong> Call the <code>decode()</code> method on the <code>BarcodeDecoder</code> instance, passing the Bitmap and Executor. This method returns a <code>CompletableFuture</code> with the decoding result.</li>
 
-<h3 id="extramarginpercent" class="anchor"><a class="heading-anchor" href="#extramarginpercent"><span></span></a>extraMarginPercent</h3>
+<li><strong>Process Results -</strong> Use the <code>thenAccept()</code> method on the resulting <code>CompletableFuture</code> to process the decoded barcode results.</li>
 
-<p>int   BarcodeDecoder.Settings.extraMarginPercent</p>
+<li><strong>Dispose Resources -</strong> Call <code>dispose()</code> on the <code>BarcodeDecoder</code> instance to release resources and memory once decoding is complete.</li>
+</ol>
 
-<h4 id="description-8" class="anchor"><a class="heading-anchor" href="#description-8"><span></span></a>Description</h4>
+<p>Sample code:</p>
 
-<p>Increase bbox dimensions by a given percentage, which usually improves results (default 10%)</p><p></p>
+<pre class="prettyprint"><code>    import com.zebra.ai.vision.BarcodeDecoder;
+    import com.zebra.ai.vision.BarcodeDecoder.Settings;
+    import android.graphics.Bitmap;
+
+    // Initialize BarcodeDecoder settings object 
+    BarcodeDecoder.Settings settings = new BarcodeDecoder.Settings();
+    BarcodeDecoder  barcodeDecoder = null;
+
+    // Initialize executor
+    Executor executor = Executors.newFixedThreadPool(1);
+
+    CompletableFuture&lt;BarcodeDecoder&gt; futureObject = getBarcodeDecoder(settings, executor); 
+
+    // Use the futureObject to implement thenAccept() callback of CompletableFuture. 
+    futureObject.thenAccept (decoderInstance -&gt; { 
+        //Use the decoder object returned here for the detection of barcodes 
+        barcodeDecoder = decoderInstance; 
+    });
+
+    // Load your Bitmap image
+    Bitmap image = ...; // Assume this is your input image
+
+    // Perform decode on barcode
+    CompletableFuture&lt;Result&gt; resultFutureObject = barcodeDecoder.decode(bitmap, executor);   
+    resultFutureObject.thenAccept (result -&gt; {  
+        //Process the returned result (of type Result) of decoded barcodes.  
+    }); 
+
+    // Dispose resources
+    // Once done using the decoder object, dispose it to release the resources and memory used for decoding.  
+    barcodeDecoder.dispose();
+</code></pre>
+
+<h3 id="decodebarcodesfromregionsofanimage" class="anchor"><a class="heading-anchor" href="#decodebarcodesfromregionsofanimage"><span></span></a>Decode Barcodes from Regions of an Image</h3>
+
+<p>This sample code demonstrates how to detect barcodes using the <a href="../localizer/">Localizer</a> class and decode them from specific regions of a bitmap image defined by <a href="../class/bbox/">bounding boxes</a>.</p>
+
+<p><strong>Step 1: Barcode Detection:</strong></p>
+
+<ol>
+<li><strong>Set Model Path and Name:</strong> Define the path to the cryptographic model file and obtain the model name for barcode localization.</li>
+
+<li><strong>Configure Localizer Settings:</strong> Create and configure a <code>Localizer.Settings</code> object with the model path and name. Optionally, set the input dimensions.</li>
+
+<li><strong>Initialize Localizer:</strong> Asynchronously obtain a <code>Localizer</code> instance using a <code>CompletableFuture</code>.</li>
+</ol>
+
+<p><strong>Step 2: Barcode Decoding:</strong></p>
+
+<ol>
+<li><strong>Create BarcodeDecoder Settings:</strong> Instantiate a Settings object for the BarcodeDecoder and enable desired symbologies, such as UPC_A.</li>
+
+<li><strong>Initialize BarcodeDecoder:</strong> Asynchronously obtain a BarcodeDecoder instance using a <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a>.</li>
+
+<li><strong>Detect Objects:</strong> Once a camera image is available, use the <code>Localizer</code> to detect objects. This method accepts a Bitmap image and returns bounding boxes of detected items.</li>
+
+<li><strong>Decode Barcodes:</strong> Use the <code>BarcodeDecoder</code> to decode the detected barcodes from the bounding boxes.</li>
+</ol>
+
+<p>Sample code: </p>
+
+<pre class="prettyprint"><code>    import com.zebra.ai.vision.BarcodeDecoder;
+    import com.zebra.ai.vision.BarcodeDecoder.Settings;
+    import com.zebra.ai.vision.BBox;
+    import android.graphics.Bitmap;
+    import com.zebra.ai.vision.Localizer;
+
+    // Initialize SDK
+    AIVisionSDK.getInstance(Context).init(); // Context refers to application context object.
+
+    // Barcode Detection
+    String modelPath = "path_to_file/model.crypt";
+    String modelName =  Localizer.Settings.getModelName(Localizer.Settings.MODEL_TYPE_BARCODE_LOCALIZER);
+    Localizer.Settings settings = new Localizer(modelPath, modelName);
+
+    // Optional: Set model input size parameters
+    settings.inferencerOptions.defaultDims.height = 640;
+    settings.inferencerOptions.defaultDims.width = 640;
+
+    // Initialize Localizer object
+    Localizer localizer = null;
+
+    CompletableFuture&lt;Localizer&gt; futureObject = Localizer.getLocalizer(settings,executor);
+
+    // Use the futureObject to implement thenAccept() callback of //CompletableFuture.
+    futureObject.thenAccept ( localizerInstance -&gt; {
+        localizer = localizerInstance; // Use the localizer object for the detection of barcodes/shelves/products
+    });
+
+    // Create BarcodeDecoder object
+    BarcodeDecoder barcodeDecoder = null;
+
+    // Create settings for BarcodeDecoder
+    Settings settings = new Settings();
+
+    // Enable symbology settings    
+    settings.barcodeSettingMap.put(BarcodeDecoder.Settings.SymbologyType.UPC_A, true); // Enable UPCA decoding
+
+    // Initialize executor
+    Executor executor = Executors.newFixedThreadPool(1);
+
+    // Asynchronously get BarcodeDecoder instance
+    CompletableFuture&lt;BarcodeDecoder&gt; futureDecoderObj = BarcodeDecoder.getBarcodeDecoder(settings, executor);
+
+    // Use the futureObject to implement thenAccept() callback of CompletableFuture. 
+    futureDecoderObj.thenAccept (decoderInstance -&gt; { 
+        barcodeDecoder = decoderInstance;  // Use the decoder object returned here for barcode detection
+    });
+
+    // Detect objects once the camera image is available
+    BBox[] detections;
+
+    // Input params: bitmap image and an executor thread object in which the detection happens
+    // Results are returned in thenAccept() callback
+    CompletableFuture &lt;BBox[]&gt; resultFutureObject = localizer.detect(Bitmap image , Executor executor); 
+    resultFutureObject.thenAccept ( bboxes -&gt; {
+        detections = bboxes;  // Process the returned array of bounding boxes
+    });
+
+    // Once the bounding boxes are available, pass them to barcodeDecoder for decoding
+    Bitmap image = ...; // //Load your Bitmap image here
+
+    // Perform decode on barcode
+    CompletableFuture&lt;Result&gt; resultFutureObject = barcodeDecoder.decode(bitmap, detections , executor);   
+    resultFutureObject.thenAccept (results -&gt; {  
+        // Process the returned result (Result[]) of decoded barcodes
+    }); 
+
+    // Dispose resources
+    // Once done using the decoder object, dispose it to release the resources and memory used for decoding.  
+    barcodeDecoder.dispose();
+</code></pre>
+
+<hr>
+
+<!-- 
+
+## BarcodeDecoder Settings
+The `BarcodeDecoder Settings` class provides configuration settings necessary for customizing the barcode decoding process.
+
+### BarcodeDecoder Settings.Type 
+The following table provides each symbology supported by the BarcodeDecoder.
+
+
+
+---
+
+### Initialization 
+
+        import com.zebra.AI.Vision.BarcodeDecoder;
+        BarcodeDecoder.Settings settings = new BarcodeDecoder.Settings();
+        // Initialize BarcodeDecoder object
+        BarcodeDecoder barcodeDecoder = new BarcodeDecoder(settings);
+
+---
+
+### Usage
+#### Method 1: Decode Using Bounding Boxes
+This method runs the decoder over specific areas of an image, defined by bounding boxes. This is typically used when these bounding boxes are determined by a separate localization process, such as a `Localizer`.
+
+        String[] decodedBarcodes = barcodeDecoder.decode(IMAGE, DETECTIONS);
+
+* **Parameters:**
+    - `IMAGE` - A `Bitmap` object representing the image from which barcodes need to be decoded.
+    - `DETECTIONS` - A list of bounding boxes. Each bounding box is a detected region within the image that potentially contains a barcode. 
+* **Return Type:**
+    * A CompletableFuture object with an array of result types. See [Result Types](#barcodedecoderresult)
+
+#### Method 2: Decode Full Image
+This method runs the decoder over the entire image, attempting to find and decode a barcode.
+
+        String decodedBarcode = barcodeDecoder.decode(IMAGE);
+
+* **Parameters:**
+    - `IMAGE` - A `Bitmap` object representing the full image to be scanned for a barcode.
+
+* **Return Type:**
+    * A CompletableFuture of result.
+
+---
+
+### APIs
+
+### BarcodeDecoder
+
+Initializes a new instance of the `BarcodeDecoder` class using the provided settings. This constructor loads necessary resources and configurations for barcode decoding.
+
+**NOTE**: Call the dispose() API for every object of BarcodeDecoder when it is no longer needed.
+
+- **Constructor:**
+    - BarcodeDecoder ([Settings](#settingsclassmembers)    settings) throws FileNotFoundException, IOException
+- **Parameters:**
+    - `Settings` - Configurable options for the Barcode Decoder object.
+- **Exceptions:**
+    - `FileNotFoundException` - Thrown if required resource files are missing or cannot be located.
+    - `IOException` - Thrown if the archive is corrupted.
+
+---
+
+### decode (Bitmap bmp) 
+
+Runs barcode decoding on the entire input Bitmap image.
+
+* **Method:**
+    - [CompletableFuture](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html)<[Result](#barcodedecoderresult)> BarcodeDecoder.decode (Bitmap    bmp) throws [InvalidInputException](../class/invalidinputexception/)
+* **Parameters:**
+    - `bmp` (Bitmap bmp) - Image to decode
+* **Return Value:**
+    - CompletableFuture with String as output. A string representing the decoded barcode.
+* **Exceptions:**
+    - `InvalidInputException` - Thrown when Bitmap is passed as null. 
+
+---
+
+### decode (Bitmap bmp, BBox [ ] detections)  
+
+Runs barcode decoding on specific locations (Bounding Box returned by localizer) within the input image.
+
+* **Method:**
+    - [CompletableFuture](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html)<[Result](#barcodedecoderresult)[ ]> BarcodeDecoder.decode (Bitmap bmp, [BBox](../class/bbox/)[ ] detections) throws [InvalidInputException](../class/invalidinputexception/)
+* **Parameters:**
+    - `bmp`(Bitmap bmp) - Image to decode
+    - `detections` - Bounding boxes indicating the barcode locations
+* **Return Value:**
+    - A CompletableFuture with Result[] array representing the decoded barcodes.
+* **Exceptions:**
+    * [`InvalidInputException`](../class/invalidinputexception/) - Thrown when Bitmap or detections array are passed as null. 
+
+---
+
+### dispose()
+
+Frees or releases resources. 
+
+* **Constructor:**
+    - BarcodeDecoder.dispose()
+
+**NOTE**: Needs to be called manually to release all internal resources. Call dispose() when the new object of BarcodeDecoder is created.
+
+---
+
+## BarcodeDecoder Types
+### BarcodeDecoder.Result
+The `BarcodeDecoder.Result` class provides a comprehensive representation of the decoded barcode data, including the symbology type and the bounding box coordinates.
+
+### Detailed Description
+The `BarcodeDecoder.Result` class encapsulates the result of a barcode decoding operation. It provides information on the decoded data value, the type of symbology used, and the bounding box data that indicates the position and dimensions of the barcode within an image.
+
+---
+
+## Result Class Members
+###  symbologytype
+int  BarcodeDecoder.Result.symbologytype
+#### Description
+This integer member represents the type of symbology that the decoded barcode corresponds to. The symbology type is essential for understanding the format of the barcode, such as QR code, UPC, EAN, etc. Each symbology type is typically associated with a specific integer value that can be cross-referenced with a symbology type enumeration or reference guide.
+
+###  value
+String  BarcodeDecoder.Result.value
+#### Description
+This string member contains the decoded value of the barcode. It is the actual data encoded within the barcode, such as a product number, URL, or any other encoded information. This value is extracted during the decoding process and is the primary output of the barcode decoding operation.
+
+###  bboxData
+BBox  BarcodeDecoder.Result.bboxData
+#### Description
+This member holds the bounding box data of the decoded barcode. The BBox class typically contains information about the position and dimensions of the barcode in the image, such as coordinates of the bounding box corners. This is useful for identifying the exact location of the barcode within a scanned image.
+
+---
+
+
+-->
+
+<hr>
+
+<h2 id="supportedbarcodesymbologies" class="anchor"><a class="heading-anchor" href="#supportedbarcodesymbologies"><span></span></a>Supported Barcode Symbologies</h2>
+
+<p>Supported barcode symbologies as a subclass of <code>DecoderParams</code> and their default values:</p>
+
+<table class="facelift" style="width:20" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th style="text-align:center">Barcode Symbology</th>
+    <th style="text-align:center">Default Value</th>
+  </tr>
+  <tr>
+    <td>AUSTRALIAN_POSTAL</td>
+    <td>Disabled</td>
+  </tr>
+  <tr>
+    <td>Aztec</td>
+    <td>Enabled</td>
+  </tr>
+  <tr>
+    <td>CANADIAN_POSTAL</td>
+    <td>Disabled</td>
+  </tr>
+  <tr>
+    <td>CHINESE_2OF5</td>
+    <td>Disabled</td>
+  </tr>
+  <tr>
+    <td>CODABAR</td>
+    <td>Enabled</td>
+  </tr>
+  <tr>
+    <td>CODE11</td>
+    <td>Disabled</td>
+  </tr>
+  <tr>
+    <td>CODE39</td>
+    <td>Enabled</td>
+  </tr>
+  <tr>
+    <td>CODE93</td>
+    <td>Disabled</td>
+  </tr>
+  <tr>
+    <td>CODE128</td>
+    <td>Enabled</td>
+  </tr>
+  <tr>
+    <td>D2OF5</td>
+    <td>Disabled</td>
+  </tr>
+  <tr>
+    <td>DATAMATRIX</td>
+    <td>Enabled</td>
+  </tr>
+  <tr>
+    <td>DOTCODE</td>
+    <td>Disabled</td>
+  </tr>
+  <tr>
+    <td>DUTCH_POSTAL</td>
+    <td>Disabled</td>
+  </tr>
+  <tr>
+    <td>EAN_8</td>
+    <td>Enabled</td>
+  </tr>
+  <tr>
+    <td>EAN_13</td>
+    <td>Enabled</td>
+  </tr>
+  <tr>
+    <td>FINNISH_POSTL_4S</td>
+    <td>Disabled</td>
+  </tr>
+  <tr>
+    <td>GRID_MATRIX</td>
+    <td>Disabled</td>
+  </tr>
+  <tr>
+    <td>GS1_DATABAR</td>
+    <td>Enabled</td>
+  </tr>
+  <tr>
+    <td>GS1_DATABAR_EXPANDED</td>
+    <td>Enabled</td>
+  </tr>
+  <tr>
+    <td>GS1_DATABAR_LIM</td>
+    <td>Disabled</td>
+  </tr>
+  <tr>
+    <td>GS1_DATAMATRIX</td>
+    <td>Disabled</td>
+  </tr>
+  <tr>
+    <td>GS1_QRCODE</td>
+    <td>Disabled</td>
+  </tr>
+  <tr>
+    <td>HANXIN</td>
+    <td>Disabled</td>
+  </tr>
+  <tr>
+    <td>I2OF5</td>
+    <td>Disabled</td>
+  </tr>
+  <tr>
+    <td>JAPANESE_POSTAL</td>
+    <td>Disabled</td>
+  </tr>
+  <tr>
+    <td>KOREAN_3OF5</td>
+    <td>Disabled</td>
+  </tr>
+  <tr>
+    <td>MAILMARK</td>
+    <td>Enabled</td>
+  </tr>
+  <tr>
+    <td>MATRIX_2OF5</td>
+    <td>Disabled</td>
+  </tr>
+  <tr>
+    <td>MAXICODE</td>
+    <td>Enabled</td>
+  </tr>
+  <tr>
+    <td>MICR_E13B</td>
+    <td>Disabled</td>
+  </tr>
+  <tr>
+    <td>MICROPDF</td>
+    <td>Disabled</td>
+  </tr>
+  <tr>
+    <td>MICROQR</td>
+    <td>Disabled</td>
+  </tr>
+  <tr>
+    <td>MSI</td>
+    <td>Disabled</td>
+  </tr>
+  <tr>
+    <td>PDF417</td>
+    <td>Enabled</td>
+  </tr>
+  <tr>
+    <td>QRCODE</td>
+    <td>Enabled</td>
+  </tr>
+  <tr>
+    <td>TLC39</td>
+    <td>Disabled</td>
+  </tr>
+  <tr>
+    <td>TRIOPTIC39</td>
+    <td>Disabled</td>
+  </tr>
+  <tr>
+    <td>UK_POSTAL</td>
+    <td>Disabled</td>
+  </tr>
+  <tr>
+    <td>UPC_A</td>
+    <td>Enabled</td>
+  </tr>
+  <tr>
+    <td>UPC_E</td>
+    <td>Enabled</td>
+  </tr>
+  <tr>
+    <td>UPCE1</td>
+    <td>Disabled</td>
+  </tr>
+  <tr>
+    <td>US_CURRENCY</td>
+    <td>Disabled</td>
+  </tr>
+  <tr>
+    <td>USPLANET</td>
+    <td>Disabled</td>
+  </tr>
+  <tr>
+    <td>USPOSTNET</td>
+    <td>Disabled</td>
+  </tr>
+  <tr>
+    <td>US4STATE</td>
+    <td>Disabled</td>
+  </tr>
+  <tr>
+    <td>US4STATE_FICS</td>
+    <td>Disabled</td>
+  </tr>
+</tbody></table>
+
+<h3 id="code128" class="anchor"><a class="heading-anchor" href="#code128"><span></span></a>Code 128</h3>
+
+<p><strong>Description:</strong> Configures the Code 128 symbology, allowing for customization of parameters such as ISBT 128 handling, EAN 128 support, length restrictions, and security settings. Updates the <code>barcodeSettingMap</code> with Code 128 configurations.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>initialStatus -</strong> Boolean to enable (true) or disable (false) Code 128. Default is true.</li>
+
+<li><strong>checkIsbtTable -</strong> Boolean to check the ISBT table.</li>
+
+<li><strong>enableEan128 -</strong> Boolean to support for EAN 128 barcodes.</li>
+
+<li><strong>enableIsbt128 -</strong> Boolean to support for ISBT 128 barcodes.</li>
+
+<li><strong>enablePlain -</strong> Boolean to decode plain Code 128 barcodes.</li>
+
+<li><strong>isbt128ConcatMode -</strong> Type <code>Isbt128ContactMode</code> to set ISBT 128 concatenation mode.</li>
+
+<li><strong>length1 -</strong> Integer specifying the minimum barcode length to decode.</li>
+
+<li><strong>length2    -</strong> Integer specifying the maximum barcode length to decode.</li>
+
+<li><strong>reducedQuietZone -</strong> Boolean to enable a reduced quiet zone.</li>
+
+<li><strong>redundancy -</strong> Boolean to enable redundancy checks for improved accuracy.</li>
+
+<li><strong>securityLevel -</strong> Type <code>SecurityLevel</code> to set the decoding security level, influencing the stringency of error checking.</li>
+
+<li><strong>ignoreFNC4 -</strong> Boolean to ignore FNC4 characters during decoding.</li>
+</ul>
+
+<h3 id="ean8" class="anchor"><a class="heading-anchor" href="#ean8"><span></span></a>EAN8</h3>
+
+<p><strong>Description:</strong> Configures parameters for EAN8 barcode decoding, including optional conversion to EAN13.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>initialStatus -</strong> Boolean to enable (true) or disable (false) the symbology.</li>
+
+<li><strong>convertToEan13 -</strong> Boolean to convert EAN8 to EAN13.</li>
+</ul>
+
+<h3 id="i2of5" class="anchor"><a class="heading-anchor" href="#i2of5"><span></span></a>I2OF5</h3>
+
+<p><strong>Description:</strong> Configures the I2OF5 symbology and parameters such as EAN conversion, FEBRABAN handling, length restrictions, and security settings. Updates the <code>barcodeSettingMap</code> to include I2OF5 configurations.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>initialstatus -</strong> Boolean to enable (true) or disable (false) the symbology. Default is false.</li>
+</ul>
+
+<h3 id="upca" class="anchor"><a class="heading-anchor" href="#upca"><span></span></a>UPCA</h3>
+
+<p><strong>Description:</strong> Configures parameters related to UPCA barcode decoding, including handling of the UPCA symbology.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>initialStatus -</strong> Boolean to enable (true) or disable (false) the symbology.</li>
+
+<li><strong>reportCheckDigit -</strong> Boolean t report the check digit. </li>
+
+<li><strong>preamble -</strong> Integer to define preamble settings:
+
+
+<ul>
+<li><strong>0 -</strong> Preamble None, transmit no preamble</li>
+
+<li><strong>1 -</strong> (Default) Preamble Sys Char, transmit System Character only</li>
+
+<li><strong>2 -</strong> Preamble Country and Sys Char, transmit System Character and Country Code</li></ul>
+</li>
+</ul>
+
+<h3 id="upce" class="anchor"><a class="heading-anchor" href="#upce"><span></span></a>UPCE</h3>
+
+<p><strong>Description:</strong> Configures UPCE barcode decoding, including handling and conversion of UPCE symbology.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>initialStatus -</strong> Boolean to enable (true) or disable (false) the symbology.</li>
+
+<li><strong>reportCheckDigit -</strong> Boolean to report the check digit. </li>
+
+<li><strong>preamble -</strong> Enum <code>Preamble</code> value to define the preamble settings. </li>
+
+<li><strong>convertToUPCA -</strong> Boolean to convert UPCE to UPCA.</li>
+</ul>
+
+<h3 id="upce1" class="anchor"><a class="heading-anchor" href="#upce1"><span></span></a>UPCE1</h3>
+
+<p><strong>Description:</strong> Configures UPCE1 barcode decoding, including handling and conversion settings.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>initialStatus -</strong> Boolean to enable (true) or disable (false) the symbology.</li>
+
+<li><strong>reportCheckDigit -</strong> Boolean to report the check digit. </li>
+
+<li><strong>preamble -</strong> Enum <code>Preamble</code> value to define the preamble settings. </li>
+
+<li><strong>convertToUPCA -</strong> Boolean to convert UPCE1 to UPCA.</li>
+</ul><p></p>
                                         
 
 
