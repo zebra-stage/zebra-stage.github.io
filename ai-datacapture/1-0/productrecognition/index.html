@@ -246,11 +246,11 @@
 <p><strong>Product Recognition</strong> utilizes the Feature Extractor, Feature Storage, and Recognizer classes to identify products in images. Typically paired with the <a href="../localizer/">Localizer</a> class, this helps build a comprehensive knowledge base that enhances inventory tracking and facilitates automated checkouts.</p>
 
 <ul>
-<li><strong><a href="#featureextractor">Feature Extractor</a> -</strong> Optimized for retail product recognition, this class extracts key features from images to produce ‘embeddings’ or ‘descriptors.’ </li>
+<li><strong><a href="#featureextractor">Feature Extractor</a> -</strong> Extracts key features from images to produce ‘descriptors.’ Optimized for retail product recognition.</li>
 
-<li><strong><a href="#featurestorage">Feature Storage</a> -</strong> These embeddings are stored in a vector database, allowing users to build a database of products for recognition.</li>
+<li><strong><a href="#featurestorage">Feature Storage</a> -</strong> These descriptors are stored in a vector database, allowing users to build a database of products for recognition.</li>
 
-<li><strong><a href="#recognizer">Recognizer</a> -</strong> This initialize the database to perform semantic searches, identifying the most similar embeddings within the knowledge base and predicting the identity of detected products. </li>
+<li><strong><a href="#recognizer">Recognizer</a> -</strong> This initializes the database to perform semantic searches, identifying the most similar embeddings within the knowledge base and predicting the identity of detected products. </li>
 </ul>
 
 <p>Based on requirements, the Retail Shelf Object Localizer can first detect products within an image. Each detected product is then ‘cropped’ and individually submitted for recognition, streamlining the process for efficient and accurate identification.</p>
@@ -261,47 +261,126 @@
 
 <h2 id="featureextractor" class="anchor"><a class="heading-anchor" href="#featureextractor"><span></span></a>Feature Extractor</h2>
 
-<p>The <code>FeatureExtractor</code> class is designed to generate a set of descriptors that are representative of items located within an image. This class provides functionalities to process both entire images and specific regions defined by bounding boxes, supporting various input formats and orientations.</p>
+<p>The <code>FeatureExtractor</code> class generates a set of descriptors, which are vectors of float numbers that describe the features of items identified within an image. It provides functionalities to process both entire images and specific regions defined by <a href="../class/bbox/">bounding boxes</a>, accommodating various input formats and orientations.</p>
 
-<p>Feature Extractor generates descriptors (embedding), which describes a feature and is a vector of floats, on a given image.</p>
-
-<ul>
-<li><strong>Input:</strong> Model and Image</li>
-
-<li><strong>Output:</strong> <a href="../types/#descriptor">Descriptor</a></li>
-</ul>
-
-<h3 id="initialization" class="anchor"><a class="heading-anchor" href="#initialization"><span></span></a>Initialization</h3>
-
-<p>The Feature Extractor object is initialized via its configuration structure.
-There are 2 mandatory fields that need to be set:</p>
+<p>Common Applications:</p>
 
 <ul>
-<li><p><code>MODEL_ARCHIVE_FILEPATH</code> = fully qualified file path to the .tar or .crypt archive from which the feature extractor model is read</p></li>
+<li><strong>Image Classification:</strong> Use descriptors that help classify images into categories, enhancing systems that sort or tag images based on visual content. </li>
 
-<li><p><code>MODEL_FILENAME</code> = file name of a localizer model (no extension)</p>
+<li><strong>Object Detection and Recognition:</strong> Extract features and generate descriptors from a whole image or specific regions of an image to help identify objects. This could be useful for surveillance, automated inspections or facial recognition within a crowd.</li>
 
-<pre class="prettyprint"><code>import com.zebra.AI.Vision.FeatureExtractor;
+<li><strong>Image Search and Retrieval:</strong> Implement image search functionality allowing to match objects to similar known entities from a database based on their descriptors, allowing for efficient and accurate visual searches. This could be useful to analyze specific areas of product images to detect defects or inconsistencies in manufacturing, ensuring high-quality standards.</li>
 
-FeatureExtractor.Settings settings = new FeatureExtractor.Settings(MODEL_ARCHIVE_FILEPATH, MODEL_FILENAME);
-
-// Initialize FeatureExtractor object
-FeatureExtractor featureExtractor = new FeatureExtractor(settings);
-</code></pre></li>
+<li><strong>Oriented Object Detection:</strong> Extract features from specific image regions at known angles to improve object detection accuracy across various camera orientations. This is particularly useful in security systems.</li>
 </ul>
 
-<h3 id="usage" class="anchor"><a class="heading-anchor" href="#usage"><span></span></a>Usage</h3>
+<h3 id="developerguide" class="anchor"><a class="heading-anchor" href="#developerguide"><span></span></a>Developer Guide</h3>
 
-<p>Generates a descriptor (embedding) on a given image.</p>
+<h4 id="step1initialization" class="anchor"><a class="heading-anchor" href="#step1initialization"><span></span></a>Step 1: Initialization</h4>
 
-<p><em>IMAGE</em> = Bitmap image</p>
+<ol>
+<li><strong>Import the FeatureExtractor class:</strong> Use <code>com.zebra.ai.vision.FeatureExtractor</code>.</li>
 
-<pre class="prettyprint"><code>    float[] descriptors = featureExtractor.generateSingleDescriptor(IMAGE)
+<li><strong>Initialize the SDK:</strong> Use your application's context object.</li>
+
+<li><strong>Specify fully qualified file path for the detection model:</strong> Include the directory and filename, e.g. <code>/model_file_path/xyz.tar.crypt</code>.</li>
+
+<li><strong>Retrieve the model name:</strong> Invoke <a href="#getmodelnameintmodeltype">getModelName</a> with the appropriate model type. This configures the feature extraction process.</li>
+
+<li><strong>Initialize Settings:</strong> Create a <code>Settings</code> object with the model file path and model name. </li>
+
+<li><strong>Instantiate FeatureExtractor:</strong> Use the <code>Settings</code> object to create an instance of <code>FeatureExtractor</code> with a <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a>. The <code>thenAccept()</code> method allows handling of the instantiated <code>FeatureExtractor</code> for further operations. </li>
+</ol>
+
+<p>Sample Code:</p>
+
+<pre class="prettyprint"><code>    import com.zebra.ai.vision.FeatureExtractor; 
+
+    // Developer must Initialize SDK by calling below API: 
+    AIVisionSDK.getInstance(Context).init(); //Context refers to application context object. 
+
+    //Initialize FeatureExtractor settings object 
+    String modelPath = "path/to/model.crypt"; 
+    String modelName = FeatureExtractor.Settings. 
+
+    getModelName(FeatureExtractor.Settings.MODEL_TYPE_FEATURE_EXTRACTOR);      
+
+    FeatureExtractor.Settings settings = new FeatureExtractor.Settings (modelPath, modelName); 
+
+    // Initialize FeatureExtractor object  
+    FeatureExtractor featureExtractor = null;  
+
+    // Initialize featureExtractor 
+    // settings = featureExtractor.Settings object created        
+    CompletableFuture&lt;FeatureExtractor&gt; futureObject = getFeatureExtractor (settings, executor);  
+
+    // Use the futureObject to implement thenAccept() callback of CompletableFuture
+    futureObject.thenAccept (featureExtractorInstance -&gt; {  
+        // Use the featureExtractor object returned here for the detection of products  
+        featureExtractor = featureExtractorInstance;  
+    } ); 
 </code></pre>
 
-<p><em>IMAGE</em> = Bitmap image</p>
+<h4 id="step2generatedescriptors" class="anchor"><a class="heading-anchor" href="#step2generatedescriptors"><span></span></a>Step 2: Generate Descriptors</h4>
 
-<pre class="prettyprint"><code>    float[][] descriptors = featureExtractor.generateDescriptors(DETECTIONS, IMAGE)
+<p>Generate descriptors for either whole images or specific image regions, depending on whether orientation adjustment is required.</p>
+
+<h5 id="forawholeimage" class="anchor"><a class="heading-anchor" href="#forawholeimage"><span></span></a>For a Whole Image</h5>
+
+<ol>
+<li><p><strong>Initialization:</strong> Ensure that the <code>FeatureExtractor</code> is properly initialized with the necessary settings. Prepare the bitmap image and executor for processing. </p></li>
+
+<li><p><strong>Descriptor Generation:</strong> Call <code>generateSingleDescriptor</code> with the bitmap and executor. This method returns a <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a> contains the image's descriptors. If orientation adjustment is required, include the orientation angle from which the image was taken.</p></li>
+
+<li><p><strong>Asynchronous Processing:</strong> Use the <code>thenAccept</code> method of <code>CompletableFuture</code> to handle the result once the descriptor generation is complete. This allows the descriptors for processing without blocking the main thread. </p></li>
+
+<li><p><strong>Resource Management:</strong> After processing is complete, call <code>dispose()</code> on the <code>FeatureExtractor</code> object to free resources and memory used during feature extraction. </p>
+
+<pre class="prettyprint"><code>// Input params: bitmap image and an executor thread object for running the feature extractor functionality
+CompletableFuture&lt;float[]&gt; futureObject = featureExtractor.generateSingleDescriptor (bitmap, executor);    
+
+// If orientation adjustment is required, pass the orientation angle from which the image was taken 
+// Comment out the code line above and use this line instead:
+// CompletableFuture&lt;float[]&gt; futureObject = featureExtractor.generateSingleDescriptor(bitmap, orientation, executor);  
+
+futureObject.thenAccept (results -&gt; {   
+    // Process the returned descriptors float array.   
+}); 
+
+// Once done using the featureExtractor object, dispose the object to release the resources and memory used for feature extraction
+featureExtractor.dispose(); 
+</code></pre></li>
+</ol>
+
+<h5 id="forspecificregions" class="anchor"><a class="heading-anchor" href="#forspecificregions"><span></span></a>For Specific Regions:</h5>
+
+<ol>
+<li><strong>Initialization:</strong> Ensure that the <code>FeatureExtractor</code> is initialized. Prepare the bitmap image and define the array of bounding boxes (detections) that indicate the specific regions of interest. <em>If applicable,</em> determine the orientation angle of the image. Set up an executor to manage asynchronous task execution. </li>
+
+<li><strong>Descriptor Generation for Regions:</strong> Call <code>generateDescriptors</code>, passing the <a href="../class/bbox/">bounding boxes</a>, bitmap, and executor. This returns a <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a> containing a two-dimensional array of descriptors, with each sub-array representing a region defined by a bounding box. <em>If applicable,</em> adjust the orientation.</li>
+
+<li><strong>Asynchronous Processing:</strong> Use the <code>thenAccept</code> method of <code>CompletableFuture</code> process the descriptors as they are generated, avoiding blocking the main execution thread. </li>
+
+<li><strong>Resource Management:</strong> After processing is complete, call <code>dispose()</code> on the <code>FeatureExtractor</code> to release resources and memory used during extraction. This is essential for optimal performance and preventing memory leaks. </li>
+</ol>
+
+<p>Sample Code:</p>
+
+<pre class="prettyprint"><code>    // Input params: bitmap image; array of bounding boxes; an executor thread object thread object for running the feature extractor functionality
+    CompletableFuture&lt;float[][]&gt; futureObject = featureExtractor.generateDescriptors(detections, bitmap, executor);  
+
+    // If orientation adjustment is required, pass the orientation angle from which the image was taken 
+    // Comment out the code line above and use this line instead:
+    CompletableFuture&lt;float[][]&gt; futureObject = featureExtractor.generateDescriptors(detections, bitmap, orientation, executor);     
+
+    futureObject.thenAccept (results -&gt; {    
+        // Process the returned 2-dimensional descriptors float array
+    } );    
+
+    // Once done using the featureExtractor object dispose the object to release the resources and memory used for feature extraction
+
+    featureExtractor.dispose(); 
 </code></pre>
 
 <!-- 
@@ -321,173 +400,128 @@ CompletableFuture<float[][]>        |     [generateDescriptors](FeatureExtractor
 ## API Detailed Description
 -->
 
-<h3 id="featureextractorconstructor" class="anchor"><a class="heading-anchor" href="#featureextractorconstructor"><span></span></a>FeatureExtractor() Constructor</h3>
+<h3 id="methods" class="anchor"><a class="heading-anchor" href="#methods"><span></span></a>Methods</h3>
 
-<p>Construct a new <code>Feature Extractor</code> object.</p>
+<h4 id="featureextractorsettingssettings" class="anchor"><a class="heading-anchor" href="#featureextractorsettingssettings"><span></span></a>FeatureExtractor (Settings settings)</h4>
 
-<ul>
-<li><strong>Method:</strong>
+<pre class="prettyprint"><code>    FeatureExtractor (Settings settings) throws IOException 
+</code></pre>
 
+<p><strong>Description:</strong> Constructs a new <code>FeatureExtractor</code> object. </p>
 
-<ul>
-<li>FeatureExtractor.FeatureExtractor (<a href="../class/featureextractorsettings/">Settings</a>    settings) throws FileNotFoundException, IOException</li></ul>
-</li>
-
-<li><strong>Parameters:</strong>
-
+<p><strong>Parameters:</strong></p>
 
 <ul>
-<li><code>settings</code> -    <a href="../class/featureextractorsettings/">Settings</a> to construct a Feature Extractor object.</li></ul>
-</li>
-
-<li><strong>Exceptions:</strong>
-
-
-<ul>
-<li><code>FileNotFoundException</code> - Thrown if the model file is not found in the archive.</li>
-
-<li><code>IOException</code> - Thrown if there is an issue accessing the archive (e.g., corruption).</li></ul>
-</li>
+<li><strong>settings -</strong> Configuration settings to construct a <code>FeatureExtractor</code> object. </li>
 </ul>
 
-<h3 id="dispose" class="anchor"><a class="heading-anchor" href="#dispose"><span></span></a>Dispose()</h3>
+<p><strong>Exceptions:</strong></p>
 
-<p>Releases all internal resources used by the <code>feature extractor</code> object. This method should be called manually to free resources.</p>
+<ul>
+<li><strong>IOException -</strong> Thrown if there is an issue accessing the archive (e.g., file not found). </li>
+</ul>
+
+<h4 id="voiddispose" class="anchor"><a class="heading-anchor" href="#voiddispose"><span></span></a>void Dispose()</h4>
+
+<pre class="prettyprint"><code>    Dispose()
+</code></pre>
+
+<p><strong>Description:</strong> Releases all internal resources used by the feature extractor object. This method should be called manually to free resources.</p>
 
 <ul>
 <li><strong>Method:</strong> void FeatureExtractor.dispose()</li>
 </ul>
 
-<h3 id="generatesingledescriptorbitmapbmpintorientation" class="anchor"><a class="heading-anchor" href="#generatesingledescriptorbitmapbmpintorientation"><span></span></a>generateSingleDescriptor (Bitmap bmp, int orientation)</h3>
+<h4 id="generatesingledescriptorbitmapbmpintorientation" class="anchor"><a class="heading-anchor" href="#generatesingledescriptorbitmapbmpintorientation"><span></span></a>generateSingleDescriptor (Bitmap bmp, int orientation)</h4>
 
-<p><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a><float[ ]=""> FeatureExtractor.generateSingleDescriptor (Bitmap bmp, int orientation) throws <a href="../class/invalidinputexception/">InvalidInputException</a></float[></p>
+<pre class="prettyprint"><code>    CompletableFuture&lt;float[]&gt; generateSingleDescriptor(Bitmap bmp, int orientation, Executor executor) throws InvalidInputException, IllegalStateException 
+</code></pre>
 
-<h4 id="description" class="anchor"><a class="heading-anchor" href="#description"><span></span></a>Description</h4>
+<p><strong>Description:</strong> Generates a descriptor for a whole image with a specified orientation, using a provided executor for asynchronous execution. </p>
 
-<p>Generate a descriptor for a whole image.</p>
-
-<h4 id="parameters" class="anchor"><a class="heading-anchor" href="#parameters"><span></span></a>Parameters</h4>
-
-<ul>
-<li><code>bmp</code> - The image to process.</li>
-
-<li><code>orientation</code> - The orientation angle of the image. The image is rotated by this angle (clockwise) before processing, and the result is rotated back (anticlockwise).</li>
-</ul>
-
-<h4 id="exceptions" class="anchor"><a class="heading-anchor" href="#exceptions"><span></span></a>Exceptions</h4>
+<p><strong>Parameters:</strong></p>
 
 <ul>
-<li><a href="../class/invalidinputexception/">InvalidInputException</a></li>
-</ul>
+<li><strong>bmp -</strong> The image to process. </li>
 
-<p>Throws <code>InvalidInputException</code> exception when Bitmap is passed as null or orientation is not equal to anyone of the following:</p>
+<li><strong>orientation -</strong> This refers to the orientation angle, which is of the Integer type. Its value can be one of the following: <br>
 
-<ul>
-<li>0 degree</li>
-
-<li>90 degree</li>
-
-<li>180 degree</li>
-
-<li>270 degree</li>
-</ul>
-
-<h4 id="returnvalue" class="anchor"><a class="heading-anchor" href="#returnvalue"><span></span></a>Return Value</h4>
-
-<p>A <code>CompletableFuture</code> containing a float array representing the descriptor.</p>
-
-<h3 id="generatesingledescriptorbitmapbmp" class="anchor"><a class="heading-anchor" href="#generatesingledescriptorbitmapbmp"><span></span></a>generateSingleDescriptor (Bitmap bmp)</h3>
-
-<p><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a><float[ ]=""> FeatureExtractor.generateSingleDescriptor    (Bitmap bmp) throws <a href="../class/invalidinputexception/">InvalidInputException</a></float[></p>
-
-<h4 id="description-1" class="anchor"><a class="heading-anchor" href="#description-1"><span></span></a>Description</h4>
-
-<p>The image to process for descriptor extraction.</p>
-
-<h4 id="parameters-1" class="anchor"><a class="heading-anchor" href="#parameters-1"><span></span></a>Parameters</h4>
 
 <ul>
-<li><code>bmp</code> - image to process for a descriptor.</li>
+<li><strong>0 -</strong> 0 degrees </li>
+
+<li><strong>1 -</strong> 90 degrees </li>
+
+<li><strong>2 -</strong> 180 degrees </li>
+
+<li><strong>3 -</strong> 270 degrees  </li></ul>
+</li>
+
+<li><strong>executor -</strong> An <code>Executor</code> for asynchronous task execution. </li>
 </ul>
 
-<h4 id="exceptions-1" class="anchor"><a class="heading-anchor" href="#exceptions-1"><span></span></a>Exceptions</h4>
+<p><strong>Return Value:</strong> A CompletableFuture containing a float array representing the descriptor. </p>
+
+<p><strong>Exceptions:</strong></p>
 
 <ul>
-<li><code>InvalidInputException</code></li>
+<li><strong>InvalidInputException -</strong> Thrown if bmp is null or orientation is invalid. </li>
+
+<li><strong>IllegalStateException -</strong> Thrown if the feature extractor is not in a valid state to perform the operation. </li>
 </ul>
 
-<p>Throws <code>InvalidInputException</code> exception when Bitmap is passed as null. </p>
+<!-- 
 
-<h4 id="returnvalue-1" class="anchor"><a class="heading-anchor" href="#returnvalue-1"><span></span></a>Return Value</h4>
+### generateSingleDescriptor (Bitmap bmp) 
+[CompletableFuture](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html)<float[ ]> FeatureExtractor.generateSingleDescriptor    (Bitmap bmp) throws [InvalidInputException](../class/invalidinputexception/)
+#### Description
+The image to process for descriptor extraction.
+#### Parameters
+- `bmp` - image to process for a descriptor.
+#### Exceptions
+- `InvalidInputException`
 
-<p>A <code>CompletableFuture</code> containing a float array representing the descriptor of the input image.</p>
+Throws `InvalidInputException` exception when Bitmap is passed as null. 
 
-<h3 id="generatedescriptorsbboxdetectionsbitmapbmpintorientation" class="anchor"><a class="heading-anchor" href="#generatedescriptorsbboxdetectionsbitmapbmpintorientation"><span></span></a>generateDescriptors (BBox[ ]    detections, Bitmap  bmp, int orientation)</h3>
+#### Return Value
+A `CompletableFuture` containing a float array representing the descriptor of the input image.
 
-<p><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a><float[ ][="" ]=""> FeatureExtractor.generateDescriptors    (<a href="../class/bbox/">BBox</a>[ ] detections, Bitmap bmp, int orientation) throws <a href="../class/invalidinputexception/">InvalidInputException</a>             </float[></p>
+### generateDescriptors (BBox[ ]    detections, Bitmap  bmp, int orientation) 
+[CompletableFuture](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html)<float[ ][ ]> FeatureExtractor.generateDescriptors    ([BBox](../class/bbox/)[ ] detections, Bitmap bmp, int orientation) throws [InvalidInputException](../class/invalidinputexception/)             
+#### Description
+Generate a set of descriptors for each of the items in an image determined by an array of bounding boxes.
+#### Parameters
+- `detections` - array of bounding boxes determining the location of items in the image.
+- `bmp` - image where the items are present.
+- `orientation` - orientation angle which the image was taken from - the detection routine rotates the image by this angle (clockwise) before processing, then rotates the result (anticlockwise) to correct.
 
-<h4 id="description-2" class="anchor"><a class="heading-anchor" href="#description-2"><span></span></a>Description</h4>
+#### Exceptions
+- `InvalidInputException`
 
-<p>Generate a set of descriptors for each of the items in an image determined by an array of bounding boxes.</p>
+Throws `InvalidInputException` exception when Bitmap is passed as null or detections array is passed as null or orientation is not equal to anyone of the following:
 
-<h4 id="parameters-2" class="anchor"><a class="heading-anchor" href="#parameters-2"><span></span></a>Parameters</h4>
+- 0 degree
+- 90 degree
+- 180 degree
+- 270 degree
 
-<ul>
-<li><code>detections</code> - array of bounding boxes determining the location of items in the image.</li>
+#### Return Value
+Array with a descriptor for each of the items defined by the bounding boxes.
 
-<li><code>bmp</code> - image where the items are present.</li>
+### generateDescriptors (BBox[ ] detections, Bitmap    bmp) 
+[CompletableFuture](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html)<float[ ][ ]> FeatureExtractor.generateDescriptors    ([BBox](../class/bbox/)[ ] detections, Bitmap bmp) throws [InvalidInputException](../class/invalidinputexception/)
+#### Description
+Generate a set of descriptors for each of the items in an image determined by an array of bounding boxes.
+#### Parameters
+- `detections` - array of bounding boxes determining the location of items in the image.
+- `bmp` - image where the items are present.
 
-<li><code>orientation</code> - orientation angle which the image was taken from - the detection routine rotates the image by this angle (clockwise) before processing, then rotates the result (anticlockwise) to correct.</li>
-</ul>
-
-<h4 id="exceptions-2" class="anchor"><a class="heading-anchor" href="#exceptions-2"><span></span></a>Exceptions</h4>
-
-<ul>
-<li><code>InvalidInputException</code></li>
-</ul>
-
-<p>Throws <code>InvalidInputException</code> exception when Bitmap is passed as null or detections array is passed as null or orientation is not equal to anyone of the following:</p>
-
-<ul>
-<li>0 degree</li>
-
-<li>90 degree</li>
-
-<li>180 degree</li>
-
-<li>270 degree</li>
-</ul>
-
-<h4 id="returnvalue-2" class="anchor"><a class="heading-anchor" href="#returnvalue-2"><span></span></a>Return Value</h4>
-
-<p>Array with a descriptor for each of the items defined by the bounding boxes.</p>
-
-<h3 id="generatedescriptorsbboxdetectionsbitmapbmp" class="anchor"><a class="heading-anchor" href="#generatedescriptorsbboxdetectionsbitmapbmp"><span></span></a>generateDescriptors (BBox[ ] detections, Bitmap    bmp)</h3>
-
-<p><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a><float[ ][="" ]=""> FeatureExtractor.generateDescriptors    (<a href="../class/bbox/">BBox</a>[ ] detections, Bitmap bmp) throws <a href="../class/invalidinputexception/">InvalidInputException</a></float[></p>
-
-<h4 id="description-3" class="anchor"><a class="heading-anchor" href="#description-3"><span></span></a>Description</h4>
-
-<p>Generate a set of descriptors for each of the items in an image determined by an array of bounding boxes.</p>
-
-<h4 id="parameters-3" class="anchor"><a class="heading-anchor" href="#parameters-3"><span></span></a>Parameters</h4>
-
-<ul>
-<li><code>detections</code> - array of bounding boxes determining the location of items in the image.</li>
-
-<li><code>bmp</code> - image where the items are present.</li>
-</ul>
-
-<h4 id="exceptions-3" class="anchor"><a class="heading-anchor" href="#exceptions-3"><span></span></a>Exceptions</h4>
-
-<ul>
-<li><code>InvalidInputException</code>
-Throws <code>InvalidInputException</code> exception when Bitmap or detections array are passed as null.</li>
-</ul>
-
-<h4 id="returnvalue-3" class="anchor"><a class="heading-anchor" href="#returnvalue-3"><span></span></a>Return Value</h4>
-
-<p>An array with a descriptor for each of the items defined by the bounding boxes.</p>
+#### Exceptions
+- `InvalidInputException`
+Throws `InvalidInputException` exception when Bitmap or detections array are passed as null.
+#### Return Value
+An array with a descriptor for each of the items defined by the bounding boxes.
+-->
 
 <hr>
 
@@ -502,7 +536,7 @@ Throws <code>InvalidInputException</code> exception when Bitmap or detections ar
 <p>Feature Storage (Learning block) has the main application of updating the set of items the <a href="#recognizer">Recognizer</a> is able to detect.
 Descriptors generated by the <a href="#featureextractor">FeatureExtractor</a> can be fed into this class, which will store them in a DB, alongside the class name they represent, following a predefined update strategy. The resulting DB can then be used to initialize a <a href="#recognizer">Recognizer</a> instance with new detection capabilities.</p>
 
-<h3 id="initialization-1" class="anchor"><a class="heading-anchor" href="#initialization-1"><span></span></a>Initialization</h3>
+<h3 id="initialization" class="anchor"><a class="heading-anchor" href="#initialization"><span></span></a>Initialization</h3>
 
 <p>The Feature Storage object is initialized via its configuration structure.
 There are 2 mandatory fields that need to be set. </p>
@@ -517,7 +551,7 @@ There are 2 mandatory fields that need to be set. </p>
     FeatureStorage featureStorage = new FeatureStorage(settings);
 </code></pre>
 
-<h3 id="usage-1" class="anchor"><a class="heading-anchor" href="#usage-1"><span></span></a>Usage</h3>
+<h3 id="usage" class="anchor"><a class="heading-anchor" href="#usage"><span></span></a>Usage</h3>
 
 <pre class="prettyprint"><code>    String[] classNames = featureStorage.getAvailableClassNames();
 </code></pre>
@@ -559,11 +593,11 @@ void      |        [connectClusteringCallback](FeatureStorage.md#connectclusteri
 
 <p>FeatureStorage.FeatureStorage (Settings settings) throws FileNotFoundException, IOException</p>
 
-<h4 id="description-4" class="anchor"><a class="heading-anchor" href="#description-4"><span></span></a>Description</h4>
+<h4 id="description" class="anchor"><a class="heading-anchor" href="#description"><span></span></a>Description</h4>
 
 <p>Construct a new <code>Feature Storage</code> object.</p>
 
-<h4 id="parameters-4" class="anchor"><a class="heading-anchor" href="#parameters-4"><span></span></a>Parameters</h4>
+<h4 id="parameters" class="anchor"><a class="heading-anchor" href="#parameters"><span></span></a>Parameters</h4>
 
 <ul>
 <li><code>settings</code> - (Settings) The configuration settings used to initialize the feature storage.</li>
@@ -583,11 +617,11 @@ void      |        [connectClusteringCallback](FeatureStorage.md#connectclusteri
 
 <p>Throws exception <code>FileNotFoundException</code> if there is an issue reading or writing to the underlying storage.</p>
 
-<h3 id="dispose-1" class="anchor"><a class="heading-anchor" href="#dispose-1"><span></span></a>Dispose()</h3>
+<h3 id="dispose" class="anchor"><a class="heading-anchor" href="#dispose"><span></span></a>Dispose()</h3>
 
 <p>void  FeatureExtractor.dispose ()</p>
 
-<h4 id="description-5" class="anchor"><a class="heading-anchor" href="#description-5"><span></span></a>Description</h4>
+<h4 id="description-1" class="anchor"><a class="heading-anchor" href="#description-1"><span></span></a>Description</h4>
 
 <p>Releases all internal resources used by the <code>FeatureStorage</code> object. This method should be called manually to free resources.</p>
 
@@ -595,11 +629,11 @@ void      |        [connectClusteringCallback](FeatureStorage.md#connectclusteri
 
 <p>void  FeatureStorage.addDescriptors (String label, float[ ][ ] descriptors)</p>
 
-<h4 id="description-6" class="anchor"><a class="heading-anchor" href="#description-6"><span></span></a>Description</h4>
+<h4 id="description-2" class="anchor"><a class="heading-anchor" href="#description-2"><span></span></a>Description</h4>
 
 <p>Adds descriptors to the storage for a specified label.</p>
 
-<h4 id="parameters-5" class="anchor"><a class="heading-anchor" href="#parameters-5"><span></span></a>Parameters</h4>
+<h4 id="parameters-1" class="anchor"><a class="heading-anchor" href="#parameters-1"><span></span></a>Parameters</h4>
 
 <ul>
 <li><code>label</code> - Identifier of the product represented by the descriptors.</li>
@@ -611,11 +645,11 @@ void      |        [connectClusteringCallback](FeatureStorage.md#connectclusteri
 
 <p>void FeatureStorage.addDescriptors (String  label, float descriptors[ ][ ], boolean forceSupport)</p>
 
-<h4 id="description-7" class="anchor"><a class="heading-anchor" href="#description-7"><span></span></a>Description</h4>
+<h4 id="description-3" class="anchor"><a class="heading-anchor" href="#description-3"><span></span></a>Description</h4>
 
 <p>Adds descriptors to the storage for a specified label, with an option to force support generation.</p>
 
-<h4 id="parameters-6" class="anchor"><a class="heading-anchor" href="#parameters-6"><span></span></a>Parameters</h4>
+<h4 id="parameters-2" class="anchor"><a class="heading-anchor" href="#parameters-2"><span></span></a>Parameters</h4>
 
 <ul>
 <li><code>label</code> - The identifier for the class or category to which the descriptors belong.</li>
@@ -629,11 +663,11 @@ void      |        [connectClusteringCallback](FeatureStorage.md#connectclusteri
 
 <p>void  FeatureStorage.addDescriptors (String label, float descriptors[ ][ ], boolean    forceSupport, boolean   randomTrim)</p>
 
-<h4 id="description-8" class="anchor"><a class="heading-anchor" href="#description-8"><span></span></a>Description</h4>
+<h4 id="description-4" class="anchor"><a class="heading-anchor" href="#description-4"><span></span></a>Description</h4>
 
 <p>Add descriptors for a product.</p>
 
-<h4 id="parameters-7" class="anchor"><a class="heading-anchor" href="#parameters-7"><span></span></a>Parameters</h4>
+<h4 id="parameters-3" class="anchor"><a class="heading-anchor" href="#parameters-3"><span></span></a>Parameters</h4>
 
 <ul>
 <li><code>label</code> - The identifier for the class or category to which the descriptors belong.</li>
@@ -649,11 +683,11 @@ void      |        [connectClusteringCallback](FeatureStorage.md#connectclusteri
 
 <p>void  FeatureStorage.addDescriptorsWithImages (String label, float descriptors[ ][ ], byte images[ ][ ], boolean forceSupport)</p>
 
-<h4 id="description-9" class="anchor"><a class="heading-anchor" href="#description-9"><span></span></a>Description</h4>
+<h4 id="description-5" class="anchor"><a class="heading-anchor" href="#description-5"><span></span></a>Description</h4>
 
 <p>Adds descriptors and associated images to the storage, with an option to force support generation.</p>
 
-<h4 id="parameters-8" class="anchor"><a class="heading-anchor" href="#parameters-8"><span></span></a>Parameters</h4>
+<h4 id="parameters-4" class="anchor"><a class="heading-anchor" href="#parameters-4"><span></span></a>Parameters</h4>
 
 <ul>
 <li><code>label</code> - The identifier for the class or category to which the descriptors and images belong.</li>
@@ -669,11 +703,11 @@ void      |        [connectClusteringCallback](FeatureStorage.md#connectclusteri
 
 <p>void  FeatureStorage.addDescriptorsWithImages (String label, float descriptors[ ][ ], byte images [ ][ ])</p>
 
-<h4 id="description-10" class="anchor"><a class="heading-anchor" href="#description-10"><span></span></a>Description</h4>
+<h4 id="description-6" class="anchor"><a class="heading-anchor" href="#description-6"><span></span></a>Description</h4>
 
 <p>Adds descriptors and associated images to the storage.</p>
 
-<h4 id="parameters-9" class="anchor"><a class="heading-anchor" href="#parameters-9"><span></span></a>Parameters</h4>
+<h4 id="parameters-5" class="anchor"><a class="heading-anchor" href="#parameters-5"><span></span></a>Parameters</h4>
 
 <ul>
 <li><code>label</code> - The identifier for the class or category to which the descriptors and images belong.</li>
@@ -687,11 +721,11 @@ void      |        [connectClusteringCallback](FeatureStorage.md#connectclusteri
 
 <p>void FeatureStorage.incrementDescriptorHitCount (String    label, float[ ] descriptor)</p>
 
-<h4 id="description-11" class="anchor"><a class="heading-anchor" href="#description-11"><span></span></a>Description</h4>
+<h4 id="description-7" class="anchor"><a class="heading-anchor" href="#description-7"><span></span></a>Description</h4>
 
 <p>Increments the hit count for a specific descriptor associated with a label.</p>
 
-<h4 id="parameters-10" class="anchor"><a class="heading-anchor" href="#parameters-10"><span></span></a>Parameters</h4>
+<h4 id="parameters-6" class="anchor"><a class="heading-anchor" href="#parameters-6"><span></span></a>Parameters</h4>
 
 <ul>
 <li><code>label</code> - The identifier for the class or category containing the descriptor.</li>
@@ -703,17 +737,17 @@ void      |        [connectClusteringCallback](FeatureStorage.md#connectclusteri
 
 <p>float[ ][ ]  FeatureStorage.getSupportDescriptorsForProduct (String label)</p>
 
-<h4 id="description-12" class="anchor"><a class="heading-anchor" href="#description-12"><span></span></a>Description</h4>
+<h4 id="description-8" class="anchor"><a class="heading-anchor" href="#description-8"><span></span></a>Description</h4>
 
 <p>Retrieves the support descriptors for a specified label.</p>
 
-<h4 id="parameters-11" class="anchor"><a class="heading-anchor" href="#parameters-11"><span></span></a>Parameters</h4>
+<h4 id="parameters-7" class="anchor"><a class="heading-anchor" href="#parameters-7"><span></span></a>Parameters</h4>
 
 <ul>
 <li><code>label</code> - The identifier for the class or category.</li>
 </ul>
 
-<h4 id="returnvalue-4" class="anchor"><a class="heading-anchor" href="#returnvalue-4"><span></span></a>Return Value</h4>
+<h4 id="returnvalue" class="anchor"><a class="heading-anchor" href="#returnvalue"><span></span></a>Return Value</h4>
 
 <p>A 2D array of support descriptors associated with the label.</p>
 
@@ -721,11 +755,11 @@ void      |        [connectClusteringCallback](FeatureStorage.md#connectclusteri
 
 <p>String[ ] FeatureStorage.getAvailableClassNames ()</p>
 
-<h4 id="description-13" class="anchor"><a class="heading-anchor" href="#description-13"><span></span></a>Description</h4>
+<h4 id="description-9" class="anchor"><a class="heading-anchor" href="#description-9"><span></span></a>Description</h4>
 
 <p>Returns a list of all available class or category labels stored in the feature storage.</p>
 
-<h4 id="returnvalue-5" class="anchor"><a class="heading-anchor" href="#returnvalue-5"><span></span></a>Return Value</h4>
+<h4 id="returnvalue-1" class="anchor"><a class="heading-anchor" href="#returnvalue-1"><span></span></a>Return Value</h4>
 
 <ul>
 <li>An array of class or category labels.</li>
@@ -735,11 +769,11 @@ void      |        [connectClusteringCallback](FeatureStorage.md#connectclusteri
 
 <p>void  FeatureStorage.connectClusteringCallback (ClusteringEvent    eventHandler)</p>
 
-<h4 id="description-14" class="anchor"><a class="heading-anchor" href="#description-14"><span></span></a>Description</h4>
+<h4 id="description-10" class="anchor"><a class="heading-anchor" href="#description-10"><span></span></a>Description</h4>
 
 <p>Connects a callback function for clustering events.</p>
 
-<h4 id="parameters-12" class="anchor"><a class="heading-anchor" href="#parameters-12"><span></span></a>Parameters</h4>
+<h4 id="parameters-8" class="anchor"><a class="heading-anchor" href="#parameters-8"><span></span></a>Parameters</h4>
 
 <ul>
 <li><code>eventHandler</code> - The event handler to be invoked for clustering-related events.</li>
@@ -784,13 +818,13 @@ void       |      [loadIndex](Recognizer.md#loadindex) (String labelFilename, St
 </li>
 </ul>
 
-<h4 id="parameters-13" class="anchor"><a class="heading-anchor" href="#parameters-13"><span></span></a>Parameters</h4>
+<h4 id="parameters-9" class="anchor"><a class="heading-anchor" href="#parameters-9"><span></span></a>Parameters</h4>
 
 <ul>
 <li><code>SettingsDb settings</code> - Settings for initialization from a database.</li>
 </ul>
 
-<h4 id="exceptions-4" class="anchor"><a class="heading-anchor" href="#exceptions-4"><span></span></a>Exceptions</h4>
+<h4 id="exceptions" class="anchor"><a class="heading-anchor" href="#exceptions"><span></span></a>Exceptions</h4>
 
 <ul>
 <li><code>FileNotFoundException</code></li>
@@ -812,13 +846,13 @@ void       |      [loadIndex](Recognizer.md#loadindex) (String labelFilename, St
 
 <p>Recognizer.Recognizer    (<a href="../class/settingsindex/">SettingsIndex</a>   settings)   throws IOException</p>
 
-<h4 id="parameters-14" class="anchor"><a class="heading-anchor" href="#parameters-14"><span></span></a>Parameters</h4>
+<h4 id="parameters-10" class="anchor"><a class="heading-anchor" href="#parameters-10"><span></span></a>Parameters</h4>
 
 <ul>
 <li><code>SettingsIndex settings</code> - Settings for initialization from an index file.</li>
 </ul>
 
-<h4 id="exceptions-5" class="anchor"><a class="heading-anchor" href="#exceptions-5"><span></span></a>Exceptions</h4>
+<h4 id="exceptions-1" class="anchor"><a class="heading-anchor" href="#exceptions-1"><span></span></a>Exceptions</h4>
 
 <ul>
 <li><code>IOException</code></li>
@@ -826,7 +860,7 @@ void       |      [loadIndex](Recognizer.md#loadindex) (String labelFilename, St
 
 <p>Throws <code>IOException</code> if the search index is corrupted.</p>
 
-<h3 id="dispose-2" class="anchor"><a class="heading-anchor" href="#dispose-2"><span></span></a>Dispose()</h3>
+<h3 id="dispose-1" class="anchor"><a class="heading-anchor" href="#dispose-1"><span></span></a>Dispose()</h3>
 
 <p>Frees or releases resources. </p>
 
@@ -848,7 +882,7 @@ void       |      [loadIndex](Recognizer.md#loadindex) (String labelFilename, St
 <p><strong>Method:</strong>
     - <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a>&lt;<a href="../class/recognition/">Recognition</a>[]&gt; Recognizer.findRecognitions (float    descriptors[ ][ ], int k)</p>
 
-<h4 id="parameters-15" class="anchor"><a class="heading-anchor" href="#parameters-15"><span></span></a>Parameters</h4>
+<h4 id="parameters-11" class="anchor"><a class="heading-anchor" href="#parameters-11"><span></span></a>Parameters</h4>
 
 <ul>
 <li><code>descriptors</code> - Array of descriptors to use for recognitions.</li>
@@ -856,7 +890,7 @@ void       |      [loadIndex](Recognizer.md#loadindex) (String labelFilename, St
 <li><code>k</code> - number of max top recognitions that should be returned.</li>
 </ul>
 
-<h4 id="returnvalue-6" class="anchor"><a class="heading-anchor" href="#returnvalue-6"><span></span></a>Return Value</h4>
+<h4 id="returnvalue-2" class="anchor"><a class="heading-anchor" href="#returnvalue-2"><span></span></a>Return Value</h4>
 
 <p>A <code>CompletableFuture</code> containing an array of <a href="../class/recognition/">Recognition</a> objects.</p>
 
@@ -866,17 +900,17 @@ void       |      [loadIndex](Recognizer.md#loadindex) (String labelFilename, St
 
 <p><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a>&lt;<a href="../class/recognition/">Recognition</a>[]&gt;  Recognizer.findRecognitions (float    descriptors[ ][ ])</p>
 
-<h4 id="description-15" class="anchor"><a class="heading-anchor" href="#description-15"><span></span></a>Description</h4>
+<h4 id="description-11" class="anchor"><a class="heading-anchor" href="#description-11"><span></span></a>Description</h4>
 
 <p>Finds the top 5 classes for each item represented by a descriptor.</p>
 
-<h4 id="parameters-16" class="anchor"><a class="heading-anchor" href="#parameters-16"><span></span></a>Parameters</h4>
+<h4 id="parameters-12" class="anchor"><a class="heading-anchor" href="#parameters-12"><span></span></a>Parameters</h4>
 
 <ul>
 <li><code>descriptors</code> - Array of descriptors to use for recognitions.</li>
 </ul>
 
-<h4 id="returnvalue-7" class="anchor"><a class="heading-anchor" href="#returnvalue-7"><span></span></a>Return Value</h4>
+<h4 id="returnvalue-3" class="anchor"><a class="heading-anchor" href="#returnvalue-3"><span></span></a>Return Value</h4>
 
 <p>A <code>CompletableFuture</code> containing an array of <a href="../class/recognition/">Recognition</a> objects.</p>
 
@@ -887,7 +921,7 @@ void       |      [loadIndex](Recognizer.md#loadindex) (String labelFilename, St
 <p><strong>Method:</strong> 
     - <a href="../class/recommendation/">Recommendation</a>[ ] Recognizer.findRecommendations (float descriptors[][], int    k)</p>
 
-<h4 id="parameters-17" class="anchor"><a class="heading-anchor" href="#parameters-17"><span></span></a>Parameters</h4>
+<h4 id="parameters-13" class="anchor"><a class="heading-anchor" href="#parameters-13"><span></span></a>Parameters</h4>
 
 <ul>
 <li><code>descriptors</code> - Array of descriptors to use for recognitions.</li>
@@ -895,7 +929,7 @@ void       |      [loadIndex](Recognizer.md#loadindex) (String labelFilename, St
 <li><code>k</code> - Number of max top matches that should be returned.</li>
 </ul>
 
-<h4 id="returnvalue-8" class="anchor"><a class="heading-anchor" href="#returnvalue-8"><span></span></a>Return Value</h4>
+<h4 id="returnvalue-4" class="anchor"><a class="heading-anchor" href="#returnvalue-4"><span></span></a>Return Value</h4>
 
 <p>An array of recommendations.</p>
 
@@ -905,17 +939,17 @@ void       |      [loadIndex](Recognizer.md#loadindex) (String labelFilename, St
 
 <p><a href="../class/recommendation/">Recommendation</a>  Recognizer.findRecommendations    (float  descriptors[ ][ ])</p>
 
-<h4 id="description-16" class="anchor"><a class="heading-anchor" href="#description-16"><span></span></a>Description</h4>
+<h4 id="description-12" class="anchor"><a class="heading-anchor" href="#description-12"><span></span></a>Description</h4>
 
 <p>Finds the top 5 labels matching a set of descriptors as a whole.</p>
 
-<h4 id="parameters-18" class="anchor"><a class="heading-anchor" href="#parameters-18"><span></span></a>Parameters</h4>
+<h4 id="parameters-14" class="anchor"><a class="heading-anchor" href="#parameters-14"><span></span></a>Parameters</h4>
 
 <ul>
 <li><code>descriptors</code> - Array of descriptors to use for recognitions.</li>
 </ul>
 
-<h4 id="returnvalue-9" class="anchor"><a class="heading-anchor" href="#returnvalue-9"><span></span></a>Return Value</h4>
+<h4 id="returnvalue-5" class="anchor"><a class="heading-anchor" href="#returnvalue-5"><span></span></a>Return Value</h4>
 
 <p>An array of recommendations.</p>
 
@@ -932,7 +966,7 @@ void       |      [loadIndex](Recognizer.md#loadindex) (String labelFilename, St
 </li>
 </ul>
 
-<h4 id="parameters-19" class="anchor"><a class="heading-anchor" href="#parameters-19"><span></span></a>Parameters</h4>
+<h4 id="parameters-15" class="anchor"><a class="heading-anchor" href="#parameters-15"><span></span></a>Parameters</h4>
 
 <ul>
 <li><code>labelFilename</code> - Specifies the file for writing labels.</li>
@@ -953,7 +987,7 @@ void       |      [loadIndex](Recognizer.md#loadindex) (String labelFilename, St
 </li>
 </ul>
 
-<h4 id="parameters-20" class="anchor"><a class="heading-anchor" href="#parameters-20"><span></span></a>Parameters</h4>
+<h4 id="parameters-16" class="anchor"><a class="heading-anchor" href="#parameters-16"><span></span></a>Parameters</h4>
 
 <ul>
 <li><code>labelFilename</code> - Specifies the file for writing labels.</li>

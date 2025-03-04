@@ -264,39 +264,42 @@
 <h3 id="step1initialization" class="anchor"><a class="heading-anchor" href="#step1initialization"><span></span></a>Step 1: Initialization</h3>
 
 <ol>
-<li><p><strong>Import the BarcodeDecoder class</strong> using <code>com.zebra.ai.vision.BarcodeDecoder</code>.</p></li>
+<li><strong>Import the BarcodeDecoder class</strong> using <code>com.zebra.ai.vision.BarcodeDecoder</code>.</li>
 
-<li><p><strong>Initialize BarcodeDecoder Settings:</strong> Create an instance of <code>BarcodeDecoder.Settings</code>, which will hold any configurations needed to set for the barcode decoding process.</p></li>
+<li><strong>Initialize BarcodeDecoder Settings:</strong> Create an instance of <code>BarcodeDecoder.Settings</code>, which will hold any configurations needed to set for the barcode decoding process.</li>
 
-<li><p><strong>Configure Barcode Symbologies:</strong> Enable the desired barcode symbologies to recognize and set its parameters; refer to the <a href="#supportedbarcodesymbologies">Supported Barcode Symbologies</a>.</p></li>
+<li><strong>Configure Barcode Symbologies:</strong> Enable the desired barcode symbologies to recognize and set its parameters; refer to the <a href="#supportedbarcodesymbologies">Supported Barcode Symbologies</a>.</li>
 
-<li><p><strong>Initialize and load the model asynchronously -</strong> Declare a <code>BarcodeDecoder</code> object and use a <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a> to load the model asynchronously. Ensure an <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Executor.html">Executor</a> is available to manage asynchronous processing.</p></li>
+<li><strong>Initialize and load the model asynchronously -</strong> Declare a <code>BarcodeDecoder</code> object and use a <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a> to load the model asynchronously. Ensure an <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Executor.html">Executor</a> is available to manage asynchronous processing.</li>
 
-<li><p><strong>Handle synchronous initialization -</strong> Implement the <code>thenAccept()</code> callback to use the decoder instance once it is available. </p>
-
-<pre class="prettyprint"><code>import com.zebra.ai.vision.BarcodeDecoder;
-
-// Initialize BarcodeDecoder settings object
-BarcodeDecoder.Settings settings = new BarcodeDecoder.Settings();
-
-// Enable Code 128 and its parameters or other desired symbologies
-settings.Symbology.CODE128.enable(true);
-settings.Symbology.CODE128.setLength1(1);
-settings.Symbology.CODE128.setLength2(10);
-
-// Initialize BarcodeDecoder object
-BarcodeDecoder decoder = null; 
-
-// Executor = An executor thread in which the processing of API call happens, and the results are returned
-CompletableFuture&lt;BarcodeDecoder&gt; futureObject = getBarcodeDecoder(settings, executor);
-
-//Use the futureObject to implement thenAccept() callback of CompletableFuture.
-futureObject.thenAccept (decoderInstance -&gt; {
-    //Use the decoder object returned here for decoding the barcodes
-    decoder = decoderInstance;
-});
-</code></pre></li>
+<li><strong>Handle synchronous initialization -</strong> Implement the <code>thenAccept()</code> callback to use the decoder instance once it is available. </li>
 </ol>
+
+<p>Sample Code:</p>
+
+<pre class="prettyprint"><code>    import com.zebra.ai.vision.BarcodeDecoder;
+
+    // Initialize BarcodeDecoder settings object
+    BarcodeDecoder.Settings settings = new BarcodeDecoder.Settings();
+
+    // Enable UPCE1 and its parameters or other desired symbologies
+    settings.Symbology.UPCE1.enable(true);
+    settings.Symbology.UPCE1.setReportCheckDigit(true);
+
+    // Initialize BarcodeDecoder object
+    BarcodeDecoder decoder = null; 
+
+    // Executor = An executor thread in which the processing of API call happens, and the results are returned
+    CompletableFuture&lt;BarcodeDecoder&gt; futureObject = getBarcodeDecoder(settings, executor);
+
+    //Use the futureObject to implement thenAccept() callback of CompletableFuture.
+    futureObject.thenAccept (decoderInstance -&gt; {
+        //Use the decoder object returned here for decoding the barcodes
+        decoder = decoderInstance;
+    });
+</code></pre>
+
+<hr>
 
 <h3 id="step2decode" class="anchor"><a class="heading-anchor" href="#step2decode"><span></span></a>Step 2: Decode</h3>
 
@@ -316,15 +319,16 @@ futureObject.thenAccept (decoderInstance -&gt; {
 <li><strong>Dispose Decoder:</strong> After decoding is complete and the decoder instance is no longer needed, dispose of the decoder to release resources.</li>
 </ol>
 
-<p>Code: 
-        // Decoding starts once the bitmap image is available. Note that the Decode API accepts Bitmap image. <br>
-        // Input params: bitmap image and an executor thread object (in which the decode happens and the results are returned). 
-        CompletableFuture<result> resultFutureObject = barcodeDecoder.decode(bitmap, executor); <br>
-        resultFutureObject.thenAccept (results -&gt; { 
-            //Process the returned result of decoded barcode. 
-        });</result></p>
+<p>Sample Code: </p>
 
-<pre class="prettyprint"><code>    // Once done with using the decoder object, dispose the object to release the resources and memory used for decoding
+<pre class="prettyprint"><code>    // Decoding starts once the bitmap image is available
+    // Input params: bitmap image and an executor thread object (in which the decode happens and the results are returned). 
+    CompletableFuture&lt;Result&gt; resultFutureObject = barcodeDecoder.decode(bitmap, executor);  
+    resultFutureObject.thenAccept (results -&gt; { 
+        //Process the returned result of decoded barcode. 
+    });
+
+    // Once done with using the decoder object, dispose the object to release the resources and memory used for decoding
     decoder.dispose();
 </code></pre>
 
@@ -333,25 +337,27 @@ futureObject.thenAccept (decoderInstance -&gt; {
 <p>This method runs the decoder over specific areas of an image, defined by <a href="../class/bbox/">bounding boxes</a>. This is typically used when these bounding boxes are determined by a separate localization process, such as a Localizer. Typically applies when decoding multiple barcodes.</p>
 
 <ol>
-<li><p><strong>Prepare Inputs:</strong> Obtain a Bitmap image containing the barcodes. Use an array of BBox (<a href="../class/bbox/">bounding boxes</a>) indicating the regions of interest in the image where barcodes are expected. Use an Executor to manage asynchronous decoding operations.</p></li>
+<li><strong>Prepare Inputs:</strong> Obtain a Bitmap image containing the barcodes. Use an array of BBox (<a href="../class/bbox/">bounding boxes</a>) indicating the regions of interest in the image where barcodes are expected. Use an Executor to manage asynchronous decoding operations.</li>
 
-<li><p><strong>Decode Barcodes:</strong> Call the decode method on the BarcodeDecoder instance, passing the image, bounding boxes, and executor.</p></li>
+<li><strong>Decode Barcodes:</strong> Call the decode method on the BarcodeDecoder instance, passing the image, bounding boxes, and executor.</li>
 
-<li><p><strong>Handle the Results:</strong> Process the decoded barcodes when the CompletableFuture completes.</p></li>
+<li><strong>Handle the Results:</strong> Process the decoded barcodes when the CompletableFuture completes.</li>
 
-<li><p><strong>Dispose the Decoder:</strong> Once decoding is complete and no further use of the decoder instance is needed, dispose of the decoder to release resources.</p>
-
-<pre class="prettyprint"><code>// Decoding starts once bounding boxes are available. 
-// Input params: bitmap image, array of bounding boxes, an executor thread object (in which the decode happens and the results are returned) 
-CompletableFuture&lt;Result[]&gt; resultFutureObject = barcodeDecoder.decode(bitmap, bboxes, executor);  
-resultFutureObject.thenAccept (results -&gt; { 
-    //Process the returned result of decoded barcodes. 
-});
-
-// Once use of the decoder object is done, dispose the object to release the resources and memory used for decoding
-decoder.dispose();
-</code></pre></li>
+<li><strong>Dispose the Decoder:</strong> Once decoding is complete and no further use of the decoder instance is needed, dispose of the decoder to release resources.</li>
 </ol>
+
+<p>Sample Code:</p>
+
+<pre class="prettyprint"><code>    // Decoding starts once bounding boxes are available
+    // Input params: bitmap image, array of bounding boxes, an executor thread object (in which the decode happens and the results are returned) 
+    CompletableFuture&lt;Result[]&gt; resultFutureObject = barcodeDecoder.decode(bitmap, bboxes, executor);  
+    resultFutureObject.thenAccept (results -&gt; { 
+        //Process the returned result of decoded barcodes. 
+    });
+
+    // Once use of the decoder object is done, dispose the object to release the resources and memory used for decoding
+    decoder.dispose();
+</code></pre>
 
 <hr>
 
@@ -469,6 +475,37 @@ decoder.dispose();
 
 <hr>
 
+<h2 id="barcodedecoderresult" class="anchor"><a class="heading-anchor" href="#barcodedecoderresult"><span></span></a>BarcodeDecoder.Result</h2>
+
+<p>The <code>BarcodeDecoder.Result</code> class encapsulates the result of a barcode decoding operation. It provides information on the decoded data value, the type of symbology used and the bounding box data indicating the barcode position and dimensions within an image. </p>
+
+<h3 id="symbologytype" class="anchor"><a class="heading-anchor" href="#symbologytype"><span></span></a>symbologytype</h3>
+
+<pre class="prettyprint"><code>    int BarcodeDecoder.Result.symbologytype 
+</code></pre>
+
+<p><strong>Description:</strong> Integer that represents the type of symbology for the decoded barcode. The symbology type is necessary for identifying the barcode format, such as QR code, UPC, or EAN. Each symbology type typically corresponds to a specific integer value, which can be referenced against a symbology type reference guide; see <a href="#supportedbarcodesymbologies">Supported Barcode Symbologies</a>.</p>
+
+<hr>
+
+<h3 id="value" class="anchor"><a class="heading-anchor" href="#value"><span></span></a>value</h3>
+
+<pre class="prettyprint"><code>    String BarcodeDecoder.Result.value 
+</code></pre>
+
+<p><strong>Description:</strong> A string that contains the data decoded from the barcode, such as a product number or URL. This value serves as the primary output of the barcode decoding operation. </p>
+
+<hr>
+
+<h3 id="bboxdata" class="anchor"><a class="heading-anchor" href="#bboxdata"><span></span></a>bboxData</h3>
+
+<pre class="prettyprint"><code>    BBox BarcodeDecoder.Result.bboxData 
+</code></pre>
+
+<p><strong>Description:</strong> Holds the bounding box data of the decoded barcode. The <a href="../class/bbox/">bounding box</a> class typically contains information about the position and dimensions of the barcode in the image, such as coordinates of the bounding box corners. This is useful for identifying the exact location of the barcode within a scanned image. </p>
+
+<hr>
+
 <h2 id="samplecode" class="anchor"><a class="heading-anchor" href="#samplecode"><span></span></a>Sample Code</h2>
 
 <h3 id="decodebarcodesfromafullimage" class="anchor"><a class="heading-anchor" href="#decodebarcodesfromafullimage"><span></span></a>Decode Barcodes from a Full Image</h3>
@@ -493,7 +530,7 @@ decoder.dispose();
 <li><strong>Dispose Resources -</strong> Call <code>dispose()</code> on the <code>BarcodeDecoder</code> instance to release resources and memory once decoding is complete.</li>
 </ol>
 
-<p>Sample code:</p>
+<p>Sample Code:</p>
 
 <pre class="prettyprint"><code>    import com.zebra.ai.vision.BarcodeDecoder;
     import com.zebra.ai.vision.BarcodeDecoder.Settings;
@@ -528,7 +565,9 @@ decoder.dispose();
     barcodeDecoder.dispose();
 </code></pre>
 
-<h3 id="decodebarcodesfromregionsofanimage" class="anchor"><a class="heading-anchor" href="#decodebarcodesfromregionsofanimage"><span></span></a>Decode Barcodes from Regions of an Image</h3>
+<hr>
+
+<h3 id="decodebarcodesfromimageregions" class="anchor"><a class="heading-anchor" href="#decodebarcodesfromimageregions"><span></span></a>Decode Barcodes from Image Regions</h3>
 
 <p>This sample code demonstrates how to detect barcodes using the <a href="../localizer/">Localizer</a> class and decode them from specific regions of a bitmap image defined by <a href="../class/bbox/">bounding boxes</a>.</p>
 
@@ -554,7 +593,7 @@ decoder.dispose();
 <li><strong>Decode Barcodes:</strong> Use the <code>BarcodeDecoder</code> to decode the detected barcodes from the bounding boxes.</li>
 </ol>
 
-<p>Sample code: </p>
+<p>Sample Code: </p>
 
 <pre class="prettyprint"><code>    import com.zebra.ai.vision.BarcodeDecoder;
     import com.zebra.ai.vision.BarcodeDecoder.Settings;
@@ -766,16 +805,14 @@ This member holds the bounding box data of the decoded barcode. The BBox class t
 
 -->
 
-<hr>
-
 <h2 id="supportedbarcodesymbologies" class="anchor"><a class="heading-anchor" href="#supportedbarcodesymbologies"><span></span></a>Supported Barcode Symbologies</h2>
 
-<p>Supported barcode symbologies as a subclass of <code>DecoderParams</code> and their default values:</p>
+<p>The following barcode symbologies are available as a subclass of <code>DecoderParams</code>, along with their default values:</p>
 
 <table class="facelift" style="width:20" border="1" padding="5px">
   <tbody><tr bgcolor="#dce8ef">
     <th style="text-align:center">Barcode Symbology</th>
-    <th style="text-align:center">Default Value</th>
+    <th style="text-align:center">Default Status</th>
   </tr>
   <tr>
     <td>AUSTRALIAN_POSTAL</td>
@@ -963,6 +1000,22 @@ This member holds the bounding box data of the decoded barcode. The BBox class t
   </tr>
 </tbody></table>
 
+<p>The sections below provide barcode symbologies with configurable parameters.</p>
+
+<p><strong>Sample Code:</strong></p>
+
+<p>The sample code below demonstrates how to enable the UPCE1 symbology and activate report check digit: </p>
+
+<pre class="prettyprint"><code>    // Initialize BarcodeDecoder settings object 
+    BarcodeDecoder.Settings settings = new BarcodeDecoder.Settings(); 
+
+    // Enabling Symbology UPCE1 and it’s parameters 
+    settings.Symbology.UPCE1.enable(true); 
+    settings.Symbology.UPCE1.setReportCheckDigit(true); 
+</code></pre>
+
+<hr>
+
 <h3 id="code128" class="anchor"><a class="heading-anchor" href="#code128"><span></span></a>Code 128</h3>
 
 <p><strong>Description:</strong> Configures the Code 128 symbology, allowing for customization of parameters such as ISBT 128 handling, EAN 128 support, length restrictions, and security settings. Updates the <code>barcodeSettingMap</code> with Code 128 configurations.</p>
@@ -995,6 +1048,8 @@ This member holds the bounding box data of the decoded barcode. The BBox class t
 <li><strong>ignoreFNC4 -</strong> Boolean to ignore FNC4 characters during decoding.</li>
 </ul>
 
+<hr>
+
 <h3 id="ean8" class="anchor"><a class="heading-anchor" href="#ean8"><span></span></a>EAN8</h3>
 
 <p><strong>Description:</strong> Configures parameters for EAN8 barcode decoding, including optional conversion to EAN13.</p>
@@ -1007,6 +1062,8 @@ This member holds the bounding box data of the decoded barcode. The BBox class t
 <li><strong>convertToEan13 -</strong> Boolean to convert EAN8 to EAN13.</li>
 </ul>
 
+<hr>
+
 <h3 id="i2of5" class="anchor"><a class="heading-anchor" href="#i2of5"><span></span></a>I2OF5</h3>
 
 <p><strong>Description:</strong> Configures the I2OF5 symbology and parameters such as EAN conversion, FEBRABAN handling, length restrictions, and security settings. Updates the <code>barcodeSettingMap</code> to include I2OF5 configurations.</p>
@@ -1017,6 +1074,8 @@ This member holds the bounding box data of the decoded barcode. The BBox class t
 <li><strong>initialstatus -</strong> Boolean to enable (true) or disable (false) the symbology. Default is false.</li>
 </ul>
 
+<hr>
+
 <h3 id="upca" class="anchor"><a class="heading-anchor" href="#upca"><span></span></a>UPCA</h3>
 
 <p><strong>Description:</strong> Configures parameters related to UPCA barcode decoding, including handling of the UPCA symbology.</p>
@@ -1026,7 +1085,7 @@ This member holds the bounding box data of the decoded barcode. The BBox class t
 <ul>
 <li><strong>initialStatus -</strong> Boolean to enable (true) or disable (false) the symbology.</li>
 
-<li><strong>reportCheckDigit -</strong> Boolean t report the check digit. </li>
+<li><strong>reportCheckDigit -</strong> Boolean to report the check digit. </li>
 
 <li><strong>preamble -</strong> Integer to define preamble settings:
 
@@ -1040,6 +1099,8 @@ This member holds the bounding box data of the decoded barcode. The BBox class t
 </li>
 </ul>
 
+<hr>
+
 <h3 id="upce" class="anchor"><a class="heading-anchor" href="#upce"><span></span></a>UPCE</h3>
 
 <p><strong>Description:</strong> Configures UPCE barcode decoding, including handling and conversion of UPCE symbology.</p>
@@ -1051,10 +1112,21 @@ This member holds the bounding box data of the decoded barcode. The BBox class t
 
 <li><strong>reportCheckDigit -</strong> Boolean to report the check digit. </li>
 
-<li><strong>preamble -</strong> Enum <code>Preamble</code> value to define the preamble settings. </li>
+<li><strong>preamble -</strong> Integer to define preamble settings:
+
+
+<ul>
+<li><strong>0 -</strong> Preamble None, transmit no preamble</li>
+
+<li><strong>1 -</strong> (Default) Preamble Sys Char, transmit System Character only</li>
+
+<li><strong>2 -</strong> Preamble Country and Sys Char, transmit System Character and Country Code </li></ul>
+</li>
 
 <li><strong>convertToUPCA -</strong> Boolean to convert UPCE to UPCA.</li>
 </ul>
+
+<hr>
 
 <h3 id="upce1" class="anchor"><a class="heading-anchor" href="#upce1"><span></span></a>UPCE1</h3>
 
@@ -1067,7 +1139,16 @@ This member holds the bounding box data of the decoded barcode. The BBox class t
 
 <li><strong>reportCheckDigit -</strong> Boolean to report the check digit. </li>
 
-<li><strong>preamble -</strong> Enum <code>Preamble</code> value to define the preamble settings. </li>
+<li><strong>preamble -</strong> Integer to define preamble settings:
+
+
+<ul>
+<li><strong>0 -</strong> Preamble None, transmit no preamble</li>
+
+<li><strong>1 -</strong> (Default) Preamble Sys Char, transmit System Character only</li>
+
+<li><strong>2 -</strong> Preamble Country and Sys Char, transmit System Character and Country Code</li></ul>
+</li>
 
 <li><strong>convertToUPCA -</strong> Boolean to convert UPCE1 to UPCA.</li>
 </ul><p></p>
