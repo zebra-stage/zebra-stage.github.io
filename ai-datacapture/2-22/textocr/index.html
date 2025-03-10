@@ -286,7 +286,7 @@
 
 <p><strong>Input Parameters:</strong> The default model input size is 640x640 pixels, but this can be adjusted during runtime initialization.</p>
 
-<p><strong>Output Parameters:</strong> The output consists of a list of text detections, each accompanied by a list of <a href="../class/bbox/">bounding boxes</a> that define the location and content of the detected text.</p>
+<p><strong>Output Parameters:</strong> The output consists of a list of text detections, each accompanied by a list of <a href="../types/#bbox/">bounding boxes</a> that define the location and content of the detected text.</p>
 
 <hr>
 
@@ -366,68 +366,60 @@ settings.detectionInferencerOptions.defaultDims.height = [your value];
 <p>Use one of the following methods to detect text within an image, based on the type of text to detect:</p>
 
 <ul>
-<li><strong>Generic Text -</strong> Outputs text in <a href="../class/bbox/">bounding boxes</a>.</li>
+<li><p><strong>Generic Text -</strong> Outputs text in <a href="../types/#bbox/">bounding boxes</a>. Sample code:</p>
 
-<li><strong>Words –</strong> Outputs an array of words. A word is a discrete unit of text identified within an image, typically separated by spaces or punctuation.</li>
+<pre class="prettyprint"><code>Bitmap image = ... // Your bitmap image here
 
-<li><strong>Paragraphs -</strong> Outputs a hierarchical structure of paragraphs using the grouping mechanism described in <a href="#textocrgroupersettings">Grouper Settings</a>. A paragraph is formed by grouping words that appear on the same line, and these lines are then organized into paragraphs. The process is parameterized, with relevant parameters detailed in the Grouper Settings.</li>
+// Initialize executor
+Executor executor = Executors.newFixedThreadPool(1);
+
+// Input parameters include a bitmap image and an executor thread object for performing detections
+CompletableFuture&lt;OCRResult[]&gt; futureResult = textocr.detect(bitmap,executor);
+
+futureResult.thenAccept (ocrResults -&gt; {
+    // Process the returned output that contains bounding boxes and text within
+});
+
+// Once finished with the textOCR object, dispose of it to release resources and memory used during detection.
+textOCR.dispose();
+</code></pre></li>
+
+<li><p><strong>Words –</strong> Outputs an array of <a href="../types/#word">words</a>. A word is a discrete unit of text identified within an image, typically separated by spaces or punctuation. Sample code:</p>
+
+<pre class="prettyprint"><code>Bitmap image = ... // Your bitmap image here
+
+// Initialize executor
+Executor executor = Executors.newFixedThreadPool(1);
+
+// Input parameters include a bitmap image and an executor thread object for performing detections
+CompletableFuture&lt;Word[]&gt; futureWords = textocr.detectWords(bitmap,executor);
+
+futureWords.thenAccept (words -&gt; {
+    // Process the returned array of detected words
+});
+
+// Once finished with the textOCR object, dispose of it to release resources and memory used during detection
+textOCR.dispose();
+</code></pre></li>
+
+<li><p><strong>Paragraphs -</strong> Outputs a hierarchical structure of <a href="../types/#textparagraph">paragraphs</a> using the grouping mechanism described in <a href="#textocrgroupersettings">Grouper Settings</a>. A paragraph is formed by grouping words that appear on the same line, and these lines are then organized into paragraphs. The process is parameterized, with relevant parameters detailed in the Grouper Settings. Sample code:</p>
+
+<pre class="prettyprint"><code>Bitmap image = ... // Your bitmap image here
+
+// Initialize executor
+Executor executor = Executors.newFixedThreadPool(1);
+
+// Input parameters include a bitmap image and an executor thread object for performing detection
+CompletableFuture&lt;TextParagraph[]&gt; futureTextParagraph = textOCR.detectParagraphs(bitmap,executor);
+
+futureTextParagraph.thenAccept (paragraphs -&gt; {
+    // Process the returned array of detected paragraphs.
+});
+
+// Once finished with the textOCR object, dispose of it to release resources and memory used during detection
+textOCR.dispose();
+</code></pre></li>
 </ul>
-
-<h4 id="samplecode-1" class="anchor"><a class="heading-anchor" href="#samplecode-1"><span></span></a>Sample Code</h4>
-
-<p>To detect generic text:</p>
-
-<pre class="prettyprint"><code>    Bitmap image = ... // Your bitmap image here
-
-    // Initialize executor
-    Executor executor = Executors.newFixedThreadPool(1);
-
-    // Input parameters include a bitmap image and an executor thread object for performing detections
-    CompletableFuture&lt;OCRResult[]&gt; futureResult = textocr.detect(bitmap,executor);
-
-    futureResult.thenAccept (ocrResults -&gt; {
-        // Process the returned output that contains bounding boxes and text within
-    });
-
-    // Once finished with the textOCR object, dispose of it to release resources and memory used during detection.
-    textOCR.dispose();
-</code></pre>
-
-<p>To detect words:</p>
-
-<pre class="prettyprint"><code>    Bitmap image = ... // Your bitmap image here
-
-    // Initialize executor
-    Executor executor = Executors.newFixedThreadPool(1);
-
-    // Input parameters include a bitmap image and an executor thread object for performing detections
-    CompletableFuture&lt;Word[]&gt; futureWords = textocr.detectWords(bitmap,executor);
-
-    futureWords.thenAccept (words -&gt; {
-        // Process the returned array of detected words
-    });
-
-    // Once finished with the textOCR object, dispose of it to release resources and memory used during detection
-    textOCR.dispose();
-</code></pre>
-
-<p>To detect paragraphs:</p>
-
-<pre class="prettyprint"><code>    Bitmap image = ... // Your bitmap image here
-
-    // Initialize executor
-    Executor executor = Executors.newFixedThreadPool(1);
-
-    // Input parameters include a bitmap image and an executor thread object for performing detection
-    CompletableFuture&lt;TextParagraph[]&gt; futureTextParagraph = textOCR.detectParagraphs(bitmap,executor);
-
-    futureTextParagraph.thenAccept (paragraphs -&gt; {
-        // Process the returned array of detected paragraphs.
-    });
-
-    // Once finished with the textOCR object, dispose of it to release resources and memory used during detection
-    textOCR.dispose();
-</code></pre>
 
 <hr>
 
@@ -471,7 +463,7 @@ settings.detectionInferencerOptions.defaultDims.height = [your value];
 <li><strong>executor -</strong> Manages asynchronous task execution.</li>
 </ul>
 
-<p><strong>Return Value:</strong> A <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a> that resolves to an array of <code>OCRResult</code>, each containing <a href="../class/bbox/">bounding boxes</a> and recognized text.</p>
+<p><strong>Return Value:</strong> A <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a> that resolves to an array of <a href="../types/#ocrresult">OCRResult</a>, each containing <a href="../types/#bbox/">bounding boxes</a> and recognized text.</p>
 
 <p><strong>Exceptions:</strong></p>
 
@@ -498,7 +490,7 @@ settings.detectionInferencerOptions.defaultDims.height = [your value];
 <li><strong>Executor -</strong> Manages asynchronous task execution.</li>
 </ul>
 
-<p><strong>Return Value:</strong> A <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a> that resolves to an array of Word objects, each containing <a href="../class/bbox/">bounding boxes</a> and possible text decodes.</p>
+<p><strong>Return Value:</strong> A <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a> that resolves to an array of Word objects, each containing <a href="../types/#bbox/">bounding boxes</a> and possible text decodes.</p>
 
 <p><strong>Exceptions:</strong></p>
 
@@ -626,11 +618,11 @@ settings.detectionInferencerOptions.defaultDims.height = [your value];
 
 </h2><h3 id="groupersettings" class="anchor"><a class="heading-anchor" href="#groupersettings"><span></span></a>Grouper Settings</h3>
 
-<p>The <code>GrouperSettings</code> class provides parameters for customizing the behavior of the OCR text grouping algorithm. It offers control over how text elements are spatially organized based on their geometric properties. By adjusting these settings, developers can fine-tune how text boxes are grouped into lines, paragraphs, or other structures based on their spatial relationships.</p>
+<p>The <code>GrouperSettings</code> class provides parameters for customizing the behavior of the OCR text grouping algorithm. It offers control over how text elements are spatially organized based on their geometric properties. By adjusting these settings, developers can fine-tune how text boxes are grouped into <a href="../types/#textline">lines</a>, <a href="../types/#textparagraph">paragraphs</a>, or other structures based on their spatial relationships.</p>
 
-<p>Grouping occurs in two stages. Words detected by OCR are grouped into Lines that are further grouped into Paragraphs. In the graphic representation below, Words, Lines and Paragraphs are represented by blue, green and fuchsia borders, respectively.</p>
+<p>Grouping occurs in two stages. <a href="../types/#word">Words</a> detected by OCR are grouped into Lines that are further grouped into Paragraphs. In the graphic representation below, Words, Lines and Paragraphs are represented by blue, green and fuchsia borders, respectively.</p>
 
-<p><img alt="image" style="height:350px" src="./schema.png"></p>
+<p><img alt="image" style="height:325px" src="./schema.png"></p>
 
 <hr>
 
@@ -647,7 +639,7 @@ settings.detectionInferencerOptions.defaultDims.height = [your value];
 
 <p><strong>Valid range:</strong> [0.0f, inf]</p>
 
-<p><img alt="image" style="height:125px" src="./widthDistanceRatio.png"></p>
+<p><img alt="image" style="height:100px" src="./widthDistanceRatio.png"></p>
 
 <hr>
 
@@ -664,7 +656,7 @@ settings.detectionInferencerOptions.defaultDims.height = [your value];
 
 <p><strong>Valid range:</strong> [1.0f, inf]</p>
 
-<p><img alt="image" style="height:125px" src="./heightDistanceRatio.jpg"></p>
+<p><img alt="image" style="height:100px" src="./heightDistanceRatio.jpg"></p>
 
 <hr>
 
@@ -679,7 +671,7 @@ settings.detectionInferencerOptions.defaultDims.height = [your value];
 
 <p><strong>Default:</strong> 0.6f</p>
 
-<p><img alt="image" style="height:125px" src="./centerDistanceRatio.png"></p>
+<p><img alt="image" style="height:100px" src="./centerDistanceRatio.png"></p>
 
 <hr>
 
@@ -696,7 +688,7 @@ settings.detectionInferencerOptions.defaultDims.height = [your value];
 
 <p><strong>Valid range:</strong> [0.0f, inf]</p>
 
-<p><img alt="image" style="height:200px" src="./paragraphHeightDistance.png"></p>
+<p><img alt="image" style="height:150px" src="./paragraphHeightDistance.png"></p>
 
 <hr>
 
@@ -713,11 +705,11 @@ settings.detectionInferencerOptions.defaultDims.height = [your value];
 
 <p><strong>Valid range:</strong> [0.0f, 1.0f]</p>
 
-<p><img alt="image" style="height:200px" src="./paragraphHeightRatioThreshold.png"></p>
+<p><img alt="image" style="height:150px" src="./paragraphHeightRatioThreshold.png"></p>
 
 <hr>
 
-<h4 id="samplecode-2" class="anchor"><a class="heading-anchor" href="#samplecode-2"><span></span></a>Sample Code</h4>
+<h4 id="samplecode-1" class="anchor"><a class="heading-anchor" href="#samplecode-1"><span></span></a>Sample Code</h4>
 
 <p>To utilize the OCR capabilities of the <code>TextOCR</code> library, follow these steps to configure settings, prepare your image, and perform text detection:</p>
 
@@ -728,7 +720,7 @@ settings.detectionInferencerOptions.defaultDims.height = [your value];
 
 <li><p><strong>Load Bitmap Image:</strong> Prepare the image for OCR by converting it to a Bitmap object.</p></li>
 
-<li><p><strong>Perform OCR:</strong> Use the <code>detect</code> method to analyze the image, retrieving an array of <code>OCRResult</code> objects with bounding boxes and recognized text.</p></li>
+<li><p><strong>Perform OCR:</strong> Use the <code>detect</code> method to analyze the image, retrieving an array of <a href="../types/#ocrresult">OCRResult</a> objects with bounding boxes and recognized text.</p></li>
 
 <li><p><strong>Process OCR Results:</strong> Handle the results by iterating over the <code>OCRResult</code> array, outputting the recognized text or using it for further processing.</p></li>
 
@@ -886,7 +878,7 @@ textOCR.dispose()
 
 <hr>
 
-<h4 id="samplecode-3" class="anchor"><a class="heading-anchor" href="#samplecode-3"><span></span></a>Sample Code</h4>
+<h4 id="samplecode-2" class="anchor"><a class="heading-anchor" href="#samplecode-2"><span></span></a>Sample Code</h4>
 
 <p>The <code>TilerSettings</code> object is part of the <code>TextOCR.Settings</code> configuration. Access and modify <code>TilerSettings</code> through the <code>TextOCR.Settings</code> object.</p>
 
@@ -901,7 +893,7 @@ textOCR.dispose()
 
 <li><p><strong>Load Bitmap Image:</strong> Prepare the image for OCR by converting it to a <code>Bitmap</code> object.</p></li>
 
-<li><p><strong>Perform Detection:</strong> Use the detect method to analyze the image and retrieve an array of <code>OCRResult</code> objects containing the detected text.</p></li>
+<li><p><strong>Perform Detection:</strong> Use the detect method to analyze the image and retrieve an array of <a href="../types/#ocrresult">OCRResult</a> objects containing the detected text.</p></li>
 
 <li><p><strong>Print Results:</strong> Iterate over the <code>OCRResult</code> array to output the recognized text to the console.</p></li>
 
@@ -939,7 +931,7 @@ textOCR.dispose()
 
 <h3 id="detectionparameters" class="anchor"><a class="heading-anchor" href="#detectionparameters"><span></span></a>Detection Parameters</h3>
 
-<p>The Detection phase processes the input image to create <a href="../class/bbox/">bounding boxes</a>, or text boxes. Each text box is represented by a list of points forming a rotated rectangle, which may not be perfectly aligned with the screen’s edges. There may be more than four points if the rectangle is clipped at the edges of the screen. To refine detection accuracy, adjust the <strong>Detection Parameters</strong> accordingly.</p>
+<p>The Detection phase processes the input image to create <a href="../types/#bbox/">bounding boxes</a>, or text boxes. Each text box is represented by a list of points forming a rotated rectangle, which may not be perfectly aligned with the screen’s edges. There may be more than four points if the rectangle is clipped at the edges of the screen. To refine detection accuracy, adjust the <strong>Detection Parameters</strong> accordingly.</p>
 
 <p>Typical scenarios for adjusting Detection Parameters:</p>
 
@@ -1110,7 +1102,7 @@ textOCR.dispose()
 
 <hr>
 
-<h4 id="samplecode-4" class="anchor"><a class="heading-anchor" href="#samplecode-4"><span></span></a>Sample Code</h4>
+<h4 id="samplecode-3" class="anchor"><a class="heading-anchor" href="#samplecode-3"><span></span></a>Sample Code</h4>
 
 <p>This sample code demonstrates how to adjust detection parameter settings:</p>
 
@@ -1121,7 +1113,7 @@ textOCR.dispose()
 
 <li><p><strong>Load Bitmap Image:</strong> Prepare the image for OCR by converting it to a Bitmap object.</p></li>
 
-<li><p><strong>Perform OCR:</strong> Use the <code>detect</code> method to analyze the image and retrieve an array of <code>OCRResult</code> objects with bounding boxes and recognized text.</p></li>
+<li><p><strong>Perform OCR:</strong> Use the <code>detect</code> method to analyze the image and retrieve an array of <a href="../types/#ocrresult">OCRResult</a> objects with bounding boxes and recognized text.</p></li>
 
 <li><p><strong>Process OCR Results:</strong> Handle the results by iterating over the <code>OCRResult</code> array, outputting the recognized text or using it for further processing.</p></li>
 
@@ -1170,7 +1162,7 @@ textOCR.dispose();
 
 <h3 id="recognitionparameters" class="anchor"><a class="heading-anchor" href="#recognitionparameters"><span></span></a>Recognition Parameters</h3>
 
-<p>The Recognition stage analyzes the text within each <a href="../class/bbox/">bounding box</a>, or text box, produced during the Detection Stage to identify the text content. Each text box results in a list of potential text decodes. Adjusting the <strong>Recognition Parameters</strong> can help refine the recognition process.</p>
+<p>The Recognition stage analyzes the text within each <a href="../types/#bbox/">bounding box</a>, or text box, produced during the Detection Stage to identify the text content. Each text box results in a list of potential text decodes. Adjusting the <strong>Recognition Parameters</strong> can help refine the recognition process.</p>
 
 <h4 id="decodingmaxwordcombinations" class="anchor"><a class="heading-anchor" href="#decodingmaxwordcombinations"><span></span></a>decodingMaxWordCombinations</h4>
 
@@ -1241,7 +1233,7 @@ textOCR.dispose();
 
 <hr>
 
-<h4 id="samplecode-5" class="anchor"><a class="heading-anchor" href="#samplecode-5"><span></span></a>Sample Code</h4>
+<h4 id="samplecode-4" class="anchor"><a class="heading-anchor" href="#samplecode-4"><span></span></a>Sample Code</h4>
 
 <p>Sample code demonstrating use of recognition parameters:</p>
 
@@ -1300,7 +1292,7 @@ textOCR.dispose()
 
 <hr>
 
-<h2 id="relatedguides" class="anchor"><a class="heading-anchor" href="#relatedguides"><span></span></a>Related Guides</h2>
+<p>Related Guides:</p>
 
 <ul>
 <li><a href="../about/">About</a></li>
