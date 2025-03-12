@@ -10,8 +10,8 @@
     <meta name="author" content="Zebra Technologies">
     <meta name="google-site-verification" content="i4B78BrWnNy8ShJwe5feRW3jO3HE6gfYlYqYbxfl8yY">
     <meta name="msvalidate.01" content="6B651B00161BCE79B8950AC09D5C4C75">
-    <meta title="Secondary BLE">
-    <title>Secondary BLE - Zebra Technologies TechDocs</title>
+    <meta title="APIs">
+    <title>APIs - Zebra Technologies TechDocs</title>
     <!-- core CSS -->
     <link href="/css/bootstrap.min.css" rel="stylesheet">
     <link href="/css/font-awesome.min.css" rel="stylesheet">
@@ -141,7 +141,7 @@
                     <nav id="toc" data-toggle="toc" data-spy="affix" style="height: 75%; max-width: 225px; overflow-y: auto; ">
                         
                         <ul class="nav">
-                            <li><strong>Secondary BLE</strong></li>
+                            <li><strong>APIs</strong></li>
                         </ul>
                     </nav>
                     <div class="modal fade" id="modal-smartdocs" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true" data-backdrop="true">
@@ -227,7 +227,7 @@
                         <div class="col-sm-12">
                             <section id="cta" class="wow fadeIn">
                                 <div class="">
-                                    <h1 id="secondary-ble" class="anchor"><a class="heading-anchor" href="#secondary-ble"><span></span></a>Secondary BLE</h1>
+                                    <h1 id="apis" class="anchor"><a class="heading-anchor" href="#apis"><span></span></a>APIs</h1>
                                     <p>
                                             Device Guardian
                                             1.0
@@ -245,151 +245,293 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p><strong>Secondary Bluetooth Low Energy (BLE)</strong> is an optional setting that allows a device to be located if it is powered off or has reached critically low battery (5% or less battery remaining). The location of this device is detected by the seeking device that listens for signals transmitted from the secondary BLE beacon of the device that is powered off or in critically low battery state. Secondary BLE beacons are transmited as long as the battery is not completely depleted. When a device reaches a crtical low battery state, in general secondary BLE beacons can be transmitted for at least a few days - there are multiple factors that can affect this, including battery charge cycles, battery age, operating temperature, etc.</p>
+<p>This guide discusses Device Guardian APIs, which use a content provider interface for securely retrieving and sharing data between applications. The content provider URI consists of four components: <code>&lt;Scheme:&gt;//&lt;Authority&gt;/&lt;API&gt;/&lt;Data&gt;</code></p>
 
-<p>The presence of secondary BLE is based on device hardware, see <a href="https://www.zebra.com/us/en/support-downloads/software/productivity-apps/device-tracker.html">device compatibility</a>. Special license pricing is offered for hardware with secondary BLE, see Device Guardian <a href="../license/#secondaryble">license</a>.</p>
+<ul>
+<li><strong>Scheme -</strong> Identifies the URI accessing a content source, typically represented as <code>content://</code>.</li>
 
-<!--  // Remove per PK 9/30/22
-The secondary BLE is located on the battery. When purchasing the BLE battery, it comes with a 3-year term Device Guardian [license](../license) for full operation of Device Guardian.
+<li><strong>Authority -</strong> The name of the provider authority, usually formatted as <code>packagename.provider</code>.</li>
 
-There are 2 types of secondary BLE:
-- **Device-based -** The secondary BLE radio is located on the device. In addition to the _[Device Guardian license](../license)_, a separate _BLE license_ is required for the secondary BLE to operate. Although the _Device Guardian license_ is monitored by the [web portal](../dashboard/#licenses), this does not apply to the _BLE license._
-- **Battery-based -** The secondary BLE radio is located on the battery. When purchasing the BLE battery, it comes with a 3-year term Device Guardian [license](../license) for full operation of Device Guardian. A BLE license is not required. There is a difference in behavior when using battery-based secondary BLE, see [battery-based BLE behavior](/stagenow/latest/csp/beaconmgr/#batterybasedblebehavior).-->
+<li><strong>API -</strong> The path that differentiates the content data.</li>
 
-<p><em>Secondary BLE</em> is used to find a device that is powered off or in critically low battery state. This should not be confused with the built-in device <em>primary BLE</em>, used for finding devices that are powered on.</p>
+<li><strong>Data -</strong> The key pointing to specific data within the path.</li>
+</ul>
+
+<p>Example of content provider URI: &nbsp;&nbsp;<span style="font-family:'Courier New'">content://com.zebra.mdna.els.provider/&lt;API&gt;/&lt;data&gt;</span></p>
+
+<p>Replace <code>&lt;API&gt;</code> and <code>&lt;data&gt;</code> with the appropriate string for specific use cases.</p>
 
 <hr>
 
-<h2 id="configuration" class="anchor"><a class="heading-anchor" href="#configuration"><span></span></a>Configuration</h2>
-
-<!--
-Enable Secondary BLE (Bluetooth Low Energy) to find devices when powered off. Locationing is based on signals transmitted from the secondary BLE beacon of the misplaced device that are detected from the [device performing the search](../use). By enabling secondary BLE, another device can locate the powered device by detecting the advertising packets sent by the powered off device. -->
-
-<p>Secondary BLE is enabled through Beacon Manager (BeaconMgr), which controls the signals transmitted by the secondary BLE radio on the powered off device. Aside from administrative control detecting beacons, Beacon Manager also controls the power level of the transmitted signal to help balance power consumption within a detectable range. To enable and configure secondary BLE on devices, select one of the following methods:</p>
+<h2 id="requirements" class="anchor"><a class="heading-anchor" href="#requirements"><span></span></a>Requirements</h2>
 
 <ul>
-<li>Use <a href="#preconfiguredfiles">pre-configured files</a> to scan the staging barcode or deploy the XML via EMM.</li>
+<li><p><strong>Modify AndroidManifest.xml:</strong> In your application's AndroidManifest.xml, include the necessary permission and the <code>&lt;queries&gt;</code> tag to specify the Identity Guardian package name:</p>
 
-<li><a href="#createaprofile">Create a StageNow profile</a> and scan the staging barcode generated or deploy the XML via EMM.</li>
-</ul>
+<pre class="prettyprint"><code>&lt;uses-permission android:name="com.zebra.mdna.els.permission.PROVIDER" /&gt;
+&lt;queries&gt;
+    &lt;package android:name="com.zebra.mdna.els" /&gt;
+&lt;/queries&gt;
+</code></pre></li>
 
-<p>See <a href="/stagenow/latest/csp/beaconmgr/">Beacon Manager</a> documentation for more information.</p>
-
-<h3 id="preconfiguredfiles" class="anchor"><a class="heading-anchor" href="#preconfiguredfiles"><span></span></a>Pre-configured Files</h3>
-
-<p>Files are provided to enable BLE on the device and configure BLE with the following settings:</p>
-
-<ul>
-<li><strong>Transmission (Tx) Power Level:</strong> High (1 dBm)</li>
-
-<li><strong>Transmission (Tx) Interval:</strong> Low Latency (100 ms)</li>
-</ul>
-
-<p>If these settings need to be changed, follow the steps to <a href="#createaprofile">Create a Profile</a>.</p>
-
-<p>Use <em>one</em> of the following methods to apply the pre-configured file:</p>
+<li><p><strong>Allowlist Your App:</strong> For security, your app must be on Identity Guardian's allowlist using <a href="/mx/accessmgr">AccessMgr CSP</a> from <a href="/flux/about">Zebra Device Manager (ZDM)</a>. Create a profile via <a href="/stagenow">StageNow</a> to configure your app's allowlist. Set the following parameters:</p>
 
 <ul>
-<li><strong>Scan the staging barcode -</strong> Open StageNow client on the device and scan the appropriate barcode:
+<li><strong>Operation Mode:</strong> "Single User without Whitelist"</li>
 
+<li><strong>Service Access Action</strong>: "Allow Caller to Call Service"</li>
 
-<ul>
-<li>For TC52AX and MC33AX, scan <a href="SecondaryBLE_TurnON_TC52ax_MC33ax.pdf">barcode</a></li>
+<li><strong>Service Identifier</strong>: &lt;delegation scope of the API category&gt;</li>
 
-<li>For all other devices, scan <a href="SecondaryBLE_TurnON.pdf">barcode</a></li></ul>
-</li>
+<li><strong>Specify Caller Package Name</strong>: &lt;enter app package name, e.g.: com.company.appname&gt;</li>
 
-<li><strong>Deploy XML via EMM -</strong> Deploy XML using either <a href="/oemconfig">OEMConfig</a> or <a href="/mx">MX</a>. <em>Do not edit the XML file - it can cause unexpected behavior.</em> Use the appropriate XML file based on the device model:
+<li><strong>Caller Signature</strong>: &lt;select signature file that contains the app certificate&gt;</li></ul>
 
+<p>For information on generating a signature file, see <a href="/mx/accessmgr/#caller-signature">Caller Signature</a> in the Access Mgr CSP documentation. After creating the StageNow profile, use StageNow to scan the generated barcode or deploy the XML file via Enterprise Mobility Management (EMM) software.</p></li>
 
-<ul>
-<li>For TC52AX and MC33AX, use <a href="SecondaryBLE_TurnON_TC52ax_MC33ax.xml">XML</a></li>
+<li><p><strong>Add APIs to Your App's Allowlist:</strong> Identity Guardian APIs must be added to your application's allowlist.</p>
 
-<li>For all other devices, use <a href="SecondaryBLE_TurnON.xml">XML</a></li></ul>
-</li>
-</ul>
-
-<p>Note: The following MX version is required on the device:</p>
+<p><strong>Prerequisites:</strong></p>
 
 <ul>
-<li>MX 10.5 or higher for TC52AX and MC33AX</li>
+<li><strong>Download <a href="/emdk-for-android/latest/samples/sigtools/">SigTools.jar</a>.</strong> This is used to generate the certificate to create a signature file for security purposes.</li>
 
-<li>MX 10.2 or higher for all other devices</li>
-</ul>
+<li><strong>Place your .APK app and <a href="/emdk-for-android/latest/samples/sigtools/">SigTools.jar</a> in the same folder</strong> on your host computer.</li>
 
-<p>See <a href="/mx/mx-version-on-device/">Which MX is Installed</a> to check the MX version.</p>
+<li><strong>Download <a href="/stagenow">StageNow</a>.</strong> This is used to create the profile to allowlist the APIs.</li></ul>
 
-<h3 id="createaprofile" class="anchor"><a class="heading-anchor" href="#createaprofile"><span></span></a>Create a Profile</h3>
+<p><strong>Procedure:</strong></p>
 
-<p>Instructions to create a StageNow profile for secondary BLE configuration:</p>
+<p>To allowlist Identity Guardian APIs in your app using StageNow:</p>
 
 <ol>
-<li><p>Open <a href="https://www.zebra.com/us/en/support-downloads/software/utilities/stagenow.html">StageNow</a> on a host computer.</p></li>
+<li><p>From the command line, navigate to the directory containing your .APK and "SigTools.jar.".</p></li>
 
-<li><p>In the StageNow home screen, click <strong>Create New Profile</strong> from the left menu.</p></li>
+<li><p>Generate the certificate by executing the following command, replacing "LOB_app.apk" with your .APK file's name:</p>
 
-<li><p>Ensure the proper MX version, MX 10.2 or higher, is selected at the top drop-down selector for secondary BLE support. Support for <strong>Manufacturer Byte</strong> and <strong>Reference RSSI</strong> options were added starting with MX 10.5. See <a href="/mx/mx-version-on-device/">MX documentation</a> for instructions how to check the version. Select <strong>Xpert Mode</strong> from the list and click <strong>Create.</strong>
-<img alt="image" src="wizard-selection.jpg"><i>Wizard selection</i></p></li>
+<pre class="prettyprint"><code>java -jar SigTools.jar getcert -inform apk -outform der -in LOB_app.apk -outfile app.crt
+</code></pre></li>
 
-<li><p>Enter the profile name. Click <strong>Start.</strong></p></li>
+<li><p>From your host system, open StageNow and click on <strong>Create New Profile.</strong></p></li>
 
-<li><p>Find <strong>BeaconMgr</strong> and click the plus (+) sign next to it. This adds <strong>BeaconMgr</strong> to the Config tab on the right side.
-<img alt="" style="height:350px" src="add-config-beaconmgr.png"><i>Add config setting</i></p></li>
+<li><p>Select the MX version that matches or exceeds the one on your device. Refer to the <a href="/mx/mx-version-on-device/">MX documentation</a> for guidance on how to determine the version.</p></li>
 
-<li><p>Click <strong>Add.</strong> In the BeaconMgr screen, select the following:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• <strong>Beaconing:</strong> Turn ON<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• <strong>Beaconing in Airplane Mode:</strong> Turn ON<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• <strong>Beacon type:</strong> AltBeacon<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• <strong>Explicit Beacon UUID?:</strong> [uncheck checkbox]<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• <strong>AltBeacon ID1:</strong> EBEB<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• <strong>AltBeacon ID2:</strong> ECDD<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• <strong>Transmission (Tx) Power Level:</strong> High (1 dBm)<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• <strong>Transmission (Tx) Interval:</strong> Low Latency (100 ms)<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• <strong>Manufacturer Byte:</strong> 00<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• <strong>Reference RSSI:</strong> <em>[For battery-based secondary BLE, such as TC52AX and MC33AX, enter <strong>C0</strong>. Otherwise, leave blank]</em><br>
-See <a href="/stagenow/latest/csp/beaconmgr/">Beacon Manager</a> for more information on the parameters and how they can be adjusted.</p></li>
+<li><p>Select <strong>Expert Mode</strong> and click <strong>Create.</strong>
+<img alt="image" style="height:400px" src="sn-wizard.jpg"></p></li>
+
+<li><p>Enter a profile name and click <strong>Start.</strong>
+<img alt="image" style="height:250px" src="sn-profile-name.png"></p></li>
+
+<li><p>Click the plus (+) sign next to <strong>AccessMgr.</strong> This adds AccessMgr to the Config tab on the right side. Click <strong>Add.</strong>
+<img alt="image" style="height:450px" src="sn-accessmgr.png"></p></li>
+
+<li><p>Enter/select the following for <strong>AccessMgr:</strong></p>
+
+<ul>
+<li><strong>Service Access Action:</strong> Allow Caller to Call Service</li>
+
+<li><strong>Service Identifier:</strong> [Enter the API URI, see step 11. For example: <code>content://com.zebra.mdna.els.provider/lockscreenaction/startauthentication</code>]</li>
+
+<li><strong>Caller Package Name:</strong> [Enter the package name for your .APK app file.]</li>
+
+<li><strong>Caller Signature:</strong> [Browse to the .CRT certificate generated from step 2 above.]
+<img alt="image" style="height:450px" src="sn-accessmgr-options.png"></li></ul></li>
 
 <li><p>Click <strong>Continue.</strong></p></li>
 
 <li><p>Click <strong>Complete Profiles.</strong></p></li>
 
-<li><p>Select one of the following based on the deployment method:</p>
+<li><p>Repeat steps 3 to 10 for each API to allowlist in your app, replacing <strong>Service Identifier</strong> with the desired API URI:</p>
 
 <ul>
-<li><strong>StageNow:</strong> Generate the barcode from the StageNow profile. Open StageNow client on the device and scan the barcode(s) generated.</li>
+<li><span style="font-family:'Courier New'">content://com.zebra.mdna.els.provider/lockscreenaction/startauthentication</span> (Start Authentication)</li>
 
-<li><strong>EMM:</strong> Export XML from the StageNow profile. Do not edit the XML file - it can cause unexpected behavior. Deploy the XML using either <a href="/oemconfig">OEMConfig</a> or <a href="/mx">MX</a>.</li></ul></li>
-</ol>
+<li><span style="font-family:'Courier New'">content://com.zebra.mdna.els.provider/previoussession</span> (Previous User Session)</li>
 
-<p>Make sure devices are connected to the network and <i>remain connected to the server for at least 5 minutes</i> during intial setup.</p>
+<li><span style="font-family:'Courier New'">content://com.zebra.mdna.els.provider/currentsession</span> (Current User Session)</li>
+
+<li><span style="font-family:'Courier New'">content://com.zebra.mdna.els.provider/lockscreenaction/authenticationstatus</span> (Authentication Status)</li>
+
+<li><span style="font-family:'Courier New'">content://com.zebra.mdna.els.provider/lockscreenaction/logout</span> (Logout)</li></ul></li></ol>
+
+<p>After creating the StageNow profiles, use one of the following methods based on the desired tool for device deployment:</p>
+
+<ul>
+<li><strong>StageNow:</strong> Generate the barcode from the StageNow profile. Open StageNow client on the device and scan the barcode(s) generated from the installation, configuration and/or BLE profile.</li>
+
+<li><strong>EMM:</strong> Export each StageNow XML file from the StageNow installation, connection and BLE profiles. <em>Do not edit the XML file</em> - it can cause unexpected behavior. Send the XML using either <a href="/oemconfig">OEMConfig</a> or <a href="/mx/overview/">MX</a> to configure the app and grant all required permissions. The installation profile and server connectivity profile XML files must be used separately.</li></ul></li>
+</ul>
 
 <hr>
 
-<h2 id="use" class="anchor"><a class="heading-anchor" href="#use"><span></span></a>Use</h2>
+<h2 id="devicecheckoutcheckin" class="anchor"><a class="heading-anchor" href="#devicecheckoutcheckin"><span></span></a>Device Check-out/Check-in</h2>
 
-<!--
-There are behavioral differences between device-based and battery-based secondary BLE. See [battery-based BLE behavior](/stagenow/latest/csp/beaconmgr/#batterybasedblebehavior). -->
+<p><strong>Description:</strong> When Identity Guardian is used for accountability, this updates the device status to check-out or check-in based on the user's sign-in or sign-out actions within Identity Guardian.</p>
 
-<p>When locating a device based on its secondary BLE beacon, the <strong>Play Sound</strong> feature is disabled during device search since it cannot function due to the loss of device power. The <a href="../use/#devicedetails">Secondary BLE state</a> is viewed from the <strong>Device Details</strong> screen. See <a href="../use/#secondaryble">Secondary BLE</a> for reference.</p>
+<p><strong>Content URI:</strong> &nbsp;&nbsp;<span style="font-family:'Courier New'">content://com.zebra.mdna.els.provider/currentsession</span></p>
+
+<p><strong>Parameters:</strong> </p>
+
+<table class="facelift" style="width:95%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>Key</th>
+    <th>Type</th>
+    <th>Description/Value</th>
+    <th>Requirement</th>
+  </tr>
+
+  <tr>
+       <td>user_id</td>
+    <td>[string]</td>
+    <td>User identifier for the person signing in, in string format.</td>
+    <td>Mandatory if signing in a user</td>
+  </tr>
+
+  <tr>
+    <td>signed_in_state</td>
+    <td>[bool]</td>
+    <td>Signed in/out state as an integer:<br>&nbsp;&nbsp;&nbsp;• <b>1 -</b> True: User signed in (checked out) the device, updating <code>signin_time</code> and ignoring <code>signout_time</code>.<br>&nbsp;&nbsp;&nbsp;• <b>0 -</b> False: User signed out (checked in) the device, updating <code>signout_time</code> and ignoring <code>signin_time</code>.</td>
+    <td>Mandatory</td>
+  </tr>
+
+  <tr>
+    <td>signin_time</td>
+    <td>[string]</td>
+    <td>Time stamp indicating the user's sign-in time in string format: “yyyy-dd-MM HH:mm:ss.SSSZ”. E.g., "2023-10-04 10:53.381+0530"</td>
+    <td>Mandatory if signing in a user</td>
+  </tr>
+
+  <tr>
+    <td>signout_time</td>
+    <td>[string]</td>
+    <td>Time stamp indicating the user's sign-out time in string format: “yyyy-dd-MM HH:mm:ss.SSSZ”. E.g., "2023-10-04 10:53.381+0530"</td>
+    <td>Mandatory if signing out a user</td>
+  </tr>
+
+</tbody></table>
+
+<p><strong>Response:</strong> </p>
+
+<ul>
+<li><p><strong><code>RESULT</code> bundle:</strong></p>
+
+<ul>
+<li><p>If successful:</p>
+
+<pre class="prettyprint"><code>{"status":"SUCCESS","message":"successfully executed"} 
+</code></pre></li>
+
+<li><p>If unsuccessful: </p>
+
+<pre class="prettyprint"><code>{"status":"FAILURE","message":"error desc"} 
+</code></pre>
+
+<p>The “message” value will vary depending on the error encountered.</p></li></ul></li>
+
+<li><p><strong>Null -</strong> Returned if the content provider does not implement the call.</p></li>
+</ul>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>NullPointerException –</strong> Thrown if the URI or method is null.</li>
+
+<li><strong>IllegalArgumentException –</strong> Thrown if the URI is not known.</li>
+</ul>
+
+<h3 id="samplecode" class="anchor"><a class="heading-anchor" href="#samplecode"><span></span></a>Sample Code</h3>
+
+<p>This sample code demonstrates how to send the device check-out/check-in parameters.</p>
+
+<pre class="prettyprint"><code>    public void getDataForCurrentUser() {
+        ContentResolver contentResolver = getContentResolver();
+        Uri uri = Uri.parse("content://com.zebra.mdna.els.provider/");
+        String METHOD_NAME = "currentsession";
+
+        Bundle bundle = new Bundle();
+        bundle.putString("user_id", "pd3445");
+        bundle.putBoolean("signed_in_state", true);
+        bundle.putString("signin_time", getCurrentDateAndTimeFormat(System.currentTimeMillis()));
+        bundle.putString("signout_time", “”);
+
+        Bundle response = contentResolver.call(uri,METHOD_NAME,null,bundle);
+        if (response != null &amp;&amp; response.containsKey("RESULT")) {
+            Log.i(TAG, response.getString("RESULT"));
+        }
+    }
+</code></pre>
+
+<hr>
+
+<h2 id="devicetrackingstate" class="anchor"><a class="heading-anchor" href="#devicetrackingstate"><span></span></a>Device Tracking State</h2>
+
+<p>The Device Tracker service exposes a Content Provider to set a device’s tracking state to missing or in service (not missing).</p>
+
+<p><strong>Content URI:</strong> &nbsp;&nbsp;<span style="font-family:'Courier New'">content://com.zebra.mdna.dg.provider/devicestate</span></p>
+
+<p><strong>Parameters:</strong> </p>
+
+<table class="facelift" style="width:95%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>Key</th>
+    <th>Type</th>
+    <th>Description/Value</th>
+    <th>Requirement</th>
+  </tr>
+
+  <tr>
+       <td>device_state</td>
+    <td>[int]</td>
+    <td>Device Tracking state represented as an integer:<br>&nbsp;&nbsp;&nbsp;• <b>0 -</b> IN SERVICE: The device is not missing.<br>&nbsp;&nbsp;&nbsp;• <b>1 -</b> TO_BE_FOUND: The device is missing.</td>
+    <td>Mandatory</td>
+  </tr>
+
+  <tr>
+    <td>state_change_time</td>
+    <td>[string]</td>
+    <td>Time stamp of the state change in string format: “yyyy-dd-MM HH:mm:ss.SSSZ”. E.g., "2023-10-04 10:53.381+0530"</td>
+    <td>Mandatory</td>
+  </tr>
+
+  <tr>
+    <td>state_change_reason</td>
+    <td>[string]</td>
+    <td>Reason why the device was marked as missing.</td>
+    <td>Optional</td>
+  </tr>
+
+</tbody></table>
+
+<p><strong>Response:</strong> </p>
+
+<ul>
+<li><strong><code>RESULT</code> bundle</strong></li>
+
+<li><strong>Null -</strong> Returned if the content provider does not implement the call.</li>
+</ul>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>NullPointerException –</strong> Thrown if the URI or method is null.</li>
+
+<li><strong>IllegalArgumentException –</strong> Thrown if the URI is not known.</li>
+</ul>
 
 <hr>
 
 <h2 id="seealso" class="anchor"><a class="heading-anchor" href="#seealso"><span></span></a>See Also</h2>
 
 <ul>
-<li><a href="../about">About Device Guardian</a></li>
+<li><a href="../about">About Identity Guardian</a></li>
 
-<li><a href="../license">Licensing</a></li>
+<li><a href="../licensing/">Licensing</a></li>
 
-<li><a href="../getstarted/">Quick Start</a></li>
+<li><a href="../setup">Setup</a></li>
 
-<li><a href="../setup">Install &amp; Setup</a></li>
+<li><a href="../usage">User Guide</a></li>
 
-<li><a href="../config">Configuration</a></li>
-
-<li><a href="../use">Track Devices</a></li>
-
-<li><a href="../dashboard/">Dashboard</a></li>
+<li><a href="../mc">Managed Configurations</a></li>
 
 <li><a href="../faq/">FAQ</a></li>
 </ul><p></p>
