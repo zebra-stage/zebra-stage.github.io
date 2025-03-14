@@ -90,11 +90,11 @@
                             </a>
                         </li>-->
 						
-                        <li>
+                         <!--  <li>
                             <a href="../api/index.html">
                                     APIs
                             </a>
-                        </li>
+                        </li> -->
                         <!--<li>
                             <a href="https://developer.zebra.com/community/home/discussions/">
                                     <i class="fa fa-comments-o"></i>
@@ -1585,7 +1585,7 @@ public SrfidResult GetWlanCertificatesList(NSMutableArray wlanCertificatesList)
 
 
 <h3>Disconnect WLAN Profile </h3>		
-<p>The DisconnectWlanProfile method disconnects an RFID device from the current WLAN profile./p>
+<p>The DisconnectWlanProfile method disconnects an RFID device from the current WLAN profile.</p>
 <pre class="prettyprint"><code>
 
   
@@ -1623,6 +1623,371 @@ public SrfidResult DisconnectWlanProfile()
 </li>
 
 
+<h3>Add Endpoint Configuration</h3>		
+<p>The AddEndpointConfig method will add an endpoint for the RFID reader.</p>
+<pre class="prettyprint"><code>
+     //Create RfidSetEndPointConfig object
+    private RfidSetEndPointConfig ConfigureEndPoint()
+    {
+        RfidSetEndPointConfig config = new RfidSetEndPointConfig();
+    
+        
+        string operation;
+    
+        if (activate)
+        {
+          operation = "activate";
+        }
+        else 
+        {
+            if (Update)
+            {
+                operation = "update";
+            }
+            else
+            {
+                operation = "new";
+            }
+    
+        }
+        config.SetOperation(new NSString(operation));
+    
+        config.SetEpname(new NSString("endpoint name"));
+        config.SetType(new NSString("soti")); 
+        config.SetProtocol(new NSString("MQTT"));
+        config.SetUrl(new NSString("url"));
+        config.SetPort(new NSString("PORT Number"));
+        config.SetKeepalive(new NSString("Keepa live time"));
+        config.SetTenantid(new NSString("Tenant id"));
+        config.SetRcdelaymin(new NSString("Reconnect  delay min time"));
+        config.SetRcdelaymax(new NSString("Reconnect  delay max time"));
+        config.SetHostvfy(new NSString("hostVfy"));
+    
+        // Handle optional fields
+        config.SetUserName(new NSString("username"));
+        config.SetPassword(new NSString("password"));
+    
+        // Set clean session options
+        if (cleanSession)
+        {
+            config.SetEncleanss(true);
+            config.SetDscleanss(false);
+        }
+        else
+        {
+            config.SetEncleanss(false);
+            config.SetDscleanss(true);
+        }
+
+        //If setType MDM
+        //If setType SOTI no need to do bellow steps
+        //if setType MDM and setProtocol MQTT
+        config.SetSubname(new NSString("sub name"));
+        config.setPub1name(new NSString("Pub1 name"));
+        config.setPub2name(new NSString("Pub2 name"));
+
+        //if setType MDM and setProtocol MQTT_TLS
+        config.setCacertname(new NSString("CA certificate name"));
+        config.setCertname(new NSString("Certificate name"));
+        config.setKeyname(new NSString("Key name"));
+    
+    
+        return config;
+    }
+    
+   
+    public SrfidResult AddEndpointConfig (RfidSetEndPointConfig endPointConfig)
+    {
+        SrfidResult addEPconfig = SrfidResult.Failure;
+        string statusMsg = null;
+        try
+        {
+            for (int i = 0; i < 2; i++)
+            {
+                addEPconfig = apiInstance.SrfidSetEndPointConfig(connectedReaderID, endPointConfig, ref statusMsg);
+                
+                if (addEPconfig != SrfidResult.ResponseTimeout && addEPconfig != SrfidResult.Failure)
+                {
+                    break;
+                }
+            }
+
+            if (addEPconfig == SrfidResult.Success)
+            {
+                System.Diagnostics.Debug.WriteLine("SrfidSetEndPointConfig Success");   
+            }
+            else if (addEPconfig == SrfidResult.ResponseError)
+            {
+                System.Diagnostics.Debug.WriteLine("SrfidSetEndPointConfig ResponseError");  
+            }
+            else if (addEPconfig == SrfidResult.ResponseTimeout || addEPconfig == SrfidResult.Failure)
+            {
+                System.Diagnostics.Debug.WriteLine("SrfidSetEndPointConfig ResponseTimeout/Failure"); 
+            }
+
+            return addEPconfig;
+
+        } catch (Exception e)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidSetEndPointConfig Exception " + e);
+            return addEPconfig;
+        }
+        
+    }
+</code>
+</pre>
+</li>
+
+<h3>Get Endpoint Configuration List</h3>		
+<p>The GetEndpointList method retrieves a list of endpoints from an RFID reader.</p>
+<pre class="prettyprint"><code>
+
+   
+    public SrfidResult GetEndpointList(NSMutableArray endpointList)
+    {
+        SrfidResult getEndpointList = SrfidResult.Failure;
+        string statusMsg = null;
+        IntPtr availableHandle = endpointList.Handle;
+        try
+        {
+            for (int i = 0; i < 2; i++)
+            {
+                getEndpointList = apiInstance.SrfidGetEndPointList(connectedReaderID, ref availableHandle, ref statusMsg);
+                endpointList = ObjCRuntime.Runtime.GetNSObject<NSMutableArray>(availableHandle);
+
+                if (getEndpointList != SrfidResult.ResponseTimeout && getEndpointList != SrfidResult.Failure)
+                {
+                    break;
+                }
+
+            }
+
+            if (getEndpointList == SrfidResult.Success)
+            {
+                System.Diagnostics.Debug.WriteLine("SrfidGetEndPointList Success");
+            }
+            else if (getEndpointList == SrfidResult.ResponseError)
+            {
+                System.Diagnostics.Debug.WriteLine("SrfidGetEndPointList ResponseError");
+            }
+            else if (getEndpointList == SrfidResult.ResponseTimeout || getEndpointList == SrfidResult.Failure)
+            {
+                System.Diagnostics.Debug.WriteLine("SrfidGetEndPointList ResponseTimeout/Failure");
+            }
+
+            System.Diagnostics.Debug.WriteLine("Returning the EP List");
+
+            return getEndpointList;
+
+        } catch (Exception e)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidGetEndPointList Exception " + e);
+            return getEndpointList;
+
+        }
+          
+    }    
+</code>
+</pre>
+</li>
+
+
+<h3>Save Endpoint Configuration</h3>		
+<p>The SaveEndpointConfig method is responsible for saving the current endpoint configuration to an RFID reader.</p>
+<pre class="prettyprint"><code>
+
+   
+    public SrfidResult SaveEndpointConfig()
+    {
+        SrfidResult saveEPConfig = SrfidResult.Failure;
+        string statusMsg = null;
+
+        try
+        {
+            for (int i = 0; i < 2; i++)
+            {
+                saveEPConfig = apiInstance.SrfidSaveEndPointConfig(connectedReaderID, ref statusMsg);
+                if (saveEPConfig == SrfidResult.ResponseTimeout || saveEPConfig == SrfidResult.Failure)
+                {
+                    break;
+                }
+            }
+
+            if (saveEPConfig == SrfidResult.Success)
+            {
+                System.Diagnostics.Debug.WriteLine("SrfidSaveEndPointConfig Success");
+            }
+            else if (saveEPConfig == SrfidResult.ResponseError)
+            {
+                System.Diagnostics.Debug.WriteLine("SrfidSaveEndPointConfig ResponseError");
+            }
+            else if (saveEPConfig == SrfidResult.ResponseTimeout || saveEPConfig == SrfidResult.Failure)
+            {
+                System.Diagnostics.Debug.WriteLine("SrfidSaveEndPointConfig ResponseTimeout/Failure");
+            }
+
+            return saveEPConfig;
+
+        } catch (Exception e)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidSaveEndPointConfig Exception " + e);
+            return saveEPConfig;
+        }   
+    }
+
+
+</code>
+</pre>
+</li>
+
+<h3>Remove Endpoint Configuration</h3>		
+<p>The RemoveEndpoint method is designed to delete an endpoint configuration from an RFID reader.</p>
+<pre class="prettyprint"><code>
+
+   
+    public SrfidResult RemoveEndpoint(NSString epName) 
+    {
+        SrfidResult removeEP = SrfidResult.Failure;
+        string statusMsg = null;
+
+        try
+        {
+            for (int i = 0; i < 2; i++)
+            {
+                removeEP = apiInstance.SrfidRemoveEndPointConfig(connectedReaderID, epName, ref statusMsg);
+                if (removeEP == SrfidResult.ResponseTimeout || removeEP == SrfidResult.Failure)
+                {
+                    break;
+                }
+            }
+
+            if (removeEP == SrfidResult.Success)
+            {
+                System.Diagnostics.Debug.WriteLine("SrfidRemoveEndPointConfig Success");
+       
+            }
+            else if (removeEP == SrfidResult.ResponseError)
+            {
+                System.Diagnostics.Debug.WriteLine("SrfidRemoveEndPointConfig ResponseError");
+       
+            }
+            else if (removeEP == SrfidResult.ResponseTimeout || removeEP == SrfidResult.Failure)
+            {
+                System.Diagnostics.Debug.WriteLine("SrfidRemoveEndPointConfig ResponseTimeout/Failure");
+ 
+            }
+
+
+            return removeEP;
+
+        } catch (Exception e)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidRemoveEndPointConfig Exception " + e);
+            return removeEP;
+
+        }  
+    }
+
+
+</code>
+</pre>
+</li>
+
+<h3>Get Endpoint Configuration</h3>		
+<p>The GetEndpointConfig method retrieves the configuration for a specific endpoint on an RFID reader.</p>
+<pre class="prettyprint"><code>
+
+   
+    public SrfidResult GetEndpointConfig(NSString epName, srfidGetEndPointConfig epConfig)
+    {
+        SrfidResult getEPConfig = SrfidResult.Failure;
+        string statusMsg = null;
+        IntPtr availableHandle = epConfig.Handle;
+
+        try
+        {
+            getEPConfig = apiInstance.SrfidGetEndpointConfig(connectedReaderID, epName, ref availableHandle, ref statusMsg);
+            epConfig = ObjCRuntime.Runtime.GetNSObject<srfidGetEndPointConfig>(availableHandle);
+
+            if (getEPConfig == SrfidResult.Success)
+            {
+                System.Diagnostics.Debug.WriteLine("SrfidGetEndpointConfig Success");
+            }
+            else if (getEPConfig == SrfidResult.ResponseError)
+            {
+                System.Diagnostics.Debug.WriteLine("SrfidGetEndpointConfig ResponseError");
+            }
+            else if (getEPConfig == SrfidResult.ResponseTimeout || getEPConfig == SrfidResult.Failure)
+            {
+                System.Diagnostics.Debug.WriteLine("SrfidGetEndpointConfig ResponseTimeout/Failure");
+            }
+
+            return getEPConfig;
+
+        } catch (Exception e)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidGetEndpointConfig Exception " + e);
+            return getEPConfig;
+        }
+
+        
+    }
+
+
+</code>
+</pre>
+</li>
+
+<h3>Get Active Endpoint Configuration List</h3>		
+<p>The GetActiveEndpoints method is designed to retrieve a list of active endpoints from an RFID reader.</p>
+<pre class="prettyprint"><code>
+
+public SrfidResult GetActiveEndpoints(srfidGetActiveEnpoints activeEPs)
+{
+    SrfidResult getActiveEPs = SrfidResult.Failure;
+    string statusMsg = null;
+
+    IntPtr availableHandle = activeEPs.Handle;
+
+    try
+    {
+        for (int i = 0; i < 2; i++)
+        {
+            getActiveEPs = apiInstance.SrfidGetActiveEndPoints(connectedReaderID, ref availableHandle, ref statusMsg);
+            activeEPs = ObjCRuntime.Runtime.GetNSObject<srfidGetActiveEnpoints>(availableHandle);
+            if (getActiveEPs == SrfidResult.ResponseTimeout || getActiveEPs == SrfidResult.Failure)
+            {
+                break;
+            }
+        }
+
+        if (getActiveEPs == SrfidResult.Success)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidGetActiveEndPoints Success");
+        }
+        else if (getActiveEPs == SrfidResult.ResponseError)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidGetActiveEndPoints ResponseError");
+        }
+        else if (getActiveEPs == SrfidResult.ResponseTimeout || getActiveEPs == SrfidResult.Failure)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidGetActiveEndPoints ResponseTimeout/Failure");
+        }
+
+        return getActiveEPs;
+
+    } catch (Exception e)
+    {
+        System.Diagnostics.Debug.WriteLine("SrfidGetActiveEndPoints Exception " + e);
+        return getActiveEPs;
+    }   
+}
+
+</code>
+</pre>
+</li>
+
+  
 
 
                                     </div>
@@ -1631,7 +1996,7 @@ public SrfidResult DisconnectWlanProfile()
                             </div>
                         </div>
                     </div>
-                </div><!--/.col-sm-6-->
+                </div>
             </div>
             </section>
         </div>
