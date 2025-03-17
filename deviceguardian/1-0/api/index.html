@@ -96,7 +96,7 @@
                         </li>
                         <li>
                             <a href="/deviceguardian/1-0/use">
-                                        Track Devices
+                                        Device Use
                             </a>
                         </li>
                         <li>
@@ -465,7 +465,7 @@
 
 <h2 id="devicetrackingstate" class="anchor"><a class="heading-anchor" href="#devicetrackingstate"><span></span></a>Device Tracking State</h2>
 
-<p>The Device Tracker service exposes a Content Provider to set a device’s tracking state to missing or in service (not missing).</p>
+<p>The Device Tracker service exposes a content provider to set a device’s tracking state to either missing ("To Be Found") or In Service (not missing). This is useful for those who prefer direct control over these states rather than relying on Device Tracker's standard operations or automated rules for these state changes.</p>
 
 <p><strong>Content URI:</strong> &nbsp;&nbsp;<span style="font-family:'Courier New'">content://com.zebra.mdna.dg.provider/devicestate</span></p>
 
@@ -505,9 +505,22 @@
 <p><strong>Response:</strong> </p>
 
 <ul>
-<li><strong><code>RESULT</code> bundle</strong></li>
+<li><p><strong><code>RESULT</code> bundle:</strong></p>
 
-<li><strong>Null -</strong> Returned if the content provider does not implement the call.</li>
+<ul>
+<li><p>If successful:</p>
+
+<pre class="prettyprint"><code>{"status":"SUCCESS","message":"Device state saved successfully"}
+</code></pre></li>
+
+<li><p>If unsuccessful: </p>
+
+<pre class="prettyprint"><code>{"status":"FAILURE","message":"error desc"} 
+</code></pre>
+
+<p>The “message” value will vary depending on the error encountered.</p></li></ul></li>
+
+<li><p><strong>Null -</strong> Returned if the content provider does not implement the call.</p></li>
 </ul>
 
 <p><strong>Exceptions:</strong></p>
@@ -517,6 +530,56 @@
 
 <li><strong>IllegalArgumentException –</strong> Thrown if the URI is not known.</li>
 </ul>
+
+<h3 id="samplecode-1" class="anchor"><a class="heading-anchor" href="#samplecode-1"><span></span></a>Sample Code</h3>
+
+<p>The sample code below demonstrates how to call the device state content provider:</p>
+
+<pre class="prettyprint"><code>    Uri uri = Uri.parse("content://com.zebra.mdna.dg.provider/");
+    String METHOD_NAME = "devicestate";
+    ContentResolver cr = getContentResolver();
+    Bundle bundle = new Bundle();
+
+    Integer intDeviceState = 1; //set device to missing state
+    String stateChangeReason = ""; // optional 
+
+    bundle.putInt("device_state", intDeviceState);
+    bundle.putString("state_change_reason", (stateChangeReason == null) ? "" : stateChangeReason);
+
+
+    // Add current date time in yyyy-dd-MM HH:mm:ss.SSSZ format for state_change_time
+    bundle.putString("state_change_time", getFormattedCurrentDate());
+
+    try {
+        Bundle response = cr.call(uri, METHOD_NAME, null, bundle);
+        if (response != null &amp;&amp; response.containsKey("RESULT")) {
+            if (response.getString("RESULT").equals("SUCCESS")) {
+                if (response.containsKey("status")) {
+                // To access the success message: response.getString("status");
+                }
+            } else {
+                result.setText(response.getString("RESULT"));
+                // To access the result message of an unsuccessful call: response.getString("RESULT");
+            }
+        }
+    }
+    catch (Exception e) {
+        e.printStackTrace();
+    }
+</code></pre>
+
+<p>Sample helper function to format the date:</p>
+
+<pre class="prettyprint"><code>    static String getFormattedCurrentDate() {
+        Date currentDate = new Date();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-dd-MM HH:mm:ss.SSSZ");
+        dateFormat.setLenient(false);
+
+        // Format the date
+        String formattedDate = dateFormat.format(currentDate);
+        return formattedDate;
+    }
+</code></pre>
 
 <hr>
 
