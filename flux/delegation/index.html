@@ -33,7 +33,8 @@
     <script src="js/respond.min.js"></script>
     <![endif]--> 
 
-    <script src="//load.sumome.com/" data-sumo-site-id="699cb66cf4dc59352efb45705526d15cbe314e1cd43f7761b94d96f3cf7338e8" async="async"></script>
+    <!-- 6/13/24- a "crown" icon randomly appeared in the MX matrix today. Rob said it looked like sumo. 
+        <script src="//load.sumome.com/" data-sumo-site-id="699cb66cf4dc59352efb45705526d15cbe314e1cd43f7761b94d96f3cf7338e8" async="async"></script> -->
     <link rel="shortcut icon" href="/favicon.ico">
 <script async="" src="https://www.googletagmanager.com/gtag/js?id=G-01QJCMQM9N"></script><script>
   window.dataLayer = window.dataLayer || [];
@@ -302,147 +303,136 @@
 
 <hr>
 
-<h2 id="communicatingwithzdm" class="anchor"><a class="heading-anchor" href="#communicatingwithzdm"><span></span></a>Communicating with ZDM</h2>
+<!-- 3/21/25 - SPR-56306 removed per. eng
 
-<p>By default, only Zebra apps (e.g. DataWedge, Enterprise Browser, etc.) can bind with ZDM without obtaining permission separately. All other apps must be expressly granted access by an administrator, a concept similar to using <a href="/mx/accessmgr">MX/Access Manager</a> to add apps to a "whitelist." </p>
+## Communicating with ZDM
 
-<h5 id="tocommunicatewithzdmthecallingappmustdothefollowing" class="anchor"><a class="heading-anchor" href="#tocommunicatewithzdmthecallingappmustdothefollowing"><span></span></a>To communicate with ZDM, the calling app must do the following:</h5>
+By default, only Zebra apps (e.g. DataWedge, Enterprise Browser, etc.) can bind with ZDM without obtaining permission separately. All other apps must be expressly granted access by an administrator, a concept similar to using [MX/Access Manager](/mx/accessmgr) to add apps to a "whitelist." 
 
-<ol>
-<li><p><strong>Obtain access to ZDM</strong> through an administrator for the app(s) that need to use it. </p></li>
+##### To communicate with ZDM, the calling app must do the following: 
 
-<li><p><strong>Add the following line to the</strong> <code>manifest.xml</code> file of the app(s): </p>
+1. **Obtain access to ZDM** through an administrator for the app(s) that need to use it. 
 
-<pre class="prettyprint"><code>
-&lt;uses-permission android:name=”com.symbol.zdm.ACCESS_DEVICE_MANAGER_SERVICE”&gt;
-</code></pre></li>
+2. **Add the following line to the** `manifest.xml` file of the app(s): 
 
-<li><p><strong>Bind app(s) with the ZDM service</strong>: </p>
+        :::xml
+        <uses-permission android:name=”com.symbol.zdm.ACCESS_DEVICE_MANAGER_SERVICE”>
 
-<pre class="prettyprint"><code>
-private static final String ZDM_PACKAGE "com.zebra.devicemanager"; 
-private static final String ZDM_SERVICE_CLASS = "com.zebra.devicemanager.ZebraDeviceMgr"; 
+3. **Bind app(s) with the ZDM service**: 
 
-Intent bindZDMServiceIntent = new Intent(); 
-bindZDMServiceIntent.setComponent(new     ComponentName(ZDM_PACKAGE,ZDM_SERVICE_CLASS)); 
-try {  bindService(bindZDMServiceIntent,ZDMServiceConnection,Context.BIND_AUTO_CREATE); 
-}catch (SecurityException e){ 
+        :::java
+        private static final String ZDM_PACKAGE "com.zebra.devicemanager"; 
+        private static final String ZDM_SERVICE_CLASS = "com.zebra.devicemanager.ZebraDeviceMgr"; 
 
-} 
+        Intent bindZDMServiceIntent = new Intent(); 
+        bindZDMServiceIntent.setComponent(new     ComponentName(ZDM_PACKAGE,ZDM_SERVICE_CLASS)); 
+        try {  bindService(bindZDMServiceIntent,ZDMServiceConnection,Context.BIND_AUTO_CREATE); 
+        }catch (SecurityException e){ 
 
-Messenger mService; 
-
-private ServiceConnection ZDMServiceConnection = new ServiceConnection() { 
-  @Override 
-  public void onServiceConnected(ComponentName name, IBinder service) { 
-            mService = new Messenger(service); 
-
-<pre><code>     } 
-</code></pre>
-
-} 
-</code></pre></li>
-
-<li><p><strong>Send message(s) to ZDM</strong> for processing: </p>
-
-<pre class="prettyprint"><code>
-Message msg = Message.obtain(); 
-
-IncomingHandler incomingHandler = new IncomingHandler(); 
-msg.replyTo = new Messenger(incomingHandler); 
-Bundle bundle = new Bundle(); 
-bundle.putString("data",”JS function/js file path in device”); 
-msg.setData(bundle); 
-mService.send(msg); 
-</code></pre></li>
-
-<li><p><strong>Implement an</strong> <code>IncomingHandler</code> to receive ZDM responses: </p>
-
-<pre class="prettyprint"><code>
-public static final int TASK_COMPLETED = 5; 
-public static final int TASK_FAILED = 6; 
-
-private class IncomingHandler extends Handler { 
-    @Override 
-    public void handleMessage(Message msg) { 
-
-<pre><code>    String response =   msg.getData().getString(Constant.RESPONSE); 
-</code></pre>
-
-//Parse the json to get all the details 
-
-//Response json format mentioned below in the docs     
         } 
-} 
-</code></pre></li>
 
-<li><p><strong>Be aware that responses come in JsonString format</strong>, as below:  </p>
+        Messenger mService; 
 
-<pre class="prettyprint"><code>
-{ 
+        private ServiceConnection ZDMServiceConnection = new ServiceConnection() { 
+          @Override 
+          public void onServiceConnected(ComponentName name, IBinder service) { 
+                    mService = new Messenger(service); 
 
-  "status": "COMPLETED", "IN_PROGRESS" 
+                 } 
 
-  "msg": "TASK_COMPLETED", "TASK_IN_PROGRESS" 
+        } 
+4. **Send message(s) to ZDM** for processing: 
 
-  "result": "[{\"command\":\"js callback name\",\"message\":\"detail about execution\",\"status\":\"SUCCESS", "ERROR", "EXCEPTION" or "IN_PROGRESS\"}]" 
+        :::java
+        Message msg = Message.obtain(); 
 
-} 
-</code></pre></li>
+        IncomingHandler incomingHandler = new IncomingHandler(); 
+        msg.replyTo = new Messenger(incomingHandler); 
+        Bundle bundle = new Bundle(); 
+        bundle.putString("data",”JS function/js file path in device”); 
+        msg.setData(bundle); 
+        mService.send(msg); 
+5. **Implement an** `IncomingHandler` to receive ZDM responses: 
 
-<li><p><strong>Parse responses</strong>:</p>
+        :::java
+        public static final int TASK_COMPLETED = 5; 
+        public static final int TASK_FAILED = 6; 
 
-<pre class="prettyprint"><code>
-JSONObject resObj = new JSONObject(response.trim()); 
-String status = resObj.getString(STATUS); 
-String message = resObj.getString(MSG); 
-String result = resObj.getString(RESULT); 
-JSONArray jsonArray = new JSONArray(result); 
+        private class IncomingHandler extends Handler { 
+            @Override 
+            public void handleMessage(Message msg) { 
 
-for (int i = 0 ; i&lt;jsonArray.length();i++){ 
-    JSONObject obj = jsonArray.getJSONObject(i); 
-    Log.i(TAG,"callback result = "+obj.toString()); 
-} 
-</code></pre></li>
-</ol>
+                String response =   msg.getData().getString(Constant.RESPONSE); 
 
-<hr>
+        //Parse the json to get all the details 
 
-<h3 id="feedbackchannel" class="anchor"><a class="heading-anchor" href="#feedbackchannel"><span></span></a>Feedback Channel</h3>
+        //Response json format mentioned below in the docs     
+                } 
+        } 
+6. **Be aware that responses come in JsonString format**, as below:  
 
-<p>In accordance with <a href="https://developer.android.com/reference/androidx/enterprise/feedback/package-summary">Google's published practices</a>, ZDM supports a feedback channel. Feedback responses are sent as a broadcast for registered authorized apps.  </p>
+        :::java
+        { 
 
-<h4 id="registerthefeedbackchannel" class="anchor"><a class="heading-anchor" href="#registerthefeedbackchannel"><span></span></a>Register the feedback channel</h4>
+          "status": "COMPLETED", "IN_PROGRESS" 
 
-<p>To configure an app to receive broadcast feedback responses, register the following action name in the app's <code>manifest.xml</code> file:</p>
+          "msg": "TASK_COMPLETED", "TASK_IN_PROGRESS" 
 
-<pre class="prettyprint"><code>  
-  FEEDBACK_ACTION_NAME = "com.zebra.feedback.action.APP_STATES"; 
-</code></pre>
+          "result": "[{\"command\":\"js callback name\",\"message\":\"detail about execution\",\"status\":\"SUCCESS", "ERROR", "EXCEPTION" or "IN_PROGRESS\"}]" 
 
-<h4 id="example" class="anchor"><a class="heading-anchor" href="#example"><span></span></a>Example</h4>
+        } 
+7. **Parse responses**:
 
-<pre class="prettyprint"><code>    &lt;receiver android:name="FeedbackReceiver" 
-    android:exported="true" 
-    android:enabled="true"&gt; 
+        :::java
+        JSONObject resObj = new JSONObject(response.trim()); 
+        String status = resObj.getString(STATUS); 
+        String message = resObj.getString(MSG); 
+        String result = resObj.getString(RESULT); 
+        JSONArray jsonArray = new JSONArray(result); 
 
-      &lt;intent-filter&gt; 
-          &lt;action android:name="com.zebra.feedback.action.APP_STATES" /&gt; 
-      &lt;/intent-filter&gt; 
-    &lt;/receiver&gt; 
-</code></pre>
+        for (int i = 0 ; i<jsonArray.length();i++){ 
+            JSONObject obj = jsonArray.getJSONObject(i); 
+            Log.i(TAG,"callback result = "+obj.toString()); 
+        } 
 
-<hr>
+-----
+-->
 
-<h3 id="retrievefeedback" class="anchor"><a class="heading-anchor" href="#retrievefeedback"><span></span></a>Retrieve Feedback</h3>
+<!-- 3/21/25 - SPR-56306 removed per. eng
 
-<p>Feedback broadcast details are received as an intent. Some of the most common are shown in the table below. </p>
+### Feedback Channel
+
+In accordance with [Google's published practices](https://developer.android.com/reference/androidx/enterprise/feedback/package-summary), ZDM supports a feedback channel. Feedback responses are sent as a broadcast for registered authorized apps.  
+
+#### Register the feedback channel 
+To configure an app to receive broadcast feedback responses, register the following action name in the app's `manifest.xml` file:
+
+      :::xml
+      FEEDBACK_ACTION_NAME = "com.zebra.feedback.action.APP_STATES"; 
+
+#### Example 
+
+        <receiver android:name="FeedbackReceiver" 
+        android:exported="true" 
+        android:enabled="true"> 
+
+          <intent-filter> 
+              <action android:name="com.zebra.feedback.action.APP_STATES" /> 
+          </intent-filter> 
+        </receiver> 
+
+-----
+
+### Retrieve Feedback 
+
+Feedback broadcast details are received as an intent. Some of the most common are shown in the table below. 
+
 
 <table class="facelift" style="width:100%" border="1" padding="5px">
 <tbody>
   <tr bgcolor="#dce8ef">
-    <th>Description</th>
-    <th>Code</th>
+    <th >Description</th>
+    <th >Code</th>
   </tr>
 
 <tr>
@@ -452,12 +442,12 @@ for (int i = 0 ; i&lt;jsonArray.length();i++){
 
 <tr>
   <td>Name of keyed app state key for a given bundle</td>
-  <td><code>static final String APP_STATE_KEY = "app_state_key";</code></td>
+  <td ><code>static final String APP_STATE_KEY = "app_state_key";</code></td>
 </tr>
 
 <tr>
   <td>Name of severity of the app state</td>
-  <td><code>static final String APP_STATE_SEVERITY = "app_state_severity";</code></td>
+  <td ><code>static final String APP_STATE_SEVERITY = "app_state_severity";</code></td>
 </tr>
 
 <tr>
@@ -480,32 +470,33 @@ for (int i = 0 ; i&lt;jsonArray.length();i++){
   <td><code>static final String APP_STATE_DATA = "app_state_data";</code></td>
 </tr>
 
-</tbody></table> 
+</table> 
 
-<p><br></p>
 
-<h4 id="example-1" class="anchor"><a class="heading-anchor" href="#example-1"><span></span></a>Example</h4>
+<br>
 
-<pre class="prettyprint"><code>public class FeedbackReceiver extends BroadcastReceiver { 
-    @Override 
-    public void onReceive(Context context, final Intent intent) { 
+#### Example
 
-                ArrayList&lt;Bundle&gt; bundles = intent.getParcelableArrayListExtra(APP_STATES); 
-                if(bundles != null) { 
-                    for (Bundle feedbackDetails : bundles) { 
-                        String key = feedbackDetails.getString(APP_STATE_KEY); 
-                        int severity = feedbackDetails.getInt(APP_STATE_SEVERITY); 
-                        String message = feedbackDetails.getString(APP_STATE_MESSAGE); 
-                        String pkgName = feedbackDetails.getString(APP_STATE_PKG); 
-                        String data = feedbackDetails.getString(APP_STATE_DATA); 
-                        Long timestamp = feedbackDetails.getLong(APP_STATE_TIME_STAMP); 
+    public class FeedbackReceiver extends BroadcastReceiver { 
+        @Override 
+        public void onReceive(Context context, final Intent intent) { 
+
+                    ArrayList<Bundle> bundles = intent.getParcelableArrayListExtra(APP_STATES); 
+                    if(bundles != null) { 
+                        for (Bundle feedbackDetails : bundles) { 
+                            String key = feedbackDetails.getString(APP_STATE_KEY); 
+                            int severity = feedbackDetails.getInt(APP_STATE_SEVERITY); 
+                            String message = feedbackDetails.getString(APP_STATE_MESSAGE); 
+                            String pkgName = feedbackDetails.getString(APP_STATE_PKG); 
+                            String data = feedbackDetails.getString(APP_STATE_DATA); 
+                            Long timestamp = feedbackDetails.getLong(APP_STATE_TIME_STAMP); 
+                        } 
                     } 
-                } 
+        } 
     } 
-} 
-</code></pre>
 
-<hr>
+-----
+-->
 
 <h2 id="delegationscopeszebraapps" class="anchor"><a class="heading-anchor" href="#delegationscopeszebraapps"><span></span></a>Delegation Scopes - Zebra Apps</h2>
 
@@ -657,7 +648,7 @@ for (int i = 0 ; i&lt;jsonArray.length();i++){
             <div class="container-fluid">
                 <div class="row">
                     <div class="col-sm-10">
-                        ZEBRA and the stylized Zebra head are trademarks of Zebra Technologies Corp., registered in many jurisdictions worldwide. All other trademarks are the property of their respective owners. ©2024 Zebra Technologies Corp. and/or its affiliates.<br> <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal.html">Legal</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/compliance/information-privacy/terms-of-use.html">Terms of Use</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal/privacy-statement.html">Privacy Policy</a> 
+                        ZEBRA and the stylized Zebra head are trademarks of Zebra Technologies Corp., registered in many jurisdictions worldwide. All other trademarks are the property of their respective owners. ©2025 Zebra Technologies Corp. and/or its affiliates.<br> <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal.html">Legal</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/compliance/information-privacy/terms-of-use.html">Terms of Use</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal/privacy-statement.html">Privacy Policy</a> 
                     </div>
                      <!--
                      <div class="col-sm-2">
