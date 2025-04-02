@@ -3,6 +3,7 @@
     Description     : DCS content specific JS.
     Author          : Eranga Tennakoon - GQCD86 
     Release Notes   :
+        04/01/2025 - Added auto redirection of rebranded pages.
         01/22/2025 - Code snippets copy and PowerShell file download support added.
         05/12/2024 - Initial document. Tab control support added
 */
@@ -56,4 +57,31 @@ function downloadFile(filename) {
 
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+}
+
+/**
+ * Redirect the page to the given URL.
+ * 
+ * @param {*} redirectUrl URL that needs to be redirect.
+ * @param {*} countdownElementId Element ID to update the timer text to the user.
+ * @param {*} timeoutSeconds Time period to redirect.
+ */
+function startRedirect(redirectUrl, countdownElementId, timeoutSeconds) {
+    let timeLeft = timeoutSeconds;
+    const countdownElement = document.getElementById(countdownElementId);
+
+    // Countdown timer
+    const countdown = setInterval(function() {
+        timeLeft--;
+        countdownElement.textContent = timeLeft;
+        if (timeLeft <= 0) {
+            clearInterval(countdown); // Stop the timer
+            window.location.href = redirectUrl; // Redirect to the specified URL
+        }
+    }, 1000); // Update every second
+
+    // Fallback redirect
+    setTimeout(function() {
+        window.location.href = redirectUrl;
+    }, timeoutSeconds * 1000);
 }

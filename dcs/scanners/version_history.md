@@ -5,6 +5,9 @@ This document tracks all software updates deployed to the staging server. Versio
 
 For any inquiries, please contact **Tennakoon, Eranga - GQCD86**. 
 
+## [2025.004] - TBD
+- [SSDK-21219](https://jira.zebra.com/browse/SSDK-21219) - Active Focus Manager (AFM) rebranded to DataWedge for Scanner (DWS).
+
 ## [2025.003] - 04/01/2025
 - [SSDK-21629](https://jira.zebra.com/browse/SSDK-21629) - PI 1.25 customer-facing release notes published.
     - CoreScanner Driver for Windows
