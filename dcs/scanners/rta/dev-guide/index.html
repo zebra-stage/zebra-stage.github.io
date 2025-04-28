@@ -7,8 +7,8 @@
         <meta name="author" content="Zebra Technologies">
         <meta name="google-site-verification" content="i4B78BrWnNy8ShJwe5feRW3jO3HE6gfYlYqYbxfl8yY">
         <meta name="msvalidate.01" content="6B651B00161BCE79B8950AC09D5C4C75">
-        <meta title="About Scanner SDK for Windows">
-        <title>Scanner SDK for Windows - RTA - Zebra Technologies</title>
+        <meta title="Real Time Alerts (RTA) for Scanners">
+        <title>Real Time Alert (RTA) - Zebra Technologies</title>
         <!-- core CSS -->
         <link rel="stylesheet" href="/home/css/uikit.min.css" />
         <link rel="stylesheet" href="/home/css/style.css" />
@@ -54,16 +54,16 @@
                             <li>
                                 <a href="/dcs/scanners">Barcode Scanner Tools</a>
                             </li>
-                            <p class="navbar-text">Real Time Alerts (RTA)</p>
+                            <p class="navbar-text">Real Time Alerts (RTA) Programmer's Guide</p>
                         </ul>
                     </div>
                     <div class="collapse navbar-collapse navbar-right">
                         <ul class="nav navbar-nav">
                             <li>
-                                <a href="/dcs/scanners/rta/sample-apps/">Sample Apps</a>
+                                <a href="/dcs/scanners/rta/dev-guide/">Programmer's Guide</a>
                             </li>
                             <li>
-                                <a href="/dcs/scanners/rta/dev-guide/">Programmer's Guide</a>
+                                <a href="/dcs/scanners/rta/sample-apps/">Sample Apps</a>
                             </li>
                         </ul>
                     </div>
@@ -78,7 +78,7 @@
                             <div class="col-sm-3 hidden-sm hidden-xs" id="sidebar">
                                 <nav id="toc" data-toggle="toc" data-spy="affix" style="height: 75%; max-width: 225px; overflow-y: auto; ">
                                     <ul class="nav">
-                                        <li><strong>Real Time Alerts (RTA)</strong></li>
+                                        <li><strong>Real Time Alerts (RTA) Programmer's Guide</strong></li>
                                     </ul>
                                 </nav>                    
                                 <script type="text/javascript">
@@ -106,7 +106,7 @@
                                         <section id="cta" class="wow fadeIn">
                                             <div class="">
                                                 <h1 id="aboutscannersdkforwindows" class="anchor">
-                                                    <a class="heading-anchor" href="#aboutscannersdkforwindows"><span></span></a>Real Time Alerts (RTA)
+                                                    <a class="heading-anchor" href="#aboutscannersdkforwindows"><span></span></a>Real Time Alerts (RTA) Programmer's Guide
                                                 </h1>
                                             </div>
                                         </section>                    
@@ -528,7 +528,7 @@
 
                                                     <p>The Host system can look up the current state of the Real Time Alert feature.   Note that if a device does not immediately have a Context Address, it usually resolves itself in a minute.  The following table shows the meaning of the RTA state value returned when requested by the host.</p>
 
-                                                    <p><strong>Table 2:</strong> RTA State Values</p>
+                                                    <p><strong>Table 3:</strong> RTA State Values</p>
                                                     <table class="hovertable">
                                                         <tr>
                                                             <th>State Name</th>
@@ -799,8 +799,159 @@
                                                     <ul>
                                                         <li>When this alert is sent, the first reported data value is the current AlertCount.</li>
                                                         <li>The  second reported data value is 0 for this alert.</li>
-                                                        <li>There are no settings for this alert.  If any setting values are sent, they are ignored.</li>
+                                                        <li>There are no settings for this alert. If any setting values are sent, they are ignored.</li>
                                                     </ul>
+
+                                                    <h2 id="rta-corescanner-api" class="anchor"><a class="heading-anchor" href="#rta-corescanner-api"><span></span></a>CoreScanner API</h2>
+
+                                                    <p>The CoreScanner API is used to both configure the Real Time Alerts feature in the scanner or cradle device, and also used to receive notifications when an RTA Event is sent by the scanner.</p>
+
+                                                    <h3 id="rta-corescanner-register" class="anchor"><a class="heading-anchor" href="#rta-corescanner-register"><span></span></a>Register for Events</h3>
+
+                                                    <p>To receive ScannerNotificationEvents, an application needs to execute the REGISTER_FOR_EVENTS method with the SUBSCRIBE_OTHER event type. When an RTA event is sent by the device, a Notification Event Type of 2000 is sent by the CoreScanner API.</p>
+
+                                                    <p><strong>Table 4:</strong> Notification Event Types</p>
+                                                    <table class="hovertable">
+                                                        <tr>
+                                                            <th>Event Type</th>
+                                                            <th>Value</th>
+                                                            <th>Description</th>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>DECODE_MODE</td>
+                                                            <td>1</td>
+                                                            <td>Triggered when a scanner changes its operation mode to decode.</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>SNAPSHOT_MODE</td>
+                                                            <td>2</td>
+                                                            <td>Triggered when a scanner changes its operation mode to image mode.</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>VIDEO_MODE</td>
+                                                            <td>3</td>
+                                                            <td>Triggered when a scanner changes its operation mode to video mode.</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>DEVICE_ENABLED</td>
+                                                            <td>13</td>
+                                                            <td>Triggered when the scanner is enabled.</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>DEVICE_DISABLED</td>
+                                                            <td>14</td>
+                                                            <td>Triggered when the scanner is disabled.</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>RTA_EVENT</td>
+                                                            <td>2000</td>
+                                                            <td>Triggered when RTA event is received.</td>
+                                                        </tr>
+                                                    </table><br />
+
+                                                    <p>The RTA_EVENT message contains the following information:</p>
+
+<pre class="prettyprint">
+<code>
+&lt;?xml version="1.0" encoding="UTF-8"?>
+&lt;outArgs>
+    &lt;scannerID>2&lt;/scannerID>
+    &lt;arg-xml>
+        &lt;modelnumber>DS8178-SR0F007ZZWW&lt;/modelnumber>
+        &lt;serialnumber>99887766556655  &lt;/serialnumber>
+        &lt;GUID>&lt;/GUID>
+        &lt;rta>
+            &lt;id>30012&lt;/id>
+            &lt;type>12&lt;/type>
+            &lt;data-1>99&lt;/data-1>
+            &lt;data-2>0&lt;/data-2>
+            &lt;raw-data>0x75 0x3C 0x00 0x0C 0x00 0x63 0x00 0x00 0x00 0x00 &lt;/raw-data>
+        &lt;/rta>
+    &lt;/arg-xml>
+&lt;/outArgs>
+</code>
+</pre>
+
+                                                    <ol>
+                                                        <li>The &lt;scannerID> tag is the Corescanner-assigned ID number of the scanner device that originated the RTA event.</li>
+                                                        <li>The &lt;modelnumber> and &lt;serialnumber> tags indicate the asset info of the device that originated the RTA event.</li>
+                                                        <li>
+                                                            Under the <rta> tag:
+                                                            <ol type="a" start="a">
+                                                                <li>The &lt;id> tag represents the RTA event attribute ID (see the “Attribute” column in Chapter 2 of this document).</li>
+                                                                <li>The &lt;type> tag represents the Stat type of the event. (see the “Type” column in Chapter 2 of this document).</li>
+                                                                <li>The &lt;data-1> and &lt;data-2> tags show the RTA event data received with the RTA event raised from the scanner.</li>
+                                                                <li>
+                                                                    The &lt;raw-data> tag includes the following data structure.
+                                                                    <table class="hovertable">
+                                                                        <tr>
+                                                                            <th>Byte</th>
+                                                                            <th>Description</th>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td>1 - 2</td>
+                                                                            <td>RTA event attribute</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td>3 - 4</td>
+                                                                            <td>RTA Stat type</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td>5 - 6</td>
+                                                                            <td>RTA event data 1</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td>7 - 8</td>
+                                                                            <td>RTA event data 2 (optional)</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td>9 - 10</td>
+                                                                            <td>Future use</td>
+                                                                        </tr>
+                                                                    </table>
+                                                                </li>
+                                                            </ol>
+                                                        </li>
+                                                    </ol>
+
+                                                    <h3 id="rta-corescanner-example" class="anchor"><a class="heading-anchor" href="#rta-corescanner-example"><span></span></a>Using the Methods to configure RTA (Examples)</h3>
+
+                                                    <ol>
+                                                        <li><strong>GET SUPPORTED RTA EVENTS (OPCODE - 5500):</strong> Gets supported RTA events of the device.</li>
+                                                        <li><strong>REGISTER_RTA_EVENTS (OPCODE - 5501):</strong> Register for selected RTA events. RTA event ID and Stat with on limit and off limit as "Not set" should be entered with values acceptable for each event.</li>
+                                                        <li><strong>UNREGISTER_RTA_EVENTS (OPCODE - 5502):</strong> Unregister for selected RTA events using RTA event ID and type.</li>
+                                                        <li>
+                                                            <strong>GET_RTA_ALERT_STATUS (OPCODE - 5503):</strong> Retrieve the RTA event's alert status. This contains information about individual status events (i.e. whether registered, reported, measured, initialized etc.)
+                                                            <ul>
+                                                                <li>Registered: Whether the event is registered or not.</li>
+                                                                <li>Reported: An alert has reported associated to the event.</li>
+                                                                <li>Measuring: Device has started measuring of the event.</li>
+                                                                <li>Initialized: Device has initialized the event.</li>
+                                                            </ul>
+                                                        </li>
+                                                        <li>
+                                                            SET_RTA_ALERT_STATUS (OPCODE - 5504): Set RTA event's reported state.<br/>
+                                                            <strong>NOTE:</strong> &lt;reported> can only be set from true (1) to false (0). If set otherwise, it will be automatically overwritten by 0.
+                                                        </li>
+                                                        <li>RTA_SUSPEND (OPCODE - 5505): Toggle RTA alert notification reporting to the host.</li>
+                                                        <li>
+                                                            RTA_STATE (OPCODE - 5506): Retrieve the current operational state of RTAs. State will have 4 values as follows.
+                                                            <ul>
+                                                                <li>State 0: RTA Suspended.</li>
+                                                                <li>State 1: RTA Awaiting Registration.</li>
+                                                                <li>State 2: RTA Awaiting Context Address.</li>
+                                                                <li>State 3: RTA Fully Operational.</li>
+                                                            </ul>
+                                                        </li>
+                                                    </ol>
+
+                                                    <h2 id="rta-opos" class="anchor"><a class="heading-anchor" href="#rta-opos"><span></span></a>OPOS Standard API</h2>
+
+                                                    <p>The OPOS driver uses Direct IO commands to configure the Real Time Alerts feature in the scanner or cradle device, and it uses Direct IO events to receive notifications when an RTA event is sent by the scanner.</p>
+
+                                                    <h2 id="rta-jpos" class="anchor"><a class="heading-anchor" href="#rta-jpos"><span></span></a>JPOS Standard API</h2>
+
+                                                    <p>The JPOS driver uses DirectIO commands to configure the Real Time Alerts feature in the scanner or cradle device, and it uses DirectIO events to receive notifications when an RTA event is sent by the scanner.</p>
 
                                                 </div>
                                             </div>
