@@ -1,18 +1,24 @@
 # Version History
-## DCS SCanner Tools - TechDocs
+## DCS SCanner Software Tools - TechDocs
 
 This document tracks all software updates deployed to the staging server. Versions follow the format **YYYY.XXX** (e.g., 2025.001, 2025.002), where **YYYY** represents the year and **XXX** is the sequential release number for that year. The listed date corresponds to the staging deployment, which may differ from the live release date.  
 
 For any inquiries, please contact **Tennakoon, Eranga - GQCD86**. 
 
-## [2025,005] - 04/28/2025
+## [2025.007] - TBD
+
+## [2025.006] - 05/08/2025
+- [SSDK-21191](https://jira.zebra.com/browse/SSDK-21191) - RTA for Windows.
+    - Review feedback implemented.
+
+## [2025.005] - 04/28/2025
 - [SSDK-21191](https://jira.zebra.com/browse/SSDK-21191) - RTA content updated for Windows. Changes are in,
     - RTA sample appd and developer guide.
     - OPOS and JPOS Driver for RTA.
     - Barcode Scanner SDK for Windows APIs for RTA.
 
 ## [2025.004] - 04/02/2025
-- [SSDK-21219](https://jira.zebra.com/browse/SSDK-21219) - Active Focus Manager (AFM) rebranded to DataWedge for Scanner (DWS).
+- [SSDK-21219](https://jira.zebra.com/browse/SSDK-21219) - Active Focus Manager (AFM) rebrand to DataWedge for Scanner (DWS).
 
 ## [2025.003] - 04/01/2025
 - [SSDK-21629](https://jira.zebra.com/browse/SSDK-21629) - PI 1.25 customer-facing release notes published.
