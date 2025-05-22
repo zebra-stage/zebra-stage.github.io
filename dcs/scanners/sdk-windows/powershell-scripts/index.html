@@ -217,6 +217,180 @@ Invoke-Command -ScriptBlock {
 </code>
 </pre>
                                                     </div>
+
+                                                    <h3 id="powershell-scripts-barcode-data" class="anchor"><a class="heading-anchor" href="#powershell-scripts-barcode-data"><span></span></a>Barcode Data</h3>
+
+                                                    <p>Barcode data.</p>
+
+                                                    <div class="code-container">
+                                                        <button class="button copy-button" onclick="copyCode(this)">Copy</button>
+                                                        <button class="button download-button" onclick="downloadFile('CoreScanner_BarcodeData.ps1')">
+                                                            <img src="../../images/common/download.png">
+                                                        </button>                                     
+<pre class="prettyprint">
+<code id="code-snippet">
+# Description : Scanner Barcode Data.
+# Support PSVersion 5+.
+# Copyright : ©2025 Zebra Technologies Corp. and/or its affiliates.
+
+# Main script to execute
+Invoke-Command -ScriptBlock {
+
+add-Type -typedef @"
+using System;
+using System.Reflection;
+using System.Runtime.InteropServices;
+
+namespace CoreScannerWrapperLib
+{
+    public delegate void BarcodeEventHandler(int dataType, string pscanData);
+    
+    /// &lt;summary>
+    /// CoreScanner Wrapper for barcode events
+    /// &lt;/summary>
+    public class CoreScannerWrapper
+    {
+        public static event BarcodeEventHandler OnBarcode;
+
+        private const int EventTypeBarcode = 1;
+        private const short NumberOfScannerTypes = 1;
+        private const int StatusFalse = -1;
+
+        private Type objType;
+        private object coreScannerObject = null;
+        private int appHandle = 0;
+        private short[] scannerTypes = new short[NumberOfScannerTypes];
+
+        // Initialize CoreScanner COM object
+        public CoreScannerWrapper()
+        {
+            string progId = "CoreScanner.CoreScanner";
+            objType = Type.GetTypeFromProgID(progId);
+            coreScannerObject = Activator.CreateInstance(objType);
+        }
+
+        public int Open()
+        {
+            int status = StatusFalse;
+            short numberOfTypes = 1;
+            short[] scannerTypes = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            scannerTypes[0] = 1;
+
+            coreScannerObject.GetType().InvokeMember("Open", BindingFlags.InvokeMethod, null,
+                coreScannerObject, new object[]
+                {
+                    appHandle,scannerTypes, numberOfTypes, status
+                });
+            RegisterForEvents();
+            return status;
+        }
+
+        public void RegisterForEvents()
+        {
+            string inXml = "";
+            string outXml = "";
+            long status = -1;
+            int opCodeRegisterForEvents = 1001;
+            int eventIdCount = 1; // Number of events to register (only barcode events)
+            int[] eventIdList = new int[eventIdCount];
+            // Register for barcode events only
+            eventIdList[0] = EventTypeBarcode;
+
+            string eventIds = String.Join(",", eventIdList);
+            inXml = "&lt;inArgs>" +
+                    "&lt;cmdArgs>" +
+                    "&lt;arg-int>" + eventIdCount + "&lt;/arg-int>" + // Number of events to register
+                    "&lt;arg-int>" + eventIds + "&lt;/arg-int>" + // Event id list of events to register for
+                    "&lt;/cmdArgs>" +
+                    "&lt;/inArgs>";
+           
+            // Call register for events
+            status=ExecCommand(opCodeRegisterForEvents, // Opcode: Register for events
+                inXml, // Input XML
+                out outXml // Output XML 
+                ); // Command execution success/failure return status  
+           
+            MethodInfo method =
+                this.GetType().GetMethod("BarcodeEvent",
+                    BindingFlags.NonPublic | BindingFlags.Instance);
+
+            MethodInfo barcodeEventCallbackMethod = this.GetType().GetMethod("BarcodeEvent", BindingFlags.Public| BindingFlags.Instance);
+            BarcodeEventHandler callback  = (BarcodeEventHandler) Delegate.CreateDelegate(typeof(BarcodeEventHandler), this, barcodeEventCallbackMethod, false);
+
+            Guid sourceId = new Guid("981E3D8B-C756-4195-A702-F198965031C6");   // CoreScanner events GUID
+            int dispId = 3;  // Barcode data disp id
+            ComEventsHelper.Combine(coreScannerObject, sourceId, dispId, callback);
+        }
+
+        public void BarcodeEvent(int dataType,  string pscanData)
+        {
+            if (OnBarcode != null)
+            { 
+                OnBarcode(dataType, pscanData);
+            }
+        }
+
+        public int ExecCommand(int opCode, string inXml, out string outXml)
+        {
+            int status = StatusFalse;
+            outXml = "";
+
+            ParameterModifier[] mods = new ParameterModifier[] { new ParameterModifier(4) };
+            mods[0][2] = true;
+            mods[0][3] = true;
+
+            object[] parameters = new object[4];
+            parameters[0] = opCode;
+            parameters[1] = inXml;
+            parameters[2] = "";
+            parameters[3] = StatusFalse;
+
+            coreScannerObject.GetType().InvokeMember("ExecCommand", BindingFlags.InvokeMethod, null, coreScannerObject, parameters, mods, null, null);
+            outXml = (string)parameters[2];
+            status = (int)parameters[3];
+            return status;
+        }
+
+        public int Close()
+        {
+            int status = StatusFalse;
+            coreScannerObject.GetType().InvokeMember("Close", BindingFlags.InvokeMethod, null,
+                coreScannerObject, new object[]
+                {
+                    appHandle, status
+                });
+            return status;
+        }
+    }
+}
+"@
+    #Add-Type -TypeDefinition $Source -Language CSharp 
+	$ScanneWrapperObject = New-Object CoreScannerWrapperLib.CoreScannerWrapper;
+
+    Write-Output "Starting --------------------"
+
+    $Action = {   
+       Write-Host $event.SourceArgs
+     }
+
+    Register-ObjectEvent -InputObject $ScanneWrapperObject -SourceIdentifier "BarcodeEvents" -EventName "OnBarcode"  -Action  $Action
+
+    $stat= $ScanneWrapperObject.Open();
+
+    Write-Output "Scan barcodes now --------------------"
+    for (($i = 0); $i -lt 10; $i++)
+    {
+        Start-Sleep -Seconds 1
+    }
+    $stat= $ScanneWrapperObject.Close();
+    Write-Output "Closing CoreScanner";
+    Unregister-Event -SourceIdentifier "BarcodeEvents"
+}
+</code>
+</pre>
+                                                    </div>
+
+                                                    <p></p>
                                                 </div>
                                             </div>
                                         </div>
