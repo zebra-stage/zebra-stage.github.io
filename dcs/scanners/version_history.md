@@ -5,6 +5,11 @@ This document tracks all software updates deployed to the staging server. Versio
 
 For any inquiries, please contact **Tennakoon, Eranga - GQCD86**. 
 
+## [2025.008] - 05/26/2025
+- [SSDK-21741](https://jira.zebra.com/browse/SSDK-21741) - IoT Connector Windows and Lnux updates.
+    - Supported devices list section added for Linux.
+    - Supported COM protocol table added.
+
 ## [2025.007] - 05/22/2025
 - [SSDK-21756](https://jira.zebra.com/browse/SSDK-21756) - SMS for Linux broken page links resolved.
 - [SSDK-21729](https://jira.zebra.com/browse/SSDK-21729) - Command Line Utility for Linux initial version published.
