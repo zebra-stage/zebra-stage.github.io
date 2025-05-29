@@ -401,8 +401,12 @@
 <li><p>Make sure project is already built successfully</p></li>
 <li><p>Click on <code>Run app (shift+F10)</code> from top right corner</p></li>
 <li><p>Now Application should be launched on Zebra Android device.</p></li>
-<li><p>Application should be showing <code>Reader connected</code> on screen</p></li>
-<p><img src="../../images/CreatingProjectAndroidStudioImages/ssw.png" alt="img"></p></li>
+<li><p>Application should be showing <code>Reader connected</code> toast message on screen</p></li>
+<div style="display: flex; gap: 12px; justify-content: flex-start;">
+<p><img src="../../images/CreatingProjectAndroidStudioImages/ssw1.png" alt="img" style="max-width:200px; height:400px;"></p>
+<p><img src="../../images/CreatingProjectAndroidStudioImages/ssw2.png" alt="img" style="max-width:200px; height:400px;"></p>
+<p><img src="../../images/CreatingProjectAndroidStudioImages/ssw3.png" alt="img" style="max-width:200px; height:400px;"></p>
+</div>
 </ol>
 
 <h2 id="tips" class="anchor"><a class="heading-anchor" href="#tips"><span></span></a>Programming tips</h2>
@@ -580,6 +584,24 @@
     }
 </code></pre></li>
 
+<pre class="prettyprint"><code>
+    package com.zebra.ssw.EncodeBarcodeToRFID;
+
+    import androidx.annotation.NonNull;
+    import java.io.Serializable;
+
+    public class EPC implements Serializable {
+
+        public static final EPC DEFAULT = new EPC("0000000000000");
+
+        private final String content;
+
+        public EPC(String s) {
+            content = s.toUpperCase();
+        }
+    }
+</code></pre></li>
+
 <li><p>Create a filter to specify which tags should be operated on</p>
 <pre class="prettyprint"><code>
     private AccessFilter setAccessFilter(String tagID) {
@@ -631,54 +653,54 @@
     private void performTagOperationSequence(String tagId, String epcData)
         throws OperationFailureException, InvalidUsageException {
 
-    Log.d(TAG, "Starting operation sequence for tag: " + tagId);
-    long accessPassword = Long.parseLong(ACCESS_PASSWORD, 16);
+        Log.d(TAG, "Starting operation sequence for tag: " + tagId);
+        long accessPassword = Long.parseLong(ACCESS_PASSWORD, 16);
 
-    try {
-        reader.Actions.TagAccess.OperationSequence.deleteAll();
-    } catch (Exception e) {
-        Log.w(TAG, "Error clearing operation sequence", e);
+        try {
+            reader.Actions.TagAccess.OperationSequence.deleteAll();
+        } catch (Exception e) {
+            Log.w(TAG, "Error clearing operation sequence", e);
+        }
+
+        TagAccess tagAccess = reader.Actions.TagAccess;
+        TagAccess.Sequence opSequence = tagAccess.new Sequence(tagAccess);
+
+        // Operation 1: Read TID memory bank
+        TagAccess.Sequence.Operation op1 = opSequence.new Operation();
+        op1.setAccessOperationCode(ACCESS_OPERATION_CODE.ACCESS_OPERATION_READ);
+        op1.ReadAccessParams.setMemoryBank(MEMORY_BANK.MEMORY_BANK_TID);
+        op1.ReadAccessParams.setCount(1);
+        op1.ReadAccessParams.setOffset(0);
+        reader.Actions.TagAccess.OperationSequence.add(op1);
+
+        // Operation 2: Unlock the EPC Memory
+        TagAccess.Sequence.Operation unlockOp = opSequence.new Operation();
+        unlockOp.setAccessOperationCode(ACCESS_OPERATION_CODE.ACCESS_OPERATION_LOCK);
+        unlockOp.LockAccessParams.setLockPrivilege(LOCK_DATA_FIELD.LOCK_EPC_MEMORY,
+                LOCK_PRIVILEGE.LOCK_PRIVILEGE_UNLOCK);
+        unlockOp.LockAccessParams.setAccessPassword(Long.decode("0X" + accessPassword));
+        reader.Actions.TagAccess.OperationSequence.add(unlockOp);
+
+        // Operation 3: Write EPC to tag
+        TagAccess.Sequence.Operation writeOp = opSequence.new Operation();
+        writeOp.setAccessOperationCode(ACCESS_OPERATION_CODE.ACCESS_OPERATION_WRITE);
+        writeOp.WriteAccessParams.setMemoryBank(MEMORY_BANK.MEMORY_BANK_EPC);
+        writeOp.WriteAccessParams.setOffset(2);
+        writeOp.WriteAccessParams.setWriteData(epcData);
+        writeOp.WriteAccessParams.setWriteDataLength(epcData.length()/4);
+        reader.Actions.TagAccess.OperationSequence.add(writeOp);
+
+        // Operation 4: Lock the EPC Memory
+        TagAccess.Sequence.Operation lockOp = opSequence.new Operation();
+        lockOp.setAccessOperationCode(ACCESS_OPERATION_CODE.ACCESS_OPERATION_LOCK);
+        lockOp.LockAccessParams.setLockPrivilege(LOCK_DATA_FIELD.LOCK_EPC_MEMORY,
+                LOCK_PRIVILEGE.LOCK_PRIVILEGE_READ_WRITE);
+        lockOp.LockAccessParams.setAccessPassword(Long.decode("0X" + accessPassword));
+        reader.Actions.TagAccess.OperationSequence.add(lockOp);
+
+        // Execute the sequence on the specific tag
+        reader.Actions.TagAccess.OperationSequence.performSequence(setAccessFilter(tagId), null, null);
     }
-
-    TagAccess tagAccess = reader.Actions.TagAccess;
-    TagAccess.Sequence opSequence = tagAccess.new Sequence(tagAccess);
-
-    // Operation 1: Read TID memory bank
-    TagAccess.Sequence.Operation op1 = opSequence.new Operation();
-    op1.setAccessOperationCode(ACCESS_OPERATION_CODE.ACCESS_OPERATION_READ);
-    op1.ReadAccessParams.setMemoryBank(MEMORY_BANK.MEMORY_BANK_TID);
-    op1.ReadAccessParams.setCount(1);
-    op1.ReadAccessParams.setOffset(0);
-    reader.Actions.TagAccess.OperationSequence.add(op1);
-
-    // Operation 2: Unlock the EPC Memory
-    TagAccess.Sequence.Operation unlockOp = opSequence.new Operation();
-    unlockOp.setAccessOperationCode(ACCESS_OPERATION_CODE.ACCESS_OPERATION_LOCK);
-    unlockOp.LockAccessParams.setLockPrivilege(LOCK_DATA_FIELD.LOCK_EPC_MEMORY,
-            LOCK_PRIVILEGE.LOCK_PRIVILEGE_UNLOCK);
-    unlockOp.LockAccessParams.setAccessPassword(Long.decode("0X" + accessPassword));
-    reader.Actions.TagAccess.OperationSequence.add(unlockOp);
-
-    // Operation 3: Write EPC to tag
-    TagAccess.Sequence.Operation writeOp = opSequence.new Operation();
-    writeOp.setAccessOperationCode(ACCESS_OPERATION_CODE.ACCESS_OPERATION_WRITE);
-    writeOp.WriteAccessParams.setMemoryBank(MEMORY_BANK.MEMORY_BANK_EPC);
-    writeOp.WriteAccessParams.setOffset(2);
-    writeOp.WriteAccessParams.setWriteData(epcData);
-    writeOp.WriteAccessParams.setWriteDataLength(epcData.length()/4);
-    reader.Actions.TagAccess.OperationSequence.add(writeOp);
-
-    // Operation 4: Lock the EPC Memory
-    TagAccess.Sequence.Operation lockOp = opSequence.new Operation();
-    lockOp.setAccessOperationCode(ACCESS_OPERATION_CODE.ACCESS_OPERATION_LOCK);
-    lockOp.LockAccessParams.setLockPrivilege(LOCK_DATA_FIELD.LOCK_EPC_MEMORY,
-            LOCK_PRIVILEGE.LOCK_PRIVILEGE_READ_WRITE);
-    lockOp.LockAccessParams.setAccessPassword(Long.decode("0X" + accessPassword));
-    reader.Actions.TagAccess.OperationSequence.add(lockOp);
-
-    // Execute the sequence on the specific tag
-    reader.Actions.TagAccess.OperationSequence.performSequence(setAccessFilter(tagId), null, null);
-}
 </code></pre></li>
 
 </ol>
@@ -995,7 +1017,7 @@
             int len = tagID.length()/2;
             AccessFilter accessFilter = new AccessFilter();
             byte[] tagMask = new byte[len];
-            byte[] tagData = hexStringToByteArray(tagID.toString());
+            byte[] tagData = hexStringToByteArray(tagID);
             for(int i= 0; i < len; i++){
                 tagMask[i] = (byte)0xff;
             }
