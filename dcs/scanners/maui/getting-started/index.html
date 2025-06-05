@@ -402,33 +402,28 @@ using ZebraBarcodeScannerSDK;
 </code>
 </pre>
 
-                                                    <h3 id="wrapper-api-sdk-version" class="anchor"><a class="heading-anchor" href="#wrapper-api-sdk-version"><span></span></a>SDK Version</h3>
+                                                    <h3 id="wrapper-api-sdk-version" class="anchor"><a class="heading-anchor" href="#wrapper-api-sdk-version"><span></span></a>Accessing the SDK</h3>
 
-                                                    <p>Version information could be queried as follows.</p>
+                                                    <p>First, an instance of the Zebra Scanner SDK needs to be created. Scanner management related APIs can be accessed through <strong>Scanners</strong> object which can be obtained through the <strong>ScannerManager</strong> property in the <strong>ScannerSDK</strong> instance.</p>
 
 <pre class="prettyprint">
 <code>
-//Create an instance of the ScannerSDK
-ScannerSDK scannerSdk = new ScannerSDK();
+// Create an instance of the Zebra Scanner SDK
+ScannerSDK scannerSDK = new ScannerSDK();
 
-//Get the scanner SDK version
-string version = scannerSdk.Version;
+// Obtain Scanners object through the ScannerManager property in the ScannerSDK instance. 
+Scanners scanners = scannerSDK.ScannerManager;
+
+// Get the Zebra Scanner SDK version
+string version = scannerSDK.Version;
 </code>
 </pre>
 
                                                     <h3 id="wrapper-api-operation-mode" class="anchor"><a class="heading-anchor" href="#wrapper-api-operation-mode"><span></span></a>Set Operation Mode</h3>
 
-                                                    <p>Set the operation mode of the reader.</p>
+                                                    <p>Zebra Scanner SDK is designed to support interaction with scanners operating in different modes based on the platform. The SDK can be configured to enable communication with a particular type of scanner by setting the operation mode.</p>
 
-<pre class="prettyprint">
-<code>
-//Create an instance of the Scanners
-Scanners scanners = scannerSdk.ScannerManager;
-
-//Set Operation Mode for Scanner SDK
-scanners.SetOperationMode(OpMode.OPMODE_MFI);                 
-</code>
-</pre>
+                                                    <p>Use the <strong>SetOperationMode</strong> function to set the required operational mode based on the platform.</p>
 
                                                     <p>The support is given for the following operation modes,</p>
 
@@ -446,32 +441,33 @@ scanners.SetOperationMode(OpMode.OPMODE_MFI);
                                                         <li>OPMODE_BTLE</li>
                                                     </ul>
 
+<pre class="prettyprint">
+<code>
+// 'scanners' is the Scanners object which is obtained through the ScannerManager property in the ScannerSDK instance. 
+// configure the sdk to support both MFi and BT LE modes on iOS
+
+scanners.SetOperationMode(OpMode.OPMODE_MFI_BTLE);                
+</code>
+</pre>
+
                                                     <h3 id="wrapper-api-scanner-detect" class="anchor"><a class="heading-anchor" href="#wrapper-api-scanner-detect"><span></span></a>Enable Available Scanner Detection</h3>
 
-                                                    <p>Enable/Disable option for Enable Available Scanner Detection API.</p>
+                                                    <p>The SDK supports automatic detection of appearance and disappearance of available scanners. When the "Available scanners detection" option is enabled, the SDK updates its internal list of available scanners and deliver a corresponding asynchronous notification once it detects appearance or disappearance of a particular scanner.</p>
+
+                                                    <p>Use the <strong>EnableAvailableScannersDetection</strong> method to actively detect appearance and disappearance of scanners.</p>
 
 <pre class="prettyprint">
 <code>
-// Enable available scanner detection for SDK.
-scanners.EnableAvailableScannersDetection(true);
-
-// Disable available scanner detection for SDK.
-scanners.EnableAvailableScannersDetection(false);                             
+// Enable available scanner detection 
+scanners.EnableAvailableScannersDetection(true);                          
 </code>
 </pre>
 
-                                                    <h3 id="wrapper-api-events" class="anchor"><a class="heading-anchor" href="#wrapper-api-events"><span></span></a>Subscribe for Events</h3>
+                                                    <h3 id="wrapper-api-events" class="anchor"><a class="heading-anchor" href="#wrapper-api-events"><span></span></a>Event Handling</h3>
 
-                                                    <p>Subscribe for events required by the SDK user.</p>
+                                                    <p>The SDK supports a set of asynchronous notifications to inform the application about scanner related events. This includes connectivity related events (eg: the appearance of a scanner) and scanner action events (eg: receiving barcode data).</p>
 
-<pre class="prettyprint">
-<code>
-// Subscribe to scanner appearance and scanner disappearance events.
-scanners.SubscribeForEvents((int)Notifications.EVENT_SCANNER_APPEARANCE | (int)Notifications.EVENT_SCANNER_DISAPPEARANCE);    
-</code>
-</pre>
-
-                                                    <p>Available events.</p>
+                                                    <p>Available events for both iOS and Android.</p>
 
                                                     <ul>
                                                         <li>EVENT_SCANNER_APPEARANCE</li>
@@ -482,18 +478,95 @@ scanners.SubscribeForEvents((int)Notifications.EVENT_SCANNER_APPEARANCE | (int)N
                                                         <li>EVENT_RAW_DATA</li>
                                                     </ul>
 
-                                                    <h3 id="wrapper-api-scanner-discover" class="anchor"><a class="heading-anchor" href="#wrapper-api-scanner-discover"><span></span></a>Get Available Scanner List</h3>
+                                                    <p>Available events only for Android.</p>
 
-                                                    <p>Query currently available scanner list as follows.</p>
+                                                    <ul>
+                                                        <li>EVENT_IMAGE</li>
+                                                        <li>EVENT_VIDEO</li>
+                                                    </ul>
 
-                                                    <p>Scanners paired with the device via  MFI mode are returned by the SDK if the operation mode is set to "OPMODE_MFI".</p>
+                                                    <h4 id="wrapper-api-events-subscribe" class="anchor"><a class="heading-anchor" href="#wrapper-api-events-subscribe"><span></span></a>Subscribe for Events</h4>
 
-<p>Scanners which are discoverable to the device are returned by the SDK if the operation mode is set to "OPMODE_BTLE".</p>
+                                                    <p>Subscribe for specific asynchronous events using the <strong>SubscribeForEvents</strong> method to specify which events should be reported by the SDK.</p>
+
 
 <pre class="prettyprint">
 <code>
-// Get available scanners list
+// Subscribe to scanner appearance/disappearance, session establishment/termination and barcode event notifications.
+scanners.SubscribeForEvents((int)(Notifications.EVENT_SCANNER_APPEARANCE | Notifications.EVENT_SCANNER_DISAPPEARANCE | Notifications.EVENT_SESSION_ESTABLISHMENT | Notifications.EVENT_SESSION_TERMINATION | Notifications.EVENT_BARCODE));
+</code>
+</pre>
+
+                                                    <h4 id="wrapper-api-events-scanner-appeared" class="anchor"><a class="heading-anchor" href="#wrapper-api-events-scanner-appeared"><span></span></a>Scanner Appeared Event</h4>
+
+                                                    <p>This event occurs when the presence of a scanner appears.</p>
+
+<pre class="prettyprint">
+<code>
+// ScannerAppeared is a event handler that needs to be implemented
+scanners.Appeared += ScannerAppeared;
+</code>
+</pre>
+
+                                                    <h4 id="wrapper-api-events-scanner-disappeared" class="anchor"><a class="heading-anchor" href="#wrapper-api-events-scanner-disappeared"><span></span></a>Scanner Disappeared Event</h4>
+
+                                                    <p>This event occurs when a scanner is no longer present.</p>
+
+<pre class="prettyprint">
+<code>
+// ScannerDisappeared is a event handler that needs to be implemented 
+scanners.Disappeared += ScannerDisappeared;
+</code>
+</pre>
+
+                                                    <h4 id="wrapper-api-events-session-establishment" class="anchor"><a class="heading-anchor" href="#wrapper-api-events-session-establishment"><span></span></a>Communication Session Established Event</h4>
+
+                                                    <p>This event occurs when communication is established with a scanner.</p>
+
+<pre class="prettyprint">
+<code>
+// ScannerConnected is a event handler that needs to be implemented
+scanners.Connected += ScannerConnected;
+</code>
+</pre>
+
+                                                    <h4 id="wrapper-api-events-session-terminate" class="anchor"><a class="heading-anchor" href="#wrapper-api-events-session-terminate"><span></span></a>Communication Session Terminated Event</h4>
+
+                                                    <p>This event occurs when communication with a scanner is terminated.</p>
+
+<pre class="prettyprint">
+<code>
+// ScannerDisconnected is a event handler that needs to be implemented
+scanners.Disconnected += ScannerDisconnected;
+</code>
+</pre>
+
+                                                    <h4 id="wrapper-api-events-barcode-data" class="anchor"><a class="heading-anchor" href="#wrapper-api-events-barcode-data"><span></span></a>Barcode Data Received Event</h4>
+
+                                                    <p>This event occurs when barcode data is read and received.</p>
+
+<pre class="prettyprint">
+<code>
+// ScannerBarcodeData is a event handler that needs to be implemented
+scanners.BarcodeData += ScannerBarcodeData;
+</code>
+</pre>
+
+                                                    <h3 id="wrapper-api-scanner-discover" class="anchor"><a class="heading-anchor" href="#wrapper-api-scanner-discover"><span></span></a>Get Available Scanner List</h3>
+
+                                                    <p>An "available" scanner is a scanner that is paired to the host device via Bluetooth.</p>
+
+                                                    <p><strong>GetAvailableScanners</strong> method can be used to get  the currently available scanner list based on the operation mode has been set.</p>
+
+                                                    <p>An "active" scanner is a scanner that is paired to the host device via Bluetooth, and has established a communication session with the SDK. <strong>GetActiveScanners</strong> method can be used to get  the currently connected scanner list.</p>
+
+<pre class="prettyprint">
+<code>
+// Get available scanner list
 List&lt;Scanner> discoveredScannerList = scanners.GetAvailableScanners();
+
+// Get active scanner list
+List&lt;Scanner> activeScannerList = scanners.GetActiveScanners();
 </code>
 </pre>
 
@@ -520,7 +593,7 @@ List&lt;Scanner> discoveredScannerList = scanners.GetAvailableScanners();
                                                         </tr>
                                                     </table><br />
 
-                                                    <p><strong>Table 2</strong> Pairing Barcode Type Attribute Values</p>
+                                                    <p><strong>Table 2</strong> Bluetooth Protocol Attribute Values</p>
                                                     <table class="hovertable">
                                                         <tr>
                                                             <th>Description</th>
@@ -536,7 +609,7 @@ List&lt;Scanner> discoveredScannerList = scanners.GetAvailableScanners();
                                                         </tr>
                                                     </table><br />
 
-                                                    <p><strong>Table 3</strong> Pairing Barcode Type Attribute Values</p>
+                                                    <p><strong>Table 3</strong> Scanner Configuration Attribute Values</p>
                                                     <table class="hovertable">
                                                         <tr>
                                                             <th>Description</th>
@@ -582,12 +655,15 @@ stcImage.Source = ImageSource.FromStream(() => new MemoryStream(imageData));
 
                                                     <h4 id="wrapper-api-scanner-connect-manual" class="anchor"><a class="heading-anchor" href="#wrapper-api-scanner-connect-manual"><span></span></a>Connect a Scanner Using Manual Pairing Method</h4>
 
-                                                    <p>Connect to the first available scanner.</p>
+                                                    <p>Establishing a connection with an available scanner can be done through <strong>Connect</strong> method.</p>
 
 <pre class="prettyprint">
 <code>
+// discoveredScannerList is the available scanner list get through GetAvailableScanners method
+Scanner availableScanner = discoveredScannerList[0];
+
 // Connect to a given scanner
-discoveredScannerList[0].Connect();
+availableScanner.Connect();
 </code>
 </pre>
 
@@ -618,22 +694,24 @@ scanner.EnableBluetoothScannerDiscovery(false);
 
                                                     <h3 id="wrapper-api-scanner-enable-disbale" class="anchor"><a class="heading-anchor" href="#wrapper-api-scanner-enable-disbale"><span></span></a>Enable/Disable Scanner</h3>
 
-                                                    <p>Enable/disable the connected barcode scanner.</p>
+                                                    <p>Enable or disable the barcode scanning of a connected scanner.</p>
 
 
 <pre class="prettyprint">
 <code>
-// Enable a connected barcode scanner. 'scanner' is a connected Scanner object
+// Enabling barcode scanning of a connected scanner. 'scanner' is a connected Scanner object
 scanner.EnableScanner(); 
 
-// Disable a connected barcode scanner. 'scanner' is a connected Scanner object
+// Disabling barcode scanning of a connected scanner. 'scanner' is a connected Scanner object
 scanner.DisableScanner();
 </code>
 </pre>
 
-                                                    <h3 id="wrapper-api-scanner-reconnect" class="anchor"><a class="heading-anchor" href="#wrapper-api-scanner-reconnect"><span></span></a>Enable Scanner Auto Re-Connection</h3>
+                                                    <h3 id="wrapper-api-scanner-reconnect" class="anchor"><a class="heading-anchor" href="#wrapper-api-scanner-reconnect"><span></span></a>Automatically Reconnect to a Scanner</h3>
 
-                                                    <p>The enabling/disabling of automatic re-connection of the scanner is accomplished here.</p>
+                                                    <p>"Automatic Session Reestablishment" option is used to automatically reconnect to a scanner which had disappeared unexpectedly. If the "Automatic Session Reestablishment" option is enabled for a specific scanner, the SDK automatically attempts to reestablish a connection with the scanner when it becomes available again.</p>
+
+                                                    <p>Use the <strong>EnableAutoReconnection</strong> function to enable or disable automatic reconnection for a specific scanner.</p>
 
 <pre class="prettyprint">
 <code>
@@ -642,6 +720,18 @@ scanner.EnableAutoReconnection(true);
 
 // Disable automatic scanner re-connection. 'scanner' is a connected Scanner object 
 scanner.EnableAutoReconnection(false);
+</code>
+</pre>
+
+                                                    <h3 id="wrapper-api-scanner-reconnect-last-connect" class="anchor"><a class="heading-anchor" href="#wrapper-api-scanner-reconnect-last-connect"><span></span></a>Automatically Connect to the Last Connected Scanner on App Relaunch</h3>
+
+                                                    <p>This API is used to enable or disable the auto reconnection to the last connected scanner on app relaunch, and it expects a Boolean value as the parameter. This API can be called using a 'Scanners' object.</p>
+
+<pre class="prettyprint">
+<code>
+// Enable the auto reconnection to the last connected scanner on app relaunch.
+// 'scanners' is the Scanners object which can be got through the ScannerManager property in the ScannerSDK instance.
+scanners.AutoReconnectToLastConnectedScannerOnAppRelaunch(true);
 </code>
 </pre>
 
@@ -662,9 +752,9 @@ Console.WriteLine("Manufactured date" + assetInformation.ManufacturedDate);
 </code>
 </pre>
 
-                                                    <h3 id="wrapper-api-scanner-pick-list" class="anchor"><a class="heading-anchor" href="#wrapper-api-scanner-pick-list"><span></span></a>Enable/Disable pick list mode</h3>
+                                                    <h3 id="wrapper-api-scanner-pick-list" class="anchor"><a class="heading-anchor" href="#wrapper-api-scanner-pick-list"><span></span></a>Enable/Disable Pick List Mode</h3>
 
-                                                    <p>The enable/disable of pick list mode can be achieved with the following API.</p>
+                                                    <p>Pick List Mode feature allows for more precise scanning in environments where multiple barcodes are present. This ensures that only the intended barcode is scanned. EnablePickListMode method can be used to enable the pick list mode whereas DisablePickListMode can be used to disable the feature.</p>
 
 <pre class="prettyprint">
 <code>
@@ -712,10 +802,10 @@ void SymbologyEnableDisable(string[] symbologyIdList, bool symbologyStatus)
 // Symbology list. Refer Table 1 in the Appendix of .NET MAUI Wrapper for Scanner SDK for symbology attribute values.
 string[] symbologyIdList = { "1", "2", "8" };
 
-// Enable a symbology
+// Enable the given symbology list
 SymbologyEnableDisable(symbologyIdList, true);
 
-// Disable a symbology
+// Disable the given symbology list
 SymbologyEnableDisable(symbologyIdList, false);
 </code>
 </pre>
@@ -733,7 +823,7 @@ scanner.DisableAllSymbologies();
 
                                                     <h3 id="wrapper-api-scanner-led" class="anchor"><a class="heading-anchor" href="#wrapper-api-scanner-led"><span></span></a>LED Blink On/Off</h3>
 
-                                                    <p>This code snippet will start/stop blinking the LED on the reader.</p>
+                                                    <p>Below code snippet will demonstrate how to start/ stop blinking the LED on the scanner.</p>
 
 <pre class="prettyprint">
 <code>
@@ -759,10 +849,10 @@ connectedScanner.ExecuteCommand(OpCode.RSM_SET_ACTION, inXml);
 
                                                     <h3 id="wrapper-api-scanner-battery-stats" class="anchor"><a class="heading-anchor" href="#wrapper-api-scanner-battery-stats"><span></span></a>Get Battery Statistics</h3>
 
-                                                    <p>By listing the following attribute IDs in the inXml, the battery statistic data can be retrieved via the outXml.</p>
+                                                    <p>ExecuteCommand API with RSM_ATTRIBUTE_GET OpCode and by listing the following attribute IDs in the input xml, the battery statistic data can be retrieved via the output xml.</p>
 
                                                     <p><strong>Table 4</strong> Battery Statistic Attribute Values</p>
-                                                    <table class="hovertable">
+                                                    <table class="hovertable tblCentered-Battery-Stats">
                                                         <tr>
                                                             <th>Description</th>
                                                             <th>Attribute Values</th>
@@ -873,21 +963,43 @@ void getBatteryStatistics(string[] batteryStatisticsAttributesIDs)
     Console.WriteLine("Get Battery Statistics Result : ", outXml);
 }
 
-// Refer Table 5 for battery statistics attribute ids 
+// Refer Table 4 for battery statistics attribute ids 
 string[] batteryStatusAttributesIdList = {"30017","30018","30019","30029","30030"};
 
 getBatteryStatistics(batteryStatusAttributesIdList);                                                                         
 </code>
 </pre>
 
-                                                    <h3 id="wrapper-api-scanner-firmware-update" class="anchor"><a class="heading-anchor" href="#wrapper-api-scanner-firmware-update"><span></span></a>Firmware Update Event</h3>
+                                                    <p><strong>NOTE:</strong> For a list of a scanner's supported attribute (parameter) numbers and definitions, refer to the Product Reference Guide for that model scanner, available from the Zebra Support website at http://www.zebra.com/support. Attributes include configuration parameters, monitored data, and asset tracking information.</p>
+
+                                                    <p>References:</p>
+
+                                                    <ul>
+                                                        <li>Find or Search for Scanner Parameters in 123Scan Config File.</li>
+                                                        <li>List of Programmable RSM Scanner Parameters Dictionary Table Definition.</li>
+                                                    </ul>
+
+                                                    <h3 id="wrapper-api-scanner-firmware-update" class="anchor"><a class="heading-anchor" href="#wrapper-api-scanner-firmware-update"><span></span></a>Firmware Update</h3>
+                                                    
+                                                    <p><strong>ScannerFirmwarerUpdate</strong> API can be used to update the firmware of a scanner using a plugin file and this API expects the path to the firmware plugin file as a string value.</p>
+
+<pre class="prettyprint">
+<code>
+string filePath = "file path to the plugin file";
+scanner.ScannerFirmwareUpdate(filePath);
+</code>
+</pre>
+
+                                                    <h4 id="wrapper-api-scanner-firmware-update-event" class="anchor"><a class="heading-anchor" href="#wrapper-api-scanner-firmware-update-event"><span></span></a>Firmware Update Event</h4>
+
+                                                    <p>This event occurs when firmware update is in progress.</p>
 
 <pre class="prettyprint">
 <code>
 // Subscribe for the FirmwareUpdate event
 scanners.FirmwareUpdate += FirmwareUpdate;
 
-// Event handler for firmware update.
+// Event handler for firmware update. 
 private async void firmwareUpdateEvent(FirmwareUpdateEvent firmwareUpdateEvent)
 {
     int maxRecord = firmwareUpdateEvent.MaxRecords;
@@ -901,9 +1013,31 @@ private async void firmwareUpdateEvent(FirmwareUpdateEvent firmwareUpdateEvent)
 </code>
 </pre>
 
+                                                    <h4 id="wrapper-api-scanner-firmware-update-abort" class="anchor"><a class="heading-anchor" href="#wrapper-api-scanner-firmware-update-abort"><span></span></a>Abort Firmware Update</h4>
+
+                                                    <p><strong>AbortFirmwarerUpdate</strong> API is used to abort ongoing firmware update.</p>
+<pre class="prettyprint">
+<code>
+// Abort ongoing firmware update.
+// 'scanner' is a connected Scanner object.
+scanner.AbortFirmwareUpdate();
+</code>
+</pre>
+
+                                                    <h4 id="wrapper-api-scanner-firmware-update-start" class="anchor"><a class="heading-anchor" href="#wrapper-api-scanner-firmware-update-start"><span></span></a>Start New Firmware</h4>
+
+                                                    <p>Once the firmware update process is finished, it is required for the firmware to be launched on to the scanner and be rebooted. <strong>StartNewFirmware</strong> method is used to launch the new firmware to the scanner.</p>
+
+<pre class="prettyprint">
+<code>
+// 'scanner' is a connected Scanner object.
+scanner.StartNewFirmware();
+</code>
+</pre>
+
                                                     <h3 id="wrapper-api-scale-read-weight" class="anchor"><a class="heading-anchor" href="#wrapper-api-scale-read-weight"><span></span></a>Read Weight</h3>
 
-                                                    <p>These APIs are only supported in the MP6000/MP7000 scanners connected through SNAPI mode on Android. These can be used to achieve functions such as Enable/Disable Scale, Reset Scale, Zero Scale and Read weight.</p>
+                                                    <p>These APIs are only supported in the MP70XX/MP72XX scanners connected through SNAPI mode on Android. These can be used to achieve functions such as Enable/Disable Scale, Reset Scale, Zero Scale and Read weight.</p>
 
 <pre class="prettyprint">
 <code>

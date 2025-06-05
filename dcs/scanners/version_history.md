@@ -5,11 +5,17 @@ This document tracks all software updates deployed to the staging server. Versio
 
 For any inquiries, please contact **Tennakoon, Eranga - GQCD86**. 
 
+## [2025.010] - 06/05/2025
+- [SSDK-21779](https://jira.zebra.com/browse/SSDK-21779) - MAUI .NET API updates.
+- [SSDK-21772](https://jira.zebra.com/browse/SSDK-21772) - DirectIO updates for configuration load in OPOS and JPOS.
+- [SSDK-20771](https://jira.zebra.com/browse/SSDK-20771) - Load configuration via the CoreScanner (Review feedback implemented).
+- [SSDK-21768](https://jira.zebra.com/browse/SSDK-21768) - DirectIO commands renaming for OPOS.
+- [SSDK-21749](https://jira.zebra.com/browse/SSDK-21749) - Camera SDK for Linux API updates.
+- [SSDK-21741](https://jira.zebra.com/browse/SSDK-21741) - IoT Connector Windows and Linux updates (Review feedback implemented).
+
 ## [2025.009] - 05/26/2025
-- [SSDK-20771](https://jira.zebra.com/browse/SSDK-20771) - Load configuration via the CoreScanner
-    - Review feedback implemented.
-- [SSDK-21741](https://jira.zebra.com/browse/SSDK-21741) - IoT Connector Windows and Linux updates.
-    - Review feedback implemented.
+- [SSDK-20771](https://jira.zebra.com/browse/SSDK-20771) - Load configuration via the CoreScanner (Review feedback implemented).
+- [SSDK-21741](https://jira.zebra.com/browse/SSDK-21741) - IoT Connector Windows and Linux updates (Review feedback implemented).
 
 ## [2025.008] - 05/26/2025
 - [SSDK-21741](https://jira.zebra.com/browse/SSDK-21741) - IoT Connector Windows and Linux updates.
@@ -22,8 +28,7 @@ For any inquiries, please contact **Tennakoon, Eranga - GQCD86**.
 - [SSDK-20771](https://jira.zebra.com/browse/SSDK-20771) - Load configuration via the CoreScanner
 
 ## [2025.006] - 05/08/2025
-- [SSDK-21191](https://jira.zebra.com/browse/SSDK-21191) - RTA for Windows.
-    - Review feedback implemented.
+- [SSDK-21191](https://jira.zebra.com/browse/SSDK-21191) - RTA for Windows (Review feedback implemented).
 
 ## [2025.005] - 04/28/2025
 - [SSDK-21191](https://jira.zebra.com/browse/SSDK-21191) - RTA content updated for Windows. Changes are in,

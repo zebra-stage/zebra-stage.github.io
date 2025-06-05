@@ -175,27 +175,31 @@
 <code>
 public class DirectIOCommand {
     public static final int GET_SCANNERS= 1;                    
-    public static final int RSM_ATTR_GETALL= 0x1388;            // 5000 
-    public static final int RSM_ATTR_GET= 0x1389;               // 5001 
-    public static final int RSM_ATTR_SET= 0x138C;               // 5004 
-    public static final int RSM_ATTR_STORE= 0x138D;             // 5005
+    public static final int RSM_ATTR_GETALL= 0x1388;                            // 5000 
+    public static final int RSM_ATTR_GET= 0x1389;                               // 5001 
+    public static final int RSM_ATTR_SET= 0x138C;                               // 5004 
+    public static final int RSM_ATTR_STORE= 0x138D;                             // 5005
 
-    public static final int DIO_NCR_SCAN_TONE = 0x01F5;         // 501
-    public static final int DIO_NCR_SCANNER_NOF = 0x01FC;       // 508
-    public static final int NCRDIO_SCAN_RESET = 0x1F6;          // 502
-    public static final int NCRDIO_SCAN_STATUS = 0x1F7;         // 503
-    public static final int NCRDIO_SCAN_DIRECT = 0x1FB;         // 507
-    public static final int NCR_DIO_SCAL_LIVE_WEIGHT = 0x25C;   // 604
-    public static final int NCRDIO_SCAL_STATUS = 0x259;         // 601
-    public static final int NCRDIO_SCAL_DIRECT = 0x25D;         // 605
+    public static final int DIO_NCR_SCAN_TONE = 0x01F5;                         // 501
+    public static final int DIO_NCR_SCANNER_NOF = 0x01FC;                       // 508
+    public static final int NCRDIO_SCAN_RESET = 0x1F6;                          // 502
+    public static final int NCRDIO_SCAN_STATUS = 0x1F7;                         // 503
+    public static final int NCRDIO_SCAN_DIRECT = 0x1FB;                         // 507
+    public static final int NCR_DIO_SCAL_LIVE_WEIGHT = 0x25C;                   // 604
+    public static final int NCRDIO_SCAL_STATUS = 0x259;                         // 601
+    public static final int NCRDIO_SCAL_DIRECT = 0x25D;                         // 605
     
-    public static final int CMD_RTA_SUPPORTED_GET = 0x157C;     // 5500
-    public static final int CMD_RTA_REGISTER = 0x157D;          // 5501
-    public static final int CMD_RTA_UNREGISTER = 0x157E;        // 5502
-    public static final int CMD_RTA_ALERT_STATUS_GET = 0x157F;  // 5503
-    public static final int CMD_RTA_ALERT_STATUS_SET = 0x1580;  // 5504
-    public static final int CMD_RTA_SUSPEND = 0x1581;           // 5505
-    public static final int CMD_RTA_STATE = 0x1582;             // 5506 
+    public static final int CMD_RTA_SUPPORTED_GET = 0x157C;                     // 5500
+    public static final int CMD_RTA_REGISTER = 0x157D;                          // 5501
+    public static final int CMD_RTA_UNREGISTER = 0x157E;                        // 5502
+    public static final int CMD_RTA_ALERT_STATUS_GET = 0x157F;                  // 5503
+    public static final int CMD_RTA_ALERT_STATUS_SET = 0x1580;                  // 5504
+    public static final int CMD_RTA_SUSPEND = 0x1581;                           // 5505
+    public static final int CMD_RTA_STATE = 0x1582;                             // 5506
+
+    public static final int CMD_LOAD_CONFIGURATION = 0x139C;                    // 5020 
+    public static final int CMD_DEVICE_UPDATE_FIRMWARE_FROM_PLUGIN = 0x1399;    // 5017
+    public static final int CMD_DEVICE_UPDATE_FIRMWARE_DAT = 0x1398;            // 5016     
 }        
 </code>
 </pre>
@@ -402,7 +406,133 @@ public class DirectIOCommand {
 </code>
 </pre>
 
-                                                    <p><strong>InOutXml:</strong> This contains the raw XML string of all of the connected scanners in the format:</p>
+                                                    <h3 id="direct-io-load-config" class="anchor"><a class="heading-anchor" href="#direct-io-load-config"><span></span></a>CMD_LOAD_CONFIGURATION</h3>
+
+                                                    <p>This command can be used to update the scanner configuration by specifying the relevant scannerID and the absolute file path, including the filename, created using 123Scan (.scncfg).</p>
+
+                                                    <p>InXML:</p>
+
+<pre class="prettyprint">
+<code>
+&lt;inArgs> 
+    &lt;scannerID>1&lt;/scannerID> 
+    &lt;cmdArgs> 
+        &lt;arg-string>C:\DS8108 Config.scncfg&lt;/arg-string> 
+    &lt;/cmdArgs> 
+&lt;/inArgs>
+</code>
+</pre>
+
+                                                    <p>OutXml: None. Instead of OutXml, DirectIO events with the following event types will be received.</p>
+
+                                                    <ul>
+                                                        <li>CONFIG_LOAD_START = 17</li>
+                                                        <li>CONFIG_LOAD_PROGRESS = 18</li>
+                                                        <li>CONFIG_LOAD_END = 19</li>
+                                                    </ul>
+
+                                                    <p>Possible error scenarios are outlined below.</p>
+
+                                                    <table class="hovertable">
+                                                        <tr>
+                                                            <th>Failure</th>
+                                                            <th>Error Code</th>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>File does not exist</td>
+                                                            <td>ERROR_INLVAID_CONFIG_FILE (601)</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Incorrect extension</td>
+                                                            <td>ERROR_INLVAID_CONFIG_FILE (601)</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Self-hash failure</td>
+                                                            <td>ERROR_INLVAID_CONFIG_FILE (601)</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Incompatible device</td>
+                                                            <td>ERROR_INCOMPATIBLE_CONFIG_FILE (602)</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>XML syntax validation failure</td>
+                                                            <td>ERROR_CONFIG_FILE_SYNTAX_VALIDATION_FAILED (603)</td>
+                                                        </tr>
+                                                    </table><br />
+
+                                                    <h3 id="direct-io-fw-update" class="anchor"><a class="heading-anchor" href="#direct-io-fw-update"><span></span></a>CMD_DEVICE_UPDATE_FIRMWARE_FROM_PLUGIN / CMD_DEVICE_UPDATE_FIRMWARE_DAT</h3>
+
+                                                    <p>This command can be used to update the scanner firmware by specifying the relevant scannerID and the absolute path of the firmware file (PLUGIN or DAT), including the filename.</p>
+
+                                                    <p>InXML:</p>
+
+<pre class="prettyprint">
+<code>
+&lt;inArgs> 
+    &lt;scannerID>1&lt;/scannerID> 
+    &lt;cmdArgs> 
+        &lt;arg-string>C:\DS3678-STANDARD.SCNPLG&lt;/arg-string> 
+    &lt;arg-int>2&lt;/arg-int> 
+    &lt;/cmdArgs> 
+&lt;/inArgs>
+</code>
+</pre>
+
+                                                    <p>OutXml: None. Instead of OutXml, DirectIO events with the following event types will be received.</p>
+
+                                                    <ul>
+                                                        <li>SCANNER_UF_SESS_START = 11</li>
+                                                        <li>SCANNER_UF_DL_START = 12</li>
+                                                        <li>SCANNER_UF_DL_PROGRESS= 13</li>
+                                                        <li>SCANNER_UF_DL_END= 14</li>
+                                                        <li>SCANNER_UF_SESS_END= 15</li>
+                                                        <li>SCANNER_UF_STATUS= 16</li>
+                                                    </ul>
+
+                                                    <p>Possible error scenarios are outlined below.</p>
+
+                                                    <table class="hovertable">
+                                                        <tr>
+                                                            <th>Failure</th>
+                                                            <th>Error Code</th>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>ERROR_FW_INVALID_DATFILE</td>
+                                                            <td>Invalid firmware file (500)</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>ERROR_FW_UPDATE_FAILED_IN_SCN</td>
+                                                            <td>FW Update failed in scanner (501)</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>ERROR_FW_READ_FAILED_DATFILE</td>
+                                                            <td>Failed to read DAT file (502)</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>ERROR_FW_UPDATE_INPROGRESS</td>
+                                                            <td>Firmware Update is in progress (cannot proceed another FW Update or another command) (503)</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>ERROR_FW_UPDATE_ALREADY_ABORTED</td>
+                                                            <td>Firmware update is already aborted (504)</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>ERROR_FW_UPDATE_ABORTE</td>
+                                                            <td>FW Update aborted (505)</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>ERROR_FW_SCN_DETTACHED</td>
+                                                            <td>Scanner is disconnected while updating firmware (506)</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>ERROR_FW_UPDATE_NOT_SUPPORTED</td>
+                                                            <td>Device doesn't support firmware update (507)</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>STATUS_FW_SWCOMP_RESIDENT</td>
+                                                            <td>The software component is already resident in the scanner (600)</td>
+                                                        </tr>
+                                                    </table>
 
                                                     <h3 id="direct-io-ncr-scanner-tone" class="anchor"><a class="heading-anchor" href="#direct-io-ncr-scanner-tone"><span></span></a>DIO_NCR_SCAN_TONE</h3>
 
