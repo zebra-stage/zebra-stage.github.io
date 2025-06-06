@@ -3551,8 +3551,222 @@ rfid_res = [[[zt_RfidAppEngine sharedAppEngine] operationEngine] stopInventory:n
         return srfid_result;
         
 }
+</code></pre>	
+
+
+<h3 class="anchor">Get IOT Status</h3>		
+<p> The "srfidRequestIOTStatus:" attempts to retrieve the IoT status of an RFID reader. </p>	
+
+<pre class="prettyprint"><code>		
+   
+- (SRFID_RESULT)requestIOTStatus:(NSString **)responsMessage
+{
+    SRFID_RESULT srfid_result = SRFID_RESULT_FAILURE;
     
+    for(int i = 0; i < ZT_MAX_RETRY; i++)
+    {
+        srfid_result = [m_RfidSdkApi srfidRequestIOTStatus:[m_ActiveReader getReaderID]];
+        if ((srfid_result != SRFID_RESULT_RESPONSE_TIMEOUT) && (srfid_result != SRFID_RESULT_FAILURE)) {
+            break;
+        }
+    }
     
+    if (srfid_result == SRFID_RESULT_SUCCESS)
+    {
+        NSLog(@"Get iot status success");
+        
+    }
+    else if(srfid_result == SRFID_RESULT_FAILURE || srfid_result == SRFID_RESULT_RESPONSE_TIMEOUT)
+    {
+      [self readerProblem];
+
+        
+    }
+    return srfid_result;
+}
+</code></pre>	
+<p> The code [m_RfidSdkApi srfidSubsribeForEvents:(SRFID_EVENT_MASK_IOT_STATUS)]; subscribes the application to IoT status events through the RFID SDK, enabling it to receive updates when such events occur.</p>
+<pre class="prettyprint"><code>	
+//Event subcribe: 
+[m_RfidSdkApi srfidSubsribeForEvents:(SRFID_EVENT_MASK_IOT_STATUS)];
+</code></pre>
+
+<p>The srfidEventIOTSatusNotity: method logs IoT status event details and asynchronously notifies all non-nil delegates in m_IOTStatusEventDelegates via onNewIOTStatusEvent: on the main thread, ensuring responsive updates.</p>
+<pre class="prettyprint"><code>	
+
+//Event:
+
+- (void)srfidEventIOTSatusNotity:(int)readerID aIOTStatusEvent:(srfidIOTStatusEvent*)iotStatusEvent
+{
+    NSLog(@"\nIOTStatusEvent: cause = (%@) eptype = (%@) epname = (%@) status = (%@) reason = (%@)\n", [iotStatusEvent getCause], [iotStatusEvent getEpType], [iotStatusEvent getEpName], [iotStatusEvent getStatus], [iotStatusEvent getReason]);
+    
+    for (id<zt_IRfidAppEngineIOTStatusEventDelegate> delegate in m_IOTStatusEventDelegates)
+    {
+        if (delegate != nil)
+        {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [delegate onNewIOTStatusEvent:iotStatusEvent];
+            });
+        }
+    }
+}
+
+
+	
+</code></pre>	
+
+<h2 class="anchor">Charge Terminal Status</h2>		
+
+<h3 class="anchor">Get Charge Terminal Status</h3>	
+<p>This function, requestChargeTerminalStatus, attempts to retrieve the charging status of a terminal using an RFID SDK API. </p>	
+<pre class="prettyprint"><code>		
+- (SRFID_RESULT)requestChargeTerminalStatus
+{
+    SRFID_RESULT srfid_result = SRFID_RESULT_FAILURE;
+    BOOL chargeTerminalStatus = NO;
+    for(int i = 0; i < 1; i++)
+    {
+      
+        srfid_result = [m_RfidSdkApi srfidGetChargeTerminalStatus:[m_ActiveReader getReaderID] chargeTerminalStatus:&chargeTerminalStatus];
+        if ((srfid_result != SRFID_RESULT_RESPONSE_TIMEOUT) && (srfid_result != SRFID_RESULT_FAILURE)) {
+            break;
+        }
+    }
+    
+    if (srfid_result == SRFID_RESULT_SUCCESS)
+    {
+        
+        self.statusOfChargeTerminal = chargeTerminalStatus;
+        
+    }
+    return srfid_result;
+}
+
+
+</code></pre>
+
+<h3 class="anchor">Enable/Disable Charge Terminal Status</h3>	
+<p>This function, attempts to enable or disable the charging status of a terminal using an RFID SDK API. It initiates a request to change the charging status for the active RFID reader. </p>	
+<pre class="prettyprint"><code>		
+- (SRFID_RESULT)requestChargeTerminalStatusEnable:(BOOL)status
+{
+    SRFID_RESULT srfid_result = SRFID_RESULT_FAILURE;
+    
+    for(int i = 0; i < 1; i++)
+    {
+      
+        srfid_result = [m_RfidSdkApi srfidEnableChargeTerminal:[m_ActiveReader getReaderID] enableStatus:status];
+        if ((srfid_result != SRFID_RESULT_RESPONSE_TIMEOUT) && (srfid_result != SRFID_RESULT_FAILURE)) {
+            break;
+        }
+    }
+    
+    if (srfid_result == SRFID_RESULT_SUCCESS)
+    {
+        // SUCCESS
+        
+    }
+    else if(srfid_result == SRFID_RESULT_RESPONSE_ERROR)
+    {
+        // ERROR
+        
+    }
+    else if(srfid_result == SRFID_RESULT_FAILURE || srfid_result == SRFID_RESULT_RESPONSE_TIMEOUT)
+    {
+        
+        // do TIMEOUT/ FAILURE
+    }
+    return srfid_result;
+}
+
+
+
+</code></pre>
+
+<h2 class="anchor">Connection type (BT/CIO)</h2>		
+<h3 class="anchor">Get connected interface notification</h3>	
+<p> The requestChargeTerminalStatus function retrieves the charge terminal status of an RFID reader. It attempts the operation once, updating statusOfChargeTerminal on success </p>	
+
+<pre class="prettyprint"><code>		
+ - (SRFID_RESULT)requestChargeTerminalStatus
+{
+    SRFID_RESULT srfid_result = SRFID_RESULT_FAILURE;
+    BOOL chargeTerminalStatus = NO;
+    for(int i = 0; i < 1; i++)
+    {
+      
+        srfid_result = [m_RfidSdkApi srfidGetChargeTerminalStatus:[m_ActiveReader getReaderID] chargeTerminalStatus:&chargeTerminalStatus];
+        if ((srfid_result != SRFID_RESULT_RESPONSE_TIMEOUT) && (srfid_result != SRFID_RESULT_FAILURE)) {
+            break;
+        }
+    }
+    
+    if (srfid_result == SRFID_RESULT_SUCCESS)
+    {
+        // do nothing
+        self.statusOfChargeTerminal = chargeTerminalStatus;
+        
+    }
+    else if(srfid_result == SRFID_RESULT_RESPONSE_ERROR)
+    {
+        // RESPONSE_ERROR
+        
+    }
+    else if(srfid_result == SRFID_RESULT_FAILURE || srfid_result == SRFID_RESULT_RESPONSE_TIMEOUT)
+    {
+        //RESULT_FAILURE
+    }
+    return srfid_result;
+}
+
+</code></pre>	
+<p> The code [m_RfidSdkApi srfidSubsribeForEvents:(SRFID_EVENT_MASK_CONNECTED_INTERFACE)]; subscribes the application to events related to the connected interface using the RFID SDK, allowing it to receive updates when such events occur.</p>
+<pre class="prettyprint"><code>	
+//Event subcribe: 
+[m_RfidSdkApi srfidSubsribeForEvents:(SRFID_EVENT_MASK_CONNECTED_INTERFACE)];
+</code></pre>
+
+<p>The srfidEventConnectedInterfaceNotity: method logs the type of connection interface for an RFID reader and updates _connectedUserInterfaceType accordingly. It distinguishes between Bluetooth, USB, No Interface, Ethernet, and Terminal connections.</p>
+<pre class="prettyprint"><code>	
+
+//Event:
+
+- (void)srfidEventIOTSatusNotity:(int)readerID aIOTStatusEvent:(srfidIOTStatusEvent*)iotStatusEvent
+Event:
+
+-(void)srfidEventConnectedInterfaceNotity:(int)readerID aConnectedInterfaceEvent:(sfidConnectedInterfaceEvent*)connectedInterfaceEvent;
+{
+    
+    NSLog(@"\nUserInterFace for Connection:(%u)\n", [connectedInterfaceEvent getConneted_Interface_Type]);
+    if (SRFID_CONNECTION_TYPE_BLUETOOTH  == [connectedInterfaceEvent getConneted_Interface_Type]) {
+        
+        NSLog(@" Bluetooth Connection");
+        _connectedUserInterfaceType = SRFID_CONNECTION_TYPE_BLUETOOTH;
+      Dc 
+    }
+    else if (SRFID_CONNECTION_TYPE_USB  == [connectedInterfaceEvent getConneted_Interface_Type]) {
+        
+        NSLog(@" USB Connection");
+        _connectedUserInterfaceType = SRFID_CONNECTION_TYPE_USB;
+    }
+    else if (SRFID_CONNECTION_TYPE_NO_INTERFACE  == [connectedInterfaceEvent getConneted_Interface_Type]){
+        NSLog(@" NO_INTERFACE Connection");
+        _connectedUserInterfaceType = SRFID_CONNECTION_TYPE_NO_INTERFACE;
+    }
+    else if (SRFID_CONNECTION_TYPE_ETHERNET  == [connectedInterfaceEvent getConneted_Interface_Type]){
+        
+        NSLog(@" SRFID_ETHERNET Connection");
+        
+        _connectedUserInterfaceType = SRFID_CONNECTION_TYPE_ETHERNET;
+        
+    } else if (SRFID_CONNECTION_TYPE_TERMINAL  == [connectedInterfaceEvent getConneted_Interface_Type]){
+        
+        NSLog(@" SRFID_CONNECTION_TYPE_TERMINAL Connection");
+        _connectedUserInterfaceType = SRFID_CONNECTION_TYPE_TERMINAL;
+    }
+}
+
+
 
 	
 </code></pre>	
