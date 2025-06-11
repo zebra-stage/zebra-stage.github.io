@@ -10,8 +10,8 @@
     <meta name="author" content="Zebra Technologies">
     <meta name="google-site-verification" content="i4B78BrWnNy8ShJwe5feRW3jO3HE6gfYlYqYbxfl8yY">
     <meta name="msvalidate.01" content="6B651B00161BCE79B8950AC09D5C4C75">
-    <meta title="About Zebra Tread Intel">
-    <title>About Zebra Tread Intel - Zebra Technologies TechDocs</title>
+    <meta title="Sample App">
+    <title>Sample App - Zebra Technologies TechDocs</title>
     <!-- core CSS -->
     <link href="/css/bootstrap.min.css" rel="stylesheet">
     <link href="/css/font-awesome.min.css" rel="stylesheet">
@@ -111,7 +111,7 @@
                     <nav id="toc" data-toggle="toc" data-spy="affix" style="height: 75%; max-width: 225px; overflow-y: auto; ">
                         
                         <ul class="nav">
-                            <li><strong>About Zebra Tread Intel</strong></li>
+                            <li><strong>Sample App</strong></li>
                         </ul>
                     </nav>
                     <div class="modal fade" id="modal-smartdocs" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true" data-backdrop="true">
@@ -197,7 +197,7 @@
                         <div class="col-sm-12">
                             <section id="cta" class="wow fadeIn">
                                 <div class="">
-                                    <h1 id="about-zebra-tread-intel" class="anchor"><a class="heading-anchor" href="#about-zebra-tread-intel"><span></span></a>About Zebra Tread Intel</h1>
+                                    <h1 id="sample-app" class="anchor"><a class="heading-anchor" href="#sample-app"><span></span></a>Sample App</h1>
                                     <p>
                                             Zebra Tread Intel
                                             1.0
@@ -215,35 +215,142 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p><strong>Zebra Tread Intel</strong> captures tread depth information for tires. It is a snap-on accessory that connects to a compatible Zebra mobile computer, functioning as a USB host. Users swipe the reader across the tire's surface to detect and record data while the tire is mounted on a wheel.</p>
+<blockquote>
+  <p>This sample application is only intended for educational purposes, demonstrating the use of the Tread Intel Intent APIs.</p>
+</blockquote>
 
-<p>This document provides guidance for developers on accessing Zebra Tread Intel functionality through their applications. It details the methods needed to retrieve tread data from the reader accessory.</p>
+<p>This sample app demonstrates the use of Zebra Tread Intel Intent APIs to measure tire tread depths. Developed using a Java environment, it serves as a guide for developing your own application.</p>
 
-<!--
-Previously, technicians manually measured as many as 12 different spots for tread depth and used a pen and paper to record each DOT code. With **Zebra Tread Intel**, technicians can complete an assessment typically in under five seconds per tire. Technicians simply swipe each tire to check for tread depth and scan the DOT code with the tool’s camera in real-time, enabling them to assist more customers, reduce wait times, and provide a more positive customer experience. -->
+<p>The Tread Intel API is built on the Android intent architecture, minimizing library dependencies and integration time for app developers. For more information, refer to the <a href="../api/">API reference guide</a>.</p>
 
 <hr>
 
 <h2 id="requirements" class="anchor"><a class="heading-anchor" href="#requirements"><span></span></a>Requirements</h2>
 
+<p><strong>Prerequisites:</strong></p>
+
 <ul>
-<li>Android 11 or higher</li>
+<li><strong>The Zebra Tread Intel Snap-On Reader must be attached to the supported mobile computer,</strong> such as the Zebra TC7x or TC5x series devices. For supported devices, see the <a href="https://www.zebra.com/us/en/support-downloads/software/mobile-computer-software/zebra-tread-intel.html">Zebra Support Portal</a> for the supported devices list.</li>
 
-<li>See the <a href="https://www.zebra.com/us/en/support-downloads/software/mobile-computer-software/zebra-tread-intel.html">Zebra Support Portal</a> for the supported devices list</li>
-
-<li>Accessory Tire Zebra Tread Intel Snap-On attached to the supported mobile computer. See the <a href="https://www.zebra.com/us/en/support-downloads/software/mobile-computer-software/zebra-tread-intel.html">Support Portal</a> for compatible mobile computers.</li>
-
-<li>Download the <a href="https://www.zebra.com/us/en/support-downloads/software/mobile-computer-software/zebra-tread-intel.html?downloadId=994532f0-b457-433c-b136-a2cbee45dd31#Ta-item-b77a5bcdd9-tab">Zebra Tread Intel package</a>, which includes the libraries necessary to use the Tread Intel APIs.</li>
+<li><strong>The Zebra <a href="https://www.zebra.com/us/en/support-downloads/software/mobile-computer-software/zebra-tread-intel.html?downloadId=994532f0-b457-433c-b136-a2cbee45dd31#Ta-item-b77a5bcdd9-tab">Tread Intel Android Framework</a> must be installed on the mobile computer.</strong></li>
 </ul>
+
+<p>The following requirements must be met: </p>
+
+<ul>
+<li><p><strong>Minimum Android SDK version:</strong> The minimum supported version is 30.</p></li>
+
+<li><p><strong>Grant required permissions:</strong> Make sure the <code>MANAGE_EXTERNAL_STORAGE</code> permission is enabled to allow full access to external storage.</p></li>
+
+<li><p><strong>Add Queries Tag:</strong> For devices running Android 13 and higher, add the <code>&lt;queries&gt;</code> tag in the <strong>AndroidManifest.xml</strong> of your Android application project. This tag defines the package name for Zebra Tread Intel and is required to allow the Zebra Tread Intel API to communicate with your application.</p>
+
+<pre class="prettyprint"><code>&lt;queries&gt;
+    &lt;package android:name="com.zebra.intentapis" /&gt;
+&lt;/queries&gt;
+</code></pre></li>
+
+<li><p><strong>Add Constants:</strong> Create a Java class named <code>IntentAPIConstantUtils</code> within your Android application project and add the code below. This helps manage and maintain consistent values throughout the project.</p>
+
+<pre class="prettyprint"><code>public class IntentAPIConstantUtils {
+    public static final int TTDR_REQUEST_CODE = 10100;
+    public static final String TTDR_CALLBACK_RESPONSE = "TTDR_CALLBACK_RESPONSE";
+    public static final String TTDR_SDK_PACKAGE = "com.zebra.intentapis";
+    public static final String TTDR_INTENT_ACTION_INITIATE_READER = "com.zebra.intentapis.action.TTDR_INITIATE";
+    public static final String TTDR_INTENT_ACTION_CURRENT_STATE = "com.zebra.intentapis.action.TTDR_CURRENT_STATE";
+    public static final String TTDR_INTENT_ACTION_ON_STATE_CHANGE = "com.zebra.intentapis.action.TTDR_ON_STATE_CHANGE";
+    public static final String TTDR_INTENT_ACTION_START = "com.zebra.intentapis.action.TTDR_START";
+    public static final String TTDR_INTENT_ACTION_SET_PARAMS = "com.zebra.intentapis.action.TTDR_SET_PARAMS";
+    public static final String TTDR_INTENT_ACTION_GET_PARAMS = "com.zebra.intentapis.action.TTDR_GET_PARAMS";
+    public static final String TTDR_INTENT_ACTION_RELEASE = "com.zebra.intentapis.action.TTDR_READER_RELEASE";
+    public static final String TTDR_INTENT_ACTION_ERROR = "com.zebra.intentapis.action.TTDR_ERROR";
+    public static final String TTDR_INTENT_ACTION_VERSION = "com.zebra.intentapis.action.TTDR_VERSION";
+    public static final String TTDR_INTENT_ERROR_CODE = "TTDR_INTENT_ERROR_CODE";
+    public static final String TTDR_INTENT_ERROR_MESSAGE = "TTDR_INTENT_ERROR_MESSAGE";
+    public static final String TTDR_INTENT_ACTION_EXCEPTION = "com.zebra.intentapis.action.TTDR_EXCEPTION";
+    public static final String TTDR_INTENT_EXCEPTION_DESCRIPTION = "TTDR_INTENT_EXCEPTION_DESCRIPTION";
+    public static final String TTDR_INTENT_EXCEPTION_OCCURRED_ACTION = "TTDR_INTENT_EXCEPTION_OCCURRED_ACTION" ;
+    public static final String TTDR_ACTION = "TTDR_ACTION";
+    public static final String TTDR_ACTION_STATUS = "TTDR_ACTION_STATUS";
+    public static final String TTDR_ACTION_DATA = "TTDR_ACTION_DATA";
+    public static final int TTDR_ACTION_SUCCESS = -1;
+    public static final int TTDR_ACTION_FAILED = 0;
+    public static final String TTDR_FW_CONNECTION_STATE = "TTDR_FW_CONNECTION_STATE";
+    public static final String TTDR_FW_STATE = "TTDR_FW_STATE";
+    public static final String TTDR_FW_PARAM = "TTDR_FW_PARAM";
+    public static final String TTDR_FW_PARAM_VALUE = "TTDR_FW_PARAM_VALUE";
+}
+</code></pre></li>
+</ul>
+
+<p><strong>NOTE:</strong> The constants from this Java class are referenced throughout the <a href="../api/">API</a> documentation. If necessary, these constants can be added to another class within your project that manages constants.</p>
+
+<hr>
+
+<h2 id="download" class="anchor"><a class="heading-anchor" href="#download"><span></span></a>Download</h2>
+
+<p><a href="https://github.com/ZebraDevs/TreadIntel-Android-Intent-Sample">Download</a> the app's source code.</p>
+
+<hr>
+
+<h2 id="usage" class="anchor"><a class="heading-anchor" href="#usage"><span></span></a>Usage</h2>
+
+<p>This sample app enables users to measure tire tread depth and operates in two modes: demo mode and test mode. Build and deploy the app to the device, then follow the instructions below.</p>
+
+<h3 id="demomode" class="anchor"><a class="heading-anchor" href="#demomode"><span></span></a>Demo Mode</h3>
+
+<p>Demo mode is designed to showcase the app's ability to read tire tread depth. In this mode, data is not saved, and there are no options to enter a Tester ID, Tire ID, or enter plunger measurements. </p>
+
+<ol>
+<li>By default, the app opens in demo mode, with the Demo tab highlighted in the bottom menu. The initial main screen shows the <strong>Measure</strong> button as deactivated.
+<img alt="image" style="height:400px" src="demo-deactivated.png"></li>
+
+<li>When the snap-on reader is attached to the device, it automatically connects, activating the <strong>Measure</strong> button. If it remains inactive, ensure the snap-on reader is properly attached to the device.
+<img alt="image" style="height:400px" src="demo-activated.png"></li>
+
+<li>Tap the <strong>Measure</strong> button and swipe the device across the tire from edge to edge. When the read is successful, measurements are displayed along with their corresponding confidence levels. If the confidence level below 60, a prompt will appear to re-swipe.
+<img alt="image" style="height:400px" src="demo-result.png"></li>
+</ol>
+
+<hr>
+
+<h3 id="testmode" class="anchor"><a class="heading-anchor" href="#testmode"><span></span></a>Test Mode</h3>
+
+<p>Test mode is intended to facilitate the evaluation of the solution by saving data from each read session, including the tester ID, tire ID, and plunger measurements. The plunger adjustments enable the entry of manual measurements using the plunger, allowing for comparison with reader measurements to help assess accuracy. The Tire ID resets after each measurement. Although the Confidence Level is not displayed visually, it is recorded in the log.</p>
+
+<ol>
+<li><p>Tap the <strong>Test</strong> icon in the bottom menu. When the app detects the snap-on attachment, the <strong>Measure</strong> button is activated.
+<img alt="image" style="height:400px" src="test-init.png"></p></li>
+
+<li><p>Enter the Tester ID and Tire ID. Adjust plunger values for the inner, center, and outer tire regions as needed. Enter these values based on manual measurements (using a plunger) for comparison with the reader's results. 
+<img alt="image" style="height:400px" src="test-populated.png"></p></li>
+
+<li><p>Tap the <strong>Measure</strong> button and swipe the device across the tire from edge to edge. When the read is successful, measurements are displayed, and the data is saved in the internal storage directory. If the confidence level is below 60, a prompt appears to re-swipe. The following data is stored in the internal storage directory (e.g. <code>/storage/emulated/0/Download/</code>):</p>
+
+<ul>
+<li><code>TreadReaderLogFile.csv</code> - Contains cumulative data of all reader activity, includes data when readers are switched.</li>
+
+<li><code>Ttinput.png</code> - Contains data that may be requested by Zebra engineers for evaluation if further analysis is needed.</li>
+
+<li>Folder in format of <code>serialno_testerID_tireID</code> - Contains data that may be requested by Zebra engineers for evaluation if further analysis is needed.</li></ul>
+
+<p><img alt="image" style="height:400px" src="test-result.png"></p></li>
+</ol>
+
+<hr>
+
+<h3 id="versions" class="anchor"><a class="heading-anchor" href="#versions"><span></span></a>Versions</h3>
+
+<p>The Versions tab in the app displays the software component versions of the reader, as well as the reader serial number and the scan count, which is the total number of scans performed by the reader.
+    <img alt="image" style="height:400px" src="versions.png"></p>
 
 <hr>
 
 <h2 id="seealso" class="anchor"><a class="heading-anchor" href="#seealso"><span></span></a>See Also</h2>
 
 <ul>
-<li><a href="../api">APIs</a></li>
+<li><a href="../about">About Zebra Tread Intel</a></li>
 
-<li><a href="../sample">Sample App</a></li>
+<li><a href="../api/">APIs</a></li>
 </ul><p></p>
                                         
 
