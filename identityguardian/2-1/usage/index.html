@@ -466,19 +466,22 @@ Other features:
 </tbody></table><p></p></li>
 
 <li><p>If the preview is not suitable, select <strong>Settings</strong> from the top right menu. Adjust the settings and preview the barcode until satisfactory (retain default values unless otherwise instructed):<br>
-<strong>Share To Parameters:</strong> Adjust barcode size for printing and sharing.
-    - <strong>Allow ShareTo -</strong> Toggle to enable non-card printing or sharing.
-    - <strong>Margin (Mils) -</strong> Adjust margins if the barcode is too large or near the edges. The default is 10. Increasing this value decreases the barcode size.
-    - <strong>Orientation -</strong> Choose Portrait or Landscape.</p>
+<strong>Share To Parameters:</strong> Adjust barcode size for printing and sharing.</p>
 
-<pre class="prettyprint"><code>&lt;table&gt;
-    &lt;tr&gt;
-        &lt;td&gt;&lt;img alt="image" style="height:350px" style="border:1px solid black;" src="../setup/printapp-menu.jpg" /&gt;&lt;/td&gt;
-        &lt;td&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&lt;/td&gt;
-        &lt;td&gt;&lt;img alt="image" style="height:350px" style="border:1px solid black;" src="../setup/printapp-settings.jpg" /&gt;&lt;/td&gt;
-    &lt;/tr&gt;
-&lt;/table&gt;
-</code></pre>
+<ul>
+<li><strong>Allow ShareTo -</strong> Toggle to enable non-card printing or sharing.</li>
+
+<li><strong>Margin (Mils) -</strong> Adjust margins if the barcode is too large or near the edges. The default is 10. Increasing this value decreases the barcode size.</li>
+
+<li><strong>Orientation -</strong> Choose Portrait or Landscape.</li></ul>
+
+<table>
+    <tbody><tr>
+        <td><img alt="image" style="height:350px" src="../setup/printapp-menu.jpg"></td>
+        <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+        <td><img alt="image" style="height:350px" src="../setup/printapp-settings.jpg"></td>
+    </tr>
+</tbody></table>
 
 Next, follow step 3 or 4 depending the type of printing (card or non-card).
 <!--
@@ -634,6 +637,121 @@ Next, follow step 3 or 4 depending the type of printing (card or non-card).
 
 <li><p>When a user launches any app that utilizes Microsoft Authenticator app as broker, the app automatically signs in without prompting for user name or password.</p></li>
 </ol>
+
+<hr>
+
+<h3 id="prioritizeauthenticationmethods" class="anchor"><a class="heading-anchor" href="#prioritizeauthenticationmethods"><span></span></a>Prioritize Authentication Methods</h3>
+
+<p>Identity Guardian offers flexible user authentication methods triggered by various lock events, as configured by the administrator in the <a href="../mc/#authenticationconfiguration">Lock-Screen Event Options</a> under Authentication Configuration. When a <em>shared device</em> experiences multiple simultaneous lock events, Identity Guardian selects the most secure Verification Setup based on the highest score from its weighted scoring system. This ensures the highest level of security for shared devices, even during concurrent events. The relevant Lock-Screen Event Options include: </p>
+
+<ul>
+<li>On Unlock</li>
+
+<li>On AC Power Connected</li>
+
+<li>On AC Power Disconnection</li>
+</ul>
+
+<p><strong>Note:</strong> The priority logic does not apply to other lock screen events: On Reboot, On Device Manual Checkin (user logout), and On User Change. In these scenarios, Identity Guardian selects the specific Verification Setup configured by the administrator for that event to authenticate the user.
+<br></p>
+
+<h4 id="weightedscoringsystem" class="anchor"><a class="heading-anchor" href="#weightedscoringsystem"><span></span></a>Weighted Scoring System</h4>
+
+<p>Identity Guardian uses a weighted scoring system to determine the optimal Verification Setup for simultaneous lock events on a shared device. Each authentication factor is assigned a specific weight:</p>
+
+<table class="facelift" style="width:25%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>Authentication Factor</th>
+    <th>Weight (Score)</th>
+  </tr>
+
+  <tr>
+    <td>SSO</td>
+    <td>4</td>
+  </tr>
+
+  <tr>
+    <td>FACE</td>
+    <td>3</td>
+  </tr>
+
+  <tr>
+    <td>PASSCODE</td>
+    <td>2</td>
+  </tr>
+
+  <tr>
+    <td>NO_COMPARISON</td>
+    <td>1</td>
+  </tr>
+
+  <tr>
+    <td>NONE</td>
+    <td>0</td>
+  </tr>
+
+</tbody></table>
+
+<p>The total score for a Verification Setup is calculated by summing the scores of its primary and secondary authentication factors. The setup with the highest score is deemed the most secure and is selected for implementation. Fallback authentication methods do not contribute to the total score.</p>
+
+<h4 id="example" class="anchor"><a class="heading-anchor" href="#example"><span></span></a>Example</h4>
+
+<p>Consider the following administrator configurations:</p>
+
+<ul>
+<li><strong>Verification Setup 1:</strong>
+
+
+<ul>
+<li><strong>Primary Authentication Factor:</strong> FACE</li>
+
+<li><strong>Secondary Authentication Factor:</strong> PASSCODE</li>
+
+<li><strong>Fallback Authentication Method:</strong> ADMIN BYPASS PASSCODE</li></ul>
+</li>
+
+<li><strong>Verification Setup 2:</strong>
+
+
+<ul>
+<li><strong>Primary Authentication Factor:</strong> FACE</li>
+
+<li><strong>Secondary Authentication Factor:</strong> NONE</li>
+
+<li><strong>Fallback Authentication Method:</strong> NONE</li></ul>
+</li>
+</ul>
+
+<p>The scores for these setups are calculated as follows:</p>
+
+<table class="facelift" style="width:60%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>Verification Setup</th>
+    <th>Primary Authentication <br>Factor (Score)</th>
+    <th>Secondary Authentication <br>Factor (Score)</th>
+    <th>Fallback Authentication <br>(No Score)</th>
+    <th>Total Score</th>
+  </tr>
+
+  <tr>
+    <td>Setup 1</td>
+    <td>FACE (3)</td>
+    <td>PASSCODE (2)</td>
+    <td>ADMIN BYPASS PASSCODE</td>
+    <td>5</td>
+  </tr>
+
+  <tr>
+    <td>Setup 2</td>
+    <td>FACE (3)</td>
+    <td>NONE (0)</td>
+    <td>NONE</td>
+      <td>3</td>
+  </tr>
+
+</tbody></table>
+
+<p><strong>Scenario:</strong> If Verification Setup 1 is configured for an unlock event and Verification Setup 2 is configured for a power disconnection event, and both events occur sequentially (e.g., unlock followed by power disconnection) while the user is logged in with the device, Identity Guardian will prioritize Verification Setup 1. This decision due to Setup 1's higher total score (5) compared to Setup 2's score (3), demonstrating Identity Guardian’s approach to selecting the verification setup with the highest combined security weight.</p>
 
 <hr>
 
@@ -1236,7 +1354,7 @@ When unlocking the device (e.g. pressing the power button or swiping to unlock),
 
 <li><strong>App Challenges:</strong> Certain apps may experience difficulties when saving or entering credentials in Guardian Safe. If you encounter such issues, please contact Zebra technical support for assistance.</li>
 
-<li><strong>User Re-Enrollment:</strong> When a user re-enrolls with the same user ID, Identity Guardian does not recognize previously saved credentials. As a result, users are prompted to save their credentials for applications they have already used. To resolve this, users must re-enter and <a href="#savecredentials">save their credentials</a> again.</li>
+<li><strong>User Re-Enrollment:</strong> When a user re-enrolls with the same user ID, Identity Guardian does <em>not</em> recognize previously saved credentials. As a result, users are prompted to save their credentials for applications they have already used. To resolve this, users must re-enter and <a href="#savecredentials">save their credentials</a> again.</li>
 </ul>
 
 <p><strong>Requirements:</strong></p>
