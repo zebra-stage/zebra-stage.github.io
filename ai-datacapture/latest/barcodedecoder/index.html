@@ -340,11 +340,29 @@
 <p>Sample Code:</p>
 
 <pre class="prettyprint"><code>    try {
+        barcodeDecoder.process(ImageData.fromImageProxy(image)).thenAccept(result -&gt;{
 
-    } 
+            for(Entity&lt;?&gt; bb:result){
+                // Access bounding box and confidence
+                Rect boundingBox = bb.getBoundingBox();
+                float confidence = bb.accuracy();
+
+                // Type cast Entity to BarcodeEntity for specific operations
+                BarcodeEntity barcodeEntity = (BarcodeEntity) bb;
+
+                // Access barcode-specific data
+                String barcodeValue = barcodeEntity.getValue();
+                String barcodeType = barcodeEntity.getSymbology();
+            }
+            image.close();
+        })
+        .exceptionally(e -&gt;{
+            image.close();
+        });
+    }
 
     catch (Exception e) {
-            Log.e(TAG, "Analysis failed: " + e.getMessage());
+        Log.e(TAG, "Analysis failed: " + e.getMessage());
     }
 </code></pre>
 
@@ -510,14 +528,14 @@ Sample Code:
 <ul>
 <li><strong>InvalidInputException -</strong> Thrown if the settings object is null.</li>
 
-<li><strong>IllegalStateException -</strong> Thrown if the AI Data Capture SDK is not initialized.</li>
+<li><strong>AIVisionSDKException -</strong> Thrown if the image queue size is exceeded.</li>
 </ul>
 
 <hr>
 
 <h3 id="decodebitmapbmp" class="anchor"><a class="heading-anchor" href="#decodebitmapbmp"><span></span></a>decode (Bitmap bmp)</h3>
 
-<pre class="prettyprint"><code>    CompletableFuture&lt;Result&gt; BarcodeDecoder. decode (Bitmap bmp, Executor executor) throws InvalidInputException, IllegalStateException
+<pre class="prettyprint"><code>    CompletableFuture&lt;Result&gt; BarcodeDecoder. decode (Bitmap bmp, Executor executor) throws InvalidInputException, AIVisionSDKException
 </code></pre>
 
 <p><strong>Description:</strong> Asynchronously decodes a barcode from the provided bitmap image. Runs the decoding process in the specified executor thread. When scanning multiple barcodes within an image, Zebra recommends passing multiple image frames to the decode API and processing the results frame by frame until all desired barcodes are decoded.</p>
@@ -537,14 +555,14 @@ Sample Code:
 <ul>
 <li><strong>InvalidInputException -</strong> Thrown when the Bitmap is null.</li>
 
-<li><strong>IllegalStateException -</strong> Thrown if the previous decoding task is still in progress.</li>
+<li><strong>AIVisionSDKException -</strong> Thrown if the image queue size is exceeded.</li>
 </ul>
 
 <hr>
 
 <h3 id="decodebitmapbmpbboxdetectionsexecutorexecutor" class="anchor"><a class="heading-anchor" href="#decodebitmapbmpbboxdetectionsexecutorexecutor"><span></span></a>decode (Bitmap bmp, BBox[ ] detections, Executor executor)</h3>
 
-<pre class="prettyprint"><code>    CompletableFuture&lt;Result[]&gt; BarcodeDecoder.decode (Bitmap bmp, BBox[] detections, Executor executor) throws InvalidInputException, IllegalStateException
+<pre class="prettyprint"><code>    CompletableFuture&lt;Result[]&gt; BarcodeDecoder.decode (Bitmap bmp, BBox[] detections, Executor executor) throws InvalidInputException, AIVisionSDKException
 </code></pre>
 
 <p><strong>Description:</strong> Decodes barcodes at specific locations (<a href="../types/#bbox/">bounding boxes</a> returned by <a href="../localizer/">Localizer</a>) within the input image. When scanning multiple barcodes within an image, Zebra recommends passing multiple image frames to the decode API and processing the results frame by frame until all desired barcodes are decoded.</p>
@@ -566,7 +584,7 @@ Sample Code:
 <ul>
 <li><strong>InvalidInputException -</strong> Thrown when Bitmap or detections array is null.</li>
 
-<li><strong>IllegalStateException -</strong> Thrown if the previous decoding task is still in progress.</li>
+<li><strong>AIVisionSDKException -</strong> Thrown if the image queue size is exceeded.</li>
 </ul>
 
 <hr>
@@ -4267,6 +4285,10 @@ Sample Code:
 </li>
 
 <li><a href="../textocr/">Text OCR</a></li>
+
+<li><a href="../types/">Data Types</a></li>
+
+<li><a href="../entity/">Entity</a></li>
 </ul><p></p>
                                         
 

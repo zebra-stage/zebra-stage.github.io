@@ -251,26 +251,331 @@
 <p>AI Data Capture SDK supports integration with CameraX-based applications by providing: </p>
 
 <ul>
+<li><strong>EntityTrackerAnalyzer –</strong> A CameraX <code>ImageAnalysis.Analyzer</code> that detects, decodes and tracks <code>Entities</code>.</li>
+
 <li><strong>Detectors for BarcodeDecode and TextOCR –</strong> Tools for building custom Analyzers.</li>
 
-<li><strong>EntityTrackerAnalyzer –</strong> Capabilities for detecting, decoding and tracking Entities.</li>
-
-<li><strong>EntityView –</strong> An integrated viewfinder designed to work alongside EntityTrackerAnalyzer. </li>
+<li><strong>EntityView –</strong> An integrated viewfinder designed to work alongside <code>EntityTrackerAnalyzer</code>. </li>
 </ul>
 
 <p>For details on compatibility, refer to the <a href="https://developer.android.com/media/camera/camerax/architecture#requirements">CameraX requirements</a>. </p>
 
 <hr>
 
-<h2 id="detectors" class="anchor"><a class="heading-anchor" href="#detectors"><span></span></a>Detectors</h2>
+<h2 id="entitytrackeranalyzer" class="anchor"><a class="heading-anchor" href="#entitytrackeranalyzer"><span></span></a>EntityTrackerAnalyzer</h2>
 
-<p>The <code>BarcodeDecoder</code> and <code>TextOCR</code> classes implement a detector interface, enabling efficient image analysis using the <code>process()</code> method: </p>
+<p><code>EntityTrackerAnalyzer</code> implements the <code>ImageAnalysis.Analyzer</code> interface, designed for real-time entity detection and tracking. It integrates seamlessly with CameraX, processing image frames with a list of detectors to deliver aggregated entity tracking results. The analyzer efficiently manages image buffers and executes detectors asynchronously to ensure optimal performance. Additionally, it automatically handles coordinate transformations.</p>
+
+<p><strong>Use Cases:</strong></p>
+
+<ol>
+<li><strong>Real-Time Object Tracking:</strong> Develop applications that require real-time entity tracking using camera feeds.</li>
+
+<li><strong>Augmented Reality Experiences:</strong> Leverage entity tracking for dynamic augmented reality (AR) experiences that respond to entity movements and interactions.</li>
+
+<li><strong>Security and Surveillance Systems:</strong> Integrate into security systems that monitor and track entities in real-time.</li>
+</ol>
+
+<p><strong>Notes:</strong></p>
 
 <ul>
-<li><a href="../barcodedecoder/">BarcodeDecoder</a> – This detector method accepts <code>ImageData</code> and generates a list of <code>BarcodeEntity</code> objects:</li>
+<li><strong>Extensibility:</strong> The analyzer is designed to be extended with additional detectors and consumer logic. However, currently only <a href="../barcodedecoder/">BarcodeDecoder</a> is supported as a detector. Only one detector of any type should be passed in to the constructor.</li>
+
+<li><strong>Lifecycle handling:</strong> The application is responsible for managing the session. <code>EntityTrackerAnalyzer</code> does not handle this internally.  </li>
+
+<li><strong>Threading:</strong> Frame processing is efficiently managed with internal threads. Results are passed to the application using the Executor provided from EntityTrackerAnalyzer through its constructor.  </li>
+</ul>
+
+<hr>
+
+<h3 id="developerguide" class="anchor"><a class="heading-anchor" href="#developerguide"><span></span></a>Developer Guide</h3>
+
+<p>This section provides a step-by-step guide to setting up a barcode detection system using the <a href="../barcodedecoder/">Barcode Decoder</a> and <a href="#entitytrackeranalyzer">EntityTrackerAnalyzer</a>. </p>
+
+<ol>
+<li><p><strong>Initialize AI Data Capture SDK:</strong> Initialize the AI Data Capture SDK to enable Zebra-specific features in the application. This initialization should be performed in <code>MainActivity</code>. <em>Ensure this initialization step is completed before making any other calls to the AI Data Capture SDK.</em> If the initialization fails, it indicates a critical problem, and the application should not proceed further.</p>
+
+<pre class="prettyprint"><code>if (!AIVisionSDK.getInstance(this.getApplicationContext()).init()) {
+    throw new IllegalStateException("Critical component initialization failed");
+}
+</code></pre></li>
+
+<li><p><strong>Setup Barcode Decoder:</strong> Configure the barcode decoder settings and obtain an instance:</p>
+
+<pre class="prettyprint"><code>BarcodeDecoder.Settings settings = new BarcodeDecoder.Settings();
+decorderExecutor = Executors.newSingleThreadExecutor();
+BarcodeDecoder barcodeDecoder = BarcodeDecoder.getBarcodeDecoder(settings, executor).get();
+</code></pre></li>
+
+<li><p><strong>Configure Camera Controller:</strong> Set up the camera controller to use the <code>EntityTrackerAnalyzer</code> as the <code>ImageAnalysis.Analyzer</code> for processing image frames:</p>
+
+<pre class="prettyprint"><code>resultsExecutor = Executors.newSingleThreadExecutor();
+
+cameraController.setImageAnalysisAnalyzer(
+    resultsExecutor,
+    new EntityTrackerAnalyzer(
+        Collections.singletonList(barcodeDecoder),
+        ImageAnalysis.COORDINATE_SYSTEM_VIEW_REFERENCED,
+        resultsExecutor,
+        new Consumer&lt;EntityTrackerAnalyzer.Result&gt;() {
+            @Override
+            public void accept(EntityTrackerAnalyzer.Result result) {
+                List&lt;? extends Entity&gt; entities = result.getValue(barcodeDecoder);
+                for (Entity entity : entities) {
+                    if (entity instanceof BarcodeEntity) {
+                        BarcodeEntity barcodeEntity = (BarcodeEntity) entity;
+                        Log.d(TAG, "value: " + barcodeEntity.getValue());
+                    }
+                }
+            }
+        }
+    )
+);
+</code></pre></li>
+
+<li><p><strong>Configure the Camera Controller Lifecycle:</strong> Integrate the camera controller with the activity’s lifecycle.</p>
+
+<pre class="prettyprint"><code>cameraController.bindToLifecycle(this); 
+previewView.setController(cameraController);
+</code></pre></li>
+
+<li><p><strong>Resource Cleanup After Usage:</strong> Properly dispose of resources after use to prevent memory leaks and ensure that all resources are released after use:</p>
+
+<pre class="prettyprint"><code>protected void dispose() {
+
+<pre><code>// Shutdown executors to release threads
+if (decorderExecutor!= null &amp;amp;&amp;amp; ! resultsExecutor.isShutdown()) {
+    decorderExecutor.shutdown();
+    decorderExecutor = null;
+}
+
+if (resultsExecutor != null &amp;amp;&amp;amp; !resultsExecutor.isShutdown()) {
+    resultsExecutor.shutdown();
+    ResultsExecutor = null;
+}
+
+// Close any clients or scanners to free up resources
+if (barcodeScanner != null) {
+    barcodeScanner.close();
+    barcodeScanner = null;
+}
+</code></pre>
+
+}
+</code></pre></li>
+</ol>
+
+<hr>
+
+<h3 id="methods" class="anchor"><a class="heading-anchor" href="#methods"><span></span></a>Methods</h3>
+
+<h4 id="constructor-NaN" class="anchor"><a class="heading-anchor" href="#constructor-NaN"><span></span></a>Constructor</h4>
+
+<pre class="prettyprint"><code>    public EntityTrackerAnalyzer(
+            @NonNull List&lt;Detector&lt;? extends List&lt;? extends Entity&gt;&gt;&gt; detectors,
+            int targetCoordinateSystem,
+            @NonNull Executor executor,
+            @NonNull Consumer&lt;EntityTrackerAnalyzer.Result&gt; consumer
+    )
+</code></pre>
+
+<p>Constructs an <code>EntityTrackerAnalyzer</code> using specified entity detectors, target coordinate system, an executor, and a consumer. It initializes components for entity tracking, including a buffer manager and an entity tracker, using specified detectors. The analyzer configures entity processing and sets the coordinate system for analysis. The executor is used to execute the consumer. </p>
+
+<p>Currently, only <a href="../barcodedecoder/">BarcodeDecoder</a> is supported as a detector. Only one detector of each type is accepted. Providing multiple detectors of the same type results in undefined behavior.</p>
+
+<p>The <code>EntityTrackerAnalyzer</code> calculates the output bounding box coordinates based on the <code>targetCoordinateSystem</code> set by the user:</p>
+
+<ul>
+<li><code>COORDINATE_SYSTEM_ORIGINAL</code> - Bounding boxes are delivered in the analyzer's coordinate system, accounting rotation at the analyzer.</li>
+
+<li><code>COORDINATE_SYSTEM_SENSOR</code> (default) - Bounding boxes are delivered in the sensor's coordinate system after applying rotation at the analyzer.  </li>
+
+<li><code>COORDINATE_SYSTEM_VIEW_REFERENCE</code> - Bounding boxes are delivered in the PreviewView coordinate system by applying rotation at the analyzer, transformation from analyzer to sensor, and transformation from sensor to PreviewView.</li>
+</ul>
+
+<p>All transformations take into account the image rotation (from <code>ImageInfo.getRotationDegrees()</code>). For example, with a 90 degree rotation using <code>COORDINATE_SYSTEM_ORIGINAL</code>, the point (0,0) maps to (0, h), where h is the <code>imageProxy</code>’s height.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>Detectors -</strong> A list of entity detectors to be utilized for detection and tracking.</li>
+
+<li><strong>TargetCoordinateSystem -</strong> The coordinate system used for image analysis: <code>COORDINATE_SYSTEM_ORIGINAL</code>, <code>COORDINATE_SYSTEM_SENSOR</code> or <code>COORDINATE_SYSTEM_VIEW_REFERENCED</code>; see Android Developers <a href="https://developer.android.com/reference/androidx/camera/core/ImageAnalysis">ImageAnalysis API reference</a>.</li>
+
+<li><strong>executor -</strong> The executor responsible for executing the consumer.</li>
+
+<li><strong>consumer -</strong> A consumer function to handle the processing of detected entities.</li>
+</ul>
+
+<hr>
+
+<h3 id="imageanalysisanalyzerinterface" class="anchor"><a class="heading-anchor" href="#imageanalysisanalyzerinterface"><span></span></a>ImageAnalysis.Analyzer Interface</h3>
+
+<h4 id="voidanalyzeimageproxyimage" class="anchor"><a class="heading-anchor" href="#voidanalyzeimageproxyimage"><span></span></a>void analyze(ImageProxy image)</h4>
+
+<pre class="prettyprint"><code>    public void analyze(@NonNull ImageProxy image)
+</code></pre>
+
+<p>Analyzes the image with the Detectors. This method forwards the image to the detectors. Typically, this method is called by ImageAnalysis when a new frame becomes available:</p>
+
+<pre class="prettyprint"><code>    void camerax.EntityTrackerAnalyzer.analyze(ImageProxy image)    
+</code></pre>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>image -</strong> An <code>ImageProxy</code> object representing the image to be analyzed.</li>
+</ul>
+
+<p><br></p>
+
+<h4 id="getdefaulttargetresolution" class="anchor"><a class="heading-anchor" href="#getdefaulttargetresolution"><span></span></a>GetDefaultTargetResolution()</h4>
+
+<pre class="prettyprint"><code>    public Size getDefaultTargetResolution()
+</code></pre>
+
+<p>Returns the default target resolution for image analysis in the <code>EntityTrackerAnalyzer</code>.</p>
+
+<p><strong>Return Value:</strong>
+A Size object representing the default resolution for target images.</p>
+
+<p><br></p>
+
+<h4 id="gettargetcoordinatesystem" class="anchor"><a class="heading-anchor" href="#gettargetcoordinatesystem"><span></span></a>getTargetCoordinateSystem()</h4>
+
+<pre class="prettyprint"><code>    public int getTargetCoordinateSystem()
+</code></pre>
+
+<p>Returns the current coordinate system used inside the Analyzer. This is passed to the analyzer when it is created via the constructor.    </p>
+
+<p><strong>Returns:</strong>
+An integer representing the coordinate system type.</p>
+
+<p><br></p>
+
+<h4 id="finalvoidupdatetransform" class="anchor"><a class="heading-anchor" href="#finalvoidupdatetransform"><span></span></a>final void    updateTransform()</h4>
+
+<pre class="prettyprint"><code>    final EntityTrackerAnalyzer.updateTransform()    
+</code></pre>
+
+<p>This method should be implemented to receive a transformation matrix that converts coordinates from the camera sensor’s system to the target system defined in <code>getTargetCoordinateSystem()</code>. It is used for transforming detected coordinates, such as those of a detected face. If the matrix is <code>null</code>, it indicates no valid transformation is available. This can occur if the target system is set to <code>COORDINATE_SYSTEM_ORIGINAL</code> or if the target system is unavailable, such as when the viewfinder is not visible. The method is invoked whenever a new transformation is ready, for example, when the viewfinder is launched or resized.</p>
+
+<p><strong>Returns:</strong>
+A <code>Matrix</code> object for transformation adjustments.</p>
+
+<p><br></p>
+
+<h4 id="updatetransform" class="anchor"><a class="heading-anchor" href="#updatetransform"><span></span></a>updateTransform()</h4>
+
+<pre class="prettyprint"><code>    public final void updateTransform(@Nullable Matrix matrix)
+</code></pre>
+
+<p>Receives a transformation matrix that converts coordinates from the camera sensor’s system to the target system, which was passed as <code>targetCoordinateSystem</code> in the constructor. </p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>matrix -</strong> A <code>Matrix</code> object for transformation adjustments.</li>
+</ul>
+
+<p><br></p>
+
+<h4 id="setcroprectrectfcroprect" class="anchor"><a class="heading-anchor" href="#setcroprectrectfcroprect"><span></span></a>setCropRect(RectF cropRect)</h4>
+
+<pre class="prettyprint"><code>    public void setCropRect(RectF cropRect)
+</code></pre>
+
+<p>Sets the crop rectangle, which specifies the region of the image that the analyzer process for entities. It should be specified in <code>COORDINATE_SYSTEM_SENSOR</code> from <code>ImageAnalysis</code>.</p>
+
+<p>Parameters:</p>
+
+<ul>
+<li><strong>cropRect -</strong> A <code>RectF</code> object with crop rectangle.</li>
+</ul>
+
+<hr>
+
+<h2 id="detectors" class="anchor"><a class="heading-anchor" href="#detectors"><span></span></a>Detectors</h2>
+
+<p>The <code>BarcodeDecoder</code> and <code>TextOCR</code> classes implement a detector interface, enabling efficient image analysis using the <code>process(ImageData imageData)</code> method: </p>
+
+<ul>
+<li><a href="../barcodedecoder/">BarcodeDecoder</a> – This detector method accepts <code>ImageData</code> and generates a list of <code>BarcodeEntity</code> objects.</li>
 
 <li><a href="../textocr/">TextOCR</a> - This detector interface facilitates integration with CameraX as the frame source, allowing the creation of custom analyzers for detecting and decoding barcodes within frames provided to the <code>analyze()</code> interface. This is particularly beneficial for applications requiring the combination of multiple detectors within the CameraX analyzer. This detector processes <code>ImageData</code> to analyze textual content.</li>
 </ul>
+
+<hr>
+
+<h3 id="developerguide-1" class="anchor"><a class="heading-anchor" href="#developerguide-1"><span></span></a>Developer Guide</h3>
+
+<p>To build a custom CameraX Analyzer using the BarcodeDecoder Detector interface, follow these steps:</p>
+
+<h4 id="step1createacustomanalyzer" class="anchor"><a class="heading-anchor" href="#step1createacustomanalyzer"><span></span></a>Step 1: Create a Custom Analyzer</h4>
+
+<ol>
+<li><strong>Implement ImageAnalysis.Analyzer -</strong> Implement the <code>ImageAnalysis.Analyzer</code> interface and override the <code>analyze()</code> method.</li>
+</ol>
+
+<h4 id="step2setupdecoderandlocalizersettings" class="anchor"><a class="heading-anchor" href="#step2setupdecoderandlocalizersettings"><span></span></a>Step 2: Set Up Decoder and Localizer Settings**</h4>
+
+<ol>
+<li><strong>Create BarcodeDecoder Settings:</strong> Instantiate a <code>Settings</code> object for the BarcodeDecoder and enable the desired symbologies.</li>
+
+<li><strong>Initialize BarcodeDecoder:</strong> Obtain a BarcodeDecoder instance asynchronously using <code>CompletableFuture</code>.</li>
+</ol>
+
+<h4 id="step3processframes" class="anchor"><a class="heading-anchor" href="#step3processframes"><span></span></a>Step 3: Process Frames</h4>
+
+<ol>
+<li><strong>Override analyze():</strong> CameraX continuously feeds frames to the Analyzers bound to it. Override the <code>analyzer()</code> interface for their specific functionalities.</li>
+
+<li><strong>Convert ImageProxy to ImageData:</strong> The <code>process()</code> interface requires <code>ImageData</code>. Use the <code>fromImageProxy()</code> method to convert from <code>ImageProxy</code>.</li>
+
+<li><strong>Call process():</strong> Invoke the <code>process()</code> method on the <code>ImageData</code> object to initiate barcode detection.</li>
+
+<li><strong>Success Handling:</strong> Upon successful detection, <code>addOnSuccessListener</code> is activated, retrieving the barcode value and symbology type.</li>
+
+<li><strong>Failure Handling:</strong> If detection fails, <code>addOnFailureListener</code> logs the error and closes the image.</li>
+
+<li><strong>Exception Handling:</strong> Handle exceptions such as <code>InvalidInputException</code> and <code>AIVisionSDKException</code> by logging issues during processing and properly closing the image.</li>
+</ol>
+
+<p><strong>Sample Code:</strong></p>
+
+<pre class="prettyprint"><code>    //import necessary packages
+
+    public class CompositeAnalyzer implements ImageAnalysis.Analyzer {
+        @Override
+        public void analyze(@NonNull ImageProxy image) {
+            try {
+                barcodeDecoder.process(ImageData.fromImageProxy(image)).addOnSuccessListener(result -&gt;{
+
+                    for(Entity&lt;?&gt; bb:result){
+                        // Access bounding box and confidence
+                        BoundingBox boundingBox = bb.getBoundingBox();
+                        float confidence = bb.accuracy();
+
+                        // Type cast Entity to BarcodeEntity for specific operations
+                        BarcodeEntity barcodeEntity = (BarcodeEntity) bb;
+
+                        // Access barcode-specific data
+                        String barcodeValue = barcodeEntity.getValue();
+                        String barcodeType = barcodeEntity.getSymbology();
+                    }
+                    image.close();
+                })
+
+                .addOnFailureListener(e -&gt;{
+                    image.close();
+                });
+            } 
+            catch (Exception e) {
+                Log.e(TAG, "Analysis failed: " + e.getMessage());
+            }
+        }
+    }
+</code></pre>
 
 <hr>
 
@@ -295,6 +600,10 @@
 </li>
 
 <li><a href="../barcodedecoder/">Barcode Decoder</a></li>
+
+<li><a href="../types/">Data Types</a></li>
+
+<li><a href="../entity/">Entity</a></li>
 </ul><p></p>
                                         
 
