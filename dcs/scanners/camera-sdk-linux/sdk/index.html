@@ -229,7 +229,7 @@ std::string hardware_ver = camera->GetHardwareVersion();    // hardware version
 
                                                     <h3 id="bcc-linux-brightness" class="anchor"><a class="heading-anchor" href="#bcc-linux-brightness"><span></span></a>Brightness</h3>
 
-                                                    <p>Camera brightness of the MP7 along with various properties of brightness can be obtained with an object of type ‘ZebraCameraClient’.</p>
+                                                    <p>Camera brightness of the MP7 along with various properties of brightness can be obtained with an object of type 'ZebraCameraClient'.</p>
 
                                                     <!-- code segment -->
 <pre class="prettyprint">
@@ -295,7 +295,7 @@ int16_t contrast = camera->Contrast.Default();
 
                                                     <h3 id="bcc-linux-saturation" class="anchor"><a class="heading-anchor" href="#bcc-linux-saturation"><span></span></a>Saturation</h3>
 
-                                                    <p>Properties affiliated with Saturation can be obtained with an object of type ‘ZebraCameraClient’.</p>
+                                                    <p>Properties affiliated with Saturation can be obtained with an object of type 'ZebraCameraClient'.</p>
 
                                                     <!-- code segment -->
 <pre class="prettyprint">
@@ -1113,42 +1113,176 @@ void ContinuousImageObserver::ImageReceived(ImageEventData image, ImageEventMeta
             return;
     }
 
-wxLogMessage("%s: wxh: %d x %d", __func__, image.image.width, image.image.height);
+    wxLogMessage("%s: wxh: %d x %d", __func__, image.image.width, image.image.height);
 
-zebra::camera_sdk::Image rgb = zebra::image::ConvertColor(converter, image.image);
+    zebra::camera_sdk::Image rgb = zebra::image::ConvertColor(converter, image.image);
 
-frame_->image_buffer_.CopyToBuffer(rgb.Data(), rgb.Length());
+    frame_->image_buffer_.CopyToBuffer(rgb.Data(), rgb.Length());
+}
 </code>
 </pre>
 
-                                                        <p>Image saving can also be done using the library mentioned above. Based on the user selection, the methods. ‘SaveAsJpeg’ and ‘SaveAsBmp’ can be made use of, to save the desired image in the computer.</p>
+                                                        <p>Image saving can also be done using the library mentioned above. Based on the user selection, the methods. 'SaveAsJpeg' and 'SaveAsBmp' can be made use of, to save the desired image in the computer.</p>
 
                                                         <!-- code segment -->
 <pre class="prettyprint">
 <code>
-    void ZebraCameraDemoFrame::SaveImage(ImageBuffer& image, std::string str_event_type)
+void ZebraCameraDemoFrame::SaveImage(ImageBuffer& image, std::string str_event_type)
+{
+    if (!save_image_directory_path_.empty() && CheckBoxSaveImages->GetValue())
     {
-        if (!save_image_directory_path_.empty() && CheckBoxSaveImages->GetValue())
+        std::time_t t = std::time(nullptr);
+        char mbstr[128];
+        std::strftime(mbstr, sizeof(mbstr), "%c", std::localtime(&t));
+        
+        std::string filepath = save_image_directory_path_ + std::string("/") + GetFileName(str_event_type);
+        switch (image_file_format_)
         {
-            std::time_t t = std::time(nullptr);
-            char mbstr[128];
-            std::strftime(mbstr, sizeof(mbstr), "%c", std::localtime(&t));
-            
-            std::string filepath = save_image_directory_path_ + std::string("/") + GetFileName(str_event_type);
-            switch (image_file_format_)
-            {
-            case ImageFileFormat::JPG:
-                image.SaveAsJpeg(filepath + std::string(".jpg"));
-                break;
-            case ImageFileFormat::BMP:
-                image.SaveAsBmp(filepath + std::string(".bmp"));
-                break;
-            default:
-                image.SaveAsJpeg(filepath + std::string(".jpg"));
-                break;
-            }
+        case ImageFileFormat::JPG:
+            image.SaveAsJpeg(filepath + std::string(".jpg"));
+            break;
+        case ImageFileFormat::BMP:
+            image.SaveAsBmp(filepath + std::string(".bmp"));
+            break;
+        default:
+            image.SaveAsJpeg(filepath + std::string(".jpg"));
+            break;
         }
     }
+}
+</code>
+</pre>
+
+                                                    <h2 id="bcc-linux-red-illumination" class="anchor"><a class="heading-anchor" href="#bcc-linux-red-illumination"><span></span></a>Red illumination detection API</h2>
+
+                                                    <p>The API is introduced to allow the user to monitor the frames for the presence of a red hue that is occasionally observed on the left and right sides of the image due to the red LED emission of the scanner.</p>
+
+<pre class="prettyprint">
+<code>
+bool isRedIlluminationPresent(int width, int height, uint8_t* data); 
+</code>
+</pre>
+
+                                                    <p>Given below is a sample code snippet that can be used to identify the presence of red illumination in a frame.</p>
+
+                                                    <p>The header file 'red_illumination_presence.h' is required to be included in the beginning. When the image information of a received frame is made available, the width, height and the image data need to be passed in to the 'isRedIlluminationPresent' API to analyze the presence of red spots.</p>
+
+                                                    <p>The width, height and the pixel data of an image can be retrieved from the 'ImageEventData' once any image event is triggered. Namely Continuous, Decode, Snapshot and Produce.</p>
+
+<pre class="prettyprint">
+<code>
+#include "/usr/include/zebra-camera/imaging_library/red_illumination_presence.h" 
+
+red_illumination_presence frame; 
+bool redness_presence= frame.isRedIlluminationPresent(image.width, image.height,const_cast&lt;uint8_t*>(image.data)); 
+
+Returns true in the event of red illumination presence.
+Returns false in the event of red illumination absence. 
+</code>
+</pre>
+
+                                                    <p>Based on the presence and the absence of the red hue, the bool value is returned to the user. </p>
+
+                                                    <h2 id="bcc-linux-get-frame" class="anchor"><a class="heading-anchor" href="#bcc-linux-get-frame"><span></span></a>Get Frame API</h2>
+
+                                                    <p>With the 'GetFrame' API, the user is given the capability to call for frames stored in the buffer by passing an integer as a parameter. The option to retrieve the next frame, in the event the user is offered a frame with red illumination present is given with the 'GetFrame' API. </p>
+
+<pre class="prettyprint">
+<code>
+ImageEventData GetFrame(int image_id); 
+</code>
+</pre>
+
+                                                    <p>The information such as the width, height, stride, size and raw pixel data can be retrieved with the returned 'ImageEventData' value of the API.</p> 
+
+                                                    <p>A code snippet detailing how the registration for the image event 'Produce' in the single client mode is provided below. </p>
+
+<pre class="prettyprint">
+<code>
+zebra::DeviceManager device_manager;
+ZebraCameraManager camera_manager; 
+
+auto info = device_manager.EnumerateDevices(); 
+
+if (info.size()) 
+{ 
+    auto camera = camera_manager.CreateZebraCamera(info[0]);  
+    ProduceImageEventObserver continuousObs;
+    camera->AddProduceImageEventListener(continuousObs); 
+    
+    sleep(20);  
+
+    //ImageEventData and ImageMetaData of the received produce images can be found in the ProduceImageEventListener
+}    
+</code>
+</pre>
+
+                                                    <p>The registration for the image event 'Produce' in multi-client mode is provided below.</p>
+
+<pre class="prettyprint">
+<code>
+DeviceManager mgr; 
+
+auto devinfolist = mgr.EnumerateDevices(); 
+cout &lt;&lt; "# cams = " &lt;&lt; devinfolist.size() &lt;&lt; endl; 
+
+if (0 == devinfolist.size()) 
+{ 
+    exit(0); 
+} 
+
+std::unique_ptr<zebra::camera_sdk::ZebraCameraManagerClient> cammgr = zebra::camera_sdk::CreateZebraCameraManagerClient(); 
+std::shared_ptr<zebra::camera_sdk::ZebraCameraClient> camera = cammgr->CreateZebraCamera(devinfolist[0]); 
+
+ProduceImageEventObserver camobj; 
+
+camera->AddProduceImageEventListener(camobj);  
+</code>
+</pre>
+
+                                                    <p>Obtaining the frame number of a received Produce image is achieved as shown below. With the knowledge of the frame number, the range of values that can be passed to the 'GetFrame' API can be determined.</p>
+
+
+
+<pre class="prettyprint">
+<code>
+class ProduceImageEventObserver: public ProduceImageEventListener
+{ 
+    public: 
+        void ImageReceived(ImageEventData ev, ImageEventMetaData md) 
+        { 
+            printf("ProduceImageEventObserver: width=%d, height=%d, image_number=%d\n", ev.image.width, ev.image.height, md.image_number); 
+
+            int frame_no = md.image_number; 
+            
+            // Obtain the image number of the received image to get an idea an idea of which frame to call using 'GetFrame' API
+        } 
+
+}; 
+
+// Ex:  
+// ImageEventData img = camera->GetFrame(frame_no + 1);  
+// ImageEventData img = camera->GetFrame(frame_no + 2);  
+// ImageEventData img = camera->GetFrame(frame_no + 5);  
+</code>
+</pre>
+
+                                                    <p>The way in which the Produce images are received in the multi-client mode is presented below.</p>
+
+
+
+<pre class="prettyprint">
+<code>
+class ProduceImageEventObserver: public zebra::camera_sdk::ProduceImageEventListener
+{ 
+    public:
+        void ImageReceived(zebra::camera_sdk::ImageEventData ev, zebra::camera_sdk::ImageEventMetaData md)
+        {
+            printf("ProduceImageEventObserver: width=%d, height=%d, image_number=%d, size=%d \n", ev.image.width, ev.image.height, md.image_number, ev.image.size);
+            
+            last_received_frame = md.image_number;
+        }
+}; 
 </code>
 </pre>
 
