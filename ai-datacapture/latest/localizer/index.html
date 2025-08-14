@@ -291,6 +291,8 @@ The **[Shelf and Product Localizer](../about/#localizer)** model detects and ide
 <ol>
 <li><p><strong>Import the Localizer class -</strong> Use <code>com.zebra.ai.vision.detector.Localizer</code>.</p></li>
 
+<li><p><strong>Configure Localizer settings -</strong> Create a Localizer.Settings object.</p></li>
+
 <li><p><strong>Initialize the SDK -</strong> Use your application's context object and invoke <code>init()</code> from the <a href="../class/aivisionsdk/">AIVisionSDK</a> class.</p></li>
 
 <li><p><strong>Optional: Set model input dimensions -</strong> If needed, customize the model input height and width through <a href="../class/inferenceroptions/">inferencerOptions</a>:</p>
@@ -305,6 +307,38 @@ settings.inferencerOptions.defaultDims.width = [your value];
 
 <li><p><strong>Handle synchronous initialization:</strong> Use the <code>thenAccept()</code> method of <code>CompletableFuture</code> to handle the initialized <code>Localizer</code> object. Assign the returned instance to your localizer variable, making it ready for barcode or shelf/product detection tasks.</p></li>
 </ol>
+
+<h4 id="samplecode" class="anchor"><a class="heading-anchor" href="#samplecode"><span></span></a>Sample Code</h4>
+
+<pre class="prettyprint"><code>    import com.zebra.ai.vision.Localizer;
+
+    // Initialize SDK. Context refers to application context object.
+    AIVisionSDK.getInstance(Context).init();
+
+    // For Barcode Localizer, pass "barcode-localizer” as the mavenModelName 
+    // For Shelf and Product Localizer, pass "product-and-shelf-recognizer” as the mavenModelName 
+
+    locSettings = new Localizer.Settings(mavenModelName); 
+    Localizer.Settings locSettings = new Localizer.Settings(mavenModelName);
+
+    // Optional - set model input size
+    locSettings.inferencerOptions.defaultDims.height = 640;
+    locSettings.inferencerOptions.defaultDims.width = 640;
+
+    // Initialize Localizer object
+    Localizer localizer = null;
+
+    // Initialize Localizer and load the model asynchronously
+    // settings = Localizer.Settings object created above
+    // Executor = An executor thread for processing API calls and returning results
+    CompletableFuture&lt;Localizer&gt; futureObject = Localizer.getLocalizer(settings,executor);
+
+    // Use the futureObject to implement the thenAccept() callback of CompletableFuture
+    futureObject.thenAccept (localizerInstance -&gt; {
+        // Use the localizer object returned here for detecting barcodes/shelves/products
+        localizer = localizerInstance;
+    });
+</code></pre>
 
 <h4 id="inputimageguidelines" class="anchor"><a class="heading-anchor" href="#inputimageguidelines"><span></span></a>Input Image Guidelines</h4>
 
@@ -328,34 +362,6 @@ settings.inferencerOptions.defaultDims.width = [your value];
 
 <li>Capture images at lower resolutions while maintaining sufficient accuracy.</li>
 </ul>
-
-<h4 id="samplecode" class="anchor"><a class="heading-anchor" href="#samplecode"><span></span></a>Sample Code</h4>
-
-<pre class="prettyprint"><code>    import com.zebra.ai.vision.Localizer;
-
-    // Initialize SDK. Context refers to application context object.
-    AIVisionSDK.getInstance(Context).init();
-
-    Localizer.Settings locSettings = new Localizer.Settings(mavenModelName);
-
-    // Optional - set model input size
-    settings.inferencerOptions.defaultDims.height = 640;
-    settings.inferencerOptions.defaultDims.width = 640;
-
-    // Initialize Localizer object
-    Localizer localizer = null;
-
-    // Initialize Localizer and load the model asynchronously
-    // settings = Localizer.Settings object created above
-    // Executor = An executor thread for processing API calls and returning results
-    CompletableFuture&lt;Localizer&gt; futureObject = Localizer.getLocalizer(settings,executor);
-
-    // Use the futureObject to implement the thenAccept() callback of CompletableFuture
-    futureObject.thenAccept (localizerInstance -&gt; {
-        // Use the localizer object returned here for detecting barcodes/shelves/products
-        localizer = localizerInstance;
-    });
-</code></pre>
 
 <hr>
 
@@ -409,14 +415,13 @@ settings.inferencerOptions.defaultDims.width = [your value];
     resultFutureObject.thenAccept ( bboxes -&gt; { 
         // Process the returned array of bounding boxes 
         for (BBox bb : bboxes) { 
-            //get class id associated with the bounding box 
+            // Get the class ID associated with the bounding box 
             int class_id = bb.cls; 
 
-            // get probability of the bounding box 
+            // Get the probability of the bounding box 
             float probability =  bb.prob; 
 
-            //draw the bounding box with the co ordinates xmin,ymin,xmax and ymax 
-
+            // Draw the bounding box with the coordinates xmin, ymin, xmax and ymax 
             drawResult(bb.xmin,bb.ymin,bb.xmax,bb.ymax); 
         } 
     }); 
@@ -436,7 +441,7 @@ settings.inferencerOptions.defaultDims.width = [your value];
 
 <li><strong>Bitmap Source -</strong> Ideal when the input image is in Bitmap format and the focus is on quickly obtaining bounding boxes for detected objects.</li>
 
-<li><strong>Asynchronous Execution -</strong> Ideal t for applications where managing task execution without blocking the main application thread is crucial.</li>
+<li><strong>Asynchronous Execution -</strong> Ideal for applications where managing task execution without blocking the main application thread is crucial.</li>
 </ul>
 
 <p><strong>Step-By-Step Implementation:</strong></p>
@@ -627,7 +632,7 @@ settings.inferencerOptions.defaultDims.width = [your value];
 <pre class="prettyprint"><code>    Localizer.Settings locSettings = new Localizer.Settings(mavenModelName) throws InvalidInputException,AIVisionSDKException;
 </code></pre>
 
-<p><strong>Description:</strong> Constructor for Settings object with model name.</p>
+<p><strong>Description:</strong> Constructor for the <code>Settings</code> object with the model name.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -664,41 +669,6 @@ settings.inferencerOptions.defaultDims.width = [your value];
 <li><strong>InvalidInputException -</strong> Thrown when the ModelFile is invalid. </li>
 
 <li><strong>AIVisionSDKException -</strong> Thrown if an error occurs while processing the modelFile.</li>
-</ul>
-
-<hr>
-
-<h3 id="getmodelnameintmodeltype" class="anchor"><a class="heading-anchor" href="#getmodelnameintmodeltype"><span></span></a>getModelName(int modelType)</h3>
-
-<pre class="prettyprint"><code>    String getModelName(int modelType) throws InvalidInputException
-</code></pre>
-
-<p><strong>Description:</strong> Returns the model name for the specified localizer model type.</p>
-
-<p><strong>Parameters:</strong></p>
-
-<ul>
-<li><strong>int modelType -</strong> Specify one of the supported model types:
-
-
-<ul>
-<li>For Barcode Localizer, pass the modelType as Localizer.Settings.MODEL_TYPE_BARCODE_LOCALIZER.</li>
-
-<li>For Shelf Localizer, pass the modelType as Localizer.Settings.MODEL_TYPE_SHELF_LOCALIZER.</li></ul>
-</li>
-</ul>
-
-<p><strong>Exceptions:</strong></p>
-
-<ul>
-<li><strong>InvalidInputException -</strong> Thrown when modelType is not one of the supported values:
-
-
-<ul>
-<li><code>Localizer.Settings.MODEL_TYPE_BARCODE_LOCALIZER</code></li>
-
-<li><code>Localizer.Settings.MODEL_TYPE_SHELF_LOCALIZER</code></li></ul>
-</li>
 </ul>
 
 <hr>
