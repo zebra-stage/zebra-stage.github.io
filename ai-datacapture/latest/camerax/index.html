@@ -604,9 +604,9 @@ A <code>Matrix</code> object for transformation adjustments.</p>
 <p>The Entity Viewfinder mainly consists of three parts:</p>
 
 <ul>
-<li><strong>EntityView -</strong> A visual interface that allows for customization of the viewfinder’s appearance and behavior.</li>
+<li><strong><a href="#entityview">EntityView</a> -</strong> A visual interface that allows for customization of the viewfinder’s appearance and behavior.</li>
 
-<li><strong>EntityViewController -</strong> A functional interface that manages and implements the operational features of the viewfinder.</li>
+<li><strong><a href="#entityviewcontroller">EntityViewController</a> -</strong> A functional interface that manages and implements the operational features of the viewfinder.</li>
 
 <li><strong>StylePen -</strong> A visual representation of the entities of the Entity Viewfinder.</li>
 </ul>
@@ -615,31 +615,31 @@ A <code>Matrix</code> object for transformation adjustments.</p>
 
 <h3 id="developerguide-2" class="anchor"><a class="heading-anchor" href="#developerguide-2"><span></span></a>Developer Guide</h3>
 
-<p>This guide illustrates the integration and configuration of <code>EntityView</code> with a camera system using CameraX in an Android application. It covers setting up a viewfinder for camera preview, handling image analysis, and rendering entities with customizable styles. The guide also demonstrates how to manage user interactions and dynamically update the viewfinder with detected entities. </p>
+<p>This guide illustrates the integration and configuration of <code>EntityViewFinder</code> with a camera system using CameraX in an Android application. It covers setting up a viewfinder for camera preview and rendering entities with customizable styles. The guide also demonstrates how to manage user interactions and dynamically update the viewfinder with detected entities. </p>
 
 <ol>
-<li><p><strong>Integrate EntityView in XML Layout -</strong> Define <code>EntityView</code> in your XML layout file, specifying attributes to configure its initial behavior and appearance, such as <code>default_zoom</code>, <code>show_flash_button</code>, <code>show_zoom_button</code>, and <code>draggable</code>. </p>
+<li><p><strong>Integrate EntityView in XML Layout -</strong> Define <code>EntityView</code> in your XML layout file, specifying attributes to configure its initial behavior and appearance. </p>
 
 <pre class="prettyprint"><code>//  Integrate EntityView in XML Layout 
 &lt;com.zebra.ai.vision.viewfinder.EntityView 
     android:id="@+id/entity_view" 
     android:layout_width="match_parent" 
     android:layout_height="match_parent" 
-    app:default_zoom="x2" 
-    app:show_flash_button="true" 
-    app:show_zoom_button="true" 
-    app:draggable="true" /&gt; 
+    app:zoom="x2" 
+    app:draggable="false" /&gt; 
 </code></pre></li>
 
-<li><p><strong>Initialize EntityView and EntityViewController -</strong> Use <code>findViewById()</code> to obtain a reference to the <code>EntityView</code>, and instantiate an <code>EntityViewController</code> with this view and the current context. The controller manages the viewfinder’s operations and interactions. </p></li>
+<li><p><strong>Initialize EntityView and EntityViewController -</strong> Use <code>findViewById()</code> to obtain a reference to the <code>EntityView</code>, and instantiate an <code>EntityViewController</code> with this <code>EntityView</code> instance and the current context aas a lifecycleOwner. The controller manages the viewfinder’s operations and interactions. </p></li>
 
-<li><p><strong>Setup Camera -</strong> Use <code>ProcessCameraProvider</code> to manage the camera lifecycle and <code>CameraSelector</code> to select the back-facing camera. Create a <code>Preview</code> use case and set its surface provider using the <code>EntityViewController</code>. </p></li>
+<li><p><strong>Setup Camera -</strong> Use <code>ProcessCameraProvider</code> to manage the camera lifecycle and <code>CameraSelector</code> to select the back-facing camera. </p></li>
 
-<li><p><strong>Set Up Image Analysis -</strong> Define an <code>ImageAnalysis</code> use case to analyze the camera feed. Set the resolution and backpressure strategy, and assign an analyzer to process the images. </p></li>
+<li><p><strong>Create a Preview Case -</strong> Create a <code>Preview</code> use case and set its surface provider using the <code>EntityViewController</code>. </p></li>
+
+<li><p><strong>Set Up Image Analysis -</strong> Define an <code>ImageAnalysis</code> use case to analyze the camera feed. Set the resolution and necessary configuration and assign an <code>EntityTrackerAnalyzer</code> to process the images. </p></li>
 
 <li><p><strong>Bind Camera to Lifecycle -</strong> Unbind any previous use cases before binding the camera to the lifecycle with the configured preview and image analysis use cases. Set the camera controller in the <code>EntityViewController</code>. </p></li>
 
-<li><p><strong>Register Event Listeners -</strong> Register listeners for entity click events and viewfinder resize events to handle user interactions and dynamic layout changes. <br></p>
+<li><p><strong>Register Event Listeners -</strong> Register listeners to handle user interactions, such as entity click events, and to manage dynanmic layout changes, like viewfinder resize events. The resize listener allows users to establish field of view and entity coordinates between the preview and analyzer.  <br></p>
 
 <p>Sample code for steps 2 to 6: </p>
 
@@ -685,9 +685,9 @@ entityViewController.registerViewfinderResizeListener(specs -&gt; {
 }); 
 </code></pre></li>
 
-<li><p><strong>Initialize StylePens for Entity Visualization -</strong> Create various <code>StylePen</code> instances for visualizing different types of entities as required. Configure these pens with desired styles, such as stroke width and icon type. </p>
+<li><p><strong>Initialize StylePens for Entity Visualization -</strong> Create various <code>StylePen</code> instances for visualizing different entities as required. Configure these pens with desired styles, such as stroke width and icon type. </p>
 
-<pre class="prettyprint"><code>// Create various style pens initially 
+<pre class="prettyprint"><code>// Initialize various style pens as per the use case 
 
 private void initializeStylePens() { 
     StylePen qrCodeBoundingBoxPen = BoundingBoxDrawPen.builder() 
@@ -705,7 +705,8 @@ private void initializeStylePens() {
 
 <li><p><strong>Apply StylePens and Render Entities -</strong> In the analyzer results consumer method, clear previous entities and retrieve detected entities. Apply the appropriate <code>StylePen</code> to each entity based on your application use case and add them to the <code>EntityViewController</code>. Finally, render all entities on the viewfinder at once for optimized performance. </p>
 
-<pre class="prettyprint"><code>private void handleEntities(EntityTrackerAnalyzer.Result result) { 
+<pre class="prettyprint"><code>// Analyzer results consumer method
+private void handleEntities(EntityTrackerAnalyzer.Result result) { 
 
 <pre><code>// Clear previous entities 
 entityViewController.removeAll(); 
@@ -755,7 +756,11 @@ entityViewController.render();
 
 <h3 id="entityview" class="anchor"><a class="heading-anchor" href="#entityview"><span></span></a>EntityView</h3>
 
-<p><code>EntityView</code> is a specialized view designed to render the visual interface of a viewfinder, incorporating both camera and viewfinder controls. Designed to be incorporated into your XML layout file, it defines the display area for the viewfinder interface. For optimal operational management and seamless integration within your application, the <code>EntityView</code> should be used alongside the <code>EntityViewController</code>.</p>
+<p>The <code>EntityView</code> is a custom view designed to render the visual interface of a viewfinder. It is the UI representation of the <code>Entity Viewfinder</code>, displaying the camera preview along with interactive controls. It includes camera controls such as zoom and flash, as well as viewfinder-related features like a full-screen toggle button and a reset position button, providing essential functionality for managing the viewfinder and camera operations. </p>
+
+<p>This view is meant to be integrated into your XML layout file to define the display area for the viewfinder interface. The <code>EntityView</code> should be used in conjunction with the <code>EntityViewController</code> to ensure proper operational management and seamless integration within your application.  </p>
+
+<p>Currently the programmatic instantiation of the viewfinder is not supported. It is recommended to integrate it in the application using XML-based UI layouts. </p>
 
 <hr>
 

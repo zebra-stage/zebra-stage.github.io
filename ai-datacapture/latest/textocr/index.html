@@ -246,28 +246,23 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>The <code>TextOCR</code> class leverages Optical Character Recognition (OCR) to detect and recognize text within images. It offers methods for identifying text, words, and paragraphs across various image formats, with options to customize the output, such as grouping detected words into "lines" or grouping lines into "paragraphs."</p>
-
-<p><strong>Text OCR</strong> operates through a seamless two-stage process:</p>
-
-<ol>
-<li><strong>Detection Stage -</strong> Processes the input image to generate text boxes (complex bbox), represented by rectangular frames that enclose detected objects within an image. <a href="#detectionparameters">Detection Parameters</a> can be adjusted to fine-tune what is detected.</li>
-
-<li><strong>Recognition Stage -</strong> Analyzes the text within each text box to recognize the text content. Each text box yields a list of potential text decodes. <a href="#recognitionparameters">Recognition Parameters</a> can be adjusted to refine the recognition process.</li>
-</ol>
+<p>The <code>TextOCR</code> class leverages Optical Character Recognition (OCR) to detect, recognize, and group text from  images. It it processes images through three stages: Detection, Recognition, and Grouping. The flexibility of its parameters allows developers to fine-tune performance for diverse use cases, including document scanning, real-time recognition, and automated data entry.</p>
 
 <p>This guide begins with initial instructions for basic setup of OCR. Subsequent sections offer a comprehensive list of OCR settings that can be fine-tuned for specific needs:</p>
 
 <ul>
-<li><a href="#groupersettings">Grouper Settings</a></li>
-
-<li><a href="#tilersettings">Tiler Settings</a></li>
-
-<li><a href="#recognitionparameters">Recognition Parameters</a></li>
+<li><a href="../class/inferenceroptions/">Inferencer Options</a></li>
 
 <li><a href="#detectionparameters">Detection Parameters</a></li>
 
-<li><a href="../class/inferenceroptions/">Inferencer Options</a></li>
+<li><a href="#recognitionparameters">Recognition Parameters</a>
+
+
+<ul>
+<li><a href="#tilersettings">Tiler Settings</a></li></ul>
+</li>
+
+<li><a href="#groupersettings">Grouper Settings</a></li>
 </ul>
 
 <p>For non-standard use cases, particularly for <a href="#groupersettings">Grouper Settings</a>, developers are encouraged to experiment with and adjust these parameters to optimize performance.</p>
@@ -292,6 +287,613 @@
 <p><strong>Input Parameters:</strong> The default model input size is 640x640 pixels, but this can be adjusted during runtime initialization.</p>
 
 <p><strong>Output Parameters:</strong> The output consists of a list of text detections, each accompanied by a list of <a href="../types/#complexbbox">complex bounding boxes</a> that define the location and content of the detected text.</p>
+
+<hr>
+
+<h2 id="configuration" class="anchor"><a class="heading-anchor" href="#configuration"><span></span></a>Configuration</h2>
+
+<p>Before starting with TextOCR, configure key settings such as model input size, resolution, and inference type. Changes to these settings will require reinitializing the models. Information on configuring these settings are provided in the sections that follow.</p>
+
+<h3 id="modelinputsize" class="anchor"><a class="heading-anchor" href="#modelinputsize"><span></span></a>Model Input Size</h3>
+
+<p>The Model Input Size defines the resolution at which the AI processes images. Before analysis, images are resized to this dimension. Adjusting this size balances speed and accuracy.  </p>
+
+<p><strong>Key Considerations:</strong></p>
+
+<ul>
+<li>Start with the default resolution 640x640 for optimal processing. </li>
+
+<li>If the results are not sufficiently accurate for small text, increasing the resolution can improve precision.</li>
+</ul>
+
+<table class="facelift" style="width:20" border="1" padding="5px">  
+  <thead>
+    <tr bgcolor="#dce8ef">
+      <th>Input Size</th>
+      <th>Best For</th>
+      <th>Use Case</th>
+      <th>Consideration</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Smaller (e.g., 640x640)</td>
+      <td>Speed: Faster processing</td>
+      <td>Large or close text</td>
+      <td>Reduced accuracy for small text</td>
+    </tr>
+    <tr>
+      <td>Larger (e.g., 1600x1600)</td>
+      <td>Accuracy: Better for details</td>
+      <td>Fine print, distant, or dense text</td>
+      <td>Slower processing, higher memory usage</td>
+    </tr>
+    <tr>
+      <td>Custom (Multiples of 32, e.g., 800x800)</td>
+      <td>Balancing speed and accuracy</td>
+      <td>Low-contrast or medium-sized text</td>
+      <td>Requires experimentation to find the optimal setting</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><br></p>
+
+<h3 id="resolution" class="anchor"><a class="heading-anchor" href="#resolution"><span></span></a>Resolution</h3>
+
+<p>Camera resolution refers to the number of pixels the device’s camera sensor can capture (e.g., 1MP = 1280x720, 8MP = 3840x2160). It determines the quality of the source image before any resizing occurs for AI processing.</p>
+
+<p>Higher camera resolution provides a more detailed and higher-quality original image, which can significantly enhance the AI model's ability to detect and recognize small, faint, or distant text. However, this increased detail comes at the cost of greater processing power and memory usage.</p>
+
+<p><strong>Key Considerations:</strong></p>
+
+<ul>
+<li><strong>Impact of Camera Resolution -</strong> Higher resolutions enhance input image detail, aiding in recognizing small, low-contrast, or distant text. However, images are downscaled to the model's input size for processing, so the benefits of high-resolution cameras diminish with low model input sizes.</li>
+
+<li><strong>General Guidance -</strong> Aim for a minimum text height of 16 pixels in the input image, adjusting for font size and camera distance from the target.</li>
+</ul>
+
+<table class="facelift" style="width:20" border="1" padding="5px">  
+  <thead>
+    <tr bgcolor="#dce8ef">
+      <th>Resolution</th>
+      <th>Best For</th>
+      <th>Use Case</th>
+      <th>Consideration</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1MP (1280x720)</td>
+      <td>Speed, power efficiency</td>
+      <td>Large/simple text</td>
+      <td>May miss fine details</td>
+    </tr>
+    <tr>
+      <td>2MP (1920x1080)</td>
+      <td>General use</td>
+      <td>Stylized or moderately detailed text</td>
+      <td>Balanced performance</td>
+    </tr>
+    <tr>
+      <td>4MP (2688x1512)</td>
+      <td>Detailed scans</td>
+      <td>Contracts, forms, dense text</td>
+      <td>Higher memory and battery use</td>
+    </tr>
+    <tr>
+      <td>8MP (3840x2160)</td>
+      <td>Maximum detail</td>
+      <td>Archival purposes</td>
+      <td>Large files, diminishing returns for low input sizes</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><br></p>
+
+<p><strong>Relationship Between Model Input Size and Camera Resolution:</strong></p>
+
+<table class="facelift" style="width:20" border="1" padding="5px">  
+  <thead>
+    <tr bgcolor="#dce8ef">
+      <th>Resolution</th>
+      <th>Low Input Size (e.g., 640x640)</th>
+      <th>High Input Size (e.g., 1600x1600)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Low Resolution (e.g., 1MP / 1280x720)</strong></td>
+      <td>
+        <strong>Speed:</strong> Fastest<br>
+        <strong>Accuracy:</strong> Lowest<br>
+        <strong>Use Case:</strong> Large, clear text close to the camera<br>
+        <strong>Note:</strong> Small/fine details may be lost
+      </td>
+      <td>
+        <strong>Not Recommended:</strong> Wasted computation with little accuracy gain
+      </td>
+    </tr>
+    <tr>
+      <td><strong>High Resolution (e.g., 8MP / 3840x2160)</strong></td>
+      <td>
+        <strong>Speed:</strong> Fast<br>
+        <strong>Accuracy:</strong> Moderate<br>
+        <strong>Use Case:</strong> Large/medium text, quick scans<br>
+        <strong>Note:</strong> High-resolution source is downsampled for AI, so small text may still be missed
+      </td>
+      <td>
+        <strong>Speed:</strong> Slowest<br>
+        <strong>Accuracy:</strong> Highest<br>
+        <strong>Use Case:</strong> Detailed, small, dense, or distant text<br>
+        <strong>Note:</strong> High memory and battery usage; may stress low-end devices
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<p><br></p>
+
+<h3 id="inferencetypeprocessor" class="anchor"><a class="heading-anchor" href="#inferencetypeprocessor"><span></span></a>Inference Type (Processor)</h3>
+
+<p>The <strong>Inference Type</strong> specifies which chip on the device is responsible for performing AI computations (referred to as "inference"). This choice directly impacts the speed and efficiency of image processing.</p>
+
+<p><strong>Key Considerations:</strong></p>
+
+<ul>
+<li><strong>DSP (Digital Signal Processor) -</strong> Use DSP if available, as it is specifically designed for real-time, energy-efficient AI tasks and provides optimal performance.</li>
+
+<li><strong>GPU (Graphics Processing Unit) -</strong> If DSP is not available, the GPU serves as an alternative for handling AI workloads efficiently. </li>
+</ul>
+
+<table class="facelift" style="width:20" border="1" padding="5px">  
+  <thead>
+    <tr bgcolor="#dce8ef">
+      <th>Processor</th>
+      <th>Description</th>
+      <th>Performance</th>
+      <th>Use Case</th>
+      <th>Device Platform</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>DSP (Digital Signal Processor)</strong></td>
+      <td>
+        Optimized for real-time, energy-efficient tasks. Ideal for specific AI workloads where battery life and efficiency are critical.
+      </td>
+      <td>
+        <ul>
+          <li><strong>Best:</strong> Fastest and most efficient.</li>
+          <li>Preserves battery life during continuous use.</li>
+        </ul>
+      </td>
+      <td>
+        Best choice for real-time, low-energy tasks such as edge AI inference.
+      </td>
+      <td><strong>Best for:</strong> SD6490, SD5430 FP2; for relevant device models, visit <a href="https://supportcommunity.zebra.com/s/article/000022440?language=en_US">Zebra Platform Devices</a></td>
+    </tr>
+    <tr>
+      <td><strong>GPU (Graphics Processing Unit)</strong></td>
+      <td>
+        Designed for heavy, parallel AI tasks and complex models. Suitable for computationally intensive workloads.
+      </td>
+      <td>
+        <ul>
+          <li><strong>Good:</strong> High-speed performance but consumes more power than DSP.</li>
+          <li>Handles large-scale parallel tasks effectively.</li>
+        </ul>
+      </td>
+      <td>
+        Best for handling complex AI models or tasks requiring significant computational power.
+      </td>
+      <td><strong>Best for:</strong> SD4490, SD5430 FP1<br><strong>Good for:</strong> SD6490, SD5430 FP2; for relevant device models, visit <a href="https://supportcommunity.zebra.com/s/article/000022440?language=en_US">Zebra Platform Devices</a></td>
+    </tr>
+    <tr>
+      <td><strong>CPU (Central Processing Unit)</strong></td>
+      <td>
+        Acts as the fallback processor for AI inference tasks. Always available but less efficient compared to DSP and GPU.
+      </td>
+      <td>
+        <ul>
+          <li><strong>Fallback:</strong> Slower and less efficient but always available.</li>
+          <li>Consumes more power, making it less suitable for continuous tasks.</li>
+        </ul>
+      </td>
+      <td>
+        Suitable for lightweight tasks or as a fallback when DSP or GPU are unavailable or causing issues.
+      </td>
+      <td><strong>Fallback for:</strong> SD6490, SD4490, SD5430 FP2, SD5430 FP1; for relevant device models, visit <a href="https://supportcommunity.zebra.com/s/article/000022440?language=en_US">Zebra Platform Devices</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<hr>
+
+<h2 id="stagesoftextocr" class="anchor"><a class="heading-anchor" href="#stagesoftextocr"><span></span></a>Stages of TextOCR</h2>
+
+<p>The <strong>Text OCR</strong> process consists of three stages:</p>
+
+<ol>
+<li><strong>Text Detection -</strong> Identifies and filters text boxes within the image</li>
+
+<li><strong>Text Recognition -</strong> Reads and extracts text content from each identified text box. </li>
+
+<li><strong>Text Grouping -</strong> Organizes recognized words into lines or paragraphs. </li>
+</ol>
+
+<p>Information about each stage is provided in the subsequent sections.</p>
+
+<!--
+1. **Detection -** Identifies and filters text boxes with the image. Processes the input image to generate text boxes (complex bbox), represented by rectangular frames that enclose detected objects within an image. [Detection Parameters](#detectionparameters) can be adjusted to fine-tune what is detected.
+2. **Recognition -** Analyzes the text within each text box to recognize the text content. Each text box yields a list of potential text decodes. [Recognition Parameters](#recognitionparameters) can be adjusted to refine the recognition process.
+3. **Grouping -** It offers methods for identifying text, words, and paragraphs across various image formats, with options to customize the output, such as grouping detected words into "lines" or grouping lines into "paragraphs."
+-->
+
+<h3 id="stage1textdetection" class="anchor"><a class="heading-anchor" href="#stage1textdetection"><span></span></a>Stage 1: Text Detection</h3>
+
+<p>The text detection process occurs in two main stages:</p>
+
+<ol>
+<li><strong>Heatmap Threshold (Pixel-Level Filtering) -</strong> A heatmap is generated where each pixel is assigned a score indicating the likelihood of it being part of a text character. The <strong>Heatmap Threshold</strong> filters out individual pixels based on these scores, retaining only the most probable candidates.</li>
+
+<li><strong>Box Threshold (Box-Level Filtering) -</strong> After pixel filtering, the system identifies groups of pixels and draws bounding boxes around them. Each box is assigned a confidence score, and the <strong>Box Threshold</strong> filters out boxes with low confidence, retaining only those likely to contain text.</li>
+</ol>
+
+<h4 id="filteringparameters" class="anchor"><a class="heading-anchor" href="#filteringparameters"><span></span></a>Filtering Parameters</h4>
+
+<p>Once potential text boxes are identified, additional filtering can be applied to refine results by eliminating noise or unwanted detections. These filters also allow adjustments to the image and bounding box handling:</p>
+
+<ul>
+<li><strong>Min Box Size (Filtering Narrow Boxes) -</strong> Removes text boxes that are too narrow or short, such as underscores, divider lines, or other elongated shapes that are unlikely to contain text.</li>
+
+<li><strong>Min Box Area (Filtering Small Boxes) -</strong> Excludes text boxes with a total area (width × height) that is too small. This is particularly effective for ignoring noise such as tiny specks or dots in the image.</li>
+
+<li><strong>Unclip Ratio (Expanding Box Size) -</strong> Expands the bounding boxes after they are detected but before text recognition occurs. Initial bounding boxes are often tightly fitted to the text, and this parameter increases their size to include some background, improving text recognition accuracy.</li>
+
+<li><strong>Min Ratio for Rotation (Handling Vertical Text) -</strong> Rotates vertically oriented boxes (e.g., bottom-up or top-down text) to a horizontal orientation for better recognition. Applies only to boxes with a height-to-width ratio exceeding the specified value, rotating them 90 degrees to facilitate decoding.</li>
+</ul>
+
+<table class="facelift" style="width:20" border="1" padding="5px">  
+  <thead>
+    <tr bgcolor="#dce8ef">
+      <th>Parameter</th>
+      <th>Description</th>
+      <th>Guidance</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Heatmap Threshold</strong></td>
+      <td>
+        Minimum pixel confidence for potential text regions. (Pixel-level filtering)
+      </td>
+      <td>
+        <ul>
+          <li><strong>↑</strong> To cut noise, best for clear text or high contrast.</li>
+          <li><strong>↓</strong> To capture faint, curved, or blurred text with low contrast.</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Box Threshold</strong></td>
+      <td>
+        Filters detected boxes by their overall confidence. (Box-level filtering)
+      </td>
+      <td>
+        <ul>
+          <li><strong>↑</strong> To reduce false positives.</li>
+          <li><strong>↓</strong> To catch weak detections.</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Min Box Size</strong></td>
+      <td>
+        Filters out text boxes that are too narrow or too short. (Filtering "skinny" boxes)
+      </td>
+      <td>
+        <ul>
+          <li><strong>↑</strong> To ignore divider lines, underscores, or non-text lines.</li>
+          <li><strong>↓</strong> To detect smaller text.</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Min Box Area</strong></td>
+      <td>
+        Filters out text boxes if their total area (width × height) is too small. (Filtering "tiny" boxes)
+      </td>
+      <td>
+        <ul>
+          <li><strong>↑</strong> To eliminate dust, dots, or tiny artifacts.</li>
+          <li><strong>↓</strong> To allow smaller text or marks.</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Unclip Ratio</strong></td>
+      <td>
+        Expands or "stretches" detected boxes outward to include full characters and some background. (Expands box size)
+      </td>
+      <td>
+        <ul>
+          <li><strong>↑</strong> For curved, rotated, or incomplete detections.</li>
+          <li><strong>↓</strong> To avoid overlapping with neighboring text regions or noisy regions.</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Min Ratio for Rotation</strong></td>
+      <td>
+        Rotates vertically (high height, low width) oriented boxes so they become horizontal. (Rotates vertical boxes)
+      </td>
+      <td>
+        Only adjust if the images contain many rotated texts (e.g., upright or vertical text).
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Legend:</strong></p>
+
+<ul>
+<li><strong>↑:</strong> Increase the value of the parameter.</li>
+
+<li><strong>↓:</strong> Decrease the value of the parameter.</li>
+</ul>
+
+<h3 id="stage2textrecognition" class="anchor"><a class="heading-anchor" href="#stage2textrecognition"><span></span></a>Stage 2: Text Recognition</h3>
+
+<p>After text boxes are detected, the next step is to extract and accurately read the text within each bounding box.
+AI Suite uses the <strong>"Total" decoder</strong> to convert character predictions into meaningful words, even in cases where the model is uncertain about specific characters. </p>
+
+<p>The <strong>"Total" decoder</strong> evaluates all possible character options for each position and balances confidence and flexibility using two key parameters: <strong>TopK Ignore Cutoff, Total Prob Threshold,</strong> and <strong>Max Word Combinations.</strong> These parameters act as filters to refine predictions and determine the final output.</p>
+
+<h4 id="decoderparameters" class="anchor"><a class="heading-anchor" href="#decoderparameters"><span></span></a>Decoder Parameters</h4>
+
+<table class="facelift" style="width:20" border="1" padding="5px">  
+  <thead>
+    <tr bgcolor="#dce8ef">
+      <th>Parameter</th>
+      <th>Description</th>
+      <th>Guidance</th>
+      <th>Example</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>TopK Ignore Cutoff</strong> <br> <i>The Gatekeeper</i></td>
+      <td>
+        The maximum number of highest-confidence character predictions the "Total" decoder considers for each character position. If additional are needed to meet the <b>Total Prob Threshold,</b> the model outputs a replacement character (e.g., "�").
+      </td>
+      <td>
+        <ul>
+          <li><strong>↑</strong> If the desired character isn’t appearing, allow more guesses.</li>
+          <li>Leave at default for most cases; adjust only if necessary.</li>
+        </ul>
+      </td>
+      <td>
+        <strong>Example:</strong>  
+        If predictions are: 'S' (40%), 's' (30%), '5' (15%), 'B' (5%), '8' (2%) And the cutoff is set to 4, only the top four predictions ('S', 's', '5', 'B') are retained. '8' and lower-ranked options are discarded.
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Total Prob Threshold</strong> <br> <i>The Quality Check</i></td>
+      <td>
+        The minimum cumulative confidence score required for a word prediction to be accepted. If the total score is below the threshold, the model outputs a replacement character (e.g., "�").
+      </td>
+      <td>
+        <ul>
+          <li><strong>↑</strong> For more flexible but potentially noisier results.</li>
+          <li><strong>↓</strong> For more trustworthy, reliable outputs.</li>
+        </ul>
+      </td>
+      <td>
+        <strong>Example:</strong> Using the predictions above, their combined confidence is:  
+        0.40 (S) + 0.30 (s) + 0.15 (5) + 0.05 (B) = 0.90. If the threshold is 0.85, the decoder proceeds. If the combined score is less, it outputs a replacement character (e.g., "�").
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Max Word Combinations</strong> <br> <i>Result Limiter</i></td>
+      <td>
+        Restricts the number of valid word outputs generated from possible character combinations for each detection. This helps avoid overwhelming results, particularly for ambiguous inputs, by limiting the model’s consideration of all potential character combinations across all positions in the word.
+      </td>
+      <td>
+        <ul>
+          <li><strong>↑</strong> For tougher, longer words to see more possible outputs.</li>
+          <li><strong>↓</strong> For faster processing and fewer alternatives.</li>
+        </ul>
+      </td>
+      <td>
+        <strong>Example:</strong> Suppose there are 20 possible valid word combinations after applying the above filters. If Max Word Combinations is set to 5, only the top 5 most confident word outputs are returned. The other 15 combinations are ignored, even if valid.
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Legend:</strong></p>
+
+<ul>
+<li><strong>↑:</strong> Increase the value of the parameter.</li>
+
+<li><strong>↓:</strong> Decrease the value of the parameter.</li>
+</ul>
+
+<h4 id="recognitionspecialcases" class="anchor"><a class="heading-anchor" href="#recognitionspecialcases"><span></span></a>Recognition: Special Cases</h4>
+
+<p>These features are designed for specific scenarios and are generally not required for most OCR tasks. Use them only when needed to address unique text recognition challenges.</p>
+
+<h5 id="flip" class="anchor"><a class="heading-anchor" href="#flip"><span></span></a>Flip</h5>
+
+<p>Runs recognition in multiple orientations to improve accuracy for rotated or flipped text. While this increases accuracy for text in varying orientations, it also adds processing time.</p>
+
+<table class="facelift" style="width:20" border="1" padding="5px">  
+  <thead>
+    <tr bgcolor="#dce8ef">
+      <th>What It Does</th>
+      <th>When/How to Adjust It</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        Runs recognition in multiple orientations to handle rotated or flipped text.
+      </td>
+      <td>
+        <ul>
+          <li><strong>Enable:</strong> If text orientation varies significantly.</li>
+          <li><strong>Disable:</strong> For standard horizontal text to reduce processing time.</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<h5 id="tiling" class="anchor"><a class="heading-anchor" href="#tiling"><span></span></a>Tiling</h5>
+
+<p>Splits very long, thin lines of text (e.g., serial numbers, document titles, part numbers) into smaller, manageable "tiles" for better recognition. This is useful when a word box exceeds the recognition limit (15 characters). While tiling improves accuracy, it also adds processing time, so it should be used only when necessary.</p>
+
+<table class="facelift" style="width:20" border="1" padding="5px">  
+  <thead>
+    <tr bgcolor="#dce8ef">
+      <th>Parameter</th>
+      <th>What It Does</th>
+      <th>When/How to Adjust It</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Aspect Ratio Lower Threshold</strong></td>
+      <td>
+        Sets the minimum width-to-height ratio for boxes to be tiled. Only boxes wider than this value are tiled, helping to control which boxes are considered "elongated."
+      </td>
+      <td>
+        <ul>
+          <li><strong>↑</strong> To tile only very long boxes.</li>
+          <li><strong>↓</strong> To tile shorter boxes, resulting in more tiled boxes.</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Aspect Ratio Upper Threshold</strong></td>
+      <td>
+        Sets the maximum width-to-height ratio for boxes to be tiled. Only boxes up to this ratio get tiled. This prevents extremely long or oddly shaped boxes from being tiled.
+      </td>
+      <td>
+        <ul>
+          <li><strong>↑</strong> To allow longer boxes to be tiled.</li>
+          <li><strong>↓</strong> To avoid tiling very stretched or oddly shaped boxes.</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>TopK Merged Predictions</strong></td>
+      <td>
+        Limits the number of "best guess" decodes returned after tiling.
+      </td>
+      <td>
+        <ul>
+          <li><strong>↑</strong> To see more possible results for review.</li>
+          <li><strong>↓</strong> For fewer, faster results.</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Legend:</strong></p>
+
+<ul>
+<li><strong>↑:</strong> Increase the value of the parameter.</li>
+
+<li><strong>↓:</strong> Decrease the value of the parameter.</li>
+</ul>
+
+<h3 id="stage3textgrouping" class="anchor"><a class="heading-anchor" href="#stage3textgrouping"><span></span></a>Stage 3: Text Grouping</h3>
+
+<p><strong>Text grouping</strong> is used to organize OCR results into logical chunks, such as lines and paragraphs, for better structure and readability. The grouping process relies on several parameters that define spacing, alignment, and font size differences.</p>
+
+<table class="facelift" style="width:20" border="1" padding="5px">  
+  <thead>
+    <tr bgcolor="#dce8ef">
+      <th>Parameter</th>
+      <th>What It Does</th>
+      <th>When/How to Adjust It</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Width Distance Ratio</strong></td>
+      <td>
+        Defines how much space is allowed between words before they are considered part of separate lines.
+      </td>
+      <td>
+        <ul>
+          <li><strong>↑</strong> If wide spaces between words should still be grouped in the same line.</li>
+          <li><strong>↓</strong> If words are being incorrectly joined into the same line.</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Height Distance Ratio</strong></td>
+      <td>
+        Allows grouping of words into a single line even if their font sizes are significantly different.
+      </td>
+      <td>
+        <ul>
+          <li><strong>↑</strong> If words with different font sizes should be grouped together in a line.</li>
+          <li><strong>↓</strong> If large font-size differences are causing messy groupings.</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Center Distance Ratio</strong></td>
+      <td>
+        Enables grouping of words into a single line even if they are not perfectly aligned (e.g., curved or wavy text).
+      </td>
+      <td>
+        <ul>
+          <li><strong>↑</strong> If curved or zigzag text should be grouped in the same line.</li>
+          <li><strong>↓</strong> If only straight lines should be grouped together.</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Paragraph Height Distance</strong></td>
+      <td>
+        Specifies the maximum distance between lines that can still be grouped into the same paragraph.
+      </td>
+      <td>
+        <ul>
+          <li><strong>↑</strong> If lines spaced far apart should still be grouped into one paragraph.</li>
+          <li><strong>↓</strong> If too many lines are being grouped into a single paragraph.</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Paragraph Height Ratio Threshold</strong></td>
+      <td>
+        Allows lines with very different heights (font sizes) to be grouped into the same paragraph.
+      </td>
+      <td>
+        <ul>
+          <li><strong>↑</strong> If lines with similar font sizes should be grouped.</li>
+          <li><strong>↓</strong> To allow lines with very different font sizes to be grouped together.</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Legend:</strong></p>
+
+<ul>
+<li><strong>↑:</strong> Increase the value of the parameter.</li>
+
+<li><strong>↓:</strong> Decrease the value of the parameter.</li>
+</ul>
 
 <hr>
 
@@ -755,7 +1357,7 @@ textOCR.dispose()
 
 <hr>
 
-<h4 id="tiling" class="anchor"><a class="heading-anchor" href="#tiling"><span></span></a>Tiling</h4>
+<h4 id="tiling-1" class="anchor"><a class="heading-anchor" href="#tiling-1"><span></span></a>Tiling</h4>
 
 <pre class="prettyprint"><code>    TilerSettings TextOCR.Settings.tiling
 </code></pre>
@@ -936,7 +1538,7 @@ textOCR.dispose()
 
 <hr>
 
-<h4 id="flip" class="anchor"><a class="heading-anchor" href="#flip"><span></span></a>flip</h4>
+<h4 id="flip-1" class="anchor"><a class="heading-anchor" href="#flip-1"><span></span></a>flip</h4>
 
 <pre class="prettyprint"><code>    boolean TextOCR.Settings.flip
 </code></pre>
