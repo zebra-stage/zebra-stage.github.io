@@ -526,7 +526,7 @@
 <p><strong>Capabilities:</strong></p>
 
 <ol>
-<li><strong>Batch Retrieval -</strong> Retrieve all devices or a filtered list of devices from the database. Each API call can retrieve up to 300 devices at a time.</li>
+<li><strong>Batch Retrieval -</strong> Retrieve all devices or a filtered subset of devices from the database. Each API call can take action on up to 300 items (devices, sites, or access points) per request.</li>
 
 <li><strong>Filtering Options -</strong> Query devices based on specific attributes such as model_serialNumber, deviceState, site, etc.</li>
 
@@ -869,21 +869,21 @@
     <tr>
       <td>code</td>
       <td>
-        HTTP response code indicating success (200), client error (4XX), or internal server error (500).
+        HTTP response code indicating success (200), client error (in the 400 range), or internal server error (500).
       </td>
     </tr>
     <tr>
       <td>timestamp</td>
       <td>
-        The time at which this response was generated, returned in UTC.
+        The timestamp at which this response was generated.
       </td>
     </tr>
     <tr>
       <td>status</td>
       <td>
         The overall status of the API request, indicating success or failure. Possible error code values include:<br>
-        - 4XX: Client Error<br>
-        - 5XX: Server Error
+        - 4XX - Client Error (any value in the 400 range)<br>
+        - 5XX - Server Error (any value in the 500 range)
       </td>
     </tr>
     <tr>
@@ -951,7 +951,9 @@
 
 <h2 id="setdevicedetails" class="anchor"><a class="heading-anchor" href="#setdevicedetails"><span></span></a>Set Device Details</h2>
 
-<p>The <strong>Set Device Details</strong> API allows updating the device state and its assigned site for a single device or a list of devices. This API also supports modifying check-in and check-out time and status. Each device's state can only transition to a new state if it meets the eligibility criteria; otherwise, the operation fails and provides relevant error details.</p>
+<p>The <strong>Set Device Details API</strong> allows updating the state and assigned site of a single device or multiple devices, with support for updating up to 300 devices per request. This API also enables modifications to check-in and check-out timestamps and statuses. </p>
+
+<p>A device's state can only transition to a new state if it satisfies the eligibility criteria. If a transition is not allowed, the operation will fail and return detailed error information. State transitions are contingent on the device's current state, and certain states may not be eligible for transition to others. </p>
 
 <p><strong>Supported Device States:</strong></p>
 
@@ -996,7 +998,7 @@
                 "signinTime": "2012-10-01 09:45:00"
         } },
             {
-            "model_serialNumber": "TC52_123789SDJ234",
+            "model_serialNumber": "TC52_123789SDJ432",
             "signoutDetails": {
                 "userId": "ST4343",
                 "signedInState": false,
@@ -1006,7 +1008,7 @@
             "model_serialNumber": "TC52_1234SDJS901234",
             "deviceState": "INSERVICE"
         }, {
-            "model_serialNumber": "TC52_12345SDJS901234",
+            "model_serialNumber": "TC52_12345SDJS901432",
             "deviceState": "FOUND"
             }
         ],
@@ -1216,12 +1218,12 @@
   <tbody>
     <tr>
       <td>code</td>
-      <td>HTTP response code indicating success (200), client error (4XX), or internal server error (500).</td>
+      <td>HTTP response code indicating success (200), client error (4XX - any value in the 400 range), or internal server error (500).</td>
     </tr>
     <tr>
       <td>timestamp</td>
       <td>
-        The time at which the response was generated.
+        The timestamp at which the response was generated.
       </td>
     </tr>
     <tr>
@@ -1260,8 +1262,8 @@
       <td>errorCode</td>
       <td>
         Code representing the specific error if the action failed for a device. <strong>Error Codes:</strong><br>
-        &nbsp;&nbsp;&nbsp;- 4XX: Client Error<br>
-        &nbsp;&nbsp;&nbsp;- 5XX: Server Error
+        &nbsp;&nbsp;&nbsp;- 4XX - Client Error (any value in the 400 range)<br>
+        &nbsp;&nbsp;&nbsp;- 5XX - Server Error (any value in the 500 range)
       </td>
     </tr>
     <tr>
@@ -1270,12 +1272,216 @@
         If an update fails for any device, this field provides information on the failure.
       </td>
     </tr>
-     <tr>
-      <td>data.status</td>
+  </tbody>
+</table>
+
+<hr>
+
+<h2 id="deletedevices" class="anchor"><a class="heading-anchor" href="#deletedevices"><span></span></a>Delete Devices</h2>
+
+<p><strong>Delete Devices</strong> API enables the deletion of a single or multiple devices in a single request. Up to 300 devices can be deleted at a time.</p>
+
+<p><strong>Endpoint URL:</strong> <code>PUT {BASE_URL}/v1/devices</code></p>
+
+<hr>
+
+<h3 id="samples-2" class="anchor"><a class="heading-anchor" href="#samples-2"><span></span></a>Samples</h3>
+
+<h4 id="samplecurlrequest-1" class="anchor"><a class="heading-anchor" href="#samplecurlrequest-1"><span></span></a>Sample cURL Request</h4>
+
+<pre class="prettyprint"><code>    curl --location --request DELETE '/v1/devices' \
+    --header 'Content-Type: application/json' \
+    --header 'Authorization: Bearer ' \
+    --data '{
+        "model_serialNumber": [
+            "TC52AX_00000000000"
+        ]
+    }'
+</code></pre>
+
+<h4 id="samplerequestjson-1" class="anchor"><a class="heading-anchor" href="#samplerequestjson-1"><span></span></a>Sample Request (json)</h4>
+
+<pre class="prettyprint"><code>    First Sample Request: -
+    {
+    "model_serialNumber":["TC52_ABC","TC52_ABC1"],
+    "deviceType":"DEVICE"
+    }
+
+    Second Sample Request: -
+    {
+    "model_serialNumber":["ET40_24003524700767","CC610_23006524301537"],
+    "deviceType":"KIOSK"
+    }
+</code></pre>
+
+<h5 id="samplerequestdescription-1" class="anchor"><a class="heading-anchor" href="#samplerequestdescription-1"><span></span></a>Sample Request Description</h5>
+
+<p>Headers:</p>
+
+<table class="facelift" style="width:100%" border="1" padding="5px">
+  <thead>
+    <tr bgcolor="#dce8ef">
+      <th>Tag</th>
+      <th>Required</th>
+      <th>Type</th>
+      <th>Boundaries</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Authorization</td>
+      <td>Yes</td>
+      <td>String</td>
+      <td>N/A</td>
+      <td>Bearer Token</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Body:</p>
+
+<table class="facelift" style="width:100%" border="1" padding="5px">
+  <thead>
+    <tr bgcolor="#dce8ef">
+      <th>Tag</th>
+      <th>Required</th>
+      <th>Type</th>
+      <th>Boundaries / Pre-Conditions</th>
+      <th>Default Value</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>model_serialNumber</td>
+      <td>Yes</td>
+      <td>Array</td>
+      <td>N/A</td>
+      <td>N/A</td>
       <td>
-        Status of the action performed indicating success or failure for each item in the request. Possible error codes:<br>
-        &nbsp;&nbsp;&nbsp;- 4XX: Client Error<br>
-        &nbsp;&nbsp;&nbsp;- 5XX: Server Error
+        Takes a list of devices (model_serialNumber) that need to be deleted. Each request is limited to 300 devices.
+      </td>
+    </tr>
+    <tr>
+      <td>deviceType</td>
+      <td>No</td>
+      <td>String</td>
+      <td>N/A</td>
+      <td>DEVICE</td>
+      <td>
+        Specifies the type of devices to be deleted. Possible values: DEVICE, KIOSK, or ANY.
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="sampleresponse" class="anchor"><a class="heading-anchor" href="#sampleresponse"><span></span></a>Sample Response</h4>
+
+<pre class="prettyprint"><code>    {
+        "apiversion": "v1.0.0", 
+        "timestamp": "Thu, 04 Jan 2024 11:28:26 GMT",
+        "code": "",
+        "status": "SUCCESS"
+        "data": {
+            "devices": [
+            {
+                "model_serialNumber": "TC52_ABC",
+                "status": "SUCCESS"
+            },
+            {
+                "model_serialNumber": "TC52_ABC1",
+                "status": "FAILED",
+                "errorCode": "XXXX",
+                "reason": ""
+            }
+            ]
+        }
+    }
+
+    Second sample Response
+    {
+        "apiversion": "v1.0.0", 
+        "timestamp": "Thu, 04 Jan 2024 11:28:26 GMT",
+        "code": "",
+        "status": "SUCCESS"
+        "data": {
+            "devices": [
+            {
+                "model_serialNumber": "ET40_24003524700767",
+                "status": "SUCCESS"
+            },
+            {
+                "model_serialNumber": "CC610_23006524301537",
+                "status": "FAILED",
+                "errorCode": "XXXX",
+                "reason": ""
+            }
+            ]
+        }
+    }
+</code></pre>
+
+<p>Response Description:</p>
+
+<table class="facelift" style="width:100%" border="1" padding="5px">
+  <thead>
+    <tr bgcolor="#dce8ef">
+      <th>Tag</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>code</td>
+      <td>
+        HTTP response code indicating success (200), client error (any value in the 400 range), or internal server error (500).
+      </td>
+    </tr>
+    <tr>
+      <td>timestamp</td>
+      <td>
+        The timestamp at which the response was generated.
+      </td>
+    </tr>
+    <tr>
+      <td>data</td>
+      <td>
+        Contains the API response data.
+      </td>
+    </tr>
+    <tr>
+      <td>devices</td>
+      <td>
+        Array of devices, where each device is identified by the model_serialNumber (a combination of model and serial number separated by an underscore) and contains the update status.
+      </td>
+    </tr>
+    <tr>
+      <td>model_serialNumber</td>
+      <td>
+        A unique device identifier formed by combining the model with an underscore and the serial number.
+      </td>
+    </tr>
+    <tr>
+      <td>status</td>
+      <td>
+        Action status indicating success or failure.
+      </td>
+    </tr>
+    <tr>
+      <td>errorCode</td>
+      <td>
+        Code representing a specific type of error: 
+        <ul>
+          <li>4XX - Client Error (any value in the 400 range)</li>
+          <li>5XX - Server Error (any value in the 500 range)</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>reason</td>
+      <td>
+        If an action fails for any device, this field provides details about the failure.
       </td>
     </tr>
   </tbody>
