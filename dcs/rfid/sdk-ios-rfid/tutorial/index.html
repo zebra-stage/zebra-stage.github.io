@@ -3771,6 +3771,114 @@ Event:
 	
 </code></pre>	
 
+
+<h1 class="anchor">Login Support for E8 Devices</h1>	
+
+<h3 class="anchor">Admin Login</h3>		
+<p>The srfidAdminLogin method attempts to log in to an RFID reader using credentials.</p>	
+<pre class="prettyprint"><code>		
+- (SRFID_RESULT) srfidAdminLogin:(int)readerID password:(NSString*)password aStatusMessage:(NSString**)statusMessage
+{
+    ZT_LOG_ENTRY(SST_LOG_LEVEL_VERBOSE);
+    
+    ZT_SDK_LOCK(SRFID_RESULT_FAILURE);
+    
+    SRFID_RESULT rfid_result = SRFID_RESULT_FAILURE;
+    
+    if (password == nil)
+    {
+        rfid_result = SRFID_RESULT_INVALID_PARAMS;
+    }
+    else
+    {
+        zt_AsciiProcotocolHandler *_handler = [self getAsciiHandlerWithReaderId:readerID];
+        
+        if (nil != _handler)
+        {
+            SRFID_COMMAND_STATUS cmd_status = [_handler performCommandAdminLogin:password andStatusMessage:statusMessage];
+            
+            if (SRFID_COMMAND_STATUS_OK == cmd_status)
+            {
+                rfid_result = SRFID_RESULT_SUCCESS;
+            }
+            else if (SRFID_COMMAND_STATUS_ERROR_MESSAGE == cmd_status)
+            {
+                rfid_result = SRFID_RESULT_RESPONSE_ERROR;
+            }
+            else if (SRFID_COMMAND_STATUS_TIMEOUT == cmd_status)
+            {
+                rfid_result = SRFID_RESULT_RESPONSE_TIMEOUT;
+            }
+            else if (SRFID_COMMAND_STATUS_ASCII_CONNECTION_REQUIRED == cmd_status)
+            {
+                rfid_result = SRFID_RESULT_ASCII_CONNECTION_REQUIRED;
+            }
+        }
+        else
+        {
+            rfid_result = SRFID_RESULT_READER_NOT_AVAILABLE;
+        }
+    }
+    
+    ZT_SDK_UNLOCK;
+    ZT_LOG_EXIT(SST_LOG_LEVEL_VERBOSE);
+    return rfid_result;
+}
+</code></pre>	
+
+	
+<h3 class="anchor">Change Password</h3>		
+<p>The srfidChangePassword method is designed to change the password for an RFID reader.</p>	
+<pre class="prettyprint"><code>		
+- (SRFID_RESULT) srfidChangePassword:(int)readerID oldPassword:(NSString*)oldPassword andNewPassword:(NSString*)newPassword andreEnterPassword:(NSString*)reEnterPassword aStatusMessage:(NSString**)statusMessage
+{
+    ZT_LOG_ENTRY(SST_LOG_LEVEL_VERBOSE);
+    
+    ZT_SDK_LOCK(SRFID_RESULT_FAILURE);
+    
+    SRFID_RESULT rfid_result = SRFID_RESULT_FAILURE;
+    
+    if ((oldPassword == nil) || (newPassword == nil) || (reEnterPassword == nil))
+    {
+        rfid_result = SRFID_RESULT_INVALID_PARAMS;
+    }
+    else
+    {
+        zt_AsciiProcotocolHandler *_handler = [self getAsciiHandlerWithReaderId:readerID];
+        
+        if (nil != _handler)
+        {
+            SRFID_COMMAND_STATUS cmd_status = [_handler performCommandChangePassword:oldPassword newPassword:newPassword reEnterPassword:reEnterPassword andStatusMessage:statusMessage];
+            
+            if (SRFID_COMMAND_STATUS_OK == cmd_status)
+            {
+                rfid_result = SRFID_RESULT_SUCCESS;
+            }
+            else if (SRFID_COMMAND_STATUS_ERROR_MESSAGE == cmd_status)
+            {
+                rfid_result = SRFID_RESULT_RESPONSE_ERROR;
+            }
+            else if (SRFID_COMMAND_STATUS_TIMEOUT == cmd_status)
+            {
+                rfid_result = SRFID_RESULT_RESPONSE_TIMEOUT;
+            }
+            else if (SRFID_COMMAND_STATUS_ASCII_CONNECTION_REQUIRED == cmd_status)
+            {
+                rfid_result = SRFID_RESULT_ASCII_CONNECTION_REQUIRED;
+            }
+        }
+        else
+        {
+            rfid_result = SRFID_RESULT_READER_NOT_AVAILABLE;
+        }
+    }
+    
+    ZT_SDK_UNLOCK;
+    ZT_LOG_EXIT(SST_LOG_LEVEL_VERBOSE);
+    return rfid_result;
+}
+</code></pre>	
+
 	
 <footer id="footer" class="navbar-fixed-bottom">
 <div class="container-fluid">
