@@ -246,7 +246,7 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>The <code>BarcodeDecoder</code> class is designed to decode various types of barcodes detected in images. Initially, the <a href="../localizer/">Localizer</a> class identifies the location of barcodes in captured images. Subsequently, the <code>BarcodeDecoder</code> class decodes barcodes from either entire images or specific regions of the image defined by <a href="../types/#bbox/">bounding boxes</a>. It can handle single and multiple barcode decoding within a single image. </p>
+<p>The <code>BarcodeDecoder</code> class is designed to decode various types of barcodes detected in images. Initially, the <a href="../localizer/">Localizer</a> class identifies the location of barcodes in captured images. Subsequently, the <code>BarcodeDecoder</code> class decodes barcodes from either entire images or specific regions of the image defined by <a href="../types/#bbox/">bounding boxes</a>. It can handle single and multiple barcode decoding within a single image.</p>
 
 <p>Additionally, the <code>process()</code> method of the <code>BarcodeDecoder</code> class facilitates the ability to localize and decode barcodes simultaneously. This interface enables the development of CameraX analyzers in conjunction with other detectors.</p>
 
@@ -277,7 +277,7 @@
 
 <li><strong>Configure Barcode Symbologies:</strong> Enable the desired barcode symbologies to recognize and set its parameters; refer to the <a href="#barcodesymbologies">Supported Barcode Symbologies</a>.</li>
 
-<li><strong>Initialize and Load the Model Asynchronously -</strong> Declare a <code>BarcodeDecoder</code> object and use a <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a> to load the model asynchronously. Refer to the <a href="../model/barcode-localizer">Barcode Localizer Model</a> info card to learn about the supported and cached input resolutions for reducing model load time.</li>
+<li><strong>Initialize and Load the Model Asynchronously -</strong> Declare a <code>BarcodeDecoder</code> object and use a <code>CompletableFuture</code> to load the model asynchronously. Refer to the <a href="../model/barcode-localizer">Barcode Localizer Model</a> info card to learn about the supported and cached input resolutions for reducing model load time.</li>
 
 <li><strong>Handle Synchronous Initialization -</strong> Implement the <code>thenAccept()</code> callback to use the decoder instance once it is available.</li>
 </ol>
@@ -310,72 +310,106 @@
 
 <h3 id="step2decode" class="anchor"><a class="heading-anchor" href="#step2decode"><span></span></a>Step 2: Decode</h3>
 
-<p>Select one of the following methods to decode:</p>
+<p>Choose a decoding method:</p>
 
-<h4 id="method1detectanddecodewithprocess" class="anchor"><a class="heading-anchor" href="#method1detectanddecodewithprocess"><span></span></a>&gt; Method 1: Detect and Decode with process()</h4>
+<ul>
+<li><strong>Method 1: Detect and Decode Using process() Method -</strong> This method provides a streamlined approach to simultaneously localize and decode barcodes. It is ideal for integration with CameraX analyzers, providing one-step detection and decoding for efficient processing. </li>
 
-<p>The <a href="#processimagedataimagedata">process()</a> method within the <code>BarcodeDecoder</code> class enables applications to pass an <code>ImageData</code> object and perform simultaneous localization and decoding, based on the Localizer and BarcodeDecode settings respectively. Designed as a “detector” for use with CameraX analyzers, this interface can be integrated alongside other detectors, such as TextOCR. This is ideal for integration with CameraX analyzers, providing one-shot detection and decoding.</p>
+<li><strong>Method 2: Decode Full Image -</strong> This method decodes a single barcode from the entire image. If the image contains multiple barcodes, only the first successfully decoded barcode is displayed. </li>
 
-<p><strong>Note:</strong> AI Data Capture SDK also offers a cameraX <code>ImageAnalysis.Analyzer</code>, which can localize, decode and track barcodes, and notify applications. For further details, refer to <a href="../camerax/">EntityTrackerAnalyzer</a>.</p>
+<li><strong>Method 3: Decode Image Regions -</strong> This method is useful for decoding multiple barcodes located in specific regions of an image. When localization results are available, they can be passed as detection parameters to this API.</li>
+</ul>
 
-<p><strong>Step 1: Initialize BarcodeDecoder:</strong></p>
+<p>Instructions on how to use each method are provided in the subsections below.</p>
+
+<h4 id="method1detectanddecodeusingtheprocessmethod" class="anchor"><a class="heading-anchor" href="#method1detectanddecodeusingtheprocessmethod"><span></span></a>&gt; Method 1: Detect and Decode Using the process() Method</h4>
+
+<p>The <a href="#processimagedataimagedata">process()</a> method in the <code>BarcodeDecoder</code> class enables applications to pass an <code>ImageData</code> object and perform both simultaneous localization and decoding, based on the Localizer and BarcodeDecode settings respectively. Designed as a “detector” for use with CameraX analyzers, this interface can be integrated alongside other detectors, such as TextOCR.</p>
+
+<p><strong>Notes:</strong> </p>
+
+<ul>
+<li>AI Data Capture SDK also offers a cameraX <code>ImageAnalysis.Analyzer</code>, which can localize, decode and track barcodes, and notify applications. For further details, refer to <a href="../camerax/">EntityTrackerAnalyzer</a>.</li>
+
+<li>The process() method can be called even if the application is not implementing the CameraX <code>ImageAnalyzer</code> interface. Applications may pass the <code>ImageData</code> objects from other sources, such as Camera2 APIs or local storage. In such cases, skip step b,c below. </li>
+</ul>
 
 <ol>
-<li><strong>Create BarcodeDecoder Settings:</strong> Instantiate a <code>Settings</code> object for the <code>BarcodeDecoder</code> and enable the desired symbologies.</li>
+<li><p><strong>Initialize Localizer settings -</strong> Perform the following steps:</p>
 
-<li><strong>Initialize BarcodeDecoder:</strong> Obtain a <code>BarcodeDecoder</code> instance asynchronously using a <code>CompletableFuture</code>.</li>
-</ol>
+<ul>
+<li><strong>Create an Array for Runtime Processor Order -</strong> Initialize an array of Integer with size 1 to hold the runtime processor order. </li>
 
-<p><strong>Step 2: Process the Frame:</strong></p>
+<li><strong>Set Runtime Processor Order -</strong> Assign the InferencerOptions.DSP constant to the first element of the array. This specifies that the DSP (Digital Signal Processor) should be used for processing. </li>
 
-<ol>
-<li><strong>Prepare Inputs:</strong> The <code>process()</code> method requires an <code>ImageData</code> object. Use the helper methods within <code>ImageData</code> for conversion based on the image source type (<code>ImageProxy</code>, <code>Android.media.image</code>, or <code>Bitmap</code>).
-2.<strong>Localize and Decode Barcodes:</strong> Execute the <code>process()</code> method to detect and decode barcodes.</li>
+<li><strong>Assign Runtime Processor Order to Localizer Settings -</strong> Set the runtimeProcessorOrder of the inferencerOptions within detectorSetting to the array created in step 1. This configures the localizer to utilize DSP as the processing unit. </li>
 
-<li><strong>Handle Results:</strong> Process the decoded barcodes when the <code>CompletableFuture</code> completes.</li>
+<li><strong>Set Default Dimensions for the Localizer -</strong> Configure the default height and width for the localizer by assigning values to defaultDims.height and defaultDims.width, respectively. </li></ul>
 
-<li><strong>Dispose the Decoder:</strong> After decoding is complete and the decoder instance is no longer needed, dispose of the decoder to release resources.</li>
+<p>This example sets both the height and width to 640 pixels. </p>
+
+<pre class="prettyprint"><code>Integer[] rpo = new Integer[1]; 
+
+rpo[0] = InferencerOptions.DSP; // set runtime processor order to DSP 
+
+decoderSettings.detectorSetting.inferencerOptions.runtimeProcessorOrder = rpo; // enable DSP for localizer 
+
+decoderSettings.detectorSetting.inferencerOptions.defaultDims.height = 640; // set default height for the localizer 
+
+decoderSettings.detectorSetting.inferencerOptions.defaultDims.width = 640; // set default width for the localizer 
+</code></pre></li>
+
+<li><p><strong>Implement ImageAnalysis.Analyzer -</strong> Develop a custom CameraX analyzer by implementing the ImageAnalysis.Analyzer interface. </p></li>
+
+<li><p><strong>Override analyze() -</strong> CameraX feeds the frames continuously to the Analyzers, that are bound to it. Users can override the analyzer() interface for their specific functionalities. </p></li>
+
+<li><p><strong>Prepare Inputs -</strong> The process() method requires ImageData object. Use the helper methods of ￼ImageData for conversion, based on the source image type (ImageProxy or Android.media.image or Bitmap). </p></li>
+
+<li><p><strong>Localize and Decode Barcodes -</strong> Use the process() method to detect and decode barcodes. </p></li>
+
+<li><p><strong>Handle Results -</strong> Process the decoded barcode when the CompletableFuture completes. </p></li>
+
+<li><p><strong>Dispose Decoder -</strong> After decoding is complete and the decoder instance is no longer needed, dispose of the decoder to release resources. </p></li>
 </ol>
 
 <p>Sample Code:</p>
 
-<pre class="prettyprint"><code>    try {
-        barcodeDecoder.process(ImageData.fromImageProxy(image)).thenAccept(result -&gt;{
+<pre class="prettyprint"><code>    try { 
+            barcodeDecoder.process(ImageData.fromImageProxy(image)) 
+                    .thenAccept(result -&gt;{ 
+                        for(BarcodeEntity  barcodeEntity:result){ 
+                            // Access bounding box and confidence 
+                            Rect boundingBox =  barcodeEntity.getBoundingBox(); 
+                            float confidence = barcodeEntity.accuracy(); 
 
-            for(Entity&lt;?&gt; bb:result){
-                // Access bounding box and confidence
-                Rect boundingBox = bb.getBoundingBox();
-                float confidence = bb.accuracy();
+                            // Access barcode-specific data 
+                            String barcodeValue =  barcodeEntity.getValue(); 
+                            String barcodeType =  barcodeEntity.getSymbology(); 
+                        } 
+                        image.close();
+                    }) 
 
-                // Type cast Entity to BarcodeEntity for specific operations
-                BarcodeEntity barcodeEntity = (BarcodeEntity) bb;
+                    .exceptionally(e -&gt;{ 
+                        image.close(); 
+                    }
+            ); 
+        } 
 
-                // Access barcode-specific data
-                String barcodeValue = barcodeEntity.getValue();
-                String barcodeType = barcodeEntity.getSymbology();
-            }
-            image.close();
-        })
-        .exceptionally(e -&gt;{
-            image.close();
-        });
-    }
-
-    catch (Exception e) {
-        Log.e(TAG, "Analysis failed: " + e.getMessage());
-    }
+        catch (Exception e) { 
+            Log.e(TAG, "Analysis failed: " + e.getMessage()); 
+        } 
 </code></pre>
 
 <h4 id="method2decodefullimage" class="anchor"><a class="heading-anchor" href="#method2decodefullimage"><span></span></a>&gt; Method 2: Decode Full Image</h4>
 
-<p>This method executes the decoder over the entire image, attempting to find and decode a barcode. Typically, this applies for decoding a single barcode.</p>
+<p>This method executes the decoder over the entire image to find and decode a single barcode. If multiple barcodes are present, only the first decoded barcode is returned. </p>
 
 <ol>
-<li><strong>Prepare Inputs:</strong> Obtain a Bitmap image that contains the barcode. Use an Executor to manage the asynchronous decoding operation.</li>
+<li><strong>Prepare Inputs:</strong> Obtain a Bitmap image that contains the barcode. Use an <code>Executor</code> to manage the asynchronous decoding operation.</li>
 
-<li><strong>Decode Barcode:</strong> Call the decode method on the BarcodeDecoder instance, passing the image and executor.</li>
+<li><strong>Decode Barcode:</strong> Call the decode method on the <code>BarcodeDecoder</code> instance, passing the image and executor.</li>
 
-<li><strong>Handle Results:</strong> Process the decoded barcode when the CompletableFuture completes.</li>
+<li><strong>Handle Results:</strong> Process the decoded barcode when the <code>CompletableFuture</code> completes.</li>
 
 <li><strong>Dispose Decoder:</strong> After decoding is complete and the decoder instance is no longer needed, dispose of the decoder to release resources.</li>
 </ol>
@@ -383,126 +417,112 @@
 <p>Sample Code:</p>
 
 <pre class="prettyprint"><code>    // Decoding starts once the bitmap image is available
-    // Input params: bitmap image and an executor thread object (in which the decode happens and the results are returned).
+    // Input params: bitmap image and an executor thread object (in which the decode happens and the results are returned)
     CompletableFuture&lt;Result&gt; resultFutureObject = barcodeDecoder.decode(bitmap, executor);
-    resultFutureObject.thenAccept (results -&gt; {
-        // Process the returned result of decoded barcode.
-    });
+    resultFutureObject.thenAccept (results -&gt; { 
+        // get barcode bounding box here 
+        BBox bb = results. GetCorners(); 
 
-    // Once done with using the decoder object, dispose the object to release the resources and memory used for decoding
-    barcodeDecoder.dispose();
+        // get the barcode value here 
+        String barcodeValue = results.getvalue(); 
+
+        // get the barcode symbology here 
+        int symbol = results.getSymbology(); 
+    }); 
+
+    // Once done with using the decoder object, dispose the object to release the resources and memory used for decoding 
+    barcodeDecoder.dispose(); 
 </code></pre>
 
 <h4 id="method3decodeimageregions" class="anchor"><a class="heading-anchor" href="#method3decodeimageregions"><span></span></a>&gt; Method 3: Decode Image Regions</h4>
 
-<p>This method executes the decoder over specific areas of an image, as defined by <a href="../types/#bbox/">bounding boxes</a>. It is generally used when these bounding boxes are identified through a separate localization process, such as a <a href="../localizer/">Localizer</a>, and is particularly applicable when decoding multiple barcodes.</p>
+<p>This method decodes multiple barcodes within specific areas of an image, defined by <a href="../types/#bbox/">bounding boxes</a> identified through a separate localization process, such as a <a href="../localizer/">Localizer</a>. The <code>Localizer</code> object and <code>Decoder</code> object must be created separately.</p>
 
 <p><strong>Step 1: Barcode Detection:</strong></p>
 
 <ol>
-<li><strong>Set Model Name:</strong> Obtain the model name for barcode localization.</li>
+<li><strong>Configure Localizer Settings -</strong> Create and configure a <code>Localizer.Settings</code> object with the model name. Optionally, set the input dimensions. </li>
 
-<li><strong>Configure Localizer Settings:</strong> Create and configure a <code>Localizer.Settings</code> object with the model name. Optionally, set the input dimensions.</li>
-
-<li><strong>Initialize Localizer:</strong> Asynchronously obtain a <code>Localizer</code> instance using a <code>CompletableFuture</code>.</li>
+<li><strong>Initialize Localizer -</strong> Asynchronously obtain a <code>Localizer</code> instance using a <code>CompletableFuture</code>. </li>
 </ol>
 
 <p><strong>Step 2: Barcode Decoding:</strong></p>
 
 <ol>
-<li><strong>Create BarcodeDecoder Settings:</strong> Instantiate a Settings object for the BarcodeDecoder and enable desired symbologies.</li>
+<li><strong>Create BarcodeDecoder Settings -</strong> Instantiate a <code>Settings</code> object for the <code>BarcodeDecoder</code> and enable the desired symbologies.</li>
 
-<li><strong>Initialize BarcodeDecoder:</strong> Asynchronously obtain a BarcodeDecoder instance using a <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a>.</li>
+<li><strong>Initialize BarcodeDecoder -</strong> Asynchronously obtain a <code>BarcodeDecoder</code> instance using a <code>CompletableFuture</code>.</li>
 
-<li><strong>Detect Objects:</strong> Once a camera image is available, use the <code>Localizer</code> to detect objects. This method accepts a Bitmap image and returns bounding boxes of detected items.</li>
+<li><strong>Detect Objects -</strong> Once a camera image is available, use the <code>Localizer</code> to detect objects. This method accepts a <code>Bitmap</code> image and returns <a href="../types/#bbox/">bounding boxes</a> of detected items.</li>
 
-<li><strong>Decode Barcodes:</strong> Use the <code>BarcodeDecoder</code> to decode the detected barcodes from the bounding boxes.</li>
+<li><strong>Decode Barcodes -</strong> Use the <code>BarcodeDecoder</code> to decode the detected barcodes from the bounding boxes.</li>
 </ol>
 
 <p>Sample Code:</p>
 
 <pre class="prettyprint"><code>    // Barcode Detection
-    String modelName =  Localizer.Settings.getModelName(Localizer.Settings.MODEL_TYPE_BARCODE_LOCALIZER);
-    Localizer.Settings settings = new Localizer(modelName);
+    String mavenModelName = "barcode-localizer"; 
+    Localizer.Settings settings = new Localizer( mavenModelName); 
 
-    // Optional: Set model input size parameters
-    settings.inferencerOptions.defaultDims.height = 640;
-    settings.inferencerOptions.defaultDims.width = 640;
+    // Optional: Set model input size parameters 
+    settings.inferencerOptions.defaultDims.height = 640; 
+    settings.inferencerOptions.defaultDims.width = 640; 
 
-    // Initialize Localizer object
-    Localizer localizer = null;
+    // Initialize Localizer object 
+    Localizer localizer = null; 
 
-    CompletableFuture&lt;Localizer&gt; futureObject = Localizer.getLocalizer(settings,executor);
+    CompletableFuture&lt;Localizer&gt; futureObject = Localizer.getLocalizer(settings,executor); 
 
-    // Use the futureObject to implement thenAccept() callback of //CompletableFuture.
-    futureObject.thenAccept ( localizerInstance -&gt; {
-        localizer = localizerInstance; // Use the localizer object for the detection of barcodes/shelves/products
-    });
+    // Use the futureObject to implement thenAccept() callback of //CompletableFuture. 
+    futureObject.thenAccept ( localizerInstance -&gt; { 
+        localizer = localizerInstance; // Use the localizer object for the detection of barcodes/shelves/products 
+    }); 
 
-    // Create BarcodeDecoder object
-    BarcodeDecoder barcodeDecoder = null;
+    // Create BarcodeDecoder object 
+    BarcodeDecoder barcodeDecoder = null;  
 
-    // Create settings for BarcodeDecoder
-    Settings settings = new Settings();
+    // Create settings for BarcodeDecoder 
+    BarcodeDecoder.Settings settings = new BarcodeDecoder.Settings(mavenModelName); 
 
-    // Enable symbology settings
-    settings.Symbology.UPCE1.enable(true);
-    settings.Symbology.UPCE1.setReportCheckDigit(true);
+    // Enable symbology settings 
+    settings.Symbology.UPCE1.enable(true); 
+    settings.Symbology.UPCE1.setReportCheckDigit(true); 
 
-    // Initialize executor
-    Executor executor = Executors.newFixedThreadPool(1);
+    // Initialize executor 
+    Executor executor = Executors.newFixedThreadPool(1); 
 
-    // Asynchronously get BarcodeDecoder instance
-    CompletableFuture&lt;BarcodeDecoder&gt; futureDecoderObj = BarcodeDecoder.getBarcodeDecoder(settings, executor);
+    // Asynchronously get BarcodeDecoder instance 
+    CompletableFuture&lt;BarcodeDecoder&gt; futureDecoderObj = BarcodeDecoder.getBarcodeDecoder(settings, executor); 
 
-    // Use the futureObject to implement thenAccept() callback of CompletableFuture.
-    futureDecoderObj.thenAccept (decoderInstance -&gt; {
-        barcodeDecoder = decoderInstance;  // Use the decoder object returned here for barcode detection
-    });
+    // Use the futureObject to implement thenAccept() callback of CompletableFuture. 
+    futureDecoderObj.thenAccept (decoderInstance -&gt; { 
+        barcodeDecoder = decoderInstance;  // Use the decoder object returned here for barcode detection 
+    }); 
 
-    // Detect objects once the camera image is available
-    BBox[] detections;
+    // Detect objects once the camera image is available 
+    BBox[] detections; 
 
-    // Input params: bitmap image and an executor thread object in which the detection happens
-    // Results are returned in thenAccept() callback
-    CompletableFuture &lt;BBox[]&gt; resultFutureObject = localizer.detect(image , executor);
-    resultFutureObject.thenAccept ( bboxes -&gt; {
-        detections = bboxes;  // Process the returned array of bounding boxes
-    });
+    // Input params: bitmap image and an executor thread object in which the detection happens 
+    // Results are returned in thenAccept() callback 
+    CompletableFuture &lt;BBox[]&gt; resultFutureObject = localizer.detect(image , executor); 
+    resultFutureObject.thenAccept ( bboxes -&gt; { 
+        detections = bboxes;  // Process the returned array of bounding boxes 
+    }); 
 
-    // Once the bounding boxes are available, pass them to barcodeDecoder for decoding
-    Bitmap image = ...; // //Load your Bitmap image here
+    // Once the bounding boxes are available, pass them to barcodeDecoder for decoding 
+    Bitmap image = ...; // //Load your Bitmap image here 
 
-    // Perform decode on barcode
-    CompletableFuture&lt;Result&gt; resultFutureObject = barcodeDecoder.decode(bitmap, detections , executor);
-    resultFutureObject.thenAccept (results -&gt; {
-        // Process the returned result (Result[]) of decoded barcodes
-    });
+    // Perform decode on barcode 
+    CompletableFuture&lt;Result&gt; resultFutureObject = barcodeDecoder.decode(bitmap, detections , executor); 
 
-    // Dispose resources
-    // Once done using the decoder object, dispose it to release the resources and memory used for decoding.
-    barcodeDecoder.dispose();
+    resultFutureObject.thenAccept (results -&gt; { 
+        // Process the returned result (Result[]) of decoded barcodes 
+    }); 
+
+    // Dispose resources 
+    // Once done using the decoder object, dispose it to release the resources and memory used for decoding. 
+    barcodeDecoder.dispose(); 
 </code></pre>
-
-<!--
-1. **Prepare Inputs:** Obtain a Bitmap image containing the barcodes. Use an array of BBox ([bounding boxes](..2.22.8/)) indicating the regions of interest in the image where barcodes are expected. Use an Executor to manage asynchronous decoding operations.
-2. **Decode Barcodes:** Call the decode method on the BarcodeDecoder instance, passing the image, bounding boxes, and executor.
-3. **Handle the Results:** Process the decoded barcodes when the CompletableFuture completes.
-4. **Dispose the Decoder:** Once decoding is complete and no further use of the decoder instance is needed, dispose of the decoder to release resources.
-
-Sample Code:
-
-        // Decoding starts once bounding boxes are available
-        // Input params: bitmap image, array of bounding boxes, an executor thread object (in which the decode happens and the results are returned)
-        CompletableFuture<Result[]> resultFutureObject = barcodeDecoder.decode(bitmap, bboxes, executor);
-        resultFutureObject.thenAccept (results -> {
-            // Process the returned result of decoded barcodes.
-        });
-
-        // Once use of the decoder object is done, dispose the object to release the resources and memory used for decoding
-        barcodeDecoder.dispose();
-
--->
 
 <hr>
 
@@ -510,7 +530,7 @@ Sample Code:
 
 <h3 id="getbarcodedecodersettingssettingsexecutorexecutor" class="anchor"><a class="heading-anchor" href="#getbarcodedecodersettingssettingsexecutorexecutor"><span></span></a>getBarcodeDecoder (Settings settings, Executor executor)</h3>
 
-<pre class="prettyprint"><code>    CompletableFuture&lt;BarcodeDecoder&gt; getBarcodeDecoder (Settings settings, Executor executor) throws InvalidInputException, RuntimeException
+<pre class="prettyprint"><code>    CompletableFuture&lt;BarcodeDecoder&gt; getBarcodeDecoder (Settings settings, Executor callerExecutor) throws InvalidInputException, AIVisionSDKSNPEException, AIVisionSDKException,AIVisionSDKModelException
 </code></pre>
 
 <p><strong>Description:</strong> Asynchronously initializes and returns a <code>BarcodeDecoder</code> object.</p>
@@ -529,13 +549,19 @@ Sample Code:
 <li><strong>InvalidInputException -</strong> Thrown if the settings object is null.</li>
 
 <li><strong>AIVisionSDKException -</strong> Thrown if the image queue size is exceeded.</li>
+
+<li><strong>AIVisionSDKSNPEException -</strong> Thrown if SNPE initialization fails. </li>
+
+<li><strong>AIVisionSDKException -</strong> Thrown if the AI Data Capture SDK is not initialized. </li>
+
+<li><strong>AIVisionSDKModelException -</strong> Thrown if there is an issue with the model itself. </li>
 </ul>
 
 <hr>
 
 <h3 id="decodebitmapbmp" class="anchor"><a class="heading-anchor" href="#decodebitmapbmp"><span></span></a>decode (Bitmap bmp)</h3>
 
-<pre class="prettyprint"><code>    CompletableFuture&lt;Result&gt; BarcodeDecoder. decode (Bitmap bmp, Executor executor) throws InvalidInputException, AIVisionSDKException
+<pre class="prettyprint"><code>    CompletableFuture&lt;Result&gt; decode (Bitmap bmp, Executor executor) throws InvalidInputException, AIVisionSDKException
 </code></pre>
 
 <p><strong>Description:</strong> Asynchronously decodes a barcode from the provided bitmap image. Runs the decoding process in the specified executor thread. When scanning multiple barcodes within an image, Zebra recommends passing multiple image frames to the decode API and processing the results frame by frame until all desired barcodes are decoded.</p>
@@ -548,21 +574,21 @@ Sample Code:
 <li><strong>Executor executor -</strong> The executor for running the decoding process.</li>
 </ul>
 
-<p><strong>Return Value -</strong> A <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a> returing a String representing the decoded barcode.</p>
+<p><strong>Return Value -</strong> A <code>CompletableFuture</code> returning a String representing the decoded barcode.</p>
 
 <p><strong>Exceptions:</strong></p>
 
 <ul>
 <li><strong>InvalidInputException -</strong> Thrown when the Bitmap is null.</li>
 
-<li><strong>AIVisionSDKException -</strong> Thrown if the image queue size is exceeded.</li>
+<li><strong>AIVisionSDKException -</strong> Thrown if the if the image queue size is exceeded.. </li>
 </ul>
 
 <hr>
 
 <h3 id="decodebitmapbmpbboxdetectionsexecutorexecutor" class="anchor"><a class="heading-anchor" href="#decodebitmapbmpbboxdetectionsexecutorexecutor"><span></span></a>decode (Bitmap bmp, BBox[ ] detections, Executor executor)</h3>
 
-<pre class="prettyprint"><code>    CompletableFuture&lt;Result[]&gt; BarcodeDecoder.decode (Bitmap bmp, BBox[] detections, Executor executor) throws InvalidInputException, AIVisionSDKException
+<pre class="prettyprint"><code>    CompletableFuture&lt;Result[]&gt; decode (Bitmap bmp, BBox[] detections, Executor executor) throws InvalidInputException, AIVisionSDKException
 </code></pre>
 
 <p><strong>Description:</strong> Decodes barcodes at specific locations (<a href="../types/#bbox/">bounding boxes</a> returned by <a href="../localizer/">Localizer</a>) within the input image. When scanning multiple barcodes within an image, Zebra recommends passing multiple image frames to the decode API and processing the results frame by frame until all desired barcodes are decoded.</p>
@@ -577,7 +603,7 @@ Sample Code:
 <li><strong>Executor executor -</strong> The executor for running the decoding process.</li>
 </ul>
 
-<p><strong>Return Value:</strong> A <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a> returning an array of <code>Result</code> objects representing the decoded barcodes.</p>
+<p><strong>Return Value:</strong> A <code>CompletableFuture</code> returning an array of <code>Result</code> objects representing the decoded barcodes.</p>
 
 <p><strong>Exceptions:</strong></p>
 
@@ -589,17 +615,19 @@ Sample Code:
 
 <hr>
 
-<h3 id="processimagedataimagedata" class="anchor"><a class="heading-anchor" href="#processimagedataimagedata"><span></span></a>process (ImageData imageData)</h3>
+<h3 id="processimagedataimagedataexecutorexecutor" class="anchor"><a class="heading-anchor" href="#processimagedataimagedataexecutorexecutor"><span></span></a>process (ImageData imageData, Executor executor))</h3>
 
-<pre class="prettyprint"><code>    CompletableFuture&lt;List&lt;BarcodeEntity&gt;&gt; BarcodeDecoder.process(ImageData imageData) throws AIVisionSDKException
+<pre class="prettyprint"><code>    CompletableFuture&lt;List&lt;BarcodeEntity&gt;&gt; process(ImageData imageData, Executor executor) throws InvalidInputException, AIVisionSDKException 
 </code></pre>
 
-<p>Processes an <code>[ImageData](#imagedata)</code> object to localize and decode barcodes, returning the localized and decoded barcodes.</p>
+<p>Processes an <code>[ImageData](#imagedata)</code> object returning the localized and decoded barcodes.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
 <li><strong>ImageData imageData -</strong> Data representing the image to be processed.</li>
+
+<li><strong>executor -</strong> Results are returned in this executor. </li>
 </ul>
 
 <p><strong>Return Value:</strong> A <code>CompletableFuture&lt;List&lt;BarcodeEntity&gt;&gt;</code> with localized and decoded barcodes.</p>
@@ -607,17 +635,10 @@ Sample Code:
 <p><strong>Exceptions:</strong></p>
 
 <ul>
+<li><strong>InvalidInputException -</strong> Thrown if <code>imageData</code> is null. </li>
+
 <li><strong>AIVisionSDKException -</strong> Thrown if <code>imageData</code> is null or if a previous operation is still in progress.</li>
 </ul>
-
-<hr>
-
-<h3 id="dispose" class="anchor"><a class="heading-anchor" href="#dispose"><span></span></a>dispose()</h3>
-
-<pre class="prettyprint"><code>    void dispose()
-</code></pre>
-
-<p><strong>Description:</strong> Frees or releases resources. This method must be called manually to release all internal resources when a new <code>BarcodeDecoder</code> object is created.</p>
 
 <hr>
 
@@ -625,29 +646,47 @@ Sample Code:
 
 <p>The <code>ImageData</code> class acts as a container for image data sourced from the <a href="#process">process()</a> API. It provides a unified interface for detectors to access image information, ensuring orientation adjustments and standardizing the format required for AI processing. The following sections outline the methods available in this class.</p>
 
-<h3 id="fromimageproxyimageproxyimageproxy" class="anchor"><a class="heading-anchor" href="#fromimageproxyimageproxyimageproxy"><span></span></a>fromImageProxy (ImageProxy imageProxy)</h3>
+<h3 id="getbitmap" class="anchor"><a class="heading-anchor" href="#getbitmap"><span></span></a>getBitmap()</h3>
 
-<pre class="prettyprint"><code>    static ImageData ImageData.fromImageProxy(ImageProxy imageProxy) throws InvalidInputException
+<pre class="prettyprint"><code>    Bitmap ImageData.getBitmap() 
 </code></pre>
 
-<p>Creates an <code>ImageData</code> instance from an <code>ImageProxy</code>. This factory method converts a CameraX <code>ImageProxy</code> to an <code>ImageData</code> object, using the rotation information from the <code>ImageProxy</code> itself.</p>
+<p><strong>Description:</strong> Retrieves the bitmap representation of the image data. </p>
+
+<p><strong>Return Value:</strong> Returns the Bitmap representation of the image. </p>
+
+<h3 id="getrotationdegrees" class="anchor"><a class="heading-anchor" href="#getrotationdegrees"><span></span></a>getRotationDegrees()</h3>
+
+<pre class="prettyprint"><code>    int ImageData.getRotationDegrees() 
+</code></pre>
+
+<p><strong>Description:</strong> Retrieves the rotation of the image in degrees. </p>
+
+<p><strong>Return Value:</strong> Returns an integer representing the rotation in degrees (0, 90, 180, or 270). </p>
+
+<h3 id="fromimageproxyimageproxyimageproxy" class="anchor"><a class="heading-anchor" href="#fromimageproxyimageproxyimageproxy"><span></span></a>fromImageProxy (ImageProxy imageProxy)</h3>
+
+<pre class="prettyprint"><code>    static ImageData ImageData.fromImageProxy(ImageProxy imageProxy) throws InvalidInputException 
+</code></pre>
+
+<p><strong>Description:</strong> Creates an ImageData instance from an ImageProxy. This method converts a CameraX <code>ImageProxy</code> to an <code>ImageData</code> object, using the rotation information from the <code>ImageProxy</code> itself. </p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>ImageProxy -</strong> The <code>ImageProxy</code> to convert.</li>
+<li><strong>ImageProxy -</strong> The <code>ImageProxy</code> to convert. </li>
 </ul>
 
 <p><strong>Return Value:</strong></p>
 
 <ul>
-<li><strong>ImageData -</strong> A new <code>ImageData</code> instance containing the image data.</li>
+<li><strong>ImageData -</strong> A new <code>ImageData</code> instance containing the image data. </li>
 </ul>
 
 <p><strong>Exceptions:</strong></p>
 
 <ul>
-<li><strong>InvalidInputException -</strong> Thrown when the input <code>ImageProxy</code> is null, indicating an invalid input parameter.</li>
+<li><strong>InvalidInputException -</strong> Thrown when the input imageProxy is null, indicating an invalid input parameter. </li>
 </ul>
 
 <h3 id="frommediaimageimageimageintrotationdegrees" class="anchor"><a class="heading-anchor" href="#frommediaimageimageimageintrotationdegrees"><span></span></a>fromMediaImage (Image image, int rotationDegrees)</h3>
@@ -706,24 +745,52 @@ Sample Code:
 
 <hr>
 
-<h2 id="barcodedecodersettings" class="anchor"><a class="heading-anchor" href="#barcodedecodersettings"><span></span></a>BarcodeDecoder.Settings</h2>
+<h2 id="detectorresult" class="anchor"><a class="heading-anchor" href="#detectorresult"><span></span></a>DetectorResult</h2>
 
-<p>The <code>BarcodeDecoder.Settings</code> class configures the barcode symbologies and related settings required for decoding barcodes from images. This class allows users to customize decoding parameters to optimize performance for specific use cases.</p>
+<p>The <code>DetectorResult</code> interface in the <code>com.zebra.ai.vision.detector</code> package defines common properties for detection results within the AI Data Capture SDK. It provides access to essential information about objects detected by various detectors, such as <a href="../types/#bbox">bounding box</a> coordinates, decoded values, and symbology types for barcodes. Implementations of this interface represent specific types of detection results.</p>
 
-<h3 id="settings" class="anchor"><a class="heading-anchor" href="#settings"><span></span></a>Settings()</h3>
+<h3 id="getcorners" class="anchor"><a class="heading-anchor" href="#getcorners"><span></span></a>getCorners()</h3>
 
-<pre class="prettyprint"><code>    BarcodeDecoder.Settings()
+<pre class="prettyprint"><code>    BBox DetectorResult.getCorners() 
 </code></pre>
 
-<p><strong>Description:</strong> Constructs a new Settings object with default values. Use this when no specific configuration is needed.</p>
+<p>Retrieves the bounding box coordinates of the detected object. The bounding box represents the location of the detected object in the source image, containing minimum and maximum x/y coordinates that form a rectangle enclosing the object. </p>
 
-<!--
-#### barcodeSettingMap
+<p><strong>Return Value:</strong></p>
 
-        Map<SymbologyType, Boolean> barcodeSettingMap = new HashMap<>();
+<ul>
+<li><strong>BBox -</strong> The bounding box of the detected object, or null if no location information is available. </li>
+</ul>
 
-**Description:** Defines a map where `Symbologytype` is the key and its status (enable/disable) is the value, allowing to specify which symbologies to use.
--->
+<h3 id="getvalue" class="anchor"><a class="heading-anchor" href="#getvalue"><span></span></a>getValue()</h3>
+
+<pre class="prettyprint"><code>    String DetectorResult.getValue() 
+</code></pre>
+
+<p>Retrieves the decoded value or content of the detected object. For barcode detectors, this is the decoded barcode content. For other detectors, it might be a label or identifier. </p>
+
+<p><strong>Return Value:</strong></p>
+
+<ul>
+<li><strong>String -</strong> The string value representing the detected object’s content. </li>
+</ul>
+
+<h3 id="getsymbology" class="anchor"><a class="heading-anchor" href="#getsymbology"><span></span></a>getSymbology()</h3>
+
+<pre class="prettyprint"><code>    int DetectorResult.getSymbology() 
+</code></pre>
+
+<p>Retrieves the symbology type identifier of the detected object. For barcode detectors, this represents the barcode symbology type (e.g., QR Code, Code 128). For other detectors, this might represent a classification or category identifier. </p>
+
+<p><strong>Return Value:</strong>
+<strong>int -</strong> An integer value indicating the symbology or type. </p>
+
+<h3 id="dispose" class="anchor"><a class="heading-anchor" href="#dispose"><span></span></a>dispose()</h3>
+
+<pre class="prettyprint"><code>    void dispose()
+</code></pre>
+
+<p>Frees or releases resources. This method must be called manually to release all internal resources when a new <code>BarcodeDecoder</code> object is created.</p>
 
 <hr>
 
@@ -774,7 +841,7 @@ Sample Code:
     settings.Symbology.UPCE1.setReportCheckDigit(true);
 </code></pre>
 
-<p>The table below lists barcode symbologies with its default status and <a href="#symbologytype">symbologytype</a> value. </p>
+<p>The table below lists barcode symbologies with its default status and <a href="#symbologytype">symbologytype</a> value.</p>
 
 <table class="facelift" style="width:20" border="1" padding="5px">
   <tbody><tr bgcolor="#dce8ef">
@@ -1031,15 +1098,15 @@ Sample Code:
 
 <h4 id="enablebooleaninitialstatus" class="anchor"><a class="heading-anchor" href="#enablebooleaninitialstatus"><span></span></a>enable(boolean initialStatus)</h4>
 
-<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODABAR.enable(boolean initialStatus) 
+<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODABAR.enable(boolean initialStatus)
 </code></pre>
 
-<p><strong>Description:</strong> Enables or disables the Codabar symbology decoding based on the input boolean parameter.  </p>
+<p><strong>Description:</strong> Enables or disables the Codabar symbology decoding based on the input boolean parameter.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>initialStatus -</strong> Boolean indicating whether to enable (true) or disable (false) the symbology. Default is true. </li>
+<li><strong>initialStatus -</strong> Boolean indicating whether to enable (true) or disable (false) the symbology. Default is true.</li>
 </ul>
 
 <h4 id="isclsiediting" class="anchor"><a class="heading-anchor" href="#isclsiediting"><span></span></a>isClsiEditing()</h4>
@@ -1059,28 +1126,28 @@ Sample Code:
 
 <h4 id="getlength1" class="anchor"><a class="heading-anchor" href="#getlength1"><span></span></a>getLength1()</h4>
 
-<pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.CODABAR.getLength1() 
+<pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.CODABAR.getLength1()
 </code></pre>
 
-<p><strong>Description:</strong> Retrieves the lower limit for the length of the Codabar symbol to be decoded. </p>
+<p><strong>Description:</strong> Retrieves the lower limit for the length of the Codabar symbol to be decoded.</p>
 
-<p><strong>Return Value:</strong> Integer representing the lower limit of the Codabar symbol length. </p>
+<p><strong>Return Value:</strong> Integer representing the lower limit of the Codabar symbol length.</p>
 
 <h4 id="getlength2" class="anchor"><a class="heading-anchor" href="#getlength2"><span></span></a>getLength2()</h4>
 
 <pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.CODABAR.getLength2()
 </code></pre>
 
-<p><strong>Description:</strong> Retrieves the upper limit for the length of the Codabar symbol to be decoded. </p>
+<p><strong>Description:</strong> Retrieves the upper limit for the length of the Codabar symbol to be decoded.</p>
 
 <p><strong>Return Value:</strong> Integer representing the upper limit of the Codabar symbol length.</p>
 
 <h4 id="isnotisediting" class="anchor"><a class="heading-anchor" href="#isnotisediting"><span></span></a>isNotisEditing()</h4>
 
-<pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.CODABAR.isNotisEditing() 
+<pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.CODABAR.isNotisEditing()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if NOTIS editing is enabled, which strips the start and stop characters from a decoded Codabar symbol according to NOTIS requirements. </p>
+<p><strong>Description:</strong> Checks if NOTIS editing is enabled, which strips the start and stop characters from a decoded Codabar symbol according to NOTIS requirements.</p>
 
 <p><strong>Return Value:</strong> Boolean value:</p>
 
@@ -1092,10 +1159,10 @@ Sample Code:
 
 <h4 id="isredundancy" class="anchor"><a class="heading-anchor" href="#isredundancy"><span></span></a>isRedundancy()</h4>
 
-<pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.CODABAR.isRedundancy() 
+<pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.CODABAR.isRedundancy()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if redundancy is enabled, which requires the scanner to read the barcode twice before accepting the data. </p>
+<p><strong>Description:</strong> Checks if redundancy is enabled, which requires the scanner to read the barcode twice before accepting the data.</p>
 
 <p><strong>Return Value:</strong> Boolean value:</p>
 
@@ -1110,7 +1177,7 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODABAR.setClsiEditing (boolean setClsiEditing)
 </code></pre>
 
-<p><strong>Description:</strong> Enables or disables CLSI editing, which modifies the format of a decoded Codabar symbol according to CLSI requirements. </p>
+<p><strong>Description:</strong> Enables or disables CLSI editing, which modifies the format of a decoded Codabar symbol according to CLSI requirements.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -1120,10 +1187,10 @@ Sample Code:
 
 <h4 id="setlength1intlength1" class="anchor"><a class="heading-anchor" href="#setlength1intlength1"><span></span></a>setLength1(int length1)</h4>
 
-<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODABAR.setLength1(int Length1) 
+<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODABAR.setLength1(int Length1)
 </code></pre>
 
-<p><strong>Description:</strong> Sets the lower limit for the length of the Codabar symbol to be decoded. </p>
+<p><strong>Description:</strong> Sets the lower limit for the length of the Codabar symbol to be decoded.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -1133,10 +1200,10 @@ Sample Code:
 
 <h4 id="setlength2intlength2" class="anchor"><a class="heading-anchor" href="#setlength2intlength2"><span></span></a>setLength2(int length2)</h4>
 
-<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODABAR.setLength2(int Length2) 
+<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODABAR.setLength2(int Length2)
 </code></pre>
 
-<p><strong>Description:</strong> Sets the upper limit for the length of the Codabar symbol to be decoded. </p>
+<p><strong>Description:</strong> Sets the upper limit for the length of the Codabar symbol to be decoded.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -1146,28 +1213,28 @@ Sample Code:
 
 <h4 id="setnotiseditingbooleannotisediting" class="anchor"><a class="heading-anchor" href="#setnotiseditingbooleannotisediting"><span></span></a>setNotisEditing(boolean notisEditing)</h4>
 
-<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODABAR.setNotisEditing(boolean notisEditing) 
+<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODABAR.setNotisEditing(boolean notisEditing)
 </code></pre>
 
-<p><strong>Description:</strong> Enables or disables NOTIS editing, which strips the start and stop characters from a decoded Codabar symbol according to NOTIS requirements. </p>
+<p><strong>Description:</strong> Enables or disables NOTIS editing, which strips the start and stop characters from a decoded Codabar symbol according to NOTIS requirements.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>notisEditing:</strong> A boolean indicating whether to enable (true) or disable (false) NOTIS editing. Default: false. </li>
+<li><strong>notisEditing:</strong> A boolean indicating whether to enable (true) or disable (false) NOTIS editing. Default: false.</li>
 </ul>
 
 <h4 id="setredundancybooleanredundancy" class="anchor"><a class="heading-anchor" href="#setredundancybooleanredundancy"><span></span></a>setRedundancy(boolean redundancy)</h4>
 
-<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODABAR.setRedundancy(boolean redundancy) 
+<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODABAR.setRedundancy(boolean redundancy)
 </code></pre>
 
-<p><strong>Description:</strong> Enables or disables redundancy, which requires the scanner to read the barcode twice before accepting the data. </p>
+<p><strong>Description:</strong> Enables or disables redundancy, which requires the scanner to read the barcode twice before accepting the data.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>redundancy:</strong> A boolean indicating whether to enable (true) or disable (false) redundancy, where the scanner reads the barcode twice before accepting data. Default: true. </li>
+<li><strong>redundancy:</strong> A boolean indicating whether to enable (true) or disable (false) redundancy, where the scanner reads the barcode twice before accepting data. Default: true.</li>
 </ul>
 
 <hr>
@@ -1186,7 +1253,7 @@ Sample Code:
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>initialStatus -</strong> A boolean indicating whether to enable (true) or disable (false) the symbology. Default: true. </li>
+<li><strong>initialStatus -</strong> A boolean indicating whether to enable (true) or disable (false) the symbology. Default: true.</li>
 </ul>
 
 <h4 id="getlength1-1" class="anchor"><a class="heading-anchor" href="#getlength1-1"><span></span></a>getLength1()</h4>
@@ -1194,7 +1261,7 @@ Sample Code:
 <pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.CODE11.getLength1()
 </code></pre>
 
-<p><strong>Description:</strong> Retrieves the minimum length of the Code11 barcode to be decoded.    </p>
+<p><strong>Description:</strong> Retrieves the minimum length of the Code11 barcode to be decoded.</p>
 
 <p><strong>Return Value:</strong> Integer that defines the minimum length of the Code11 barcode.</p>
 
@@ -1203,7 +1270,7 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODE11.setLength1(int length1) throws InvalidInputException
 </code></pre>
 
-<p><strong>Description:</strong> Sets the minimum length of the Code11 barcode to be decoded.    </p>
+<p><strong>Description:</strong> Sets the minimum length of the Code11 barcode to be decoded.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -1222,7 +1289,7 @@ Sample Code:
 <pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.CODE11.getLength2()
 </code></pre>
 
-<p><strong>Description:</strong> Retrieves the maximum length of the Code11 barcode to be decoded.    </p>
+<p><strong>Description:</strong> Retrieves the maximum length of the Code11 barcode to be decoded.</p>
 
 <p><strong>Return Value:</strong> Integer representing the maximum length of the Code11 barcode.</p>
 
@@ -1231,7 +1298,7 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODE11.setLength2 (int length2) throws InvalidInputException
 </code></pre>
 
-<p><strong>Description:</strong> Sets the maximum length of the Code11 barcode to be decoded.    </p>
+<p><strong>Description:</strong> Sets the maximum length of the Code11 barcode to be decoded.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -1250,23 +1317,22 @@ Sample Code:
 <pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.CODE11.isRedundancy()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if redundancy is enabled, which requires the scanner to read the barcode twice before accepting the data.    </p>
+<p><strong>Description:</strong> Checks if redundancy is enabled, which requires the scanner to read the barcode twice before accepting the data.</p>
 
 <p><strong>Return Value:</strong> Boolean:</p>
 
 <ul>
 <li><strong>true -</strong> Redundancy is enabled</li>
 
-<li><strong>false -</strong> Redundancy is disabled
- </li>
+<li><strong>false -</strong> Redundancy is disabled</li>
 </ul>
 
 <h4 id="setredundancybooleanredundancy-1" class="anchor"><a class="heading-anchor" href="#setredundancybooleanredundancy-1"><span></span></a>setRedundancy(boolean redundancy)</h4>
 
-<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODE11.setRedundancy (boolean redundancy)    
+<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODE11.setRedundancy (boolean redundancy)
 </code></pre>
 
-<p><strong>Description:</strong> Enables or disables redundancy, requiring the scanner to read the barcode twice before accepting the data.    </p>
+<p><strong>Description:</strong> Enables or disables redundancy, requiring the scanner to read the barcode twice before accepting the data.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -1279,13 +1345,13 @@ Sample Code:
 <pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.CODE11.getVerifyCheckDigit()
 </code></pre>
 
-<p><strong>Description:</strong> Retrieves the current check digit verification setting for Code11 symbols.    </p>
+<p><strong>Description:</strong> Retrieves the current check digit verification setting for Code11 symbols.</p>
 
 <p><strong>Return Value:</strong> Integer that defines the current check digit verification setting (0 to 2).</p>
 
 <h4 id="setverifycheckdigitintverifycheckdigit" class="anchor"><a class="heading-anchor" href="#setverifycheckdigitintverifycheckdigit"><span></span></a>setVerifyCheckDigit(int verifyCheckDigit)</h4>
 
-<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODE11.setVerifyCheckDigit(int verifyCheckDigit)    
+<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODE11.setVerifyCheckDigit(int verifyCheckDigit)
 </code></pre>
 
 <p><strong>Description:</strong> Configures the check digit verification mechanism for Code11 symbols.</p>
@@ -1310,7 +1376,7 @@ Sample Code:
 <pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.CODE11.isReportCheckDigit()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if the “Report Check Digit” parameter is enabled, which determines whether the check digit is included in the transmitted data.    </p>
+<p><strong>Description:</strong> Checks if the “Report Check Digit” parameter is enabled, which determines whether the check digit is included in the transmitted data.</p>
 
 <p><strong>Return Value:</strong> Boolean:</p>
 
@@ -1325,31 +1391,31 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODE11.setReportCheckDigit(boolean reportCheckDigit)
 </code></pre>
 
-<p><strong>Description:</strong> Enables or disables the “Report Check Digit” parameter, which determines whether the check digit is included in the transmitted data.    </p>
+<p><strong>Description:</strong> Enables or disables the “Report Check Digit” parameter, which determines whether the check digit is included in the transmitted data.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>reportCheckDigit:</strong> A boolean indicating whether to enable (true) or disable (false) the check digit reporting. Default: false    </li>
+<li><strong>reportCheckDigit:</strong> A boolean indicating whether to enable (true) or disable (false) the check digit reporting. Default: false</li>
 </ul>
 
 <hr>
 
 <h3 id="code39" class="anchor"><a class="heading-anchor" href="#code39"><span></span></a>CODE39</h3>
 
-<p><strong>Description:</strong> Configures parameters for decoding Code 39 barcodes. </p>
+<p><strong>Description:</strong> Configures parameters for decoding Code 39 barcodes.</p>
 
 <h4 id="enablebooleaninitialstatus-2" class="anchor"><a class="heading-anchor" href="#enablebooleaninitialstatus-2"><span></span></a>enable(boolean initialStatus)</h4>
 
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODE39.enable(boolean initialStatus)
 </code></pre>
 
-<p><strong>Description:</strong> Enables or disables Code39 symbology decoding based on the input boolean parameter.    </p>
+<p><strong>Description:</strong> Enables or disables Code39 symbology decoding based on the input boolean parameter.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>initialStatus:</strong> A boolean indicating whether to enable (true) or disable (false) the symbology. Default: true.    </li>
+<li><strong>initialStatus:</strong> A boolean indicating whether to enable (true) or disable (false) the symbology. Default: true.</li>
 </ul>
 
 <h4 id="isconverttocode32" class="anchor"><a class="heading-anchor" href="#isconverttocode32"><span></span></a>isConvertToCode32()</h4>
@@ -1362,9 +1428,9 @@ Sample Code:
 <p><strong>Return Value:</strong> Boolean value:</p>
 
 <ul>
-<li><strong>true -</strong>  Conversion from Code 39 to Code 32 is enabled</li>
+<li><strong>true -</strong> Conversion from Code 39 to Code 32 is enabled</li>
 
-<li><strong>false -</strong> Conversion from Code 39 to Code 32 is disabled </li>
+<li><strong>false -</strong> Conversion from Code 39 to Code 32 is disabled</li>
 </ul>
 
 <h4 id="setconverttocode32booleanconverttocode32" class="anchor"><a class="heading-anchor" href="#setconverttocode32booleanconverttocode32"><span></span></a>setConvertToCode32(boolean convertToCode32)</h4>
@@ -1372,12 +1438,12 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODE39.setConvertToCode32(boolean convertToCode32)
 </code></pre>
 
-<p><strong>Description:</strong> Enables or disables conversion from Code 39 to Code 32, which is used by the Italian pharmaceutical industry. </p>
+<p><strong>Description:</strong> Enables or disables conversion from Code 39 to Code 32, which is used by the Italian pharmaceutical industry.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>convertToCode32 -</strong> A boolean indicating whether to enable (true) or disable (false) the conversion. Default: false. </li>
+<li><strong>convertToCode32 -</strong> A boolean indicating whether to enable (true) or disable (false) the conversion. Default: false.</li>
 </ul>
 
 <h4 id="isfullascii" class="anchor"><a class="heading-anchor" href="#isfullascii"><span></span></a>isFullAscii()</h4>
@@ -1405,12 +1471,12 @@ Sample Code:
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>fullAscii -</strong> A boolean indicating whether to enable (true) or disable (false) full ASCII encoding. Default: false. </li>
+<li><strong>fullAscii -</strong> A boolean indicating whether to enable (true) or disable (false) full ASCII encoding. Default: false.</li>
 </ul>
 
 <h4 id="getlength1-2" class="anchor"><a class="heading-anchor" href="#getlength1-2"><span></span></a>getLength1()</h4>
 
-<pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.CODE39.getLength1() 
+<pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.CODE39.getLength1()
 </code></pre>
 
 <p><strong>Description:</strong> Retrieves the minimum length for Code 39 barcodes.</p>
@@ -1419,10 +1485,10 @@ Sample Code:
 
 <h4 id="setlength1intlength1-2" class="anchor"><a class="heading-anchor" href="#setlength1intlength1-2"><span></span></a>setLength1(int length1)</h4>
 
-<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODE39.setLength1(int length1) throws InvalidInputException 
+<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODE39.setLength1(int length1) throws InvalidInputException
 </code></pre>
 
-<p><strong>Description:</strong> Sets the minimum length for Code 39 barcodes. </p>
+<p><strong>Description:</strong> Sets the minimum length for Code 39 barcodes.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -1433,7 +1499,7 @@ Sample Code:
 <p><strong>Exceptions:</strong></p>
 
 <ul>
-<li><strong>InvalidInputException -</strong> Thrown if length1 is beyond the valid range. </li>
+<li><strong>InvalidInputException -</strong> Thrown if length1 is beyond the valid range.</li>
 </ul>
 
 <h4 id="getlength2-2" class="anchor"><a class="heading-anchor" href="#getlength2-2"><span></span></a>getLength2()</h4>
@@ -1441,9 +1507,9 @@ Sample Code:
 <pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.CODE39.getLength2()
 </code></pre>
 
-<p><strong>Description:</strong> Retrieves the maximum length for Code 39 barcodes. </p>
+<p><strong>Description:</strong> Retrieves the maximum length for Code 39 barcodes.</p>
 
-<p><strong>Return Value:</strong> Integer that represents the maximum length configured for Code 39 barcodes. </p>
+<p><strong>Return Value:</strong> Integer that represents the maximum length configured for Code 39 barcodes.</p>
 
 <h4 id="setlength2intlength2-2" class="anchor"><a class="heading-anchor" href="#setlength2intlength2-2"><span></span></a>setLength2(int length2)</h4>
 
@@ -1455,21 +1521,21 @@ Sample Code:
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>length2 -</strong> An integer specifying the maximum length for the Code 39 symbol. Default: 55. Valid range: 0 to 55. </li>
+<li><strong>length2 -</strong> An integer specifying the maximum length for the Code 39 symbol. Default: 55. Valid range: 0 to 55.</li>
 </ul>
 
 <p><strong>Exceptions:</strong></p>
 
 <ul>
-<li><strong>InvalidInputException -</strong> Thrown if length2 is beyond the valid range. </li>
+<li><strong>InvalidInputException -</strong> Thrown if length2 is beyond the valid range.</li>
 </ul>
 
 <h4 id="isreducedquietzone" class="anchor"><a class="heading-anchor" href="#isreducedquietzone"><span></span></a>isReducedQuietZone()</h4>
 
-<pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.CODE39.isReducedQuietZone() 
+<pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.CODE39.isReducedQuietZone()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if marginless decoding is enabled for Code 39 barcodes. </p>
+<p><strong>Description:</strong> Checks if marginless decoding is enabled for Code 39 barcodes.</p>
 
 <p><strong>Return Value:</strong> Boolean value:
 - <strong>true -</strong> Marginless decoding is enabled</p>
@@ -1480,7 +1546,7 @@ Sample Code:
 
 <h4 id="setreducedquietzonebooleanreducedquietzone" class="anchor"><a class="heading-anchor" href="#setreducedquietzonebooleanreducedquietzone"><span></span></a>setReducedQuietZone(boolean reducedQuietZone)</h4>
 
-<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODE39.setReducedQuietZone(boolean reducedQuietZone) 
+<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODE39.setReducedQuietZone(boolean reducedQuietZone)
 </code></pre>
 
 <p><strong>Description:</strong> Enables or disables marginless decoding for Code 39 barcodes.</p>
@@ -1488,7 +1554,7 @@ Sample Code:
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>reducedQuietZone -</strong> A boolean indicating whether to enable (true) or disable (false) marginless decoding. Default: false. </li>
+<li><strong>reducedQuietZone -</strong> A boolean indicating whether to enable (true) or disable (false) marginless decoding. Default: false.</li>
 </ul>
 
 <h4 id="isredundancy-2" class="anchor"><a class="heading-anchor" href="#isredundancy-2"><span></span></a>isRedundancy()</h4>
@@ -1496,7 +1562,7 @@ Sample Code:
 <pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.CODE39.isRedundancy()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if redundancy is enabled, requiring the barcode to be read twice before acceptance. </p>
+<p><strong>Description:</strong> Checks if redundancy is enabled, requiring the barcode to be read twice before acceptance.</p>
 
 <p><strong>Return Value:</strong> Boolean value:</p>
 
@@ -1511,20 +1577,20 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODE39.setRedundancy(boolean redundancy)
 </code></pre>
 
-<p><strong>Description:</strong> Enables or disables redundancy, where the scanner reads the barcode twice before accepting data. </p>
+<p><strong>Description:</strong> Enables or disables redundancy, where the scanner reads the barcode twice before accepting data.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>redundancy -</strong> A boolean indicating whether to enable (true) or disable (false) redundancy. Default: false. </li>
+<li><strong>redundancy -</strong> A boolean indicating whether to enable (true) or disable (false) redundancy. Default: false.</li>
 </ul>
 
 <h4 id="isreportcheckdigit-1" class="anchor"><a class="heading-anchor" href="#isreportcheckdigit-1"><span></span></a>isReportCheckDigit()</h4>
 
-<pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.CODE39.isReportCheckDigit() 
+<pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.CODE39.isReportCheckDigit()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if the check digit is reported for Code 39 barcodes. </p>
+<p><strong>Description:</strong> Checks if the check digit is reported for Code 39 barcodes.</p>
 
 <p><strong>Return Value:</strong> Boolean value:</p>
 
@@ -1536,23 +1602,23 @@ Sample Code:
 
 <h4 id="setreportcheckdigitbooleanreportcheckdigit-1" class="anchor"><a class="heading-anchor" href="#setreportcheckdigitbooleanreportcheckdigit-1"><span></span></a>setReportCheckDigit(boolean reportCheckDigit)</h4>
 
-<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODE39.setReportCheckDigit(boolean reportCheckDigit) 
+<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODE39.setReportCheckDigit(boolean reportCheckDigit)
 </code></pre>
 
-<p><strong>Description:</strong> Configures whether to transmit data with or without the check digit. </p>
+<p><strong>Description:</strong> Configures whether to transmit data with or without the check digit.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>reportCheckDigit -</strong> A boolean indicating whether to report (true) or not report (false) the check digit. Default: false. </li>
+<li><strong>reportCheckDigit -</strong> A boolean indicating whether to report (true) or not report (false) the check digit. Default: false.</li>
 </ul>
 
 <h4 id="isreportcode32prefix" class="anchor"><a class="heading-anchor" href="#isreportcode32prefix"><span></span></a>isReportCode32Prefix()</h4>
 
-<pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.CODE39.isReportCode32Prefix() 
+<pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.CODE39.isReportCode32Prefix()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if the prefix character “A” is added to all Code 32 barcodes. </p>
+<p><strong>Description:</strong> Checks if the prefix character “A” is added to all Code 32 barcodes.</p>
 
 <p><strong>Return Value:</strong> Boolean value:</p>
 
@@ -1567,12 +1633,12 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODE39.setReportCode32Prefix(boolean reportCode32Prefix)
 </code></pre>
 
-<p><strong>Description:</strong> Enables the addition of the prefix character “A” to all Code 32 barcodes. </p>
+<p><strong>Description:</strong> Enables the addition of the prefix character “A” to all Code 32 barcodes.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>reportCode32Prefix -</strong> A boolean indicating whether to enable (true) or disable (false) the prefix addition. Default: false. </li>
+<li><strong>reportCode32Prefix -</strong> A boolean indicating whether to enable (true) or disable (false) the prefix addition. Default: false.</li>
 </ul>
 
 <h4 id="getsecuritylevel" class="anchor"><a class="heading-anchor" href="#getsecuritylevel"><span></span></a>getSecurityLevel()</h4>
@@ -1580,7 +1646,7 @@ Sample Code:
 <pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.CODE39.getSecurityLevel()
 </code></pre>
 
-<p><strong>Description:</strong> Retrieves the current security level used for decoding Code39 barcodes. </p>
+<p><strong>Description:</strong> Retrieves the current security level used for decoding Code39 barcodes.</p>
 
 <p><strong>Return Value:</strong> Returns the integer representing the security level.</p>
 
@@ -1589,12 +1655,12 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODE39.setSecurityLevel(SecurityLevel securityLevel)
 </code></pre>
 
-<p><strong>Description:</strong> Retrieves the current security level used for decoding Code39 barcodes. </p>
+<p><strong>Description:</strong> Retrieves the current security level used for decoding Code39 barcodes.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>SecurityLevel:</strong> An enumerator that specifies the security level, the values are: 
+<li><strong>SecurityLevel:</strong> An enumerator that specifies the security level, the values are:
 
 
 <ul>
@@ -1613,7 +1679,7 @@ Sample Code:
 <pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.CODE39.isVerifyCheckDigit()
 </code></pre>
 
-<p><strong>Description:</strong> Checks the integrity of all Code 39 symbols to verify that the data complies with a specified check digit algorithm. </p>
+<p><strong>Description:</strong> Checks the integrity of all Code 39 symbols to verify that the data complies with a specified check digit algorithm.</p>
 
 <p><strong>Return Value:</strong> Integer representing the current security level:</p>
 
@@ -1629,7 +1695,7 @@ Sample Code:
 
 <h4 id="setverifycheckdigitbooleanverifycheckdigit" class="anchor"><a class="heading-anchor" href="#setverifycheckdigitbooleanverifycheckdigit"><span></span></a>setVerifyCheckDigit(boolean verifyCheckDigit)</h4>
 
-<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODE39.setVerifyCheckDigit(boolean verifyCheckDigit) 
+<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODE39.setVerifyCheckDigit(boolean verifyCheckDigit)
 </code></pre>
 
 <p><strong>Description:</strong> Enables or disables the Code 39 check digit verification.</p>
@@ -1637,7 +1703,7 @@ Sample Code:
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>verifyCheckDigit -</strong> A boolean indicating whether to enable (true) or disable (false) check digit verification. Default: false. </li>
+<li><strong>verifyCheckDigit -</strong> A boolean indicating whether to enable (true) or disable (false) check digit verification. Default: false.</li>
 </ul>
 
 <hr>
@@ -1648,15 +1714,15 @@ Sample Code:
 
 <h4 id="enablebooleaninitialstatus-3" class="anchor"><a class="heading-anchor" href="#enablebooleaninitialstatus-3"><span></span></a>enable(boolean initialStatus)</h4>
 
-<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODE93.enable(boolean initialStatus)    
+<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODE93.enable(boolean initialStatus)
 </code></pre>
 
-<p><strong>Description:</strong> Enables or disables Code93 symbology decoding based on the input boolean parameter.    </p>
+<p><strong>Description:</strong> Enables or disables Code93 symbology decoding based on the input boolean parameter.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>initialStatus:</strong> A boolean indicating whether to enable (true) or disable (false) the symbology. Default: false.    </li>
+<li><strong>initialStatus:</strong> A boolean indicating whether to enable (true) or disable (false) the symbology. Default: false.</li>
 </ul>
 
 <h4 id="getlength1-3" class="anchor"><a class="heading-anchor" href="#getlength1-3"><span></span></a>getLength1()</h4>
@@ -1664,7 +1730,7 @@ Sample Code:
 <pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.CODE93.getLength1()
 </code></pre>
 
-<p><strong>Description:</strong> Retrieves the minimum length of the Code93 barcode to be decoded.    </p>
+<p><strong>Description:</strong> Retrieves the minimum length of the Code93 barcode to be decoded.</p>
 
 <p><strong>Return Value:</strong> Integer representing the minimum length of the Code 93 barcode.</p>
 
@@ -1673,7 +1739,7 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODE93.setLength1(int length1) throws InvalidInputException
 </code></pre>
 
-<p><strong>Description:</strong> Sets the minimum length of the Code 93 barcode to be decoded.    </p>
+<p><strong>Description:</strong> Sets the minimum length of the Code 93 barcode to be decoded.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -1692,7 +1758,7 @@ Sample Code:
 <pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.CODE93.getLength2()
 </code></pre>
 
-<p><strong>Description:</strong> Retrieves the maximum length for the Code 93 barcode to be decoded.    </p>
+<p><strong>Description:</strong> Retrieves the maximum length for the Code 93 barcode to be decoded.</p>
 
 <p><strong>Return Value:</strong> Integer representing the maximum length of the Code93 barcode.</p>
 
@@ -1701,7 +1767,7 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODE93.setLength2(int length2) throws InvalidInputException
 </code></pre>
 
-<p><strong>Description:</strong> Sets the maximum length for the Code93 barcode to be decoded.    </p>
+<p><strong>Description:</strong> Sets the maximum length for the Code93 barcode to be decoded.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -1720,7 +1786,7 @@ Sample Code:
 <pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.CODE93.isRedundancy()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if redundancy is enabled, which requires the scanner to read the barcode twice before accepting the data.    </p>
+<p><strong>Description:</strong> Checks if redundancy is enabled, which requires the scanner to read the barcode twice before accepting the data.</p>
 
 <p><strong>Return Value:</strong> Boolean:</p>
 
@@ -1751,7 +1817,7 @@ Sample Code:
 
 <h4 id="enablebooleaninitialstatus-4" class="anchor"><a class="heading-anchor" href="#enablebooleaninitialstatus-4"><span></span></a>enable(boolean initialStatus)</h4>
 
-<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODE128.enable(boolean initialStatus) 
+<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODE128.enable(boolean initialStatus)
 </code></pre>
 
 <p><strong>Description:</strong> Enables or disables Code 128 symbology decoding based on the input boolean parameter.</p>
@@ -1759,15 +1825,15 @@ Sample Code:
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>initialStatus -</strong> A boolean indicating whether to enable (true) or disable (false) the symbology. Default: true. </li>
+<li><strong>initialStatus -</strong> A boolean indicating whether to enable (true) or disable (false) the symbology. Default: true.</li>
 </ul>
 
 <h4 id="isignorefnc4" class="anchor"><a class="heading-anchor" href="#isignorefnc4"><span></span></a>isIgnoreFNC4()</h4>
 
-<pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.CODE128.isIgnoreFNC4() 
+<pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.CODE128.isIgnoreFNC4()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if the “Ignore FNC4” parameter is enabled, allowing the decoder to ignore the FNC4 character in Code 128 barcodes. </p>
+<p><strong>Description:</strong> Checks if the “Ignore FNC4” parameter is enabled, allowing the decoder to ignore the FNC4 character in Code 128 barcodes.</p>
 
 <p><strong>Return Value:</strong> Boolean value:</p>
 
@@ -1782,20 +1848,20 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODE128.setIgnoreFNC4(boolean ignoreFNC4)
 </code></pre>
 
-<p><strong>Description:</strong> Enables or disables the “Ignore FNC4” parameter for Code 128 decoding. </p>
+<p><strong>Description:</strong> Enables or disables the “Ignore FNC4” parameter for Code 128 decoding.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>ignoreFNC4:</strong> A boolean indicating whether to enable (true) or disable (false) the FNC4 parameter. Default: false. </li>
+<li><strong>ignoreFNC4:</strong> A boolean indicating whether to enable (true) or disable (false) the FNC4 parameter. Default: false.</li>
 </ul>
 
 <h4 id="ischeckisbttable" class="anchor"><a class="heading-anchor" href="#ischeckisbttable"><span></span></a>isCheckIsbtTable()</h4>
 
-<pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.CODE128.isCheckIsbtTable() 
+<pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.CODE128.isCheckIsbtTable()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if the “Check ISBT Table” parameter is enabled, which applies ISBT-specific concatenation rules. </p>
+<p><strong>Description:</strong> Checks if the “Check ISBT Table” parameter is enabled, which applies ISBT-specific concatenation rules.</p>
 
 <p><strong>Return Value:</strong> Boolean value:</p>
 
@@ -1823,7 +1889,7 @@ Sample Code:
 <pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.CODE128.isEnableEan128()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if EAN128 decoding is enabled. </p>
+<p><strong>Description:</strong> Checks if EAN128 decoding is enabled.</p>
 
 <p><strong>Return Value:</strong> Boolean value:</p>
 
@@ -1851,7 +1917,7 @@ Sample Code:
 <pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.CODE128.isEnableIsbt128()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if ISBT128 decoding is enabled. </p>
+<p><strong>Description:</strong> Checks if ISBT128 decoding is enabled.</p>
 
 <p><strong>Return Value:</strong> Boolean value:</p>
 
@@ -1863,7 +1929,7 @@ Sample Code:
 
 <h4 id="setenableisbt128booleanenableisbt128" class="anchor"><a class="heading-anchor" href="#setenableisbt128booleanenableisbt128"><span></span></a>setEnableIsbt128(boolean enableIsbt128)</h4>
 
-<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODE128.setEnableIsbt128(boolean enableIsbt128) 
+<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.CODE128.setEnableIsbt128(boolean enableIsbt128)
 </code></pre>
 
 <p><strong>Description:</strong> Enables or disables decoding of ISBT128 barcodes.</p>
@@ -1876,15 +1942,15 @@ Sample Code:
 
 <h4 id="isenableplain" class="anchor"><a class="heading-anchor" href="#isenableplain"><span></span></a>isEnablePlain()</h4>
 
-<pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.CODE128.isEnablePlain() 
+<pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.CODE128.isEnablePlain()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if plain Code128 decoding is enabled. </p>
+<p><strong>Description:</strong> Checks if plain Code128 decoding is enabled.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>enableIsbt128:</strong> A boolean indicating whether to enable (true) or disable (false) ISBT128 decoding. Default: true. </li>
+<li><strong>enableIsbt128:</strong> A boolean indicating whether to enable (true) or disable (false) ISBT128 decoding. Default: true.</li>
 </ul>
 
 <p><strong>Return Value:</strong> Boolean value:</p>
@@ -1905,12 +1971,12 @@ Sample Code:
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>enablePlain -</strong> Boolean indicating to enable (true) or disable (false) plain Code 128 decoding. </li>
+<li><strong>enablePlain -</strong> Boolean indicating to enable (true) or disable (false) plain Code 128 decoding.</li>
 </ul>
 
 <h4 id="getisbt128concatmode" class="anchor"><a class="heading-anchor" href="#getisbt128concatmode"><span></span></a>getIsbt128ConcatMode()</h4>
 
-<pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.CODE128.getIsbt128ConcatMode() 
+<pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.CODE128.getIsbt128ConcatMode()
 </code></pre>
 
 <p><strong>Description:</strong> Retrieves the current ISBT128 concatenation mode.</p>
@@ -2094,7 +2160,7 @@ Sample Code:
 
 <h3 id="composite_ab" class="anchor"><a class="heading-anchor" href="#composite_ab"><span></span></a>COMPOSITE_AB</h3>
 
-<p><strong>Description:</strong> Configures parameters related to Composite AB barcode decoding. </p>
+<p><strong>Description:</strong> Configures parameters related to Composite AB barcode decoding.</p>
 
 <h4 id="enablebooleaninitialstatus-5" class="anchor"><a class="heading-anchor" href="#enablebooleaninitialstatus-5"><span></span></a>enable(boolean initialStatus)</h4>
 
@@ -2116,7 +2182,7 @@ Sample Code:
 
 <p><strong>Description:</strong> Configures the decoder to one of three link modes for linking UPC symbols with a 2D symbol during transmission as if they were one symbol.</p>
 
-<p><strong>Parameters:</strong> The Uniform Code Council (UCC) link modes supported are: </p>
+<p><strong>Parameters:</strong> The Uniform Code Council (UCC) link modes supported are:</p>
 
 <ul>
 <li><strong>LINK_FLAG_IGNORED (0) -</strong> Transmits UPC barcodes regardless of the presence of a 2D symbol.</li>
@@ -2133,7 +2199,7 @@ Sample Code:
 
 <p><strong>Description:</strong> Retrieves the UCC link mode for Composite AB barcodes.</p>
 
-<p><strong>Parameters:</strong> </p>
+<p><strong>Parameters:</strong></p>
 
 <ul>
 <li>Integer representing one of the UCC link modes:
@@ -2169,10 +2235,10 @@ Sample Code:
 
 <h4 id="getlength1-5" class="anchor"><a class="heading-anchor" href="#getlength1-5"><span></span></a>getLength1()</h4>
 
-<pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.D2OF5.getLength1()    
+<pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.D2OF5.getLength1()
 </code></pre>
 
-<p><strong>Description:</strong> Retrieves the minimum length of the D2OF5 symbol to be decoded.    </p>
+<p><strong>Description:</strong> Retrieves the minimum length of the D2OF5 symbol to be decoded.</p>
 
 <p><strong>Return Value:</strong> Integer that defines the minimum length of the D2OF5 symbol.</p>
 
@@ -2181,7 +2247,7 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.D2OF5.setLength1(int length1)
 </code></pre>
 
-<p><strong>Description:</strong> Sets the minimum length of the D2OF5 symbol to be decoded.    </p>
+<p><strong>Description:</strong> Sets the minimum length of the D2OF5 symbol to be decoded.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -2203,7 +2269,7 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.D2OF5.setLength2(int length2)
 </code></pre>
 
-<p><strong>Description:</strong> Sets the upper limit for the length of the D2OF5 symbol to be decoded.    </p>
+<p><strong>Description:</strong> Sets the upper limit for the length of the D2OF5 symbol to be decoded.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -2213,10 +2279,10 @@ Sample Code:
 
 <h4 id="isredundancy-5" class="anchor"><a class="heading-anchor" href="#isredundancy-5"><span></span></a>isRedundancy()</h4>
 
-<pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.D2OF5.isRedundancy()    
+<pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.D2OF5.isRedundancy()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if redundancy is enabled, which requires the scanner to read the barcode twice before accepting the data.    </p>
+<p><strong>Description:</strong> Checks if redundancy is enabled, which requires the scanner to read the barcode twice before accepting the data.</p>
 
 <p><strong>Return Value:</strong> Boolean:</p>
 
@@ -2231,12 +2297,12 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.D2OF5.setRedundancy(boolean redundancy)
 </code></pre>
 
-<p><strong>Description:</strong> Enables or disables redundancy, requiring the scanner to read the barcode twice before accepting the data.    </p>
+<p><strong>Description:</strong> Enables or disables redundancy, requiring the scanner to read the barcode twice before accepting the data.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>redundancy:</strong> A boolean indicating whether to enable (true) or disable (false) redundancy. Default: true.    </li>
+<li><strong>redundancy:</strong> A boolean indicating whether to enable (true) or disable (false) redundancy. Default: true.</li>
 </ul>
 
 <hr>
@@ -2263,7 +2329,7 @@ Sample Code:
 <pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.DATAMATRIX.getInverseMode()
 </code></pre>
 
-<p><strong>Description:</strong> Retrieves the current inverse mode setting for Data Matrix decoding.    </p>
+<p><strong>Description:</strong> Retrieves the current inverse mode setting for Data Matrix decoding.</p>
 
 <p><strong>Return Value:</strong> Integer representing the current inverse mode setting:</p>
 
@@ -2313,7 +2379,7 @@ Sample Code:
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>initialStatus -</strong> A boolean indicating whether to enable (true) or disable (false) the symbology. Default: false.    </li>
+<li><strong>initialStatus -</strong> A boolean indicating whether to enable (true) or disable (false) the symbology. Default: false.</li>
 </ul>
 
 <h4 id="getinverse" class="anchor"><a class="heading-anchor" href="#getinverse"><span></span></a>getInverse()</h4>
@@ -2321,19 +2387,16 @@ Sample Code:
 <pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.DOTCODE.getInverse()
 </code></pre>
 
-<p><strong>Description:</strong> Retrieves the current inverse decoding setting for DotCode symbols.    </p>
+<p><strong>Description:</strong> Retrieves the current inverse decoding setting for DotCode symbols.</p>
 
-<p><strong>Return Value:</strong> Integer that represent the current inverse decoding setting:
-    - <strong>0 -</strong> Disable
-    - <strong>1 -</strong> Enable
-    - <strong>2 -</strong> Auto</p>
+<p><strong>Return Value:</strong> Integer that represent the current inverse decoding setting: - <strong>0 -</strong> Disable - <strong>1 -</strong> Enable - <strong>2 -</strong> Auto</p>
 
 <h4 id="setinverseintinverse" class="anchor"><a class="heading-anchor" href="#setinverseintinverse"><span></span></a>setInverse(int inverse)</h4>
 
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.DOTCODE.setInverse(int inverse)
 </code></pre>
 
-<p><strong>Description:</strong> Configures inverse decoding for DotCode symbols, allowing detection of standard or inverse (black-on-white or white-on-black) symbols.    </p>
+<p><strong>Description:</strong> Configures inverse decoding for DotCode symbols, allowing detection of standard or inverse (black-on-white or white-on-black) symbols.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -2355,7 +2418,7 @@ Sample Code:
 <pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.DOTCODE.getMirror()
 </code></pre>
 
-<p><strong>Description:</strong> Retrieves the current mirrored decoding setting for DotCode symbols.    </p>
+<p><strong>Description:</strong> Retrieves the current mirrored decoding setting for DotCode symbols.</p>
 
 <p><strong>Return Value:</strong> Integer that defines the current mirrored decoding setting:</p>
 
@@ -2372,7 +2435,7 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.DOTCODE.setMirror(int Mirror)
 </code></pre>
 
-<p><strong>Description:</strong> Configures mirrored decoding for DotCode symbols, allowing detection of mirrored symbols.    </p>
+<p><strong>Description:</strong> Configures mirrored decoding for DotCode symbols, allowing detection of mirrored symbols.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -2394,7 +2457,7 @@ Sample Code:
 <pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.DOTCODE.getErasure()
 </code></pre>
 
-<p><strong>Description:</strong> Retrieves the current erasure setting for DotCode decoding.    </p>
+<p><strong>Description:</strong> Retrieves the current erasure setting for DotCode decoding.</p>
 
 <p><strong>Return Value:</strong> Integer that defines the erasure setting, indicating the number of erasures allowed, within a range of 4 to 20.</p>
 
@@ -2403,7 +2466,7 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.DOTCODE.setErasure(int erasure)
 </code></pre>
 
-<p><strong>Description:</strong> Configures the number of erasures allowed during DotCode decoding to handle damaged or incomplete symbols.    </p>
+<p><strong>Description:</strong> Configures the number of erasures allowed during DotCode decoding to handle damaged or incomplete symbols.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -2427,7 +2490,7 @@ Sample Code:
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>initialStatus -</strong> A boolean indicating whether to enable (true) or disable (false) the symbology. Default: false.    </li>
+<li><strong>initialStatus -</strong> A boolean indicating whether to enable (true) or disable (false) the symbology. Default: false.</li>
 </ul>
 
 <h4 id="ispostal3s" class="anchor"><a class="heading-anchor" href="#ispostal3s"><span></span></a>isPostal3S()</h4>
@@ -2435,7 +2498,7 @@ Sample Code:
 <pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.DUTCH_POSTAL.isPostal3S()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if the postal type is set to 3S, which is a specific format used in Dutch Postal systems.    </p>
+<p><strong>Description:</strong> Checks if the postal type is set to 3S, which is a specific format used in Dutch Postal systems.</p>
 
 <p><strong>Return Value:</strong> Boolean:</p>
 
@@ -2447,10 +2510,10 @@ Sample Code:
 
 <h4 id="setpostal3sbooleanpostal3s" class="anchor"><a class="heading-anchor" href="#setpostal3sbooleanpostal3s"><span></span></a>setPostal3S(boolean postal3S)</h4>
 
-<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.DUTCH_POSTAL.setPostal3S (boolean postal3S)        
+<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.DUTCH_POSTAL.setPostal3S (boolean postal3S)
 </code></pre>
 
-<p><strong>Description:</strong> Configures whether the postal type is set to 3S in Dutch Postal systems.    </p>
+<p><strong>Description:</strong> Configures whether the postal type is set to 3S in Dutch Postal systems.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -2462,7 +2525,7 @@ Sample Code:
 
 <h3 id="ean8" class="anchor"><a class="heading-anchor" href="#ean8"><span></span></a>EAN8</h3>
 
-<p><strong>Description:</strong> Configures parameters related to EAN8 barcode decoding. EAN8 is a compact barcode typically used for small products in retail environments, while EAN13 is its extended counterpart for larger-scale applications. </p>
+<p><strong>Description:</strong> Configures parameters related to EAN8 barcode decoding. EAN8 is a compact barcode typically used for small products in retail environments, while EAN13 is its extended counterpart for larger-scale applications.</p>
 
 <h4 id="enablebooleaninitialstatus-10" class="anchor"><a class="heading-anchor" href="#enablebooleaninitialstatus-10"><span></span></a>enable(boolean initialStatus)</h4>
 
@@ -2503,7 +2566,7 @@ Sample Code:
 
 <h3 id="gs1_databar" class="anchor"><a class="heading-anchor" href="#gs1_databar"><span></span></a>GS1_DATABAR</h3>
 
-<p><strong>Description:</strong> Configures parameters related to GS1 DataBar barcode decoding. GS1 DataBar barcodes are a family of compact, high-density barcodes commonly used in retail, healthcare, and logistics for encoding additional information like expiration dates, lot numbers, and serial numbers. </p>
+<p><strong>Description:</strong> Configures parameters related to GS1 DataBar barcode decoding. GS1 DataBar barcodes are a family of compact, high-density barcodes commonly used in retail, healthcare, and logistics for encoding additional information like expiration dates, lot numbers, and serial numbers.</p>
 
 <h4 id="enablebooleaninitialstatus-11" class="anchor"><a class="heading-anchor" href="#enablebooleaninitialstatus-11"><span></span></a>enable(boolean initialStatus)</h4>
 
@@ -2523,7 +2586,7 @@ Sample Code:
 <pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.GS1_DATABAR.getGS1SecurityLevel()
 </code></pre>
 
-<p><strong>Description:</strong> Retrieves the current security level setting for GS1 DataBar barcodes.    </p>
+<p><strong>Description:</strong> Retrieves the current security level setting for GS1 DataBar barcodes.</p>
 
 <p><strong>Return Value:</strong> Integer that defines the current GS1 DataBar security level (0 to 3).</p>
 
@@ -2532,7 +2595,7 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.GS1_DATABAR.setGS1SecurityLevel(int securityLevel)
 </code></pre>
 
-<p><strong>Description:</strong> Configures the security level for GS1 DataBar barcodes, determining how aggressively the scanner decodes the barcodes while balancing the risk of misdecodes.    </p>
+<p><strong>Description:</strong> Configures the security level for GS1 DataBar barcodes, determining how aggressively the scanner decodes the barcodes while balancing the risk of misdecodes.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -2575,7 +2638,7 @@ Sample Code:
 <pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.GS1_DATABAR_LIM.getGS1LIMSecurityLevel()
 </code></pre>
 
-<p><strong>Description:</strong> Retrieves the current security level setting for GS1 DataBar Limited barcodes.    </p>
+<p><strong>Description:</strong> Retrieves the current security level setting for GS1 DataBar Limited barcodes.</p>
 
 <p><strong>Return Value:</strong> Integer that defines the current GS1 DataBar Limited security level:</p>
 
@@ -2594,7 +2657,7 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.GS1_DATABAR_LIM. setGS1LimSecurityLevel(int securitylimLevel)
 </code></pre>
 
-<p><strong>Description:</strong> Configures the security level for GS1 DataBar Limited barcodes, which determines the scanner’s aggressiveness and margin requirements for decoding.    </p>
+<p><strong>Description:</strong> Configures the security level for GS1 DataBar Limited barcodes, which determines the scanner’s aggressiveness and margin requirements for decoding.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -2646,7 +2709,7 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.HANXIN.setInverseMode(int setinverseMode)
 </code></pre>
 
-<p><strong>Description:</strong> Configures the inverse mode for Han Xin barcodes, allowing decoding of regular, inverse, or both types of barcodes.    </p>
+<p><strong>Description:</strong> Configures the inverse mode for Han Xin barcodes, allowing decoding of regular, inverse, or both types of barcodes.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -2687,7 +2750,7 @@ Sample Code:
 <pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.I2OF5.isConvertToEan13()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if the conversion of 14-character I2OF5 barcodes to EAN13 is enabled.    </p>
+<p><strong>Description:</strong> Checks if the conversion of 14-character I2OF5 barcodes to EAN13 is enabled.</p>
 
 <p><strong>Return Value:</strong> Boolean indicating to enable (true) or disable (false) conversion to EAN13.</p>
 
@@ -2781,7 +2844,7 @@ Sample Code:
 
 <h4 id="setreducedquietzonebooleanreducedquietzone-2" class="anchor"><a class="heading-anchor" href="#setreducedquietzonebooleanreducedquietzone-2"><span></span></a>setReducedQuietZone(boolean reducedQuietZone)</h4>
 
-<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.I2OF5.setReducedQuietZone(boolean reducedQuietZone)    
+<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.I2OF5.setReducedQuietZone(boolean reducedQuietZone)
 </code></pre>
 
 <p><strong>Description:</strong> Enables or disables the “Reduced Quiet Zone” parameter.</p>
@@ -2797,7 +2860,7 @@ Sample Code:
 <pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.I2OF5.isRedundancy(boolean isRedundancy())
 </code></pre>
 
-<p><strong>Description:</strong> Checks if redundancy is enabled, which requires the decoder to read the barcode twice before accepting the data.    </p>
+<p><strong>Description:</strong> Checks if redundancy is enabled, which requires the decoder to read the barcode twice before accepting the data.</p>
 
 <p><strong>Return Value:</strong> Boolean indicating to enable (true) or disable (false) redundancy.</p>
 
@@ -2806,7 +2869,7 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.I2OF5.setRedundancy(boolean redundancy)
 </code></pre>
 
-<p><strong>Description:</strong> Enables or disables redundancy, requiring the decoder to read the barcode twice before accepting the data.    </p>
+<p><strong>Description:</strong> Enables or disables redundancy, requiring the decoder to read the barcode twice before accepting the data.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -2880,7 +2943,7 @@ Sample Code:
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>SecurityLevel -</strong> An enumerator that specifies the security level, the values are: 
+<li><strong>SecurityLevel -</strong> An enumerator that specifies the security level, the values are:
 
 
 <ul>
@@ -2890,7 +2953,7 @@ Sample Code:
 
 <li><strong>LEVEL_2:</strong> Suitable if LEVEL_1 does not adequately prevent mis-decodes.</li>
 
-<li><strong>LEVEL_3:</strong> Suitable if LEVEL_2 does not adequately prevent mis-decodes. This level is an extreme measure against decoding severely out-of-specification barcodes and significantly compromised the decoder's effectiveness. If such aa high security level is required, improving the barcode quality is recommended. </li></ul>
+<li><strong>LEVEL_3:</strong> Suitable if LEVEL_2 does not adequately prevent mis-decodes. This level is an extreme measure against decoding severely out-of-specification barcodes and significantly compromised the decoder's effectiveness. If such aa high security level is required, improving the barcode quality is recommended.</li></ul>
 </li>
 </ul>
 
@@ -2955,10 +3018,10 @@ Sample Code:
 
 <h4 id="setlength1intlength1-7" class="anchor"><a class="heading-anchor" href="#setlength1intlength1-7"><span></span></a>setLength1(int length1)</h4>
 
-<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.MATRIX_2OF5.setLength1(int length1) throws InvalidInputException    
+<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.MATRIX_2OF5.setLength1(int length1) throws InvalidInputException
 </code></pre>
 
-<p><strong>Description:</strong> Sets the minimum length of Matrix 2 of 5 symbols to be decoded.    </p>
+<p><strong>Description:</strong> Sets the minimum length of Matrix 2 of 5 symbols to be decoded.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -2986,7 +3049,7 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.MATRIX_2OF5.setLength2(int length2) throws InvalidInputException
 </code></pre>
 
-<p><strong>Description:</strong> Sets the maximum length of the Matrix 2 of 5 symbols to be decoded.    </p>
+<p><strong>Description:</strong> Sets the maximum length of the Matrix 2 of 5 symbols to be decoded.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -3005,7 +3068,7 @@ Sample Code:
 <pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.MATRIX_2OF5.isRedundancy ()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if redundancy is enabled, which requires the scanner to read the barcode twice before accepting the data.    </p>
+<p><strong>Description:</strong> Checks if redundancy is enabled, which requires the scanner to read the barcode twice before accepting the data.</p>
 
 <p><strong>Return Value:</strong> Boolean:</p>
 
@@ -3020,12 +3083,12 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.MATRIX_2OF5.setRedundancy(boolean redundancy)
 </code></pre>
 
-<p><strong>Description:</strong> Enables or disables redundancy, requiring the scanner to read the barcode twice before accepting the data.    </p>
+<p><strong>Description:</strong> Enables or disables redundancy, requiring the scanner to read the barcode twice before accepting the data.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>redundancy:</strong> A boolean indicating whether to enable (true) or disable (false) redundancy. Default: false.    </li>
+<li><strong>redundancy:</strong> A boolean indicating whether to enable (true) or disable (false) redundancy. Default: false.</li>
 </ul>
 
 <h4 id="isreportcheckdigit-3" class="anchor"><a class="heading-anchor" href="#isreportcheckdigit-3"><span></span></a>isReportCheckDigit()</h4>
@@ -3033,7 +3096,7 @@ Sample Code:
 <pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.MATRIX_2OF5.isReportCheckDigit()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if the “Report Check Digit” parameter is enabled, which determines whether the check digit is included in the transmitted data.    </p>
+<p><strong>Description:</strong> Checks if the “Report Check Digit” parameter is enabled, which determines whether the check digit is included in the transmitted data.</p>
 
 <p><strong>Return Value:</strong> Boolean:</p>
 
@@ -3048,17 +3111,17 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.MATRIX_2OF5.setReportCheckDigit(boolean reportCheckDigit)
 </code></pre>
 
-<p><strong>Description:</strong> Enables or disables the “Report Check Digit” parameter, which determines whether the check digit is included in the transmitted data.    </p>
+<p><strong>Description:</strong> Enables or disables the “Report Check Digit” parameter, which determines whether the check digit is included in the transmitted data.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>reportCheckDigit:</strong> A boolean indicating whether to enable (true) or disable (false) the check digit reporting. Default: true.    </li>
+<li><strong>reportCheckDigit:</strong> A boolean indicating whether to enable (true) or disable (false) the check digit reporting. Default: true.</li>
 </ul>
 
 <h4 id="isverifycheckdigit-1" class="anchor"><a class="heading-anchor" href="#isverifycheckdigit-1"><span></span></a>isVerifyCheckDigit()</h4>
 
-<pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.MATRIX_2OF5. isVerifyCheckDigit()    
+<pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.MATRIX_2OF5. isVerifyCheckDigit()
 </code></pre>
 
 <p><strong>Description:</strong> Checks if the “Verify Check Digit” parameter is enabled, which determines whether the check digit is verified for integrity during decoding.</p>
@@ -3076,12 +3139,12 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.MATRIX_2OF5.setVerifyCheckDigit(boolean verifyCheckDigit)
 </code></pre>
 
-<p><strong>Description:</strong> Enables or disables the “Verify Check Digit” parameter, which verifies the integrity of Matrix 2 of 5 symbols using a specified check digit algorithm.    </p>
+<p><strong>Description:</strong> Enables or disables the “Verify Check Digit” parameter, which verifies the integrity of Matrix 2 of 5 symbols using a specified check digit algorithm.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>verifyCheckDigit:</strong> A boolean indicating whether to enable (true) or disable (false) check digit verification. Default: true.    </li>
+<li><strong>verifyCheckDigit:</strong> A boolean indicating whether to enable (true) or disable (false) check digit verification. Default: true.</li>
 </ul>
 
 <hr>
@@ -3114,7 +3177,7 @@ Sample Code:
 
 <h4 id="setlength1intlength1-8" class="anchor"><a class="heading-anchor" href="#setlength1intlength1-8"><span></span></a>setLength1(int length1)</h4>
 
-<p><strong>Description:</strong> Sets the lower limit for the length of the MSI symbol to be decoded.    </p>
+<p><strong>Description:</strong> Sets the lower limit for the length of the MSI symbol to be decoded.</p>
 
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.MSI.setLength1(int length1) throws InvalidInputException
 </code></pre>
@@ -3136,7 +3199,7 @@ Sample Code:
 <pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.MSI.getLength2()
 </code></pre>
 
-<p><strong>Description:</strong> Retrieves the maximum length of the MSI symbol to be decoded.    </p>
+<p><strong>Description:</strong> Retrieves the maximum length of the MSI symbol to be decoded.</p>
 
 <p><strong>Return Value:</strong> Integer that defines the maximum length of the MSI symbol length to be decoded.</p>
 
@@ -3164,7 +3227,7 @@ Sample Code:
 <pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.MSI.isRedundancy()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if redundancy is enabled, which requires the scanner to read the barcode twice before accepting the data.    </p>
+<p><strong>Description:</strong> Checks if redundancy is enabled, which requires the scanner to read the barcode twice before accepting the data.</p>
 
 <p><strong>Return Value:</strong> Boolean:</p>
 
@@ -3179,12 +3242,12 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.MSI.setRedundancy(boolean redundancy)
 </code></pre>
 
-<p><strong>Description:</strong> Enables or disables redundancy, requiring the scanner to read the barcode twice before accepting the data.    </p>
+<p><strong>Description:</strong> Enables or disables redundancy, requiring the scanner to read the barcode twice before accepting the data.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>redundancy:</strong> A boolean indicating whether to enable (true) or disable (false) redundancy. Default: true.    </li>
+<li><strong>redundancy:</strong> A boolean indicating whether to enable (true) or disable (false) redundancy. Default: true.</li>
 </ul>
 
 <h4 id="getcheckdigit" class="anchor"><a class="heading-anchor" href="#getcheckdigit"><span></span></a>getCheckDigit()</h4>
@@ -3192,12 +3255,12 @@ Sample Code:
 <pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.MSI.getCheckDigit()
 </code></pre>
 
-<p><strong>Description:</strong> Retrieves the current check digit configuration for MSI barcodes.    </p>
+<p><strong>Description:</strong> Retrieves the current check digit configuration for MSI barcodes.</p>
 
 <p><strong>Return Value:</strong> Integer the defines the current check digit configuration:</p>
 
 <ul>
-<li><strong>0 -</strong> One Check Digit </li>
+<li><strong>0 -</strong> One Check Digit</li>
 
 <li><strong>1 -</strong> Two Check Digits</li>
 </ul>
@@ -3207,7 +3270,7 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.MSI.setCheckDigit(int checkDigit)
 </code></pre>
 
-<p><strong>Description:</strong> Configures the check digit for MSI barcodes. MSI symbols require one check digit, a second check digit is optional.    </p>
+<p><strong>Description:</strong> Configures the check digit for MSI barcodes. MSI symbols require one check digit, a second check digit is optional.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -3227,7 +3290,7 @@ Sample Code:
 <pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.MSI.getCheckDigitScheme()
 </code></pre>
 
-<p><strong>Description:</strong> Retrieves the current check digit scheme used for MSI barcodes.    </p>
+<p><strong>Description:</strong> Retrieves the current check digit scheme used for MSI barcodes.</p>
 
 <p><strong>Return Value:</strong> Integer the defines the current check digit scheme:</p>
 
@@ -3236,7 +3299,7 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.MSI.setCheckDigitScheme(int checkDigitScheme)
 </code></pre>
 
-<p><strong>Description:</strong> Configures the check digit scheme for MSI barcodes. Two algorithms are available for verifying the second check digit.    </p>
+<p><strong>Description:</strong> Configures the check digit scheme for MSI barcodes. Two algorithms are available for verifying the second check digit.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -3256,9 +3319,9 @@ Sample Code:
 <pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.MSI.isReportCheckDigit()
 </code></pre>
 
-<p><strong>Description:</strong>  Checks if the “Report Check Digit” parameter is enabled, which determines whether the check digit is included in the transmitted data.    </p>
+<p><strong>Description:</strong> Checks if the “Report Check Digit” parameter is enabled, which determines whether the check digit is included in the transmitted data.</p>
 
-<p><strong>Return Value:</strong>  Boolean:</p>
+<p><strong>Return Value:</strong> Boolean:</p>
 
 <ul>
 <li><strong>true -</strong> Report Check Digit is enabled</li>
@@ -3271,12 +3334,12 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.MSI.setReportCheckDigit(boolean reportCheckDigit)
 </code></pre>
 
-<p><strong>Description:</strong> Enables or disables the “Report Check Digit” parameter, which determines whether the check digit is included in the transmitted data.    </p>
+<p><strong>Description:</strong> Enables or disables the “Report Check Digit” parameter, which determines whether the check digit is included in the transmitted data.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>reportCheckDigit:</strong> A boolean indicating whether to enable (true) or disable (false) the check digit reporting. Default: false.    </li>
+<li><strong>reportCheckDigit:</strong> A boolean indicating whether to enable (true) or disable (false) the check digit reporting. Default: false.</li>
 </ul>
 
 <h4 id="getsecuritylevel-3" class="anchor"><a class="heading-anchor" href="#getsecuritylevel-3"><span></span></a>getSecurityLevel()</h4>
@@ -3284,7 +3347,7 @@ Sample Code:
 <pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.MSI.getSecurityLevel()
 </code></pre>
 
-<p><strong>Description:</strong> Retrieves the current security level used for MSI barcodes.    </p>
+<p><strong>Description:</strong> Retrieves the current security level used for MSI barcodes.</p>
 
 <p><strong>Return Value:</strong> Integer that defines the current security level (0 to 3).</p>
 
@@ -3317,7 +3380,7 @@ Sample Code:
 <pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.MSI.isReducedQuietZone()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if the “Reduced Quiet Zone” parameter is enabled.    </p>
+<p><strong>Description:</strong> Checks if the “Reduced Quiet Zone” parameter is enabled.</p>
 
 <p><strong>Return Value:</strong> Boolean:</p>
 
@@ -3332,7 +3395,7 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.MSI.setReducedQuietZone(boolean reducedQuietZone)
 </code></pre>
 
-<p><strong>Description:</strong> Enables or disables the “Reduced Quiet Zone” parameter, which allows decoding MSI barcodes with reduced quiet zones.    </p>
+<p><strong>Description:</strong> Enables or disables the “Reduced Quiet Zone” parameter, which allows decoding MSI barcodes with reduced quiet zones.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -3344,7 +3407,7 @@ Sample Code:
 
 <h3 id="trioptic39" class="anchor"><a class="heading-anchor" href="#trioptic39"><span></span></a>TRIOPTIC39</h3>
 
-<p><strong>Description:</strong> Configures parameters related to for Trioptic39 barcode decoding. Trioptic39 is a variant of Code39 commonly used in applications requiring specialized barcode formats. </p>
+<p><strong>Description:</strong> Configures parameters related to for Trioptic39 barcode decoding. Trioptic39 is a variant of Code39 commonly used in applications requiring specialized barcode formats.</p>
 
 <h4 id="enablebooleaninitialstatus-17" class="anchor"><a class="heading-anchor" href="#enablebooleaninitialstatus-17"><span></span></a>enable(boolean initialStatus)</h4>
 
@@ -3361,10 +3424,10 @@ Sample Code:
 
 <h4 id="isredundancy-9" class="anchor"><a class="heading-anchor" href="#isredundancy-9"><span></span></a>isRedundancy()</h4>
 
-<pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.TRIOPTIC39.isRedundancy()     
+<pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.TRIOPTIC39.isRedundancy()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if redundancy is enabled, which requires the scanner to read the barcode twice before accepting the data.     </p>
+<p><strong>Description:</strong> Checks if redundancy is enabled, which requires the scanner to read the barcode twice before accepting the data.</p>
 
 <p><strong>Return Value:</strong> Boolean:</p>
 
@@ -3379,12 +3442,12 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.TRIOPTIC39.setRedundancy(boolean Redundancy())
 </code></pre>
 
-<p><strong>Description:</strong> Enables or disables redundancy, requiring the scanner to read the barcode twice before accepting the data.     </p>
+<p><strong>Description:</strong> Enables or disables redundancy, requiring the scanner to read the barcode twice before accepting the data.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>redundancy:</strong> A boolean indicating whether to enable (true) or disable (false) redundancy.  Default: false.</li>
+<li><strong>redundancy:</strong> A boolean indicating whether to enable (true) or disable (false) redundancy. Default: false.</li>
 </ul>
 
 <hr>
@@ -3395,10 +3458,10 @@ Sample Code:
 
 <h4 id="enablebooleaninitialstatus-18" class="anchor"><a class="heading-anchor" href="#enablebooleaninitialstatus-18"><span></span></a>enable(boolean initialStatus)</h4>
 
-<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.UK_POSTAL.enable(boolean initialStatus) 
+<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.UK_POSTAL.enable(boolean initialStatus)
 </code></pre>
 
-<p><strong>Description:</strong> Enables or disables the UK Postal symbology decoding based on the input boolean parameter.    </p>
+<p><strong>Description:</strong> Enables or disables the UK Postal symbology decoding based on the input boolean parameter.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -3411,7 +3474,7 @@ Sample Code:
 <pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.UK_POSTAL.isReportCheckDigit()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if the “Report Check Digit” parameter is enabled, which determines whether the check digit is included in the transmitted data.     </p>
+<p><strong>Description:</strong> Checks if the “Report Check Digit” parameter is enabled, which determines whether the check digit is included in the transmitted data.</p>
 
 <p><strong>Return Value:</strong> Boolean:</p>
 
@@ -3426,7 +3489,7 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.UK_POSTAL.setReportCheckDigit(boolean reportCheckDigit)
 </code></pre>
 
-<p><strong>Description:</strong> Enables or disables the “Report Check Digit” parameter, which determines whether the check digit is included in the transmitted data.     </p>
+<p><strong>Description:</strong> Enables or disables the “Report Check Digit” parameter, which determines whether the check digit is included in the transmitted data.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -3438,7 +3501,7 @@ Sample Code:
 
 <h3 id="upca" class="anchor"><a class="heading-anchor" href="#upca"><span></span></a>UPCA</h3>
 
-<p><strong>Description:</strong> Configures parameters related to UPC-A barcode decoding. UPC-A is one of the most widely used barcode formats, especially in retail applications, encoding 12 numerical digits for product identification. </p>
+<p><strong>Description:</strong> Configures parameters related to UPC-A barcode decoding. UPC-A is one of the most widely used barcode formats, especially in retail applications, encoding 12 numerical digits for product identification.</p>
 
 <h4 id="enablebooleaninitialstatus-19" class="anchor"><a class="heading-anchor" href="#enablebooleaninitialstatus-19"><span></span></a>enable(boolean initialStatus)</h4>
 
@@ -3458,7 +3521,7 @@ Sample Code:
 <pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.UPCA.isReportCheckDigit()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if the “Report Check Digit” parameter is enabled, which determines whether the check digit is included in the transmitted data.    </p>
+<p><strong>Description:</strong> Checks if the “Report Check Digit” parameter is enabled, which determines whether the check digit is included in the transmitted data.</p>
 
 <p><strong>Return Value:</strong> Boolean value:</p>
 
@@ -3514,7 +3577,7 @@ Sample Code:
 <ul>
 <li><strong>0 -</strong> None</li>
 
-<li><strong>1 -</strong> System Character only (Default) </li>
+<li><strong>1 -</strong> System Character only (Default)</li>
 
 <li><strong>2 -</strong> System Character and Country Code</li></ul>
 </li>
@@ -3531,7 +3594,7 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.UPCE.enable(boolean initialStatus)
 </code></pre>
 
-<p><strong>Description:</strong> Enables or disables the UPC-E symbology decoding based on the input boolean parameter.    </p>
+<p><strong>Description:</strong> Enables or disables the UPC-E symbology decoding based on the input boolean parameter.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -3544,7 +3607,7 @@ Sample Code:
 <pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.UPCE.isReportCheckDigit()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if the “Report Check Digit” parameter is enabled, which determines whether the check digit is included in the transmitted data.    </p>
+<p><strong>Description:</strong> Checks if the “Report Check Digit” parameter is enabled, which determines whether the check digit is included in the transmitted data.</p>
 
 <p><strong>Return Value:</strong> Boolean:</p>
 
@@ -3559,7 +3622,7 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.UPCE.setReportCheckDigit(boolean reportCheckDigit)
 </code></pre>
 
-<p><strong>Description:</strong> Enables or disables the “Report Check Digit” parameter, which determines whether the check digit is included in the transmitted data.    </p>
+<p><strong>Description:</strong> Enables or disables the “Report Check Digit” parameter, which determines whether the check digit is included in the transmitted data.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -3589,7 +3652,7 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.UPCE.setPreamble(int preamble)
 </code></pre>
 
-<p><strong>Description:</strong> Configures the preamble transmission for UPC-E symbols, affecting how the country code and system character are transmitted to the host device.    </p>
+<p><strong>Description:</strong> Configures the preamble transmission for UPC-E symbols, affecting how the country code and system character are transmitted to the host device.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -3620,7 +3683,7 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.UPCE.setConvertToUPCA(boolean convertToUPCA)
 </code></pre>
 
-<p><strong>Description:</strong> Enables or disables the “Convert to UPCA” parameter, allowing UPC-E data to be transmitted in UPC-A format.    </p>
+<p><strong>Description:</strong> Enables or disables the “Convert to UPCA” parameter, allowing UPC-E data to be transmitted in UPC-A format.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -3753,7 +3816,7 @@ Sample Code:
 <pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.UPCEAN.getSecurityLevel()
 </code></pre>
 
-<p><strong>Description:</strong> Retrieves the current security level setting for UPC/EAN barcodes.     </p>
+<p><strong>Description:</strong> Retrieves the current security level setting for UPC/EAN barcodes.</p>
 
 <p><strong>Return Value:</strong> Integer representing the current security level, which is one of the following enumerated values:</p>
 
@@ -3783,7 +3846,7 @@ Sample Code:
 <ul>
 <li><strong>0 -</strong> LEVEL_0</li>
 
-<li><strong>1 -</strong> LEVEL_1 (default) </li>
+<li><strong>1 -</strong> LEVEL_1 (default)</li>
 
 <li><strong>2 -</strong> LEVEL_2</li>
 
@@ -3816,7 +3879,7 @@ Sample Code:
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>supplemental2:</strong> A boolean indicating whether to enable (true) or disable (false) the 2-digit supplemental.     </li>
+<li><strong>supplemental2:</strong> A boolean indicating whether to enable (true) or disable (false) the 2-digit supplemental.</li>
 </ul>
 
 <h4 id="issupplemental5enabled" class="anchor"><a class="heading-anchor" href="#issupplemental5enabled"><span></span></a>isSupplemental5Enabled()</h4>
@@ -3824,7 +3887,7 @@ Sample Code:
 <pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.UPCEAN.isSupplemental5Enabled()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if the 5-digit supplemental for UPC/EAN barcodes is enabled.     </p>
+<p><strong>Description:</strong> Checks if the 5-digit supplemental for UPC/EAN barcodes is enabled.</p>
 
 <p><strong>Return Value:</strong> Boolean:</p>
 
@@ -3844,7 +3907,7 @@ Sample Code:
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>supplemental5:</strong> A boolean indicating whether to enable (true) or disable (false) the 5-digit supplemental.     </li>
+<li><strong>supplemental5:</strong> A boolean indicating whether to enable (true) or disable (false) the 5-digit supplemental.</li>
 </ul>
 
 <h4 id="getsupplementalmode" class="anchor"><a class="heading-anchor" href="#getsupplementalmode"><span></span></a>getSupplementalMode()</h4>
@@ -3852,21 +3915,21 @@ Sample Code:
 <pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.UPCEAN.getSupplementalMode(int getSupplementalMode)
 </code></pre>
 
-<p><strong>Description:</strong> Retrieves the current supplemental mode for UPC/EAN barcodes.     </p>
+<p><strong>Description:</strong> Retrieves the current supplemental mode for UPC/EAN barcodes.</p>
 
-<p><strong>Return Value:</strong> Integer that defines the current supplemental mode (0 to 7). </p>
+<p><strong>Return Value:</strong> Integer that defines the current supplemental mode (0 to 7).</p>
 
 <h4 id="setsupplementalmodeintsupplementalmode" class="anchor"><a class="heading-anchor" href="#setsupplementalmodeintsupplementalmode"><span></span></a>setSupplementalMode(int supplementalMode)</h4>
 
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.UPCEAN.setSupplementalMode(int supplementalMode)
 </code></pre>
 
-<p><strong>Description:</strong> Sets the supplemental mode for UPC/EAN barcodes, controlling the handling of appended barcodes.     </p>
+<p><strong>Description:</strong> Sets the supplemental mode for UPC/EAN barcodes, controlling the handling of appended barcodes.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>supplementalMode:</strong> A SupplementalMode enumerator indicating the method for handling supplementals: 
+<li><strong>supplementalMode:</strong> A SupplementalMode enumerator indicating the method for handling supplementals:
 
 
 <ul>
@@ -3893,16 +3956,16 @@ Sample Code:
 <pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.UPCEAN.getRetryCount()
 </code></pre>
 
-<p><strong>Description:</strong> Retrieves the current retry count setting for auto-discriminating supplementals in UPC/EAN barcodes.     </p>
+<p><strong>Description:</strong> Retrieves the current retry count setting for auto-discriminating supplementals in UPC/EAN barcodes.</p>
 
-<p><strong>Return Value:</strong> Integer that defines the current retry count. </p>
+<p><strong>Return Value:</strong> Integer that defines the current retry count.</p>
 
 <h4 id="setretrycountintretrycount" class="anchor"><a class="heading-anchor" href="#setretrycountintretrycount"><span></span></a>setRetryCount(int retryCount)</h4>
 
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.UPCEAN.setRetryCount(int retryCount) throws InvalidInputException
 </code></pre>
 
-<p><strong>Description:</strong> Sets the retry count for auto-discriminating supplementals in UPC/EAN barcodes.     </p>
+<p><strong>Description:</strong> Sets the retry count for auto-discriminating supplementals in UPC/EAN barcodes.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -3913,7 +3976,7 @@ Sample Code:
 <p><strong>Exception:</strong></p>
 
 <ul>
-<li><strong>InvalidInputException –</strong> Thrown if the retryCount is outside the valid range.     </li>
+<li><strong>InvalidInputException –</strong> Thrown if the retryCount is outside the valid range.</li>
 </ul>
 
 <h4 id="islineardecodeenabled" class="anchor"><a class="heading-anchor" href="#islineardecodeenabled"><span></span></a>isLinearDecodeEnabled()</h4>
@@ -3921,7 +3984,7 @@ Sample Code:
 <pre class="prettyprint"><code>    boolean  BarcodeDecoder.Settings.Symbology.UPCEAN.isLinearDecodeEnabled()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if linear decoding for UPC/EAN barcodes is enabled.     </p>
+<p><strong>Description:</strong> Checks if linear decoding for UPC/EAN barcodes is enabled.</p>
 
 <p><strong>Return Value:</strong> Boolean:</p>
 
@@ -3936,20 +3999,20 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.UPCEAN.setLinearDecode(boolean linearDecode)
 </code></pre>
 
-<p><strong>Description:</strong> Enables or disables linear decoding for UPC/EAN barcodes.     </p>
+<p><strong>Description:</strong> Enables or disables linear decoding for UPC/EAN barcodes.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>linearDecode:</strong> A boolean indicating whether to enable (true) or disable (false) linear decoding.     </li>
+<li><strong>linearDecode:</strong> A boolean indicating whether to enable (true) or disable (false) linear decoding.</li>
 </ul>
 
 <h4 id="isbooklandenabled" class="anchor"><a class="heading-anchor" href="#isbooklandenabled"><span></span></a>isBooklandEnabled()</h4>
 
-<pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.UPCEAN.isBooklandEnabled()     
+<pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.UPCEAN.isBooklandEnabled()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if Bookland decoding for UPC/EAN barcodes is enabled.     </p>
+<p><strong>Description:</strong> Checks if Bookland decoding for UPC/EAN barcodes is enabled.</p>
 
 <p><strong>Return Value:</strong> Boolean:</p>
 
@@ -3969,7 +4032,7 @@ Sample Code:
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>bookland:</strong> A boolean indicating whether to enable (true) or disable (false) Bookland decoding.     </li>
+<li><strong>bookland:</strong> A boolean indicating whether to enable (true) or disable (false) Bookland decoding.</li>
 </ul>
 
 <h4 id="iscouponenabled" class="anchor"><a class="heading-anchor" href="#iscouponenabled"><span></span></a>isCouponEnabled()</h4>
@@ -3977,7 +4040,7 @@ Sample Code:
 <pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.UPCEAN.isCouponEnabled()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if coupon decoding for UPC/EAN barcodes is enabled.    </p>
+<p><strong>Description:</strong> Checks if coupon decoding for UPC/EAN barcodes is enabled.</p>
 
 <p><strong>Return Value:</strong> Boolean:</p>
 
@@ -3997,7 +4060,7 @@ Sample Code:
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>coupon:</strong> A boolean indicating whether to enable (true) or disable (false) coupon decoding.     </li>
+<li><strong>coupon:</strong> A boolean indicating whether to enable (true) or disable (false) coupon decoding.</li>
 </ul>
 
 <h4 id="getcouponreportmode" class="anchor"><a class="heading-anchor" href="#getcouponreportmode"><span></span></a>getCouponReportMode()</h4>
@@ -4005,16 +4068,16 @@ Sample Code:
 <pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.UPCEAN.getCouponReportMode()
 </code></pre>
 
-<p><strong>Description:</strong> Retrieves the current coupon report mode for UPC/EAN barcodes.     </p>
+<p><strong>Description:</strong> Retrieves the current coupon report mode for UPC/EAN barcodes.</p>
 
-<p><strong>Return Value:</strong> Integer representing the current coupon report mode (0 to 2). </p>
+<p><strong>Return Value:</strong> Integer representing the current coupon report mode (0 to 2).</p>
 
 <h4 id="setcouponreportmodeintcouponreportmode" class="anchor"><a class="heading-anchor" href="#setcouponreportmodeintcouponreportmode"><span></span></a>setCouponReportMode(int couponReportMode)</h4>
 
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.UPCEAN.setCouponReportMode(int couponReportMode) throws InvalidInputException
 </code></pre>
 
-<p><strong>Description:</strong> Sets the coupon report mode for UPC/EAN barcodes.     </p>
+<p><strong>Description:</strong> Sets the coupon report mode for UPC/EAN barcodes.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -4025,7 +4088,7 @@ Sample Code:
 <ul>
 <li><strong>0 -</strong> Old Coupon Report Mode, only the Old coupon format is read, with Interim format returning UPC.</li>
 
-<li><strong>1 -</strong> New Coupon Report Mode, only Interim or New coupon formats are read. </li>
+<li><strong>1 -</strong> New Coupon Report Mode, only Interim or New coupon formats are read.</li>
 
 <li><strong>2 -</strong> Both Old as well the new GS1 Databar coupon formats are read (default).</li></ul>
 </li>
@@ -4034,7 +4097,7 @@ Sample Code:
 <p><strong>Exception:</strong></p>
 
 <ul>
-<li><strong>InvalidInputException –</strong> Thrown if couponReportMode is outside the valid values.     </li>
+<li><strong>InvalidInputException –</strong> Thrown if couponReportMode is outside the valid values.</li>
 </ul>
 
 <h4 id="iseanzeroextendenabled" class="anchor"><a class="heading-anchor" href="#iseanzeroextendenabled"><span></span></a>isEanZeroExtendEnabled()</h4>
@@ -4042,7 +4105,7 @@ Sample Code:
 <pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.UPCEAN.isEanZeroExtendEnabled()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if EAN zero extend feature for UPC/EAN barcodes is enabled.     </p>
+<p><strong>Description:</strong> Checks if EAN zero extend feature for UPC/EAN barcodes is enabled.</p>
 
 <p><strong>Return Value:</strong> Boolean:</p>
 
@@ -4062,7 +4125,7 @@ Sample Code:
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>eanZeroExtend:</strong> A boolean indicating whether to enable (true) or disable (false) EAN zero extend.     </li>
+<li><strong>eanZeroExtend:</strong> A boolean indicating whether to enable (true) or disable (false) EAN zero extend.</li>
 </ul>
 
 <h4 id="getbooklandformat" class="anchor"><a class="heading-anchor" href="#getbooklandformat"><span></span></a>getBooklandFormat()</h4>
@@ -4070,27 +4133,27 @@ Sample Code:
 <pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.UPCEAN.getBooklandFormat()
 </code></pre>
 
-<p><strong>Description:</strong> Retrieves the current Bookland format setting for UPC/EAN barcodes.     </p>
+<p><strong>Description:</strong> Retrieves the current Bookland format setting for UPC/EAN barcodes.</p>
 
-<p><strong>Return Value:</strong> Integer that represents the current Bookland format (0 or 1). </p>
+<p><strong>Return Value:</strong> Integer that represents the current Bookland format (0 or 1).</p>
 
 <h4 id="setbooklandformatintbooklandformat" class="anchor"><a class="heading-anchor" href="#setbooklandformatintbooklandformat"><span></span></a>setBooklandFormat(int booklandFormat)</h4>
 
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.UPCEAN.setBooklandFormat(int booklandFormat) throws InvalidInputException
 </code></pre>
 
-<p><strong>Description:</strong> Sets the Bookland format for UPC/EAN barcodes.     </p>
+<p><strong>Description:</strong> Sets the Bookland format for UPC/EAN barcodes.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>booklandFormat:</strong> An integer specifying the Bookland format: <br>
+<li><strong>booklandFormat:</strong> An integer specifying the Bookland format:
 
 
 <ul>
 <li><strong>0 -</strong> Format ISBN-10, 978/979 transmitted as EAN13 as per 2007 ISBN-13 protocol (default)</li>
 
-<li><strong>1 -</strong> Format ISBN-13, 978/979 transmitted as EAN13 as per 2007 ISBN-13 protocol </li></ul>
+<li><strong>1 -</strong> Format ISBN-13, 978/979 transmitted as EAN13 as per 2007 ISBN-13 protocol</li></ul>
 </li>
 </ul>
 
@@ -4117,15 +4180,15 @@ Sample Code:
 
 <h4 id="setconvertdatabartoupceanbooleanconvertdatabartoupcean" class="anchor"><a class="heading-anchor" href="#setconvertdatabartoupceanbooleanconvertdatabartoupcean"><span></span></a>SetConvertDataBarToUPCEAN(boolean convertDataBarToUPCEAN)</h4>
 
-<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.setConvertDataBarToUPCEAN(boolean convertDataBarToUPCEAN) 
+<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.setConvertDataBarToUPCEAN(boolean convertDataBarToUPCEAN)
 </code></pre>
 
-<p><strong>Description:</strong> Enables the conversion from DataBar to UPC/EAN for barcodes.     </p>
+<p><strong>Description:</strong> Enables the conversion from DataBar to UPC/EAN for barcodes.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>convertDataBarToUPCEAN:</strong> A boolean indicating whether to enable (true) or disable (false) conversion from DataBar to UPC/EAN.     </li>
+<li><strong>convertDataBarToUPCEAN:</strong> A boolean indicating whether to enable (true) or disable (false) conversion from DataBar to UPC/EAN.</li>
 </ul>
 
 <h4 id="isreducedquietzoneenabled" class="anchor"><a class="heading-anchor" href="#isreducedquietzoneenabled"><span></span></a>isReducedQuietZoneEnabled()</h4>
@@ -4133,7 +4196,7 @@ Sample Code:
 <pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.isReducedQuietZoneEnabled()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if reduced quiet zone decoding for UPC/EAN barcodes is enabled.     </p>
+<p><strong>Description:</strong> Checks if reduced quiet zone decoding for UPC/EAN barcodes is enabled.</p>
 
 <p><strong>Return Value:</strong> Boolean:</p>
 
@@ -4148,7 +4211,7 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.setReducedQuietZone(boolean reducedQuietZone)
 </code></pre>
 
-<p><strong>Description:</strong> Enables or disables reduced quiet zone decoding for UPC/EAN barcodes.     </p>
+<p><strong>Description:</strong> Enables or disables reduced quiet zone decoding for UPC/EAN barcodes.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -4160,14 +4223,14 @@ Sample Code:
 
 <h3 id="usplanet" class="anchor"><a class="heading-anchor" href="#usplanet"><span></span></a>USPLANET</h3>
 
-<p><strong>Description:</strong> Configures parameters related to US Planet barcode decoding. US Planet barcodes are used in postal services for tracking mailpieces and packages. </p>
+<p><strong>Description:</strong> Configures parameters related to US Planet barcode decoding. US Planet barcodes are used in postal services for tracking mailpieces and packages.</p>
 
 <h4 id="enablebooleaninitialstatus-22" class="anchor"><a class="heading-anchor" href="#enablebooleaninitialstatus-22"><span></span></a>enable(boolean initialStatus)</h4>
 
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.USPLANET.enable (boolean initialStatus)
 </code></pre>
 
-<p><strong>Description:</strong> Enables or disables the US Planet symbology decoding based on the input boolean parameter.    </p>
+<p><strong>Description:</strong> Enables or disables the US Planet symbology decoding based on the input boolean parameter.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -4185,9 +4248,9 @@ Sample Code:
 <p><strong>Return Value:</strong> Boolean:</p>
 
 <ul>
-<li><strong>true -</strong> Report Check Digit is enabled </li>
+<li><strong>true -</strong> Report Check Digit is enabled</li>
 
-<li><strong>false  -</strong> Report Check Digit is disabled </li>
+<li><strong>false -</strong> Report Check Digit is disabled</li>
 </ul>
 
 <h4 id="setreportcheckdigitbooleanreportcheckdigit-9" class="anchor"><a class="heading-anchor" href="#setreportcheckdigitbooleanreportcheckdigit-9"><span></span></a>setReportCheckDigit(boolean reportCheckDigit)</h4>
@@ -4214,7 +4277,7 @@ Sample Code:
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.USPOSTNET.enable(boolean initialStatus)
 </code></pre>
 
-<p><strong>Description:</strong> Enables or disables the US Postnet symbology decoding based on the input boolean parameter.    </p>
+<p><strong>Description:</strong> Enables or disables the US Postnet symbology decoding based on the input boolean parameter.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -4227,7 +4290,7 @@ Sample Code:
 <pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.USPOSTNET.isReportCheckDigit()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if the “Report Check Digit” parameter is enabled, which determines whether the check digit is included in the transmitted data.    </p>
+<p><strong>Description:</strong> Checks if the “Report Check Digit” parameter is enabled, which determines whether the check digit is included in the transmitted data.</p>
 
 <p><strong>Return Value:</strong> Boolean:</p>
 

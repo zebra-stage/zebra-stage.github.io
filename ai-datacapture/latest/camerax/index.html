@@ -253,9 +253,9 @@
 <ul>
 <li><strong>EntityTrackerAnalyzer –</strong> A CameraX <code>ImageAnalysis.Analyzer</code> that detects, decodes and tracks <code>Entities</code>.</li>
 
-<li><strong>Detectors for BarcodeDecode and TextOCR –</strong> Tools for building custom Analyzers.</li>
+<li><strong>Detectors for BarcodeDecoder and TextOCR –</strong> Developers can utilize these detectors to create custom Analyzers.</li>
 
-<li><strong>EntityView –</strong> An integrated viewfinder designed to work alongside <code>EntityTrackerAnalyzer</code>. </li>
+<li><strong>EntityViewfinder –</strong> An integrated viewfinder designed to work alongside <code>EntityTrackerAnalyzer</code>. </li>
 </ul>
 
 <p>For details on compatibility, refer to the <a href="https://developer.android.com/media/camera/camerax/architecture#requirements">CameraX requirements</a>. </p>
@@ -269,7 +269,7 @@
 <p><strong>Use Cases:</strong></p>
 
 <ol>
-<li><strong>Real-Time Object Tracking -</strong> Develop applications that require real-time entity tracking using camera feeds.</li>
+<li><strong>Real-Time Entity Tracking -</strong> Develop applications that require real-time entity tracking using camera feeds.</li>
 
 <li><strong>Augmented Reality Experiences -</strong> Leverage entity tracking for dynamic augmented reality (AR) experiences that respond to entity movements and interactions.</li>
 
@@ -279,9 +279,9 @@
 <p><strong>Notes:</strong></p>
 
 <ul>
-<li><strong>Extensibility -</strong> The analyzer is designed to be extended with additional detectors and consumer logic. However, currently only <a href="../barcodedecoder/">BarcodeDecoder</a> is supported as a detector. Only one instance of a detector can be passed in to the constructor.</li>
+<li><strong>Extensibility -</strong> The analyzer is designed to be extended with additional detectors and consumer logic. However, currently only <a href="../barcodedecoder/">BarcodeDecoder</a> is supported as a detector. Only a single instance of each detector type should be passed in to the constructor.</li>
 
-<li><strong>Lifecycle handling -</strong> Developers are responsible for managing the session throughout the Android application lifecycle, including the initialization and deinitialization of <code>EntityTrackerAnalyzer</code>. The application must manage the session, since <code>EntityTrackerAnalyzer</code> does not handle this internally.   </li>
+<li><strong>Lifecycle handling -</strong> Developers are responsible for managing the session throughout the Android application lifecycle. The application must manage the session, since <code>EntityTrackerAnalyzer</code> does not handle this internally.   </li>
 
 <li><strong>Threading -</strong> The processing of image frames is efficiently managed using threads within the <code>EntityTrackerAnalyzer</code>.</li>
 </ul>
@@ -304,7 +304,7 @@
 
 <pre class="prettyprint"><code>BarcodeDecoder.Settings settings = new BarcodeDecoder.Settings();
 decorderExecutor = Executors.newSingleThreadExecutor();
-BarcodeDecoder barcodeDecoder = BarcodeDecoder.getBarcodeDecoder(settings, executor).get();
+BarcodeDecoder barcodeDecoder = BarcodeDecoder.getBarcodeDecoder(settings, decoderExecutor).get();
 </code></pre></li>
 
 <li><p><strong>Configure Camera Controller -</strong> Set up the camera controller to use the <code>EntityTrackerAnalyzer</code> as the <code>ImageAnalysis.Analyzer</code> for processing image frames:</p>
@@ -355,9 +355,9 @@ if (resultsExecutor != null &amp;amp;&amp;amp; !resultsExecutor.isShutdown()) {
 }
 
 // Close any clients or scanners to free up resources
-if (barcodeScanner != null) {
-    barcodeScanner.close();
-    barcodeScanner = null;
+if (barcodeDecoder != null) {
+    barcodeDecoder.dispose();
+    barcodeDecoder = null;
 }
 </code></pre>
 
@@ -386,25 +386,78 @@ if (barcodeScanner != null) {
 <p>The <code>EntityTrackerAnalyzer</code> calculates the output bounding box coordinates based on the <code>targetCoordinateSystem</code> set by the user:</p>
 
 <ul>
-<li><code>COORDINATE_SYSTEM_ORIGINAL</code> - Bounding boxes are delivered in the analyzer's coordinate system, accounting rotation at the analyzer.</li>
+<li><code>COORDINATE_SYSTEM_ORIGINAL</code> - Bounding boxes are delivered in the Analyzer's coordinate system.</li>
 
-<li><code>COORDINATE_SYSTEM_SENSOR</code> (default) - Bounding boxes are delivered in the sensor's coordinate system after applying rotation at the analyzer.  </li>
+<li><code>COORDINATE_SYSTEM_SENSOR</code> (default) - Bounding boxes are delivered in the Sensor's coordinate system.</li>
 
-<li><code>COORDINATE_SYSTEM_VIEW_REFERENCE</code> - Bounding boxes are delivered in the PreviewView coordinate system by applying rotation at the analyzer, transformation from analyzer to sensor, and transformation from sensor to PreviewView.</li>
+<li><code>COORDINATE_SYSTEM_VIEW_REFERENCE</code> - Bounding boxes are delivered in the PreviewView coordinate system. </li>
 </ul>
 
-<p>All transformations take into account the image rotation (from <code>ImageInfo.getRotationDegrees()</code>). For example, with a 90 degree rotation using <code>COORDINATE_SYSTEM_ORIGINAL</code>, the point (0,0) maps to (0, h), where h is the <code>imageProxy</code>’s height.</p>
+<p>During transformations, the Analyzer manages image rotation. All transformations then take the image rotations from the <code>ImageInfo.getRotationDegrees().ImaageAnalysis.Analyzer</code> interface. </p>
+
+<!-- 
+**Parameters:**
+- **Detectors -** A list of entity detectors to be utilized for detection and tracking.
+- **TargetCoordinateSystem -** The coordinate system used for image analysis: `COORDINATE_SYSTEM_ORIGINAL`, `COORDINATE_SYSTEM_SENSOR` or `COORDINATE_SYSTEM_VIEW_REFERENCED`; see Android Developers [ImageAnalysis API reference](https://developer.android.com/reference/androidx/camera/core/ImageAnalysis).
+- **executor -** The executor responsible for executing the consumer.
+- **consumer -** A consumer function to handle the processing of detected entities.
+-->
+
+<h4 id="analyzeimageproxyimage" class="anchor"><a class="heading-anchor" href="#analyzeimageproxyimage"><span></span></a>analyze(ImageProxy image)</h4>
+
+<pre class="prettyprint"><code>    public void analyze(@NonNull ImageProxy image) 
+</code></pre>
+
+<p>Analyzes the image with the Detectors. This method delivers the image to the detectors. Typically, this method is called by ImageAnalysis when a new frame becomes available. </p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>Detectors -</strong> A list of entity detectors to be utilized for detection and tracking.</li>
+<li><strong>image -</strong> An <code>ImageProxy</code> object representing the image to be analyzed. </li>
+</ul>
 
-<li><strong>TargetCoordinateSystem -</strong> The coordinate system used for image analysis: <code>COORDINATE_SYSTEM_ORIGINAL</code>, <code>COORDINATE_SYSTEM_SENSOR</code> or <code>COORDINATE_SYSTEM_VIEW_REFERENCED</code>; see Android Developers <a href="https://developer.android.com/reference/androidx/camera/core/ImageAnalysis">ImageAnalysis API reference</a>.</li>
+<h4 id="getdefaulttargetresolution" class="anchor"><a class="heading-anchor" href="#getdefaulttargetresolution"><span></span></a>GetDefaultTargetResolution()</h4>
 
-<li><strong>executor -</strong> The executor responsible for executing the consumer.</li>
+<pre class="prettyprint"><code>    public Size getDefaultTargetResolution() 
+</code></pre>
 
-<li><strong>consumer -</strong> A consumer function to handle the processing of detected entities.</li>
+<p>Returns the default target resolution for image analysis in the <code>EntityTrackerAnalyzer</code>. </p>
+
+<p><strong>Return Value:</strong> A Size object representing the default resolution for target images. </p>
+
+<h4 id="gettargetcoordinatesystem" class="anchor"><a class="heading-anchor" href="#gettargetcoordinatesystem"><span></span></a>getTargetCoordinateSystem</h4>
+
+<pre class="prettyprint"><code>    public int getTargetCoordinateSystem() 
+</code></pre>
+
+<p>Returns the current coordinate system used inside the Analyzer. This is passed to the analyzer when it is created via the constructor.     </p>
+
+<p><strong>Returns:</strong> An integer representing the coordinate system type. </p>
+
+<h4 id="updatetransformmatrixmatrix" class="anchor"><a class="heading-anchor" href="#updatetransformmatrixmatrix"><span></span></a>updateTransform(Matrix matrix)</h4>
+
+<pre class="prettyprint"><code>    public final void updateTransform(@Nullable Matrix matrix) 
+</code></pre>
+
+<p>Receive a transformation matrix, which converts coordinates from the camera sensor’s system to the target system which was passed  as targetCoordinateSystem in the constructor.  </p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>matrix -</strong> A Matrix object for transformation adjustments. </li>
+</ul>
+
+<h4 id="setcroprectrectfcroprect" class="anchor"><a class="heading-anchor" href="#setcroprectrectfcroprect"><span></span></a>setCropRect(RectF cropRect)</h4>
+
+<pre class="prettyprint"><code>    public void setCropRect(RectF cropRect) 
+</code></pre>
+
+<p>Sets the crop rectangle. The crop rectangle specifies the region of the image that the analyzer process for entities.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>cropRect -</strong> A <code>RectF</code> object with crop rectangle. </li>
 </ul>
 
 <hr>
@@ -429,7 +482,7 @@ if (barcodeScanner != null) {
 
 <p><br></p>
 
-<h4 id="getdefaulttargetresolution" class="anchor"><a class="heading-anchor" href="#getdefaulttargetresolution"><span></span></a>GetDefaultTargetResolution()</h4>
+<h4 id="getdefaulttargetresolution-1" class="anchor"><a class="heading-anchor" href="#getdefaulttargetresolution-1"><span></span></a>GetDefaultTargetResolution()</h4>
 
 <pre class="prettyprint"><code>    public Size getDefaultTargetResolution()
 </code></pre>
@@ -441,7 +494,7 @@ A Size object representing the default resolution for target images.</p>
 
 <p><br></p>
 
-<h4 id="gettargetcoordinatesystem" class="anchor"><a class="heading-anchor" href="#gettargetcoordinatesystem"><span></span></a>getTargetCoordinateSystem()</h4>
+<h4 id="gettargetcoordinatesystem-1" class="anchor"><a class="heading-anchor" href="#gettargetcoordinatesystem-1"><span></span></a>getTargetCoordinateSystem()</h4>
 
 <pre class="prettyprint"><code>    public int getTargetCoordinateSystem()
 </code></pre>
@@ -480,7 +533,7 @@ A <code>Matrix</code> object for transformation adjustments.</p>
 
 <p><br></p>
 
-<h4 id="setcroprectrectfcroprect" class="anchor"><a class="heading-anchor" href="#setcroprectrectfcroprect"><span></span></a>setCropRect(RectF cropRect)</h4>
+<h4 id="setcroprectrectfcroprect-1" class="anchor"><a class="heading-anchor" href="#setcroprectrectfcroprect-1"><span></span></a>setCropRect(RectF cropRect)</h4>
 
 <pre class="prettyprint"><code>    public void setCropRect(RectF cropRect)
 </code></pre>
@@ -497,19 +550,27 @@ A <code>Matrix</code> object for transformation adjustments.</p>
 
 <h2 id="detectors" class="anchor"><a class="heading-anchor" href="#detectors"><span></span></a>Detectors</h2>
 
-<p>The <code>BarcodeDecoder</code> and <code>TextOCR</code> classes implement a detector interface, enabling efficient image analysis using the <code>process(ImageData imageData)</code> method: </p>
+<p>The <code>BarcodeDecoder</code> and <code>TextOCR</code> classes implement a detector interface allowing users to use CameraX as the frame source and build custom analyzers to detect and decode barcodes or recognize text in the frame delivered to the analyze() interface: This is particularly useful for applications that require to combining multiple detectors within the CameraX analyzer. </p>
+
+<p>Available detectors:</p>
 
 <ul>
-<li><a href="../barcodedecoder/">BarcodeDecoder</a> – This detector method accepts <code>ImageData</code> and generates a list of <code>BarcodeEntity</code> objects.</li>
+<li><p><a href="../barcodedecoder/">BarcodeDecoder</a> – Processes <code>ImageData</code> and generates a list of <code>BarcodeEntity</code> objects. It uses the <a href="../barcodedecoder/#processimagedataimagedataexecutorexecutor">process()</a> method from <strong>BarcodeDecoder:</strong></p>
 
-<li><a href="../textocr/">TextOCR</a> - This detector interface facilitates integration with CameraX as the frame source, allowing the creation of custom analyzers for detecting and decoding barcodes within frames provided to the <code>analyze()</code> interface. This is particularly beneficial for applications requiring the combination of multiple detectors within the CameraX analyzer. This detector processes <code>ImageData</code> to analyze textual content.</li>
+<pre class="prettyprint"><code>process (ImageData imageData) 
+</code></pre></li>
+
+<li><p><a href="../textocr/">TextOCR</a> - Processes <code>ImageData</code> and generates a list of <code>ParagraphEntity</code> objects. It uses the <a href="../textocr/#processimagedataimagedataexecutorexecutor">process()</a> method from TextOCR:</p>
+
+<pre class="prettyprint"><code>process (ImageData imageData) 
+</code></pre></li>
 </ul>
 
 <hr>
 
 <h3 id="developerguide-1" class="anchor"><a class="heading-anchor" href="#developerguide-1"><span></span></a>Developer Guide</h3>
 
-<p>To build a custom CameraX Analyzer using the BarcodeDecoder Detector interface, follow these steps:</p>
+<p>Follow the steps below to build a custom CameraX Analyzer using the <strong>BarcodeDecoder's Detector interface:</strong></p>
 
 <h4 id="step1createacustomanalyzer" class="anchor"><a class="heading-anchor" href="#step1createacustomanalyzer"><span></span></a>Step 1: Create a Custom Analyzer</h4>
 
@@ -581,7 +642,7 @@ A <code>Matrix</code> object for transformation adjustments.</p>
 
 <h2 id="entityviewfinder" class="anchor"><a class="heading-anchor" href="#entityviewfinder"><span></span></a>Entity Viewfinder</h2>
 
-<p><code>Entity Viewfinder</code> is a built-in viewfinder designed for seamless integration with CameraX as a preview component. It surpasses the default PreviewView by offering advanced features, such as rendering and interacting with <a href="../entity/">Entities</a>, making it an ideal choice for developers seeking to deliver a high-performance, intuitive user experience.</p>
+<p><code>Entity Viewfinder</code> is a built-in viewfinder designed for seamless integration with CameraX as a preview component. It enhances the default PreviewView by offering advanced features, such as rendering and interacting with <a href="../entity/">Entities</a>, making it a suitable choice for developers seeking to deliver a high-performance, intuitive user experience.</p>
 
 <p>This viewfinder is utilized in applications requiring a visual interface for camera operations and entity detection, such as augmented reality applications, barcode scanners, and image recognition systems. It offers user interaction capabilities with camera controls, including zoom levels, flash settings, and draggable viewfinder functionality.</p>
 
@@ -608,7 +669,7 @@ A <code>Matrix</code> object for transformation adjustments.</p>
 
 <li><strong><a href="#entityviewcontroller">EntityViewController</a> -</strong> A functional interface that manages and implements the operational features of the viewfinder.</li>
 
-<li><strong>StylePen -</strong> A visual representation of the entities of the Entity Viewfinder.</li>
+<li><strong><a href="#stylepen">StylePen</a> -</strong> A visual representation of the entities of the Entity Viewfinder.</li>
 </ul>
 
 <hr>
@@ -762,117 +823,613 @@ entityViewController.render();
 
 <p>Currently the programmatic instantiation of the viewfinder is not supported. It is recommended to integrate it in the application using XML-based UI layouts. </p>
 
+<h4 id="configurations" class="anchor"><a class="heading-anchor" href="#configurations"><span></span></a>Configurations</h4>
+
+<h5 id="zoomlevel" class="anchor"><a class="heading-anchor" href="#zoomlevel"><span></span></a>Zoom Level</h5>
+
+<p>The <strong>zoom</strong> attribute sets the default zoom level for the viewfinder. It supports the following enum values: </p>
+
+<table class="facelift" style="width:50%" border="1" padding="5px">
+  <thead>
+    <tr bgcolor="#dce8ef">
+      <th>Attribute</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>zoom="x1"</code></td>
+      <td>Sets the zoom level to 1x (default level).</td>
+    </tr>
+    <tr>
+      <td><code>zoom="x2"</code></td>
+      <td>Sets the zoom level to 2x.</td>
+    </tr>
+    <tr>
+      <td><code>zoom="x4"</code></td>
+      <td>Sets the zoom level to 4x.</td>
+    </tr>
+    <tr>
+      <td><code>zoom="x8"</code></td>
+      <td>Sets the zoom level to 8x.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h5 id="flashstate" class="anchor"><a class="heading-anchor" href="#flashstate"><span></span></a>Flash State</h5>
+
+<p>The <strong>flash</strong> attribute specifies whether the flash is enabled or disabled by default. </p>
+
+<table class="facelift" style="width:50%" border="1" padding="5px">
+  <thead>
+    <tr bgcolor="#dce8ef">
+      <th>Attribute</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>flash="true"</code></td>
+      <td>Flash is enabled.</td>
+    </tr>
+    <tr>
+      <td><code>flash="false"</code></td>
+      <td>Flash is disabled (default).</td>
+    </tr>
+  </tbody>
+</table>
+
+<h5 id="visibilityofbuttons" class="anchor"><a class="heading-anchor" href="#visibilityofbuttons"><span></span></a>Visibility of Buttons</h5>
+
+<p>These attributes allows controls the visibility of specific UI buttons on the viewfinder. </p>
+
+<table class="facelift" style="width:80%" border="1" padding="5px">
+  <thead>
+    <tr bgcolor="#dce8ef">
+      <th>Attribute</th>
+      <th>Description</th>
+      <th>Value</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>hide_reset_position_button</code></td>
+      <td>Shows or hides the reset position button.</td>
+      <td><code>true</code> or <code>false</code></td>
+      <td><code>false</code></td>
+    </tr>
+    <tr>
+      <td><code>hide_flash_button</code></td>
+      <td>Shows or hides the flash button.</td>
+      <td><code>true</code> or <code>false</code></td>
+      <td><code>false</code></td>
+    </tr>
+    <tr>
+      <td><code>hide_zoom_button</code></td>
+      <td>Shows or hides the zoom button.</td>
+      <td><code>true</code> or <code>false</code></td>
+      <td><code>false</code></td>
+    </tr>
+    <tr>
+      <td><code>hide_resize_button</code></td>
+      <td>Shows or hides the resize button.</td>
+      <td><code>true</code> or <code>false</code></td>
+      <td><code>false</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h5 id="draggableviewfinder" class="anchor"><a class="heading-anchor" href="#draggableviewfinder"><span></span></a>Draggable Viewfinder</h5>
+
+<p>The <strong>draggable</strong> attribute determines whether the viewfinder can be dragged or repositioned by the user.</p>
+
+<table class="facelift" style="width:80%" border="1" padding="5px">
+  <thead>
+    <tr bgcolor="#dce8ef">
+      <th>Attribute</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>draggable="true"</code></td>
+      <td>Enables dragging functionality.</td>
+    </tr>
+    <tr>
+      <td><code>draggable="false"</code></td>
+      <td>Disables dragging functionality (default).<br> <strong>Note:</strong> This automatically hides the reset position button and resize button by default.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h5 id="viewfindersize" class="anchor"><a class="heading-anchor" href="#viewfindersize"><span></span></a>Viewfinder Size</h5>
+
+<p>The Viewfinder is designed to integrate seamlessly into Android applications, delivering consistent and reliable performance across supported devices. This widget adheres to specific minimum size constraints to ensure optimal functionality and display fidelity. Developers can integrate the Viewfinder into their layouts using standard Android XML attributes.</p>
+
+<p><strong>Examples:</strong></p>
+
+<ul>
+<li><p>Match Parent:</p>
+
+<pre class="prettyprint"><code>&lt;com.zebra.ai.vision.viewfinder.EntityView
+    android:id="@+id/entity_view"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" /&gt;
+</code></pre></li>
+
+<li><p>Using Constraint Percentage (%):</p>
+
+<pre class="prettyprint"><code>&lt;com.zebra.ai.vision.viewfinder.EntityView
+    android:id="@+id/entity_view"
+    app:layout_constraintWidth_percent="1.0"
+    app:layout_constraintHeight_percent="0.5"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintTop_toBottomOf="@id/otherWidget" /&gt;
+</code></pre></li>
+
+<li><p>Fixed Dimensions:</p>
+
+<pre class="prettyprint"><code>&lt;com.zebra.ai.vision.viewfinder.EntityView
+    android:id="@+id/entity_view"
+    android:layout_width="600dp"
+    android:layout_height="400dp" /&gt;
+</code></pre>
+
+<ul>
+<li><strong>Note:</strong> The Viewfinder cannot be resized smaller than the specified dimensions due to enforced minimum size constraints based on the device model. If the layout specifies a size below the minimum, the Viewfinder  automatically defaults to its minimum size.</li></ul></li>
+</ul>
+
+<table class="facelift" style="width:80%" border="1" padding="5px">
+  <thead>
+    <tr bgcolor="#dce8ef">
+      <th>Device Model</th>
+      <th>Minimum Viewfinder Size (Width x Height in Pixels)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>EM45</td>
+      <td>1052 x 542</td>
+    </tr>
+    <tr>
+      <td>TC53/TC58, TC73/TC78, TC53e/TC58e, TC22/TC27, HC50</td>
+      <td>1076 x 554</td>
+    </tr>
+    <tr>
+      <td>ET6X, L10ax, ET5X 10-inch, ET4X 10-inch</td>
+      <td>600 x 309</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- 
+---
+
+#### Methods
+
+##### EntityView(Context context) 
+
+        EntityView(Context context) throws AIVisionSDKException
+
+Constructor that creates a new EntityView with the given context. 
+
+**Parameters:** 
+- **context -** The activity context. 
+
+**Exceptions:**
+- **AIVisionSDKException -** Thrown if the context is null. 
+
+##### EntityView(Context context, AttributeSet attrs) 
+
+        EntityView(Context context, AttributeSet attrs) throws AIVisionSDKException
+
+Constructor that initializes the view with XML attributes. 
+
+**Parameters:**
+- **context -** The activity context.  
+- **attrs -** The XML attributes for configuration. 
+
+**Exceptions:**
+- **AIVisionSDKException -** Thrown if the context is null. 
+
+##### EntityView(Context context, AttributeSet attrs, int defStyleAttr) 
+
+        EntityView(Context context, AttributeSet attrs, int defStyleAttr) 
+
+Constructor that initializes the view with XML attributes and a default style. 
+
+**Parameters:**
+- **context -** The activity context.  
+- **attrs -** The XML attributes for configuration. 
+- **defStyleAttr -** Default style attribute. 
+
+##### EntityView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) 
+
+        EntityView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) 
+
+Constructor that initializes the view with XML attributes, default style, and default resources. 
+
+**Parameters:**
+- **context -** The activity context. 
+- **attrs -** The XML attribute set for configuration. 
+- **defStyleAttr -** The default style attribute. 
+
+##### EntityView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) 
+
+        EntityView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) 
+
+Constructor that initializes the view with XML attributes, a default style, and default resources. 
+
+**Parameters:**
+- **context -** The activity context. 
+- **attrs -** The XML attribute set for configuration. 
+- **defStyleAttr -** The default style attribute. 
+- **defStyleRes -** The default style resource. 
+
+##### IViewfinderController getViewfinderController() 
+
+        IViewfinderController getViewfinderController() 
+
+Returns the viewfinder controller instance. 
+
+**Return Value:** Returns either an instance of `IViewfinderController` or `null` if the view is not properly initialized. 
+
+NOTE: This API is not intended for developers use. 
+--->
+
 <hr>
+
+<h3 id="entityviewcontroller" class="anchor"><a class="heading-anchor" href="#entityviewcontroller"><span></span></a>EntityViewController</h3>
+
+<p><code>EntityViewController</code> is a key component of the <code>EntityViewfinder</code>, providing a high-level interface for managing the camera preview, rendering detected entities, handling user interactions, and controlling viewfinder behavior.</p>
 
 <h4 id="methods-1" class="anchor"><a class="heading-anchor" href="#methods-1"><span></span></a>Methods</h4>
 
-<h5 id="entityviewcontextcontext" class="anchor"><a class="heading-anchor" href="#entityviewcontextcontext"><span></span></a>EntityView(Context context)</h5>
+<h5 id="entityviewcontrollerentityviewentityviewlifecycleownerlifecycleowner" class="anchor"><a class="heading-anchor" href="#entityviewcontrollerentityviewentityviewlifecycleownerlifecycleowner"><span></span></a>EntityViewController(EntityView entityView, LifecycleOwner lifecycleOwner)</h5>
 
-<pre class="prettyprint"><code>    EntityView(Context context) throws AIVisionSDKException
+<pre class="prettyprint"><code>    EntityViewController(EntityView entityView, LifecycleOwner lifecycleOwner)
 </code></pre>
 
-<p>Constructor that creates a new EntityView with the given context. </p>
+<p>Constructor: Creates and initializes a new <code>EntityViewController</code>.</p>
 
-<p><strong>Parameters:</strong> </p>
+<p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>context -</strong> The activity context. </li>
+<li><strong>entityView -</strong> The <code>EntityView</code> container for the viewfinder.</li>
+
+<li><strong>lifecycleOwner -</strong> The <code>LifecycleOwner</code> responsible for automatic resource management.</li>
 </ul>
 
 <p><strong>Exceptions:</strong></p>
 
 <ul>
-<li><strong>AIVisionSDKException -</strong> Thrown if the context is null. </li>
+<li><strong>InvalidInputException -</strong> Thrown if <code>entityView</code> or <code>lifecycleOwner</code> is null.</li>
+
+<li><strong>AIVisionSDKException -</strong> Thrown if internal initialization fails.</li>
 </ul>
 
-<h5 id="entityviewcontextcontextattributesetattrs" class="anchor"><a class="heading-anchor" href="#entityviewcontextcontextattributesetattrs"><span></span></a>EntityView(Context context, AttributeSet attrs)</h5>
+<h5 id="setcameracontrollercamerasessioncamera" class="anchor"><a class="heading-anchor" href="#setcameracontrollercamerasessioncamera"><span></span></a>setCameraController(Camera sessionCamera)</h5>
 
-<pre class="prettyprint"><code>    EntityView(Context context, AttributeSet attrs) throws AIVisionSDKException
+<pre class="prettyprint"><code>    void setCameraController(Camera sessionCamera)
 </code></pre>
 
-<p>Constructor that initializes the view with XML attributes. </p>
+<p>Associates a <code>Camera</code> instance with the viewfinder after successfully invoking the <code>bindToLifecycle</code> API. This method ensures proper configuration of the viewfinder to display preview frames and enables effective use of camera controls. It is intended for CameraProvider-based CameraX applications. </p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>context -</strong> The activity context.  </li>
-
-<li><strong>attrs -</strong> The XML attributes for configuration. </li>
+<li><strong>sessionCamera -</strong> The Camera instance. </li>
 </ul>
 
 <p><strong>Exceptions:</strong></p>
 
 <ul>
-<li><strong>AIVisionSDKException -</strong> Thrown if the context is null. </li>
+<li><strong>InvalidInputException -</strong> Thrown if input session camera is null. </li>
+
+<li><strong>AIVisionSDKException -</strong> Thrown if the camera cannot be set. </li>
 </ul>
 
-<h5 id="entityviewcontextcontextattributesetattrsintdefstyleattr" class="anchor"><a class="heading-anchor" href="#entityviewcontextcontextattributesetattrsintdefstyleattr"><span></span></a>EntityView(Context context, AttributeSet attrs, int defStyleAttr)</h5>
+<h5 id="show" class="anchor"><a class="heading-anchor" href="#show"><span></span></a>show()</h5>
 
-<pre class="prettyprint"><code>    EntityView(Context context, AttributeSet attrs, int defStyleAttr) 
+<pre class="prettyprint"><code>    void show()
 </code></pre>
 
-<p>Constructor that initializes the view with XML attributes and a default style. </p>
+<p>Makes the viewfinder visible.</p>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>AIVisionSDKException -</strong> Thrown if the viewfinder cannot be shown.</li>
+</ul>
+
+<h5 id="hide" class="anchor"><a class="heading-anchor" href="#hide"><span></span></a>hide()</h5>
+
+<pre class="prettyprint"><code>    void hide()
+</code></pre>
+
+<p>Hides the viewfinder from the display while maintaining its internal state. The camera stream continues running even if the viewfinder is hidden.</p>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>AIVisionSDKException -</strong> Thrown if the viewfinder cannot be hidden.</li>
+</ul>
+
+<h5 id="getsurfaceprovider" class="anchor"><a class="heading-anchor" href="#getsurfaceprovider"><span></span></a>getSurfaceProvider()</h5>
+
+<pre class="prettyprint"><code>    public Preview.SurfaceProvider getSurfaceProvider()
+</code></pre>
+
+<p>Provides the <code>SurfaceProvider</code> required for integrating the CameraX Preview use case.</p>
+
+<p><strong>Return Value:</strong> Returns a <code>Preview.SurfaceProvider</code> for camera preview integration.</p>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>AIVisionSDKException -</strong> Thrown if the surface provider cannot be retrieved.</li>
+</ul>
+
+<h5 id="getwidth" class="anchor"><a class="heading-anchor" href="#getwidth"><span></span></a>getWidth()</h5>
+
+<pre class="prettyprint"><code>    int getWidth()
+</code></pre>
+
+<p>Retrieves the current width of the viewfinder display area.</p>
+
+<p><strong>Return Value:</strong> Returns the current width of the viewfinder in pixels.</p>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>AIVisionSDKException -</strong> Thrown if the width cannot be retrieved.</li>
+</ul>
+
+<h5 id="getheight" class="anchor"><a class="heading-anchor" href="#getheight"><span></span></a>getHeight()</h5>
+
+<pre class="prettyprint"><code>    int getHeight()
+</code></pre>
+
+<p>Retrieves the current height of the viewfinder display area.</p>
+
+<p><strong>Return Value:</strong> Returns the current height of the viewfinder in pixels.</p>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>AIVisionSDKException -</strong> Thrown if the height cannot be retrieved.</li>
+</ul>
+
+<h5 id="getsensortoviewtransform" class="anchor"><a class="heading-anchor" href="#getsensortoviewtransform"><span></span></a>getSensorToViewTransform()</h5>
+
+<pre class="prettyprint"><code>    public Matrix getSensorToViewTransform()
+</code></pre>
+
+<p>Retrieves the transformation matrix used to map sensor coordinates to view coordinates.</p>
+
+<p><strong>Return Value:</strong> Returns a <code>Matrix</code> object representing the transformation from sensor coordinates to view coordinates.</p>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>AIVisionSDKException-</strong> Thrown if the transformation cannot be retrieved.</li>
+</ul>
+
+<h5 id="addentityentitystylepenstylepen" class="anchor"><a class="heading-anchor" href="#addentityentitystylepenstylepen"><span></span></a>add(Entity entity, StylePen stylePen)</h5>
+
+<pre class="prettyprint"><code>    void add(Entity entity, StylePen stylePen)
+</code></pre>
+
+<p>Adds an entity to be rendered on the viewfinder.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>context -</strong> The activity context.  </li>
+<li><strong>entity -</strong> The <code>Entity</code> to add.</li>
 
-<li><strong>attrs -</strong> The XML attributes for configuration. </li>
-
-<li><strong>defStyleAttr -</strong> Default style attribute. </li>
+<li><strong>stylePen -</strong> The <code>StylePen</code> used for rendering the entity.</li>
 </ul>
 
-<h5 id="entityviewcontextcontextattributesetattrsintdefstyleattrintdefstyleres" class="anchor"><a class="heading-anchor" href="#entityviewcontextcontextattributesetattrsintdefstyleattrintdefstyleres"><span></span></a>EntityView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes)</h5>
+<p><strong>Exceptions:</strong></p>
 
-<pre class="prettyprint"><code>    EntityView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) 
+<ul>
+<li><strong>InvalidInputException -</strong> Thrown if entity or stylePen is null.</li>
+
+<li><strong>AIVisionSDKException -</strong> Thrown if adding the entity fails.</li>
+</ul>
+
+<h5 id="removeentitye" class="anchor"><a class="heading-anchor" href="#removeentitye"><span></span></a>remove(Entity e)</h5>
+
+<pre class="prettyprint"><code>    void remove(Entity e)
 </code></pre>
 
-<p>Constructor that initializes the view with XML attributes, default style, and default resources. </p>
+<p>Removes a specific entity from the viewfinder.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>context -</strong> The activity context. </li>
-
-<li><strong>attrs -</strong> The XML attribute set for configuration. </li>
-
-<li><strong>defStyleAttr -</strong> The default style attribute. </li>
+<li><strong>e -</strong> The <code>Entity</code> to remove.</li>
 </ul>
 
-<h5 id="entityviewcontextcontextattributesetattrsintdefstyleattrintdefstyleres-1" class="anchor"><a class="heading-anchor" href="#entityviewcontextcontextattributesetattrsintdefstyleattrintdefstyleres-1"><span></span></a>EntityView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes)</h5>
+<p><strong>Exceptions:</strong></p>
 
-<pre class="prettyprint"><code>    EntityView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) 
+<ul>
+<li><strong>InvalidInputException -</strong> Thrown if the Entity is null.</li>
+
+<li><strong>AIVisionSDKException -</strong> Thrown if removing the entity fails.</li>
+</ul>
+
+<h5 id="removeall" class="anchor"><a class="heading-anchor" href="#removeall"><span></span></a>removeAll()</h5>
+
+<pre class="prettyprint"><code>    void removeAll()
 </code></pre>
 
-<p>Constructor that initializes the view with XML attributes, a default style, and default resources. </p>
+<p>Removes all entities from the viewfinder.</p>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>AIVisionSDKException -</strong> Thrown if removing all entities fails.</li>
+</ul>
+
+<h5 id="render" class="anchor"><a class="heading-anchor" href="#render"><span></span></a>render()</h5>
+
+<pre class="prettyprint"><code>    void render()
+</code></pre>
+
+<p>Renders all added entities onto the viewfinder.</p>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>AIVisionSDKException -</strong> Thrown if rendering fails.</li>
+</ul>
+
+<h5 id="registerentityclicklistenerentityclicklistenerentityclicklistener" class="anchor"><a class="heading-anchor" href="#registerentityclicklistenerentityclicklistenerentityclicklistener"><span></span></a>registerEntityClickListener(EntityClickListener entityClickListener)</h5>
+
+<pre class="prettyprint"><code>    void registerEntityClickListener(EntityClickListener entityClickListener)
+</code></pre>
+
+<p>Registers a listener to handle entity click events.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>context -</strong> The activity context. </li>
-
-<li><strong>attrs -</strong> The XML attribute set for configuration. </li>
-
-<li><strong>defStyleAttr -</strong> The default style attribute. </li>
-
-<li><strong>defStyleRes -</strong> The default style resource. </li>
+<li><strong>entityClickListener -</strong> The listener to register for entity click events.</li>
 </ul>
 
-<h5 id="iviewfindercontrollergetviewfindercontroller" class="anchor"><a class="heading-anchor" href="#iviewfindercontrollergetviewfindercontroller"><span></span></a>IViewfinderController getViewfinderController()</h5>
+<p><strong>Exceptions:</strong></p>
 
-<pre class="prettyprint"><code>    IViewfinderController getViewfinderController() 
+<ul>
+<li><strong>AIVisionSDKException -</strong> Thrown if the click listener registration fails.</li>
+</ul>
+
+<h5 id="registerviewfinderresizelistenerentityviewresizelistenerlistener" class="anchor"><a class="heading-anchor" href="#registerviewfinderresizelistenerentityviewresizelistenerlistener"><span></span></a>registerViewfinderResizeListener(EntityViewResizeListener listener)</h5>
+
+<pre class="prettyprint"><code>    void registerViewfinderResizeListener(EntityViewResizeListener listener)
 </code></pre>
 
-<p>Returns the viewfinder controller instance. </p>
+<p>Registers a listener to handle viewfinder resize events.</p>
 
-<p><strong>Return Value:</strong> Returns either an instance of <code>IViewfinderController</code> or <code>null</code> if the view is not properly initialized. </p>
+<p>Parameters:</p>
 
-<p>NOTE: This API is not intended for developers use. </p>
+<ul>
+<li><strong>listener -</strong> The listener to register for resize events.</li>
+</ul>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>AIVisionSDKException -</strong> Thrown if the listener registration fails.</li>
+</ul>
 
 <hr>
 
-<h2 id="entityviewcontroller" class="anchor"><a class="heading-anchor" href="#entityviewcontroller"><span></span></a>EntityViewController</h2>
+<h4 id="listeners" class="anchor"><a class="heading-anchor" href="#listeners"><span></span></a>Listeners</h4>
+
+<h5 id="entityclicklistener" class="anchor"><a class="heading-anchor" href="#entityclicklistener"><span></span></a>EntityClickListener</h5>
+
+<p>The <code>EntityClickListener</code> interface offers a callback mechanism for handling user interactions with entities rendered in a viewfinder. By implementing this interface, developers can define custom behaviors that are triggered when an entity is clicked, enabling applications to respond effectively to user inputs.</p>
+
+<p>Implementation:</p>
+
+<ol>
+<li><p><strong>Implement the EntityClickListener Interface -</strong> Define an instance of <code>EntityClickListener</code> by implementing its onEntityClicked() method. This method is invoked whenever a user clicks on an entity, allowing specific actions or logic to be defined in response to the click event.</p>
+
+<pre class="prettyprint"><code>EntityClickListener entityClickListener = new EntityClickListener() {
+    @Override
+    public void onEntityClicked(Entity entity) {
+        // Define actions to perform on the clicked entity
+    }
+};
+</code></pre></li>
+
+<li><p><strong>Register the listener -</strong> When a user clicks on an entity rendered by the viewfinder, the <code>onEntityClicked(Entity entity)</code> method is called with the associated entityRegister, the listener with the <code>EntityViewController</code>.  Use the <code>registerEntityClickListener()</code> method from <code>EntityViewController</code> to register the <code>EntityClickListener</code> instance. This connects the listener to the viewfinder, enabling it to receive click event notifications for entities displayed within the viewfinder.</p>
+
+<pre class="prettyprint"><code>entityViewController.registerEntityClickListener( entityClickListener); 
+</code></pre></li>
+</ol>
+
+<h6 id="registerentityclicklistenerentityclicklistenerlistener" class="anchor"><a class="heading-anchor" href="#registerentityclicklistenerentityclicklistenerlistener"><span></span></a>registerEntityClickListener(EntityClickListener listener):</h6>
+
+<pre class="prettyprint"><code>    void registerEntityClickListener(EntityClickListener listener): 
+</code></pre>
+
+<p>This method takes the listener as a parameter and ensures that it will be notified of any click events on entities within the viewfinder. </p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>listener -</strong> The EntityClickListener instance to register. </li>
+</ul>
+
+<h6 id="onentityclickedentityentity" class="anchor"><a class="heading-anchor" href="#onentityclickedentityentity"><span></span></a>onEntityClicked(Entity entity)</h6>
+
+<pre class="prettyprint"><code>    void onEntityClicked(Entity entity) 
+</code></pre>
+
+<p>Callback method invoked when a user clicks on an entity. </p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>entity -</strong> The <code>Entity</code> that was clicked. </li>
+</ul>
+
+<hr>
+
+<h5 id="entityviewresizelistener" class="anchor"><a class="heading-anchor" href="#entityviewresizelistener"><span></span></a>EntityViewResizeListener</h5>
+
+<p>The <code>EntityViewResizeListener</code> interface provides a callback mechanism to manage changes in the size and transformations of the viewfinder. It plays a crucial role in maintaining synchronization between the camera’s sensor coordinates and display coordinates, ensuring that detected entities are accurately positioned and rendered. By implementing this listener, developers can dynamically adapt their applications to changes in the viewfinder’s dimensions, ensuring proper layout adjustments and entity synchronization.</p>
+
+<p>Implementing the EntityViewResizeListener Interface:</p>
+
+<ol>
+<li><p><strong>Implement the EntityViewResizeListener Interface -</strong> Define an instance of <code>EntityViewResizeListener</code> by implementing its <code>onViewfinderResized()</code> method. This method is called whenever the viewfinder undergoes a resize or transformation, allowing to define specific actions or adjustments that should be made in response. </p>
+
+<pre class="prettyprint"><code>EntityViewResizeListener resizeListener = new EntityViewResizeListener() { 
+    @Override 
+    public void onViewfinderResized(EntityViewResizeSpecs specs) { 
+        // Handle changes in viewfinder size or transformation 
+        // This is where you can update layouts, adjust UI elements, or synchronize entities 
+    } 
+}; 
+</code></pre></li>
+
+<li><p><strong>Register the Listener with the EntityViewController -</strong> Use the <code>registerViewfinderResizeListener()</code> method from <code>EntityViewController</code> to register the <code>EntityViewResizeListener</code> instance. This connects the listener to the viewfinder, enabling it to receive notifications of any resize events. </p>
+
+<pre class="prettyprint"><code>// Register the listener with the EntityViewController 
+entityViewController.registerViewfinderResizeListener(resizeListener); 
+</code></pre></li>
+</ol>
+
+<h6 id="onviewfinderresizedentityviewresizespecsspecs" class="anchor"><a class="heading-anchor" href="#onviewfinderresizedentityviewresizespecsspecs"><span></span></a>onViewfinderResized(EntityViewResizeSpecs specs)</h6>
+
+<pre class="prettyprint"><code>    void onViewfinderResized(EntityViewResizeSpecs specs) 
+</code></pre>
+
+<p>This method is invoked whenever there are changes in the viewfinder’s dimensions or transformations.  It can be used to adjust layouts, update UI elements, or synchronize entities to match the new viewfinder size or transformation. It provides the necessary information to maintain synchronization between the camera’s detection systems and the Viewfinder. </p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>specs -</strong> An <code>EntityViewResizeSpecs</code> object that contains comprehensive details of the new state and transformations of the viewfinder. </li>
+</ul>
+
+<h6 id="registerviewfinderresizelistenerentityviewresizelistenerlistener-1" class="anchor"><a class="heading-anchor" href="#registerviewfinderresizelistenerentityviewresizelistenerlistener-1"><span></span></a>registerViewfinderResizeListener(EntityViewResizeListener listener)</h6>
+
+<pre class="prettyprint"><code>    void registerViewfinderResizeListener(EntityViewResizeListener listener)
+</code></pre>
+
+<p>This method takes the listener as a parameter and ensures that it will be notified of any changes in the viewfinder’s dimensions or transformations. </p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>specs -</strong> An <code>EntityViewResizeListener</code> object that contains the listener. </li>
+</ul>
 
 <hr>
 
