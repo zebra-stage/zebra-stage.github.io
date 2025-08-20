@@ -640,7 +640,7 @@ A <code>Matrix</code> object for transformation adjustments.</p>
 
 <hr>
 
-<h2 id="entityviewfinder" class="anchor"><a class="heading-anchor" href="#entityviewfinder"><span></span></a>Entity Viewfinder</h2>
+<h2 id="entityviewfinder" class="anchor"><a class="heading-anchor" href="#entityviewfinder"><span></span></a>EntityViewfinder</h2>
 
 <p><code>Entity Viewfinder</code> is a built-in viewfinder designed for seamless integration with CameraX as a preview component. It enhances the default PreviewView by offering advanced features, such as rendering and interacting with <a href="../entity/">Entities</a>, making it a suitable choice for developers seeking to deliver a high-performance, intuitive user experience.</p>
 
@@ -1429,6 +1429,326 @@ entityViewController.registerViewfinderResizeListener(resizeListener);
 
 <ul>
 <li><strong>specs -</strong> An <code>EntityViewResizeListener</code> object that contains the listener. </li>
+</ul>
+
+<hr>
+
+<h5 id="entityviewresizespecs" class="anchor"><a class="heading-anchor" href="#entityviewresizespecs"><span></span></a>EntityViewResizeSpecs</h5>
+
+<p>The <code>EntityViewResizeSpecs</code> class is an immutable data container that provides detailed specifications for viewfinder resize events, including the viewfinder’s dimensions, a transformation matrix from sensor to view coordinates, and the calculated field-of-view (FOV) crop region in sensor space.  </p>
+
+<p><code>EntityViewResizeSpecs</code> is primarily used in conjunction with the <code>EntityTrackerAnalyzer</code> to maintain accurate coordinate synchronization when the viewfinder undergoes size or transformation changes. It provides essential data to update entity detection systems, ensuring that the field of view and entity positioning remain consistent with the viewfinder’s current state. </p>
+
+<p>Methods for <code>EntityViewResizeSpecs</code> are provided below.</p>
+
+<h6 id="getheight-1" class="anchor"><a class="heading-anchor" href="#getheight-1"><span></span></a>getHeight()</h6>
+
+<pre class="prettyprint"><code>    int getHeight() 
+</code></pre>
+
+<p>Returns the height of the viewfinder in pixels. </p>
+
+<p><strong>Return Value:</strong> Return the dimensions of the viewfinder in pixels. </p>
+
+<h6 id="getwidth-1" class="anchor"><a class="heading-anchor" href="#getwidth-1"><span></span></a>getWidth()</h6>
+
+<pre class="prettyprint"><code>    int getWidth()
+</code></pre>
+
+<p>Returns the width of the viewfinder in pixels. </p>
+
+<p><strong>Return Value:</strong> Returns the dimensions of the viewfinder in pixels. </p>
+
+<h6 id="getsensortoviewmatrix" class="anchor"><a class="heading-anchor" href="#getsensortoviewmatrix"><span></span></a>getSensorToViewMatrix()</h6>
+
+<pre class="prettyprint"><code>    Matrix getSensorToViewMatrix() 
+</code></pre>
+
+<p>Returns a copy of the sensor-to-view coordinate transformation matrix. </p>
+
+<p><strong>Return Value:</strong>
+A Matrix representing the transformation from sensor to view coordinates. </p>
+
+<h6 id="getviewfinderfovcropregion" class="anchor"><a class="heading-anchor" href="#getviewfinderfovcropregion"><span></span></a>getViewfinderFOVCropRegion()</h6>
+
+<pre class="prettyprint"><code>    RectF getViewfinderFOVCropRegion() 
+</code></pre>
+
+<p>Calculates and returns the viewfinder’s field-of-view crop region in sensor coordinates. </p>
+
+<p><strong>Return Value:</strong> A <code>RectF</code> representing the viewfinder FOV in sensor coordinate space, or <code>null</code> if the calculation fails. </p>
+
+<hr>
+
+<h3 id="stylepen" class="anchor"><a class="heading-anchor" href="#stylepen"><span></span></a>StylePen</h3>
+
+<p><code>StylePen</code> is an interface that visually represents entities on the <code>EntityViewfinder</code>. It provides predefined styling options that allow developers to customize the appearance of entities.</p>
+
+<p>The following built-in StylePen’s are supported: </p>
+
+<ul>
+<li><a href="#boundingboxdrawpen">BoundingBoxDrawPen</a></li>
+
+<li><a href="#icondrawpen">IconDrawPen</a></li>
+</ul>
+
+<p>The methods and properties available for each are provided in the subsections below.</p>
+
+<h4 id="developerguide-3" class="anchor"><a class="heading-anchor" href="#developerguide-3"><span></span></a>Developer Guide</h4>
+
+<p>Follow these steps utilize a StylePen:</p>
+
+<ol>
+<li><strong>Create and customize a StylePen -</strong> These pens allow for customization of stroke, fill, icon styles, and other visual attributes. Create a <code>BoundingBoxDrawPen</code> or <code>IconDrawPen</code> based on your use case.</li>
+
+<li><strong>Associate Entities with the StylePen -</strong> Use the configured <code>BoundingBoxDrawPen</code> or <code>IconDrawPen</code> to add multiple entities to the controller. This applies the defined style to each entity.</li>
+
+<li><strong>Render Entities -</strong> Call the <code>render()</code> method on the controller to draw all the entities on the viewfinder. This method processes the added entities and applies the styles, displaying them with the configured visual attributes.</li>
+</ol>
+
+<p>Sample Code:</p>
+
+<pre class="prettyprint"><code>    //Create Stylepens 
+    StylePen boundingBoxPen = BoundingBoxDrawPen.builder() 
+        .setStroke(3f, Color.RED) 
+        .setFill(Color.YELLOW) 
+        .setClickable(true) 
+        .build(); 
+
+    IconDrawPen iconPen = IconDrawPen.builder() 
+        .setIconStyle(IconStyle.ACTION) 
+        .setclickable(true) 
+        .setIconSizes(50, 100) 
+        .build(); 
+
+    // Associate the stylepens with Entities 
+    entityViewController.add(detectedEntity1, boundingBoxPen); 
+    entityViewController.add(detectedEntity2, iconPen); 
+    entityViewController.add(detectedEntity3, iconPen); 
+
+    // Render Entities 
+    controller.render(); 
+</code></pre>
+
+<hr>
+
+<h4 id="boundingboxdrawpen" class="anchor"><a class="heading-anchor" href="#boundingboxdrawpen"><span></span></a>BoundingBoxDrawPen</h4>
+
+<p>The <code>BoundingBoxDrawPen</code> class enables the drawing of bounding boxes around detected entities on a viewfinder, implementing the <code>StylePen</code> interface. It allows the customization of the bounding box appearance through a builder pattern, offering features such as adjustable stroke width and color, fill options, and clickability.</p>
+
+<p><code>BoundingBoxDrawPen</code> methods and properties are provided in the following subsections.</p>
+
+<h5 id="builderbuilder" class="anchor"><a class="heading-anchor" href="#builderbuilder"><span></span></a>Builder builder()</h5>
+
+<pre class="prettyprint"><code>    Builder builder()
+</code></pre>
+
+<p>Creates a new <code>Builder</code> instance for constructing a <code>BoundingBoxDrawPen</code>. </p>
+
+<p><strong>Return Value:</strong> A new <code>Builder</code> instance. </p>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>AIVisionSDKException -</strong> Thrown if the <code>BoundingBoxDrawPen</code> cannot be created.</li>
+</ul>
+
+<h5 id="setstrokefloatwidthcolorintintcolor" class="anchor"><a class="heading-anchor" href="#setstrokefloatwidthcolorintintcolor"><span></span></a>setStroke(float width, @ColorInt int color)</h5>
+
+<pre class="prettyprint"><code>    setStroke(float width, @ColorInt int color)
+</code></pre>
+
+<p>Sets the stroke width and color for the bounding box. </p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>width -</strong> The stroke width. </li>
+
+<li><strong>color -</strong> The stroke color. </li>
+</ul>
+
+<p><strong>Return Value:</strong> The <code>Builder</code> instance.</p>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>IllegalArgumentException -</strong> Thrown if the width is less than or equal to 0. </li>
+</ul>
+
+<h5 id="setfillcolorintintcolor" class="anchor"><a class="heading-anchor" href="#setfillcolorintintcolor"><span></span></a>setFill(@ColorInt int color)</h5>
+
+<pre class="prettyprint"><code>    setFill(@ColorInt int color)
+</code></pre>
+
+<p>Sets the fill color for the bounding box. </p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>color -</strong> The fill color. </li>
+</ul>
+
+<p><strong>Return Value:</strong> The <code>Builder</code> instance. </p>
+
+<h5 id="setclickablebooleanclickable" class="anchor"><a class="heading-anchor" href="#setclickablebooleanclickable"><span></span></a>setClickable(boolean clickable)</h5>
+
+<pre class="prettyprint"><code>    setClickable(boolean clickable) 
+</code></pre>
+
+<p>Sets whether the bounding box is clickable. </p>
+
+<p><strong>Parameters:</strong> </p>
+
+<ul>
+<li><strong>clickable -</strong> Set to <code>true</code> if clickable, otherwise set to <code>false</code>. </li>
+</ul>
+
+<p><strong>Return Value:</strong> The <code>Builder</code> instance. </p>
+
+<h5 id="stylepenbuild" class="anchor"><a class="heading-anchor" href="#stylepenbuild"><span></span></a>StylePen build()</h5>
+
+<pre class="prettyprint"><code>    StylePen build() 
+</code></pre>
+
+<p>Builds and returns a <code>BoundingBoxDrawPen</code> instance. </p>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>AIVisionSDKException -</strong> Thrown if the BoundingBoxDrawPen cannot be created due to internal errors. </li>
+</ul>
+
+<p><strong>Return Value:</strong> A <code>BoundingBoxDrawPen</code> instance. </p>
+
+<hr>
+
+<h4 id="icondrawpen" class="anchor"><a class="heading-anchor" href="#icondrawpen"><span></span></a>IconDrawPen</h4>
+
+<p>The <code>IconDrawPen</code> class offers the ability to draw built-in icons on a viewfinder for the detected entities, implementing the <code>StylePen</code> interface. It uses a builder pattern to create instances with predefined icon styles, supporting configuration options such as icon size constraints and clickability.   </p>
+
+<p><code>IconDrawPen</code> methods and properties are provided in the following subsections.</p>
+
+<hr>
+
+<h5 id="builderbuilder-1" class="anchor"><a class="heading-anchor" href="#builderbuilder-1"><span></span></a>Builder builder()</h5>
+
+<pre class="prettyprint"><code>    Builder builder()
+</code></pre>
+
+<p>Creates a new <code>Builder</code> instance for constructing an <code>IconDrawPen</code>. </p>
+
+<p><strong>Return Value:</strong> A new <code>Builder</code> instance. </p>
+
+<h5 id="setclickablebooleanclickable-1" class="anchor"><a class="heading-anchor" href="#setclickablebooleanclickable-1"><span></span></a>setClickable(boolean clickable)</h5>
+
+<pre class="prettyprint"><code>    setClickable(boolean clickable) 
+</code></pre>
+
+<p>Sets whether the icon is clickable. </p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>clickable -</strong> Set to <code>true</code> if clickable, otherwise set to <code>false</code>. </li>
+</ul>
+
+<p><strong>Return Value:</strong> The <code>Builder</code> instance.  </p>
+
+<h5 id="seticonstylenonnulliconstylestyle" class="anchor"><a class="heading-anchor" href="#seticonstylenonnulliconstylestyle"><span></span></a>setIconStyle(@NonNull IconStyle style)</h5>
+
+<pre class="prettyprint"><code>    setIconStyle(@NonNull IconStyle style) 
+</code></pre>
+
+<p>Sets the icon style. </p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>style -</strong> Specify the <code>IconStyle</code> to use. The <code>IconStyle</code> enum defines a set of built-in visual styles for icons rendered on a viewfinder. The <code>IconStyle</code> enum is used in conjunction with the <code>IconDrawPen</code> to specify the visual representation of icons on a viewfinder. Each style indicates a different state or action related to an entity,  </li>
+</ul>
+
+<p>IconStyle Enum Description:</p>
+
+<table class="facelift" style="width:100%" border="1" padding="5px">
+  <thead>
+    <tr bgcolor="#dce8ef">
+      <th>Enum</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>NO_ACTION</code></td>
+      <td>Represents a neutral state with no specific action associated.</td>
+    </tr>
+    <tr>
+      <td><code>ACTION_OPERATE</code></td>
+      <td>Indicates an actionable item, typically for entities that can be interacted with.</td>
+    </tr>
+    <tr>
+      <td><code>ACTION_RECALL</code></td>
+      <td>Used for items that can be recalled or reverted.</td>
+    </tr>
+    <tr>
+      <td><code>ACTION_TAKEN</code></td>
+      <td>Indicates that an action has been taken, showing a completed state.</td>
+    </tr>
+    <tr>
+      <td><code>DETECTION_ONLY</code></td>
+      <td>Represents a detected entity without any specific action.</td>
+    </tr>
+    <tr>
+      <td><code>SUCCESSFUL_DECODE</code></td>
+      <td>Indicates a successful decode or operation.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Return Value:</strong> Returns the <code>Builder</code> instance for chaining.</p>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>AIVisionSDKException -</strong> Thrown if the style is null or invalid. </li>
+</ul>
+
+<h5 id="seticonsizesintminsizeintmaxsize" class="anchor"><a class="heading-anchor" href="#seticonsizesintminsizeintmaxsize"><span></span></a>setIconSizes(int minSize, int maxSize)</h5>
+
+<pre class="prettyprint"><code>    setIconSizes(int minSize, int maxSize) 
+</code></pre>
+
+<p>Sets the size constraints for dynamic scaling.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>minSize -</strong> The minimum size in pixels. </li>
+
+<li><strong>maxSize -</strong> The maximum size in pixels. </li>
+</ul>
+
+<p><strong>Return Value:</strong> The <code>Builder</code> instance. </p>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>AIVisionSDKException -</strong> Thrown if the size constraints are invalid. </li>
+</ul>
+
+<h5 id="stylepenbuild-1" class="anchor"><a class="heading-anchor" href="#stylepenbuild-1"><span></span></a>StylePen build()</h5>
+
+<pre class="prettyprint"><code>    StylePen build() 
+</code></pre>
+
+<p>Builds and returns an <code>IconDrawPen</code> instance. </p>
+
+<p><strong>Return Value:</strong> A <code>StylePen</code> instance configured with the specified properties. </p>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>AIVisionSDKException:</strong> Thrown if the pen cannot be created due to internal errors. </li>
 </ul>
 
 <hr>

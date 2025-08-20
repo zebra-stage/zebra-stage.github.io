@@ -271,7 +271,7 @@
 <h3 id="step1initializationofbarcodedecoder" class="anchor"><a class="heading-anchor" href="#step1initializationofbarcodedecoder"><span></span></a>Step 1: Initialization of BarcodeDecoder</h3>
 
 <ol>
-<li><strong>Import the BarcodeDecoder class</strong> using <code>com.zebra.ai.vision.BarcodeDecoder</code>.</li>
+<li><strong>Import the BarcodeDecoder class</strong> using <code>com.zebra.ai.vision.detector.BarcodeDecoder</code>.</li>
 
 <li><strong>Initialize BarcodeDecoder Settings:</strong> Create an instance of <code>BarcodeDecoder.Settings</code>, which will hold any configurations needed to set for the barcode decoding process.</li>
 
@@ -284,10 +284,11 @@
 
 <p>Sample Code:</p>
 
-<pre class="prettyprint"><code>    import com.zebra.ai.vision.BarcodeDecoder;
+<pre class="prettyprint"><code>    import com.zebra.ai.vision.detector.BarcodeDecoder;
 
     // Initialize BarcodeDecoder settings object
-    BarcodeDecoder.Settings settings = new BarcodeDecoder.Settings();
+    String mavenModelName = "barcode-localizer"; 
+    BarcodeDecoder.Settings settings = new BarcodeDecoder.Settings(mavenModelName)
 
     // Enable UPCE1 and its parameters or other desired symbologies
     settings.Symbology.UPCE1.enable(true);
@@ -296,14 +297,19 @@
     // Initialize BarcodeDecoder object
     BarcodeDecoder barcodeDecoder = null;
 
-    // Executor = An executor thread in which the processing of API call happens, and the results are returned
+    // Executor = An executor thread in which the results are returned
     CompletableFuture&lt;BarcodeDecoder&gt; futureObject = BarcodeDecoder.getBarcodeDecoder(settings, executor);
 
     // Use the futureObject to implement thenAccept() callback of CompletableFuture.
     futureObject.thenAccept (decoderInstance -&gt; {
-        // Use the decoder object returned here for decoding the barcodes
-        barcodeDecoder = decoderInstance;
-    });
+        // Use the decoder object returned here for decoding the barcodes 
+        barcodeDecoder = decoderInstance; 
+    }).exceptionally( e -&gt; { 
+        if (e instanceof AIVisionSDKException) { 
+            Log.e(TAG, "[AIVisionSDKException] BarcodeDecoder object creation failed: " + e.getMessage()); 
+        } 
+    return null; 
+    }); 
 </code></pre>
 
 <hr>
@@ -351,11 +357,8 @@
 <pre class="prettyprint"><code>Integer[] rpo = new Integer[1]; 
 
 rpo[0] = InferencerOptions.DSP; // set runtime processor order to DSP 
-
 decoderSettings.detectorSetting.inferencerOptions.runtimeProcessorOrder = rpo; // enable DSP for localizer 
-
 decoderSettings.detectorSetting.inferencerOptions.defaultDims.height = 640; // set default height for the localizer 
-
 decoderSettings.detectorSetting.inferencerOptions.defaultDims.width = 640; // set default width for the localizer 
 </code></pre></li>
 
@@ -374,30 +377,25 @@ decoderSettings.detectorSetting.inferencerOptions.defaultDims.width = 640; // se
 
 <p>Sample Code:</p>
 
-<pre class="prettyprint"><code>    try { 
-            barcodeDecoder.process(ImageData.fromImageProxy(image)) 
-                    .thenAccept(result -&gt;{ 
-                        for(BarcodeEntity  barcodeEntity:result){ 
-                            // Access bounding box and confidence 
-                            Rect boundingBox =  barcodeEntity.getBoundingBox(); 
-                            float confidence = barcodeEntity.accuracy(); 
+<pre class="prettyprint"><code>    barcodeDecoder.process(ImageData.fromImageProxy(imageProxy)) 
+        .thenAccept(result -&gt;{ 
+            for(BarcodeEntity  barcodeEntity:result){ 
+                // Access bounding box and confidence 
+                Rect boundingBox =  barcodeEntity.getBoundingBox(); 
+                float confidence = barcodeEntity.accuracy(); 
 
-                            // Access barcode-specific data 
-                            String barcodeValue =  barcodeEntity.getValue(); 
-                            String barcodeType =  barcodeEntity.getSymbology(); 
-                        } 
-                        image.close();
-                    }) 
+                // Access barcode-specific data 
+                String barcodeValue =  barcodeEntity.getValue(); 
+                String barcodeType =  barcodeEntity.getSymbology(); 
+            } 
+        }) 
 
-                    .exceptionally(e -&gt;{ 
-                        image.close(); 
-                    }
-            ); 
-        } 
-
-        catch (Exception e) { 
-            Log.e(TAG, "Analysis failed: " + e.getMessage()); 
-        } 
+        .exceptionally(e -&gt;{ 
+            if (e instanceof AIVisionSDKException) { 
+                Log.e(TAG, "[AIVisionSDKException] Error in barcode decoding: " + e.getMessage()); 
+            } 
+            return null; 
+        }); 
 </code></pre>
 
 <h4 id="method2decodefullimage" class="anchor"><a class="heading-anchor" href="#method2decodefullimage"><span></span></a>&gt; Method 2: Decode Full Image</h4>
@@ -416,22 +414,31 @@ decoderSettings.detectorSetting.inferencerOptions.defaultDims.width = 640; // se
 
 <p>Sample Code:</p>
 
-<pre class="prettyprint"><code>    // Decoding starts once the bitmap image is available
-    // Input params: bitmap image and an executor thread object (in which the decode happens and the results are returned)
-    CompletableFuture&lt;Result&gt; resultFutureObject = barcodeDecoder.decode(bitmap, executor);
+<pre class="prettyprint"><code>    // Decoding starts once the bitmap image is available 
+
+    // Input params: bitmap image and an executor thread object (in which the decode happens and the results are returned). 
+
+    CompletableFuture&lt;Result&gt; resultFutureObject = barcodeDecoder.decode(bitmap, executor); 
     resultFutureObject.thenAccept (results -&gt; { 
-        // get barcode bounding box here 
+        //get barcode bounding box here 
         BBox bb = results. GetCorners(); 
 
-        // get the barcode value here 
+        //get the barcode value here 
         String barcodeValue = results.getvalue(); 
 
         // get the barcode symbology here 
         int symbol = results.getSymbology(); 
+
+        }).exceptionally( e -&gt;{ 
+        if (e instanceof AIVisionSDKException) { 
+            Log.e(TAG, "[AIVisionSDKException] Error in barcode decoding: " + e.getMessage()); 
+        } 
+        return null; 
     }); 
 
     // Once done with using the decoder object, dispose the object to release the resources and memory used for decoding 
-    barcodeDecoder.dispose(); 
+
+    barcodeDecoder.dispose();
 </code></pre>
 
 <h4 id="method3decodeimageregions" class="anchor"><a class="heading-anchor" href="#method3decodeimageregions"><span></span></a>&gt; Method 3: Decode Image Regions</h4>
@@ -460,7 +467,7 @@ decoderSettings.detectorSetting.inferencerOptions.defaultDims.width = 640; // se
 
 <p>Sample Code:</p>
 
-<pre class="prettyprint"><code>    // Barcode Detection
+<pre class="prettyprint"><code>    // Barcode Detection 
     String mavenModelName = "barcode-localizer"; 
     Localizer.Settings settings = new Localizer( mavenModelName); 
 
@@ -470,16 +477,20 @@ decoderSettings.detectorSetting.inferencerOptions.defaultDims.width = 640; // se
 
     // Initialize Localizer object 
     Localizer localizer = null; 
-
     CompletableFuture&lt;Localizer&gt; futureObject = Localizer.getLocalizer(settings,executor); 
 
     // Use the futureObject to implement thenAccept() callback of //CompletableFuture. 
     futureObject.thenAccept ( localizerInstance -&gt; { 
         localizer = localizerInstance; // Use the localizer object for the detection of barcodes/shelves/products 
+    }).exceptionally( e -&gt; { 
+        if (e instanceof AIVisionSDKException) { 
+            Log.e(TAG, "[AIVisionSDKException] Localizer object creation failed: " + e.getMessage()); 
+        } 
+        return null; 
     }); 
 
     // Create BarcodeDecoder object 
-    BarcodeDecoder barcodeDecoder = null;  
+    BarcodeDecoder barcodeDecoder = null; 
 
     // Create settings for BarcodeDecoder 
     BarcodeDecoder.Settings settings = new BarcodeDecoder.Settings(mavenModelName); 
@@ -497,6 +508,11 @@ decoderSettings.detectorSetting.inferencerOptions.defaultDims.width = 640; // se
     // Use the futureObject to implement thenAccept() callback of CompletableFuture. 
     futureDecoderObj.thenAccept (decoderInstance -&gt; { 
         barcodeDecoder = decoderInstance;  // Use the decoder object returned here for barcode detection 
+    }).exceptionally( e -&gt; { 
+        if (e instanceof AIVisionSDKException) { 
+            Log.e(TAG, "[AIVisionSDKException] BarcodeDecoder object creation failed: " + e.getMessage()); 
+        } 
+        return null; 
     }); 
 
     // Detect objects once the camera image is available 
@@ -507,16 +523,26 @@ decoderSettings.detectorSetting.inferencerOptions.defaultDims.width = 640; // se
     CompletableFuture &lt;BBox[]&gt; resultFutureObject = localizer.detect(image , executor); 
     resultFutureObject.thenAccept ( bboxes -&gt; { 
         detections = bboxes;  // Process the returned array of bounding boxes 
+        if (e instanceof AIVisionSDKException) { 
+            Log.e(TAG, "[AIVisionSDKException] Error in localizer barcode: " + e.getMessage()); 
+        } 
+        return null; 
     }); 
 
     // Once the bounding boxes are available, pass them to barcodeDecoder for decoding 
     Bitmap image = ...; // //Load your Bitmap image here 
+    Result[] decodes; 
 
     // Perform decode on barcode 
     CompletableFuture&lt;Result&gt; resultFutureObject = barcodeDecoder.decode(bitmap, detections , executor); 
-
-    resultFutureObject.thenAccept (results -&gt; { 
+    resultFutureObject.thenAccept (result -&gt; { 
         // Process the returned result (Result[]) of decoded barcodes 
+        decodes = result; 
+    }).exceptionally( e -&gt;{ 
+        if (e instanceof AIVisionSDKException) { 
+            Log.e(TAG, "[AIVisionSDKException] Error in barcode decoding: " + e.getMessage()); 
+    } 
+    return null; 
     }); 
 
     // Dispose resources 
@@ -530,7 +556,7 @@ decoderSettings.detectorSetting.inferencerOptions.defaultDims.width = 640; // se
 
 <h3 id="getbarcodedecodersettingssettingsexecutorexecutor" class="anchor"><a class="heading-anchor" href="#getbarcodedecodersettingssettingsexecutorexecutor"><span></span></a>getBarcodeDecoder (Settings settings, Executor executor)</h3>
 
-<pre class="prettyprint"><code>    CompletableFuture&lt;BarcodeDecoder&gt; getBarcodeDecoder (Settings settings, Executor callerExecutor) throws InvalidInputException, AIVisionSDKSNPEException, AIVisionSDKException,AIVisionSDKModelException
+<pre class="prettyprint"><code>    CompletableFuture&lt;BarcodeDecoder&gt; getBarcodeDecoder (Settings settings, Executor callerExecutor) throws InvalidInputException, AIVisionSDKSNPEException, AIVisionSDKException, AIVisionSDKModelException,  AIVisionSDKLicenseException
 </code></pre>
 
 <p><strong>Description:</strong> Asynchronously initializes and returns a <code>BarcodeDecoder</code> object.</p>
@@ -548,13 +574,65 @@ decoderSettings.detectorSetting.inferencerOptions.defaultDims.width = 640; // se
 <ul>
 <li><strong>InvalidInputException -</strong> Thrown if the settings object is null.</li>
 
-<li><strong>AIVisionSDKException -</strong> Thrown if the image queue size is exceeded.</li>
-
-<li><strong>AIVisionSDKSNPEException -</strong> Thrown if SNPE initialization fails. </li>
+<li><strong>AIVisionSDKSNPEException -</strong> Thrown if SNPE initialization fails.</li>
 
 <li><strong>AIVisionSDKException -</strong> Thrown if the AI Data Capture SDK is not initialized. </li>
 
-<li><strong>AIVisionSDKModelException -</strong> Thrown if there is an issue with the model itself. </li>
+<li><strong>AIVisionSDKModelException -</strong> Thrown if the current SDK version is incompatible with the required version. </li>
+
+<li><strong>AIVisionSDKLicenseException -</strong> Thrown if there is a licensing issue related to the barcode-localizer model.</li>
+</ul>
+
+<hr>
+
+<h3 id="processimagedataimagedataexecutorexecutor" class="anchor"><a class="heading-anchor" href="#processimagedataimagedataexecutorexecutor"><span></span></a>process (ImageData imageData, Executor executor)</h3>
+
+<pre class="prettyprint"><code>    CompletableFuture&lt;List&lt;BarcodeEntity&gt;&gt; process(ImageData imageData, Executor executor) throws InvalidInputException, AIVisionSDKException 
+</code></pre>
+
+<p>Processes an <code>[ImageData](#imagedata)</code> object returning the localized and decoded barcodes.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>ImageData imageData -</strong> Data representing the image to be processed.</li>
+
+<li><strong>executor -</strong> Results are returned in this executor. </li>
+</ul>
+
+<p><strong>Return Value:</strong> A <code>CompletableFuture&lt;List&lt;BarcodeEntity&gt;&gt;</code> with localized and decoded barcodes.</p>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>InvalidInputException -</strong> Thrown if <code>imageData</code> is null. </li>
+
+<li><strong>AIVisionSDKException -</strong> Thrown if <code>imageData</code> is null or if a previous operation is still in progress.</li>
+</ul>
+
+<hr>
+
+<h3 id="processimagedataimagedata" class="anchor"><a class="heading-anchor" href="#processimagedataimagedata"><span></span></a>process (ImageData imageData)</h3>
+
+<pre class="prettyprint"><code>    CompletableFuture&lt;List&lt;BarcodeEntity&gt;&gt; process(ImageData imageData, Executor executor) throws InvalidInputException, AIVisionSDKException 
+</code></pre>
+
+<p>Processes an <code>[ImageData](#imagedata)</code> object returning the localized and decoded barcodes.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>ImageData imageData -</strong> Data representing the image to be processed.</li>
+</ul>
+
+<p><strong>Return Value:</strong> A <code>CompletableFuture&lt;List&lt;BarcodeEntity&gt;&gt;</code> with localized and decoded barcodes.</p>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>InvalidInputException -</strong> Thrown if <code>imageData</code> is null. </li>
+
+<li><strong>AIVisionSDKException -</strong> Thrown if <code>imageData</code> is null or if a previous operation is still in progress.</li>
 </ul>
 
 <hr>
@@ -615,136 +693,6 @@ decoderSettings.detectorSetting.inferencerOptions.defaultDims.width = 640; // se
 
 <hr>
 
-<h3 id="processimagedataimagedataexecutorexecutor" class="anchor"><a class="heading-anchor" href="#processimagedataimagedataexecutorexecutor"><span></span></a>process (ImageData imageData, Executor executor))</h3>
-
-<pre class="prettyprint"><code>    CompletableFuture&lt;List&lt;BarcodeEntity&gt;&gt; process(ImageData imageData, Executor executor) throws InvalidInputException, AIVisionSDKException 
-</code></pre>
-
-<p>Processes an <code>[ImageData](#imagedata)</code> object returning the localized and decoded barcodes.</p>
-
-<p><strong>Parameters:</strong></p>
-
-<ul>
-<li><strong>ImageData imageData -</strong> Data representing the image to be processed.</li>
-
-<li><strong>executor -</strong> Results are returned in this executor. </li>
-</ul>
-
-<p><strong>Return Value:</strong> A <code>CompletableFuture&lt;List&lt;BarcodeEntity&gt;&gt;</code> with localized and decoded barcodes.</p>
-
-<p><strong>Exceptions:</strong></p>
-
-<ul>
-<li><strong>InvalidInputException -</strong> Thrown if <code>imageData</code> is null. </li>
-
-<li><strong>AIVisionSDKException -</strong> Thrown if <code>imageData</code> is null or if a previous operation is still in progress.</li>
-</ul>
-
-<hr>
-
-<h2 id="imagedata" class="anchor"><a class="heading-anchor" href="#imagedata"><span></span></a>ImageData</h2>
-
-<p>The <code>ImageData</code> class acts as a container for image data sourced from the <a href="#process">process()</a> API. It provides a unified interface for detectors to access image information, ensuring orientation adjustments and standardizing the format required for AI processing. The following sections outline the methods available in this class.</p>
-
-<h3 id="getbitmap" class="anchor"><a class="heading-anchor" href="#getbitmap"><span></span></a>getBitmap()</h3>
-
-<pre class="prettyprint"><code>    Bitmap ImageData.getBitmap() 
-</code></pre>
-
-<p><strong>Description:</strong> Retrieves the bitmap representation of the image data. </p>
-
-<p><strong>Return Value:</strong> Returns the Bitmap representation of the image. </p>
-
-<h3 id="getrotationdegrees" class="anchor"><a class="heading-anchor" href="#getrotationdegrees"><span></span></a>getRotationDegrees()</h3>
-
-<pre class="prettyprint"><code>    int ImageData.getRotationDegrees() 
-</code></pre>
-
-<p><strong>Description:</strong> Retrieves the rotation of the image in degrees. </p>
-
-<p><strong>Return Value:</strong> Returns an integer representing the rotation in degrees (0, 90, 180, or 270). </p>
-
-<h3 id="fromimageproxyimageproxyimageproxy" class="anchor"><a class="heading-anchor" href="#fromimageproxyimageproxyimageproxy"><span></span></a>fromImageProxy (ImageProxy imageProxy)</h3>
-
-<pre class="prettyprint"><code>    static ImageData ImageData.fromImageProxy(ImageProxy imageProxy) throws InvalidInputException 
-</code></pre>
-
-<p><strong>Description:</strong> Creates an ImageData instance from an ImageProxy. This method converts a CameraX <code>ImageProxy</code> to an <code>ImageData</code> object, using the rotation information from the <code>ImageProxy</code> itself. </p>
-
-<p><strong>Parameters:</strong></p>
-
-<ul>
-<li><strong>ImageProxy -</strong> The <code>ImageProxy</code> to convert. </li>
-</ul>
-
-<p><strong>Return Value:</strong></p>
-
-<ul>
-<li><strong>ImageData -</strong> A new <code>ImageData</code> instance containing the image data. </li>
-</ul>
-
-<p><strong>Exceptions:</strong></p>
-
-<ul>
-<li><strong>InvalidInputException -</strong> Thrown when the input imageProxy is null, indicating an invalid input parameter. </li>
-</ul>
-
-<h3 id="frommediaimageimageimageintrotationdegrees" class="anchor"><a class="heading-anchor" href="#frommediaimageimageimageintrotationdegrees"><span></span></a>fromMediaImage (Image image, int rotationDegrees)</h3>
-
-<pre class="prettyprint"><code>    static ImageData ImageData.fromMediaImage(Image image, int rotationDegrees) throws InvalidInputException
-</code></pre>
-
-<p>Creates an <code>ImageData</code> instance from a media <code>Image</code>. This factory method converts an <code>android.media.Image</code> into an <code>ImageData</code> object, applying the specified rotation to ensure correct orientation.</p>
-
-<p><strong>Parameters:</strong></p>
-
-<ul>
-<li><strong>image -</strong> The media <code>Image</code> to convert.</li>
-
-<li><strong>rotationDegrees -</strong> The rotation to apply in degrees.</li>
-</ul>
-
-<p><strong>Return Value:</strong></p>
-
-<ul>
-<li><strong>ImageData -</strong> A new <code>ImageData</code> instance containing the image data.</li>
-</ul>
-
-<p><strong>Exceptions:</strong></p>
-
-<ul>
-<li><strong>InvalidInputException -</strong> Thrown if the image is null or the orientation is not supported.</li>
-</ul>
-
-<h3 id="frombitmapbitmapbitmapintrotationdegrees" class="anchor"><a class="heading-anchor" href="#frombitmapbitmapbitmapintrotationdegrees"><span></span></a>fromBitmap(Bitmap bitmap, int rotationDegrees)</h3>
-
-<pre class="prettyprint"><code>    static ImageData ImageData.fromBitmap(Bitmap bitmap, int rotationDegrees) throws InvalidInputException
-</code></pre>
-
-<p>Creates an <code>ImageData</code> instance from a given bitmap with specified rotation degrees. This factory method transforms a bitmap into an <code>ImageData</code> object, applying the specified rotation to ensure the image is correctly oriented for processing.</p>
-
-<p><strong>Parameters:</strong></p>
-
-<ul>
-<li><strong>bitmap -</strong> The bitmap from which to create <code>ImageData</code>.</li>
-
-<li><strong>rotationDegrees -</strong> The rotation to apply to the image in degrees.</li>
-</ul>
-
-<p><strong>Return Value:</strong></p>
-
-<ul>
-<li><strong>ImageData -</strong> A new <code>ImageData</code> instance containing the bitmap data.</li>
-</ul>
-
-<p><strong>Exceptions:</strong></p>
-
-<ul>
-<li><strong>InvalidInputException -</strong> Thrown if the bitmap is null or the rotation is unsupported.</li>
-</ul>
-
-<hr>
-
 <h2 id="detectorresult" class="anchor"><a class="heading-anchor" href="#detectorresult"><span></span></a>DetectorResult</h2>
 
 <p>The <code>DetectorResult</code> interface in the <code>com.zebra.ai.vision.detector</code> package defines common properties for detection results within the AI Data Capture SDK. It provides access to essential information about objects detected by various detectors, such as <a href="../types/#bbox">bounding box</a> coordinates, decoded values, and symbology types for barcodes. Implementations of this interface represent specific types of detection results.</p>
@@ -777,13 +725,22 @@ decoderSettings.detectorSetting.inferencerOptions.defaultDims.width = 640; // se
 
 <h3 id="getsymbology" class="anchor"><a class="heading-anchor" href="#getsymbology"><span></span></a>getSymbology()</h3>
 
-<pre class="prettyprint"><code>    int DetectorResult.getSymbology() 
+<pre class="prettyprint"><code>    Integer DetectorResult.getSymbology() 
 </code></pre>
 
 <p>Retrieves the symbology type identifier of the detected object. For barcode detectors, this represents the barcode symbology type (e.g., QR Code, Code 128). For other detectors, this might represent a classification or category identifier. </p>
 
 <p><strong>Return Value:</strong>
-<strong>int -</strong> An integer value indicating the symbology or type. </p>
+<strong>Integer -</strong> An integer value indicating the symbology or type. </p>
+
+<h3 id="getlabel" class="anchor"><a class="heading-anchor" href="#getlabel"><span></span></a>getLabel()</h3>
+
+<pre class="prettyprint"><code>    String getLabel(); 
+</code></pre>
+
+<p>Retrieves the label type or the <a href="#barcodesymbologies">barcode symbology</a> of the decoded barcode. </p>
+
+<p><strong>Return Value:</strong> The string value representing the decoded barcode’s symbology. </p>
 
 <h3 id="dispose" class="anchor"><a class="heading-anchor" href="#dispose"><span></span></a>dispose()</h3>
 
@@ -794,13 +751,63 @@ decoderSettings.detectorSetting.inferencerOptions.defaultDims.width = 640; // se
 
 <hr>
 
+<h2 id="barcodedecodersettings" class="anchor"><a class="heading-anchor" href="#barcodedecodersettings"><span></span></a>BarcodeDecoder.Settings</h2>
+
+<p>The <code>BarcodeDecoder.Settings</code> class configures the barcode symbologies and related settings required for decoding barcodes from images. It allows customization of decoding parameters to optimize performance for specific use cases. </p>
+
+<h3 id="settingsstringmavenmodelname" class="anchor"><a class="heading-anchor" href="#settingsstringmavenmodelname"><span></span></a>Settings(String mavenModelName)</h3>
+
+<pre class="prettyprint"><code>    BarcodeDecoder.Settings decoderSettings = new BarcodeDecoder.Settings(mavenModelName) throws InvalidInputException,AIVisionSDKException; 
+</code></pre>
+
+<p><strong>Description:</strong> Constructor for Settings object with model name. </p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>mavenModelName -</strong> The name of the model specified in the Maven repository. </li>
+</ul>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>InvalidInputException -</strong> Thrown if the mavenModelName is invalid. </li>
+
+<li><strong>AIVisionSDKException -</strong> Thrown if an error occurs while reading the specified model or the AI Data Capture SDK is not initialized. </li>
+</ul>
+
+<h3 id="settingsfilemodelfile" class="anchor"><a class="heading-anchor" href="#settingsfilemodelfile"><span></span></a>Settings(File modelFile)</h3>
+
+<pre class="prettyprint"><code>    BarcodeDecoder.Settings decoderSettings = new BarcodeDecoder.Settings(modelFile) throws InvalidInputException,AIVisionSDKException; 
+</code></pre>
+
+<p><strong>Description:</strong> Constructs a new Settings object with File object passed. </p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>modelFile -</strong> The file object that contains the localizer model. </li>
+</ul>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>InvalidInputException -</strong> Thrown if the modelFile is invalid. </li>
+
+<li><strong>AIVisionSDKException -</strong> Thrown if an error occurs while reading the specified model or the AI Data Capture SDK is not initialized. </li>
+</ul>
+
+<hr>
+
 <h2 id="barcodedecoderresult" class="anchor"><a class="heading-anchor" href="#barcodedecoderresult"><span></span></a>BarcodeDecoder.Result</h2>
 
-<p>The <code>BarcodeDecoder.Result</code> class encapsulates the result of a barcode decoding operation. It provides information on the decoded data value, the type of symbology used and the bounding box data indicating the barcode position and dimensions within an image.</p>
+<p>The <code>BarcodeDecoder.Result</code> class encapsulates the result of a barcode decoding operation. It provides information on the decoded data value, the type of symbology used and the label type of the decoded baarcode and the bounding box data that indicates the barcode position and dimensions within an image.</p>
+
+<hr>
 
 <h3 id="symbologytype" class="anchor"><a class="heading-anchor" href="#symbologytype"><span></span></a>symbologytype</h3>
 
-<pre class="prettyprint"><code>    int BarcodeDecoder.Result.symbologytype
+<pre class="prettyprint"><code>    Integer BarcodeDecoder.Result.symbologytype
 </code></pre>
 
 <p><strong>Description:</strong> Integer that defines the type of symbology for the decoded barcode. The symbology type is necessary for identifying the barcode format, such as QR code, UPC, or EAN. Each symbology type typically corresponds to a specific integer value, which can be referenced against a symbology type reference guide; see <a href="#barcodesymbologies">Barcode Symbologies</a>.</p>
@@ -825,240 +832,293 @@ decoderSettings.detectorSetting.inferencerOptions.defaultDims.width = 640; // se
 
 <hr>
 
+<h3 id="label_type" class="anchor"><a class="heading-anchor" href="#label_type"><span></span></a>label_type</h3>
+
+<pre class="prettyprint"><code>    BBox BarcodeDecoder.Result.label_type 
+</code></pre>
+
+<p><strong>Description:</strong> A string that contains the label type or <a href="#barcodesymbologies">barcode symbology</a> of the decoded barcode. This value represents the returned label type of the decoded barcode. </p>
+
+<hr>
+
 <h2 id="barcodesymbologies" class="anchor"><a class="heading-anchor" href="#barcodesymbologies"><span></span></a>Barcode Symbologies</h2>
 
-<p>The symbology classes described in the following sections offer methods for configuring decoder settings. These classes are part of the <code>com.zebra.ai.vision.BarcodeDecoder.Settings.Symbology</code> namespace.</p>
+<p>The symbology classes described in the following sections offer methods for configuring decoder settings. These classes are part of the <code>com.zebra.ai.vision.detector.BarcodeDecoder.Settings.Symbology</code> namespace.</p>
 
 <p><strong>Sample Code:</strong></p>
 
 <p>The sample code below demonstrates how to enable a symbology and configure its options. In this example, UPC-E1 is enabled with report check digit option activated. These steps can be modified to enable other symbologies and adjust their specific parameters:</p>
 
-<pre class="prettyprint"><code>    // Initialize BarcodeDecoder settings object
-    BarcodeDecoder.Settings settings = new BarcodeDecoder.Settings();
+<pre class="prettyprint"><code>// Initialize BarcodeDecoder settings object 
+String mavenModelName = "barcode-localizer"; 
+BarcodeDecoder.Settings settings = new BarcodeDecoder.Settings(mavenModelName); 
 
-    // Enabling Symbology UPCE1 and it’s parameters
-    settings.Symbology.UPCE1.enable(true);
-    settings.Symbology.UPCE1.setReportCheckDigit(true);
+// Enabling Symbology UPCE1 and it’s parameters 
+settings.Symbology.UPCE1.enable(true); 
+settings.Symbology.UPCE1.setReportCheckDigit(true);
 </code></pre>
 
-<p>The table below lists barcode symbologies with its default status and <a href="#symbologytype">symbologytype</a> value.</p>
+<p>The table below lists barcode symbologies with its default status, <a href="#symbologytype">symbologytype</a> value, and returned label type.</p>
 
 <table class="facelift" style="width:20" border="1" padding="5px">
   <tbody><tr bgcolor="#dce8ef">
     <th style="text-align:center">Barcode Symbology</th>
     <th style="text-align:center">Default Status</th>
     <th style="text-align:center"><code>symbologytype</code><br>Value</th>
+    <th style="text-align:center">Returned Barcode <code>label_type</code></th>
   </tr>
   <tr>
     <td>AUSTRALIAN_POSTAL</td>
     <td>Disabled</td>
     <td>26</td>
+    <td>LABEL-TYPE-AUSPOSTAL</td>
   </tr>
   <tr>
     <td>AZTEC</td>
     <td>Enabled</td>
     <td>4</td>
+    <td>LABEL-TYPE-AZTEC</td>
   </tr>
   <tr>
     <td>CANADIAN_POSTAL</td>
     <td>Disabled</td>
     <td>27</td>
+    <td>LABEL-TYPE-CANPOSTAL</td>
   </tr>
   <tr>
     <td>CHINESE_2OF5</td>
     <td>Disabled</td>
     <td>35</td>
+    <td>LABEL-TYPE-CHINESE-2OF5</td>
   </tr>
   <tr>
     <td><a href="#codabar">CODABAR</a></td>
     <td>Enabled</td>
     <td>5</td>
+    <td>LABEL-TYPE-CODABAR</td>
   </tr>
   <tr>
     <td><a href="#code11">CODE11</a></td>
     <td>Disabled</td>
     <td>37</td>
+    <td>LABEL-TYPE-CODE11</td>
   </tr>
   <tr>
     <td><a href="#code39">CODE39</a></td>
     <td>Enabled</td>
     <td>7</td>
+    <td>LABEL-TYPE-CODE39</td>
   </tr>
   <tr>
     <td><a href="#code93">CODE93</a></td>
     <td>Disabled</td>
     <td>32</td>
+    <td>LABEL-TYPE-CODE93</td>
   </tr>
   <tr>
     <td><a href="#code128">CODE128</a></td>
     <td>Enabled</td>
     <td>6</td>
+    <td>LABEL-TYPE-CODE128</td>
   </tr>
   <tr>
     <td><a href="#composite_ab">COMPOSITE_AB</a></td>
     <td>Disabled</td>
     <td>44</td>
+    <td>LABEL-TYPE-COMPOSITE-AB</td>
   </tr>
   <tr>
     <td>COMPOSITE_C</td>
     <td>Disabled</td>
     <td>45</td>
+    <td>LABEL-TYPE-COMPOSITE-C</td>
   </tr>
   <tr>
     <td><a href="#d2of5">D2OF5</a></td>
     <td>Disabled</td>
     <td>34</td>
+    <td>LABEL-TYPE-D2OF5</td>
   </tr>
   <tr>
     <td><a href="#datamatrix">DATAMATRIX</a></td>
     <td>Enabled</td>
     <td>10</td>
+    <td>LABEL-TYPE-DATAMATRIX</td>
   </tr>
   <tr>
     <td><a href="#dotcode">DOTCODE</a></td>
     <td>Disabled</td>
     <td>16</td>
+    <td>LABEL-TYPE-DOTCODE</td>
   </tr>
   <tr>
     <td><a href="#dutch_postal">DUTCH_POSTAL</a></td>
     <td>Disabled</td>
     <td>28</td>
+    <td>LABEL-TYPE-DUTCHPOSTAL</td>
   </tr>
   <tr>
     <td><a href="#ean8">EAN_8</a></td>
     <td>Enabled</td>
     <td>0</td>
+    <td>LABEL-TYPE-EAN8</td>
   </tr>
   <tr>
     <td>EAN_13</td>
     <td>Enabled</td>
     <td>1</td>
+    <td>LABEL-TYPE-EAN13</td>
   </tr>
   <tr>
     <td>FINNISH_POSTAL_4S</td>
     <td>Disabled</td>
     <td>43</td>
+    <td>LABEL-TYPE-FINNISHPOSTAL-4S</td>
   </tr>
   <tr>
     <td>GRID_MATRIX</td>
     <td>Disabled</td>
     <td>17</td>
+    <td>LABEL-TYPE-GRIDMATRIX</td>
   </tr>
   <tr>
     <td><a href="#gs1_databar">GS1_DATABAR</a></td>
     <td>Enabled</td>
     <td>9</td>
+    <td>LABEL-TYPE-GS1-DATABAR</td>
   </tr>
   <tr>
     <td>GS1_DATABAR_EXPANDED</td>
     <td>Enabled</td>
     <td>11</td>
+    <td>LABEL-TYPE-GS1-DATABAR-EXP</td>
   </tr>
   <tr>
     <td><a href="#gs1_databar_lim">GS1_DATABAR_LIM</a></td>
     <td>Disabled</td>
     <td>42</td>
+    <td>LABEL-TYPE-GS1-DATABAR-LIM</td>
   </tr>
   <tr>
     <td>GS1_DATAMATRIX</td>
     <td>Disabled</td>
     <td>18</td>
+    <td>LABEL-TYPE-GS1-DATAMATRIX</td>
   </tr>
   <tr>
     <td>GS1_QRCODE</td>
     <td>Disabled</td>
     <td>19</td>
+    <td>LABEL-TYPE-GS1-QRCODE</td>
   </tr>
   <tr>
     <td><a href="#hanxin">HANXIN</a></td>
     <td>Disabled</td>
     <td>39</td>
+    <td>LABEL-TYPE-HANXIN</td>
   </tr>
   <tr>
     <td><a href="#i2of5">I2OF5</a></td>
     <td>Disabled</td>
     <td>8</td>
+    <td>LABEL-TYPE-I2OF5</td>
   </tr>
   <tr>
     <td>JAPANESE_POSTAL</td>
     <td>Disabled</td>
     <td>25</td>
+    <td>LABEL-TYPE-JAPPOSTAL</td>
   </tr>
   <tr>
     <td>KOREAN_3OF5</td>
     <td>Disabled</td>
     <td>36</td>
+    <td>LABEL-TYPE-KOREAN-3OF5</td>
   </tr>
   <tr>
     <td>MAILMARK</td>
     <td>Enabled</td>
     <td>12</td>
+    <td>LABEL-TYPE-MAILMARK</td>
   </tr>
   <tr>
     <td><a href="#matrix_2of5">MATRIX_2OF5</a></td>
     <td>Disabled</td>
     <td>40</td>
+    <td>LABEL-TYPE-MATRIX-2OF5</td>
   </tr>
   <tr>
     <td>MAXICODE</td>
     <td>Enabled</td>
     <td>13</td>
+    <td>LABEL-TYPE-MAXICODE</td>
   </tr>
   <tr>
   </tr><tr>
     <td>MICROPDF</td>
     <td>Disabled</td>
     <td>21</td>
+    <td>LABEL-TYPE-MICROPDF</td>
   </tr>
   <tr>
     <td>MICROQR</td>
     <td>Disabled</td>
     <td>20</td>
+    <td>LABEL-TYPE-MICROQR</td>
   </tr>
   <tr>
     <td><a href="#msi">MSI</a></td>
     <td>Disabled</td>
     <td>31</td>
+    <td>LABEL-TYPE-MSI</td>
   </tr>
   <tr>
     <td>PDF417</td>
     <td>Enabled</td>
     <td>14</td>
+    <td>LABEL-TYPE-PDF417</td>
   </tr>
   <tr>
     <td>QRCODE</td>
     <td>Enabled</td>
     <td>15</td>
+    <td>LABEL-TYPE-QRCODE</td>
   </tr>
   <tr>
     <td>TLC39</td>
     <td>Disabled</td>
     <td>38</td>
+    <td>LABEL-TYPE-TLC39</td>
   </tr>
   <tr>
     <td><a href="#trioptic39">TRIOPTIC39</a></td>
     <td>Disabled</td>
     <td>33</td>
+    <td>LABEL-TYPE-TRIOPTIC39</td>
   </tr>
   <tr>
     <td><a href="#uk_postal">UK_POSTAL</a></td>
     <td>Disabled</td>
     <td>24</td>
+    <td>LABEL-TYPE-UKPOSTAL</td>
   </tr>
   <tr>
     <td><a href="#upca">UPC_A</a></td>
     <td>Enabled</td>
     <td>2</td>
+    <td>LABEL-TYPE-UPCA</td>
   </tr>
   <tr>
     <td><a href="#upce">UPC_E</a></td>
     <td>Enabled</td>
     <td>3</td>
+    <td>LABEL-TYPE-UPCE0</td>
   </tr>
   <tr>
     <td><a href="#upce1">UPCE1</a></td>
     <td>Disabled</td>
     <td>41</td>
+    <td>LABEL-TYPE-UPCE1</td>
   </tr>
   <!--
   <tr>
@@ -1070,21 +1130,25 @@ decoderSettings.detectorSetting.inferencerOptions.defaultDims.width = 640; // se
     <td><a href="#usplanet">USPLANET</a></td>
     <td>Disabled</td>
     <td>23</td>
+    <td>LABEL-TYPE-USPLANET</td>
   </tr>
   <tr>
     <td><a href="#uspostnet">USPOSTNET</a></td>
     <td>Disabled</td>
     <td>22</td>
+    <td>LABEL-TYPE-USPOSTNET</td>
   </tr>
   <tr>
     <td>US4STATE</td>
     <td>Disabled</td>
     <td>29</td>
+    <td>LABEL-TYPE-US4STATE</td>
   </tr>
   <tr>
     <td>US4STATE_FICS</td>
     <td>Disabled</td>
     <td>30</td>
+    <td>LABEL-TYPE-US4STATE-FICS</td>
   </tr>
 </tbody></table>
 
@@ -3585,16 +3649,16 @@ decoderSettings.detectorSetting.inferencerOptions.defaultDims.width = 640; // se
 
 <hr>
 
-<h3 id="upce" class="anchor"><a class="heading-anchor" href="#upce"><span></span></a>UPCE</h3>
+<h3 id="upce0" class="anchor"><a class="heading-anchor" href="#upce0"><span></span></a>UPCE0</h3>
 
-<p><strong>Description:</strong> Configures parameters related to UPC-E barcode decoding. UPC-E is a compact version of UPC-A, used to save space on packaging, especially in retail environments.</p>
+<p><strong>Description:</strong> Configures parameters related to UPCE0 barcode decoding. UPCE0 is a compact version of UPC-A, used to save space on packaging, especially in retail environments.</p>
 
 <h4 id="enablebooleaninitialstatus-20" class="anchor"><a class="heading-anchor" href="#enablebooleaninitialstatus-20"><span></span></a>enable(boolean initialStatus)</h4>
 
-<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.UPCE.enable(boolean initialStatus)
+<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.UPCE0.enable(boolean initialStatus)
 </code></pre>
 
-<p><strong>Description:</strong> Enables or disables the UPC-E symbology decoding based on the input boolean parameter.</p>
+<p><strong>Description:</strong> Enables or disables the UPCE0 symbology decoding based on the input boolean parameter.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -3604,7 +3668,7 @@ decoderSettings.detectorSetting.inferencerOptions.defaultDims.width = 640; // se
 
 <h4 id="isreportcheckdigit-7" class="anchor"><a class="heading-anchor" href="#isreportcheckdigit-7"><span></span></a>isReportCheckDigit()</h4>
 
-<pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.UPCE.isReportCheckDigit()
+<pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.UPCE0.isReportCheckDigit()
 </code></pre>
 
 <p><strong>Description:</strong> Checks if the “Report Check Digit” parameter is enabled, which determines whether the check digit is included in the transmitted data.</p>
@@ -3619,7 +3683,7 @@ decoderSettings.detectorSetting.inferencerOptions.defaultDims.width = 640; // se
 
 <h4 id="setreportcheckdigitbooleanreportcheckdigit-7" class="anchor"><a class="heading-anchor" href="#setreportcheckdigitbooleanreportcheckdigit-7"><span></span></a>setReportCheckDigit(boolean reportCheckDigit)</h4>
 
-<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.UPCE.setReportCheckDigit(boolean reportCheckDigit)
+<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.UPCE0.setReportCheckDigit(boolean reportCheckDigit)
 </code></pre>
 
 <p><strong>Description:</strong> Enables or disables the “Report Check Digit” parameter, which determines whether the check digit is included in the transmitted data.</p>
@@ -3632,10 +3696,10 @@ decoderSettings.detectorSetting.inferencerOptions.defaultDims.width = 640; // se
 
 <h4 id="getpreamble-1" class="anchor"><a class="heading-anchor" href="#getpreamble-1"><span></span></a>getPreamble()</h4>
 
-<pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.UPCE.getPreamble()
+<pre class="prettyprint"><code>    int BarcodeDecoder.Settings.Symbology.UPCE0.getPreamble()
 </code></pre>
 
-<p><strong>Description:</strong> Retrieves the current preamble setting for UPC-E symbols.</p>
+<p><strong>Description:</strong> Retrieves the current preamble setting for UPCE0 symbols.</p>
 
 <p><strong>Return Value:</strong> Integer value representing the preamble setting:</p>
 
@@ -3649,10 +3713,10 @@ decoderSettings.detectorSetting.inferencerOptions.defaultDims.width = 640; // se
 
 <h4 id="setpreamblepreamblepreamble-1" class="anchor"><a class="heading-anchor" href="#setpreamblepreamblepreamble-1"><span></span></a>setPreamble(Preamble preamble)</h4>
 
-<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.UPCE.setPreamble(int preamble)
+<pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.UPCE0.setPreamble(int preamble)
 </code></pre>
 
-<p><strong>Description:</strong> Configures the preamble transmission for UPC-E symbols, affecting how the country code and system character are transmitted to the host device.</p>
+<p><strong>Description:</strong> Configures the preamble transmission for UPCE0 symbols, affecting how the country code and system character are transmitted to the host device.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -3674,7 +3738,7 @@ decoderSettings.detectorSetting.inferencerOptions.defaultDims.width = 640; // se
 <pre class="prettyprint"><code>    boolean BarcodeDecoder.Settings.Symbology.UPCE.isConvertToUPCA()
 </code></pre>
 
-<p><strong>Description:</strong> Checks if the “Convert to UPCA” parameter is enabled, which determines whether UPCE data is converted to UPCA format before transmission.</p>
+<p><strong>Description:</strong> Checks if the “Convert to UPCA” parameter is enabled, which determines whether UPCE0 data is converted to UPCA format before transmission.</p>
 
 <p><strong>Return Value:</strong> Boolean indicating to enable (true) or disable (false) conversion to UPCA.</p>
 
@@ -3683,12 +3747,12 @@ decoderSettings.detectorSetting.inferencerOptions.defaultDims.width = 640; // se
 <pre class="prettyprint"><code>    void BarcodeDecoder.Settings.Symbology.UPCE.setConvertToUPCA(boolean convertToUPCA)
 </code></pre>
 
-<p><strong>Description:</strong> Enables or disables the “Convert to UPCA” parameter, allowing UPC-E data to be transmitted in UPC-A format.</p>
+<p><strong>Description:</strong> Enables or disables the “Convert to UPCA” parameter, allowing UPCE0 data to be transmitted in UPC-A format.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>convertToUPCA -</strong> Boolean indicating whether to convert (true) or not convert (false) UPC-E to UPC-A. Default: false.</li>
+<li><strong>convertToUPCA -</strong> Boolean indicating whether to convert (true) or not convert (false) UPCE0 to UPC-A. Default: false.</li>
 </ul>
 
 <hr>
