@@ -171,7 +171,7 @@
                                                 2.0.5.208
                                           </p>
                                             <p>
-                                                Applicable Devices : RFD40/90 Only
+                                                Applicable Devices : RFD40/90, EM45, TC53e-RFID
                                             </p>
                                         </div>
                                     </section>
@@ -205,13 +205,13 @@
                                                 <p>Impinj Gen2X tags are required to leverage these features with Gen2X-enabled Zebra RFID Readers. </p>
                                                 <p>Users should verify whether their tags support these operations by referring to Impinj Gen2X tag specifications: <a href="http://www.impinj.com/Gen2X">http://www.impinj.com/Gen2X</a></p>
                                                   <h2 id="code1" class="anchor"><a class="heading-anchor" href="#code1"><span></span></a>Setting it up</h2>
-                                                        <p>In the application create an object of ImpinjExtensions and pass connected RfidReader object to it. This will allow the application to use the following impinj gen2X apis.</p>
+                                                        <p>In the application create an object of ImpinjExtensions and pass connected RfidReader object to it. This will allow the application to use the following Impinj Gen2X APIs.</p>
 <pre class="prettyprint"><code>
 ImpinjExtensions impinjExtensions = new ImpinjExtensions(connectedRfidReader);
 </code>                                                        
 </pre>
                                                         <h3 id="tagProtect" class="anchor"><a class="heading-anchor" href="#tagProtect"><span></span></a>Protected Mode</h3>
-                                                        <p> Protected mode is a feature that renders a tag invisible to an RFID reader unless the reader first provides the correct 32-bit PIN. A user can make the tag protected or unprotected using the following APIs.</p>
+                                                        <p> Protected mode is a feature that renders a tag invisible to an RFID reader unless the reader first provides the correct 32-bit PIN/Password. A user can make the tag protected or unprotected using the following APIs.</p>
                                                         <p>By default, the password will be 0. Users can set the password by using writeWait operation.</p>
                                                         <pre class="prettyprint"><code>
 TagData writeTagData = new TagData();
@@ -232,6 +232,8 @@ try {
                 </code> </pre>
                                                         <p>To get the password readWait can be used</p>
                                                         <pre class="prettyprint"><code>
+TagData tagData = new TagData();
+String password;
 TagAccess tagAccess = new TagAccess();
 TagAccess.ReadAccessParams readAccessParams = tagAccess.new ReadAccessParams();
 readAccessParams.setAccessPassword(Long.decode("00" ));
@@ -239,7 +241,10 @@ readAccessParams.setCount(2);
 readAccessParams.setMemoryBank(MEMORY_BANK.MEMORY_BANK_RESERVED);
 readAccessParams.setOffset(2);
 try {
-    tagData.set(mConnectedRfidReader.Actions.TagAccess.readWait(tagId, readAccessParams, null));
+    tagData = (mConnectedRfidReader.Actions.TagAccess.readWait(tagId, readAccessParams, null));
+    if(tagData.getOpStatus() == ACCESS_OPERATION_STATUS.ACCESS_SUCCESS) {
+        password = tagData.getMemoryBankData();
+    }
 } catch (OperationFailureException | InvalidUsageException | IllegalStateException  | NumberFormatException e) {
     e.printStackTrace();
 }
@@ -257,13 +262,13 @@ impinjExtensions.disableTagProtection(tagID, password,tagData, antennaID);
 </code>                                                        
 </pre>
 
-                                                        <p>To make a protected tag temporarily visible.</p>
+                                                        <p>Enable Inventory of Protected Tags (using known password).</p>
 <pre class="prettyprint"><code>
 String passoword = "ABCD5678"; // HEX value of 32 bit password
 impinjExtensions.enableTagVisibility(password, antennaID);
 </code>                                                        
 </pre>
-                                                        <p>To disable the enabled temporary visibility for a protected tag.</p>
+                                                        <p>Clear Protected Mode Configuration (reader will no longer read protected tags).</p>
 <pre class="prettyprint"><code>
 impinjExtensions.disableTagVisibility(password, antennaID);
 </code>                                                        
@@ -300,7 +305,7 @@ mReader.Config.Antennas.setSingulationControl(antennaID, s1_singulationControl);
                                                         <li>ENUM_TAGQUIET_MASK.SL_ASSERT</li>
                                                         <li>ENUM_TAGQUIET_MASK.SL_DEASSERT</li>
                                                     </ul>
-                                                    <p>User can provide upto three valid combinations. If the combinations is invalid or the combination exceeds three , SDK throws IllegalArgumentException. </p>
+                                                    <p>The user can provide up to three valid combinations. Providing more than three combinations or any invalid combination will result in the SDK throwing an IllegalArgumentException. </p>
                                                    
                                                     <p>Examples of valid combinations: </p>
                                                         
