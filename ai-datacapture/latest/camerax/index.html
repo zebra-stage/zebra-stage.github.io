@@ -264,7 +264,7 @@
 
 <h2 id="entitytrackeranalyzer" class="anchor"><a class="heading-anchor" href="#entitytrackeranalyzer"><span></span></a>EntityTrackerAnalyzer</h2>
 
-<p><code>EntityTrackerAnalyzer</code> implements the <code>ImageAnalysis.Analyzer</code> interface for real-time detection and tracking of <a href="../entity/">entities</a>. It integrates seamlessly with CameraX, processing image frames using a list of detectors to deliver aggregated entity tracking results. The analyzer efficiently manages image buffers and executes detectors asynchronously, ensuring optimal performance. It also automatically handles coordinate system transformations automatically based on the coordinate system value passed to the constructor. <em>Currently, only BarcodeDecoder is supported as a detector.</em></p>
+<p><code>EntityTrackerAnalyzer</code> implements the <code>ImageAnalysis.Analyzer</code> interface for real-time detection and tracking of <a href="../entity/">entities</a>. It integrates seamlessly with CameraX, processing image frames using a list of detectors to deliver aggregated entity tracking results. The analyzer efficiently manages image buffers and executes detectors asynchronously, ensuring optimal performance. It also automatically handles coordinate system transformations automatically based on the coordinate system value passed to the constructor. </p>
 
 <p><strong>Use Cases:</strong></p>
 
@@ -339,31 +339,30 @@ cameraController.setImageAnalysisAnalyzer(
 previewView.setController(cameraController);
 </code></pre></li>
 
-<li><p><strong>Resource Cleanup After Usage -</strong> Properly dispose of resources after use to prevent memory leaks and ensure that all resources are released after use:</p>
-
-<pre class="prettyprint"><code>protected void dispose() {
-
-<pre><code>// Shutdown executors to release threads
-if (decorderExecutor!= null &amp;amp;&amp;amp; ! resultsExecutor.isShutdown()) {
-    decorderExecutor.shutdown();
-    decorderExecutor = null;
-}
-
-if (resultsExecutor != null &amp;amp;&amp;amp; !resultsExecutor.isShutdown()) {
-    resultsExecutor.shutdown();
-    ResultsExecutor = null;
-}
-
-// Close any clients or scanners to free up resources
-if (barcodeDecoder != null) {
-    barcodeDecoder.dispose();
-    barcodeDecoder = null;
-}
-</code></pre>
-
-}
-</code></pre></li>
+<li><p><strong>Resource Cleanup After Usage -</strong> Properly dispose of resources after use to prevent memory leaks and ensure that all resources are released after use:</p></li>
 </ol>
+
+<p><code>
+protected void dispose() {
+
+    // Shutdown executors to release threads
+    if (decorderExecutor!= null &amp;&amp; ! resultsExecutor.isShutdown()) {
+        decorderExecutor.shutdown();
+        decorderExecutor = null;
+    }
+
+    if (resultsExecutor != null &amp;&amp; !resultsExecutor.isShutdown()) {
+        resultsExecutor.shutdown();
+        ResultsExecutor = null;
+    }
+
+    // Close any clients or scanners to free up resources
+    if (barcodeDecoder != null) {
+        barcodeDecoder.dispose();
+        barcodeDecoder = null;
+    }
+}
+</code></p>
 
 <hr>
 
@@ -379,9 +378,9 @@ if (barcodeDecoder != null) {
     )
 </code></pre>
 
-<p>Constructs an <code>EntityTrackerAnalyzer</code> using specified entity detectors, target coordinate system, an executor, and a consumer. It initializes components for entity tracking, including a buffer manager and an entity tracker, using specified detectors. The analyzer configures entity processing and sets the coordinate system for analysis. The executor is used to execute the consumer. </p>
+<p>Constructs an <code>EntityTrackerAnalyzer</code> using specified entity detectors, target coordinate system, an executor, and an <a href="../entity/">Entity</a> consumer. It initializes components for entity tracking, including a buffer manager and an entity tracker, using specified detectors. The analyzer configures entity processing and sets the coordinate system for analysis. The executor is used to execute the consumer. </p>
 
-<p>Currently, only <a href="../barcodedecoder/">BarcodeDecoder</a> is supported as a detector. Only one detector of each type is accepted. Providing multiple detectors of the same type results in undefined behavior.</p>
+<p>Currently, only <a href="../barcodedecoder/">BarcodeDecoder</a> is supported as a detector. Only one instance of BarcodeDecoder detector is accepted. Providing multiple detectors of the same type results in undefined behavior.</p>
 
 <p>The <code>EntityTrackerAnalyzer</code> calculates the output bounding box coordinates based on the <code>targetCoordinateSystem</code> set by the user:</p>
 
@@ -408,7 +407,7 @@ if (barcodeDecoder != null) {
 <pre class="prettyprint"><code>    public void analyze(@NonNull ImageProxy image) 
 </code></pre>
 
-<p>Analyzes the image with the Detectors. This method delivers the image to the detectors. Typically, this method is called by ImageAnalysis when a new frame becomes available. </p>
+<p>Analyzes the image with the Detectors. This method delivers the image to the detector. Typically, this method is called by ImageAnalysis when a new frame becomes available. </p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -416,7 +415,7 @@ if (barcodeDecoder != null) {
 <li><strong>image -</strong> An <code>ImageProxy</code> object representing the image to be analyzed. </li>
 </ul>
 
-<h4 id="getdefaulttargetresolution" class="anchor"><a class="heading-anchor" href="#getdefaulttargetresolution"><span></span></a>GetDefaultTargetResolution()</h4>
+<h4 id="getdefaulttargetresolution" class="anchor"><a class="heading-anchor" href="#getdefaulttargetresolution"><span></span></a>getDefaultTargetResolution()</h4>
 
 <pre class="prettyprint"><code>    public Size getDefaultTargetResolution() 
 </code></pre>
@@ -460,97 +459,83 @@ if (barcodeDecoder != null) {
 <li><strong>cropRect -</strong> A <code>RectF</code> object with crop rectangle. </li>
 </ul>
 
-<hr>
+<!--
+---
 
-<h3 id="imageanalysisanalyzerinterface" class="anchor"><a class="heading-anchor" href="#imageanalysisanalyzerinterface"><span></span></a>ImageAnalysis.Analyzer Interface</h3>
+### ImageAnalysis.Analyzer Interface
 
-<h4 id="voidanalyzeimageproxyimage" class="anchor"><a class="heading-anchor" href="#voidanalyzeimageproxyimage"><span></span></a>void analyze(ImageProxy image)</h4>
+#### void analyze(ImageProxy image)
 
-<pre class="prettyprint"><code>    public void analyze(@NonNull ImageProxy image)
-</code></pre>
+        public void analyze(@NonNull ImageProxy image)
 
-<p>Analyzes the image with the Detectors. This method forwards the image to the detectors. Typically, this method is called by ImageAnalysis when a new frame becomes available:</p>
+Analyzes the image with the Detectors. This method forwards the image to the detectors. Typically, this method is called by ImageAnalysis when a new frame becomes available:
 
-<pre class="prettyprint"><code>    void camerax.EntityTrackerAnalyzer.analyze(ImageProxy image)    
-</code></pre>
+        void camerax.EntityTrackerAnalyzer.analyze(ImageProxy image)    
 
-<p><strong>Parameters:</strong></p>
+**Parameters:**
+- **image -** An `ImageProxy` object representing the image to be analyzed.
 
-<ul>
-<li><strong>image -</strong> An <code>ImageProxy</code> object representing the image to be analyzed.</li>
-</ul>
+<br />
 
-<p><br></p>
+#### GetDefaultTargetResolution()
 
-<h4 id="getdefaulttargetresolution-1" class="anchor"><a class="heading-anchor" href="#getdefaulttargetresolution-1"><span></span></a>GetDefaultTargetResolution()</h4>
+        public Size getDefaultTargetResolution()
 
-<pre class="prettyprint"><code>    public Size getDefaultTargetResolution()
-</code></pre>
+Returns the default target resolution for image analysis in the `EntityTrackerAnalyzer`.
 
-<p>Returns the default target resolution for image analysis in the <code>EntityTrackerAnalyzer</code>.</p>
+**Return Value:**
+A Size object representing the default resolution for target images.
 
-<p><strong>Return Value:</strong>
-A Size object representing the default resolution for target images.</p>
+<br />
 
-<p><br></p>
+#### getTargetCoordinateSystem()
 
-<h4 id="gettargetcoordinatesystem-1" class="anchor"><a class="heading-anchor" href="#gettargetcoordinatesystem-1"><span></span></a>getTargetCoordinateSystem()</h4>
+        public int getTargetCoordinateSystem()
 
-<pre class="prettyprint"><code>    public int getTargetCoordinateSystem()
-</code></pre>
+Returns the current coordinate system used inside the Analyzer. This is passed to the analyzer when it is created via the constructor.    
 
-<p>Returns the current coordinate system used inside the Analyzer. This is passed to the analyzer when it is created via the constructor.    </p>
+**Returns:**
+An integer representing the coordinate system type.
 
-<p><strong>Returns:</strong>
-An integer representing the coordinate system type.</p>
+<br />
 
-<p><br></p>
+#### final void    updateTransform()
 
-<h4 id="finalvoidupdatetransform" class="anchor"><a class="heading-anchor" href="#finalvoidupdatetransform"><span></span></a>final void    updateTransform()</h4>
+        final EntityTrackerAnalyzer.updateTransform()    
 
-<pre class="prettyprint"><code>    final EntityTrackerAnalyzer.updateTransform()    
-</code></pre>
+This method should be implemented to receive a transformation matrix that converts coordinates from the camera sensor’s system to the target system defined in `getTargetCoordinateSystem()`. It is used for transforming detected coordinates, such as those of a detected face. If the matrix is `null`, it indicates no valid transformation is available. This can occur if the target system is set to `COORDINATE_SYSTEM_ORIGINAL` or if the target system is unavailable, such as when the viewfinder is not visible. The method is invoked whenever a new transformation is ready, for example, when the viewfinder is launched or resized.
 
-<p>This method should be implemented to receive a transformation matrix that converts coordinates from the camera sensor’s system to the target system defined in <code>getTargetCoordinateSystem()</code>. It is used for transforming detected coordinates, such as those of a detected face. If the matrix is <code>null</code>, it indicates no valid transformation is available. This can occur if the target system is set to <code>COORDINATE_SYSTEM_ORIGINAL</code> or if the target system is unavailable, such as when the viewfinder is not visible. The method is invoked whenever a new transformation is ready, for example, when the viewfinder is launched or resized.</p>
+**Returns:**
+A `Matrix` object for transformation adjustments.
 
-<p><strong>Returns:</strong>
-A <code>Matrix</code> object for transformation adjustments.</p>
+<br />
 
-<p><br></p>
+#### updateTransform()
 
-<h4 id="updatetransform" class="anchor"><a class="heading-anchor" href="#updatetransform"><span></span></a>updateTransform()</h4>
+        public final void updateTransform(@Nullable Matrix matrix)
 
-<pre class="prettyprint"><code>    public final void updateTransform(@Nullable Matrix matrix)
-</code></pre>
+Receives a transformation matrix that converts coordinates from the camera sensor’s system to the target system, which was passed as `targetCoordinateSystem` in the constructor. 
 
-<p>Receives a transformation matrix that converts coordinates from the camera sensor’s system to the target system, which was passed as <code>targetCoordinateSystem</code> in the constructor. </p>
+**Parameters:**
+- **matrix -** A `Matrix` object for transformation adjustments.
 
-<p><strong>Parameters:</strong></p>
+<br />
 
-<ul>
-<li><strong>matrix -</strong> A <code>Matrix</code> object for transformation adjustments.</li>
-</ul>
+#### setCropRect(RectF cropRect)
 
-<p><br></p>
+        public void setCropRect(RectF cropRect)
 
-<h4 id="setcroprectrectfcroprect-1" class="anchor"><a class="heading-anchor" href="#setcroprectrectfcroprect-1"><span></span></a>setCropRect(RectF cropRect)</h4>
+Sets the crop rectangle, which specifies the region of the image that the analyzer process for entities. It should be specified in `COORDINATE_SYSTEM_SENSOR` from `ImageAnalysis`.
 
-<pre class="prettyprint"><code>    public void setCropRect(RectF cropRect)
-</code></pre>
-
-<p>Sets the crop rectangle, which specifies the region of the image that the analyzer process for entities. It should be specified in <code>COORDINATE_SYSTEM_SENSOR</code> from <code>ImageAnalysis</code>.</p>
-
-<p>Parameters:</p>
-
-<ul>
-<li><strong>cropRect -</strong> A <code>RectF</code> object with crop rectangle.</li>
-</ul>
+Parameters:
+- **cropRect -** A `RectF` object with crop rectangle.
+-->
 
 <hr>
 
 <h2 id="detectors" class="anchor"><a class="heading-anchor" href="#detectors"><span></span></a>Detectors</h2>
 
-<p>The <code>BarcodeDecoder</code> and <code>TextOCR</code> classes implement a detector interface allowing users to use CameraX as the frame source and build custom analyzers to detect and decode barcodes or recognize text in the frame delivered to the analyze() interface: This is particularly useful for applications that require to combining multiple detectors within the CameraX analyzer. </p>
+<p>The <code>BarcodeDecoder</code> and <code>TextOCR</code> classes implement a CameraX <code>Detector</code> interface allowing users to use CameraX as the frame source and build custom analyzers to detect and decode barcodes or recognize text in the frame delivered to the analyze() interface: This is particularly useful for applications that require to combining multiple detectors within the CameraX analyzer. </p>
 
 <p>Available detectors:</p>
 
@@ -676,7 +661,7 @@ A <code>Matrix</code> object for transformation adjustments.</p>
 
 <h3 id="developerguide-2" class="anchor"><a class="heading-anchor" href="#developerguide-2"><span></span></a>Developer Guide</h3>
 
-<p>This guide illustrates the integration and configuration of <code>EntityViewFinder</code> with a camera system using CameraX in an Android application. It covers setting up a viewfinder for camera preview and rendering entities with customizable styles. The guide also demonstrates how to manage user interactions and dynamically update the viewfinder with detected entities. </p>
+<p>This guide illustrates the integration and configuration of <code>EntityViewfinder</code> with a camera system using CameraX in an Android application. It covers setting up a viewfinder for camera preview and rendering entities with customizable styles. The guide also demonstrates how to manage user interactions and dynamically update the viewfinder with detected entities. </p>
 
 <ol>
 <li><p><strong>Integrate EntityView in XML Layout -</strong> Define <code>EntityView</code> in your XML layout file, specifying attributes to configure its initial behavior and appearance. </p>
