@@ -253,7 +253,7 @@
 <h2 id="requirements" class="anchor"><a class="heading-anchor" href="#requirements"><span></span></a>Requirements</h2>
 
 <ul>
-<li><strong>Supported Devices:</strong> Zebra QC6490, QC4490, or QC5430 FP2 mobile computers running Android 14 or higher. For details on relevant device models, visit <a href="https://supportcommunity.zebra.com/s/article/000022440?language=en_US">Zebra Platform Devices</a><!--  For supported device models, see the <a href="https://www.zebra.com/us/en/support-downloads/software.html">Zebra Support Portal</a>. --></li>
+<li><strong>Supported Zebra Devices:</strong> TC53, TC58, TC73, TC78 , ET6x , EM45, TC53e, TC58e, MC94<!--  For supported device models, see the <a href="https://www.zebra.com/us/en/support-downloads/software.html">Zebra Support Portal</a>. --></li>
 
 <li><strong>Android Project:</strong> Target SDK version 34 (Android 14) or higher</li>
 
@@ -288,8 +288,8 @@
 
   <tr>
     <td>Barcode Decoder</td>
-    <td>N/A</td>
-    <td>N/A</td>
+    <td>barcode-localizer</td>
+    <td>5.0.1</td>
   </tr>
 
   <tr>
@@ -300,25 +300,25 @@
 
   <tr>
     <td>Product Recognizer</td>
-    <td>product-recognition-bundle</td>
+    <td>product-and-shelf-recognizer</td>
     <td>3.4.2</td>
   </tr>
 
   <tr>
     <td>Shelf and Product Localizer</td>
-    <td>product-recognition-bundle</td>
+    <td>product-and-shelf-recognizer</td>
     <td>3.4.2</td>
   </tr>
 
   <tr>
     <td>TextOCR</td>
     <td>ocr</td>
-    <td>2.7.1</td>
+    <td>2.7.3</td>
   </tr>
 
 </tbody></table>
 
-<p><strong>Note:</strong> No model is required for Barcode Decoder.</p>
+<p><strong>Note:</strong> Barcode Decoder’s <code>process()</code> API uses the barcode-localizer model to perform detections before decoding. </p>
 
 <hr>
 
@@ -326,26 +326,26 @@
 
 <p>Integrate the AI Data Capture SDK and models into an Android project by using either the Gradle or manual method. Models can be included as a bundle with the application or loaded independently. After integration, develop application logic for functionalities such as <a href="../localizer/">localization</a>, <a href="../productrecognition/">recognition</a>, <a href="../barcodedecoder/">barcode decoding</a>, or <a href="../textocr/">text OCR</a>.</p>
 
+<p>For effective use of the AI Data Capture SDK, models can be loaded independently from the application (<a href="#method1loadmodelsindependently">Method 1</a>). Alternatively, they can be bundled with the application using Gradle (<a href="#method2usegradle">Method 2</a>)or manual integration (<a href="#method3manual">Method 3</a>). Choose the approach that best fits your needs and follow the corresponding method below.</p>
+
 <hr>
 
 <h3 id="method1loadmodelsindependently" class="anchor"><a class="heading-anchor" href="#method1loadmodelsindependently"><span></span></a>Method 1: Load Models Independently</h3>
 
-<p>To use the AI Data Capture SDK effectively, models can be loaded independently from the application, rather than bundling them with the application as described in "Method 2: Use Gradle" and "Method 3: Manual." This approach allows for flexibility in deploying models.</p>
-
-<p>Procedure for Deploying Models Independently:</p>
+<p>Procedure for deploying models independently:</p>
 
 <ol>
-<li><p><strong>Configure the Application to Access the Model:</strong> Program the application to retrieve the model from a designated public folder. For example:</p>
+<li><p><strong>Configure the Application to Access the Model:</strong> Program the application to retrieve the model from a designated public folder. e: Instead of <code>/data/local/tmp</code> used in the sample below, it may be replaced by any application-accessible location on the device. Sample code:</p>
 
-<pre class="prettyprint"><code>// Define the model file path and name.
-String modelFilePath = "/data/local/tmp/barcode_localizer.tar.crypt"; // Path to the model file
-String modelFileName = "localizer"; // Name of the model
+<pre class="prettyprint"><code>// Define the model file path and name. 
+String modelFilePath = "/data/local/tmp/barcode-localizer-5.0.1.aar"; // Path to the model file 
+File modelFile = new File(modelFilePath); // modelFile represents the model File object 
 
-// Create a Localizer Settings object using the specified model file path and name.
-Localizer.Settings locSettings = new Localizer.Settings(modelFilePath, modelFileName);
+// Create a Localizer Settings object using the specified model file object 
+Localizer.Settings locSettings = new Localizer.Settings(modelFile); 
 
-// For TextOCR, create a TextOCR Settings object using a defined model file path. 
-TextOCR.Settings textOCRSettings = new TextOCR.Settings(modelFilePath); 
+// For TextOCR, create TextOCR Settings object using defined model file object. 
+TextOCR.Settings textOCRSettings = new TextOCR.Settings(modelFile); 
 </code></pre></li>
 
 <li><p><strong>Deploy the Models to the Specified Folder:</strong> Transfer models to the configured folder using adb (Android Debug Bridge) or Enterprise Mobility Management (EMM) tools. To push the model to the public folder on the device using aadb:</p>
@@ -373,8 +373,8 @@ TextOCR.Settings textOCRSettings = new TextOCR.Settings(modelFilePath);
 <ul>
 <li><p>Define SDK and model versions, for example:</p>
 
-<pre class="prettyprint"><code>aiSdkVersion = "2.22.8"
-localizerVersion = "3.1.0"
+<pre class="prettyprint"><code>aiSdkVersion = "3.0.2"
+localizerVersion = "5.0.1"
 </code></pre>
 
 <p><strong>Note:</strong> Replace "localizerVersion" with the desired model and version.</p></li>
@@ -383,8 +383,8 @@ localizerVersion = "3.1.0"
 
 <pre class="prettyprint"><code>[libraries]
 …
-ai-sdk-version = {group ="com.zebra.ai.vision", name="Zebra-AI-Vision-SDK", version.ref ="aiSdkVersion"}
-barcode-localizer = { group ="com.zebra.ai.models", name="barcode-localizer", version.ref ="localizerVersion"}
+ai-sdk-version = {group ="com.zebra.ai.vision", name="AI-Data-Capture-SDK", version.ref ="aiSdkVersion"}
+barcode-localizer = {group ="com.zebra.ai.models", name="barcode-localizer", version.ref ="localizerVersion"} 
 </code></pre>
 
 <p><strong>Note:</strong> The "version.ref" field must match the variable defined in the previous step.</p></li></ul></li>
@@ -393,8 +393,8 @@ barcode-localizer = { group ="com.zebra.ai.models", name="barcode-localizer", ve
 
 <pre class="prettyprint"><code>    dependencies{
         ……
-        implementation(libs.ai-sdk-version) { artifact { type ="aar" } }
-        implementation(libs.barcode-localizer) { artifact { type ="aar" } }
+        implementation(libs.ai-sdk-version) { artifact { type ="aar" } } 
+        implementation(libs.barcode-localizer) { artifact { type ="aar" } } 
     }
 </code></pre>
 
@@ -441,14 +441,19 @@ barcode-localizer = { group ="com.zebra.ai.models", name="barcode-localizer", ve
 
 <hr>
 
-<p>Related Guides:</p>
+<h2 id="relatedguides" class="anchor"><a class="heading-anchor" href="#relatedguides"><span></span></a>Related Guides</h2>
 
 <ul>
 <li><a href="../about/">About</a></li>
 
-<li><a href="../localizer/">Localizer</a></li>
+<li><a href="../localizer/">Localizer</a>
 
-<li><a href="../productrecognition/">Product Recognition</a>
+
+<ul>
+<li>Models: <a href="../model/barcode-localizer/">Barcode</a>, <a href="../model/prod-recognizer/">Product &amp; Shelf</a></li></ul>
+</li>
+
+<li><a href="../productrecognition/">Product Recognition</a> - <a href="../model/prod-recognizer/">Model</a>
 
 
 <ul>
@@ -461,11 +466,27 @@ barcode-localizer = { group ="com.zebra.ai.models", name="barcode-localizer", ve
 
 <li><a href="../barcodedecoder/">Barcode Decoder</a></li>
 
-<li><a href="../textocr/">Text OCR</a></li>
+<li><a href="../textocr/">Text OCR</a>
 
-<li><a href="../types/">Data Types</a></li>
+
+<ul>
+<li><a href="../model/textocr/">Model</a></li></ul>
+</li>
+
+<li><a href="../camerax/">CameraX</a>
+
+
+<ul>
+<li><a href="../camerax/#entitytrackeranalyzer">EntityTrackerAnalyzer</a>    </li>
+
+<li><a href="../camerax/#detectors">Detectors</a></li>
+
+<li><a href="../camerax/#entityviewfinder">EntityViewfinder</a></li></ul>
+</li>
 
 <li><a href="../entity/">Entity</a></li>
+
+<li><a href="../types/">Data Types</a></li>
 </ul><p></p>
                                         
 
