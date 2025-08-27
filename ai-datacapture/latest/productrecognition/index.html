@@ -260,7 +260,7 @@
 
 <hr>
 
-<h2 id="aimodels" class="anchor"><a class="heading-anchor" href="#aimodels"><span></span></a>AI Models</h2>
+<h2 id="aimodel" class="anchor"><a class="heading-anchor" href="#aimodel"><span></span></a>AI Model</h2>
 
 <p>The <strong>product-and-shelf-recognizer</strong> model is designed specifically for product and shelf recognition tasks. For more information and to download the model, refer to <a href="../model/prod-recognizer/">Product and Shelf Recognizer Model</a>.</p>
 
@@ -293,39 +293,47 @@
 <h4 id="step1initialization" class="anchor"><a class="heading-anchor" href="#step1initialization"><span></span></a>Step 1: Initialization</h4>
 
 <ol>
-<li><strong>Import the FeatureExtractor class:</strong> Use <code>com.zebra.ai.vision.FeatureExtractor</code>.</li>
+<li><strong>Import the FeatureExtractor class:</strong> Use <code>com.zebra.ai.vision.detector.FeatureExtractor</code>.</li>
 
 <li><strong>Initialize the SDK:</strong> Use your application's context object and invoke <code>init()</code> from the <a href="../class/aivisionsdk/">AIVisionSDK</a> class.</li>
 
 <li><strong>Initialize Settings:</strong> Create a <code>Settings</code> object with the model file path and model name.</li>
 
-<li><strong>Instantiate FeatureExtractor:</strong> Use the <code>Settings</code> object to create an instance of <code>FeatureExtractor</code> with a <code>CompletableFuture</code>. The <code>thenAccept()</code> method allows handling of the instantiated <code>FeatureExtractor</code> for further operations.</li>
+<li><strong>Instantiate FeatureExtractor:</strong> Use the <code>Settings</code> object to create an instance of <code>FeatureExtractor</code> with a <a href="../types/#completablefuture">CompletableFuture</a>. The <code>thenAccept()</code> method allows handling of the instantiated <code>FeatureExtractor</code> for further operations.</li>
 </ol>
 
 <p>Sample Code:</p>
 
-<pre class="prettyprint"><code>    import com.zebra.ai.vision.FeatureExtractor;
+<pre class="prettyprint"><code>    import com.zebra.ai.vision.detector.FeatureExtractor; 
 
-    // Initialize the SDK
-    AIVisionSDK.getInstance(Context).init(); // Context refers to application context object.
+    // Developer must Initialize SDK by calling below API: 
+    AIVisionSDK.getInstance(this.getApplicationContext()).init(); 
 
-    // Initialize FeatureExtractor settings object
-    String mavenModelName = "product-and-shelf-recognizer";
+    // Context refers to application context object. 
 
-    FeatureExtractor.Settings settings = new FeatureExtractor.Settings (mavenModelName);
+    String mavenModelName = "product-and-shelf-recognizer"; 
 
-    // Initialize FeatureExtractor object
-    FeatureExtractor featureExtractor = null;
+    FeatureExtractor.Settings feSettings = new FeatureExtractor.Settings ( mavenModelName); 
 
-    // Initialize featureExtractor
-    // settings = featureExtractor.Settings object created
-    CompletableFuture&lt;FeatureExtractor&gt; futureObject = getFeatureExtractor (settings, executor);
+    // optional set runtime processing order, by default DSP will be used 
+    Integer[] rpo = new Integer[]{InferencerOptions.DSP}; 
+    feSettings.inferencerOptions.runtimeProcessorOrder = rpo; 
 
-    // Use the futureObject to implement thenAccept() callback of CompletableFuture
-    futureObject.thenAccept (featureExtractorInstance -&gt; {
-        // Use the featureExtractor object returned here for the detection of products
-        featureExtractor = featureExtractorInstance;
-    });
+    // Initialize FeatureExtractor object 
+    final FeatureExtractor featureExtractor = null; 
+
+    CompletableFuture&lt;FeatureExtractor&gt; futureObject = FeatureExtractor.getFeatureExtractor (settings, executor); 
+
+    // Use the futureObject to implement thenAccept() callback of CompletableFuture 
+    futureObject.thenAccept(featureExtractorInstance -&gt; {        
+        // Use the featureExtractor object returned here for the detection of products 
+        featureExtractor = featureExtractorInstance; 
+    }).exceptionally(e -&gt;{ 
+        if (e instanceof AIVisionSDKException) { 
+            Log.e(TAG, "[AIVisionSDKException] FeatureExtractor object creation failed: " + e.getMessage()); 
+        } 
+        return null; 
+    }); 
 </code></pre>
 
 <hr>
@@ -356,19 +364,23 @@
 
 <li><p><strong>Resource Management:</strong> After processing is complete, call <code>dispose()</code> on the <code>FeatureExtractor</code> object to free resources and memory used during feature extraction.</p>
 
-<pre class="prettyprint"><code>// Input params: bitmap image and an executor thread object for running the feature extractor functionality
-CompletableFuture&lt;Descriptor&gt; futureObject = featureExtractor.generateSingleDescriptor (bitmap, executor);
+<pre class="prettyprint"><code>// Input params: bitmap image and an executor thread object for running the feature extractor functionality 
+CompletableFuture&lt;Descriptor&gt; futureObject = featureExtractor.generateSingleDescriptor (bitmap, executor); 
 
-// If orientation adjustment is required, pass the orientation angle from which the image was taken
-// Comment out the code line above and use this line instead:
-// CompletableFuture&lt;Descriptor&gt; futureObject = featureExtractor.generateSingleDescriptor(bitmap, orientation, executor);
+// If orientation adjustment is required, pass the orientation angle from which the image was taken 
+// Comment out the code line above and use this line instead: 
+// CompletableFuture&lt;Descriptor&gt; futureObject = featureExtractor.generateSingleDescriptor(bitmap, orientation, executor); 
+futureObject.thenAccept (results -&gt; { 
+    // Process the returned descriptor object           
+}).exceptionally(e -&gt; { 
+    if (e instanceof AIVisionSDKException) { 
+        Log.e(TAG, "[AIVisionSDKException] Failed to generate descriptor : " + e.getMessage()); 
+    } 
+    return null; 
+});  
 
-futureObject.thenAccept (results -&gt; {
-    // Process the returned descriptor object
-});
-
-// Once done using the featureExtractor object, dispose the object to release the resources and memory used for feature extraction
-featureExtractor.dispose();
+// Once done using the featureExtractor object, dispose the object to release the resources and memory used for feature extraction 
+featureExtractor.dispose(); 
 </code></pre></li>
 </ol>
 
@@ -390,50 +402,64 @@ featureExtractor.dispose();
 <pre class="prettyprint"><code>CompletableFuture&lt;Descriptor&gt; futureObject = featureExtractor.generateDescriptors(detections, bitmap, orientation, executor);
 </code></pre></li></ul></li>
 
-<li><p><strong>Asynchronous Processing:</strong> Use the <code>thenAccept</code> method of <code>CompletableFuture</code> process the descriptors as they are generated, avoiding blocking the main execution thread.</p></li>
+<li><p><strong>Asynchronous Processing:</strong> Use the <code>thenAccept</code> method of <code>CompletableFuture</code> to process the descriptors as they are generated.</p></li>
 
 <li><p><strong>Resource Management:</strong> After processing is complete, call <code>dispose()</code> on the <code>FeatureExtractor</code> to release resources and memory used during extraction. This is essential for optimal performance and preventing memory leaks.</p></li>
 </ol>
 
 <p>Sample Code:</p>
 
-<pre class="prettyprint"><code>    // Input params: bitmap image; array of bounding boxes; an executor thread object thread object for running the feature extractor functionality
-    CompletableFuture&lt;Descriptor&gt; futureObject = featureExtractor.generateDescriptors(detections, bitmap, executor);
+<pre class="prettyprint"><code>    // Input params: bitmap image; array of bounding boxes; an executor thread object thread object for running the feature extractor functionality 
+    CompletableFuture&lt;Descriptor&gt; futureObject = featureExtractor.generateDescriptors(detections, bitmap, executor); 
 
-    // If orientation adjustment is required, pass the orientation angle from which the image was taken
-    // Comment out the code line above and use this line instead:
-    // CompletableFuture&lt;Descriptor&gt; futureObject = featureExtractor.generateDescriptors(detections, bitmap, orientation, executor);
+    // If orientation adjustment is required, pass the orientation angle from which the image was taken 
+    // Comment out the code line above and use this line instead: 
+    // CompletableFuture&lt;Descriptor&gt; futureObject = featureExtractor.generateDescriptors(detections, bitmap, orientation, executor); 
+    futureObject.thenAccept (results -&gt; { 
+        // Process the Descriptor object     }).exceptionally(e -&gt; { 
+        if (e instanceof AIVisionSDKException) { 
+            Log.e(TAG, "[AIVisionSDKException] generateSingleDescriptor Failed to generate descriptor : " + e.getMessage()); 
+        } 
+        return null; 
+    }); 
 
-    futureObject.thenAccept (results -&gt; {
-        // Process the Descriptor object
-    } );
-
-    // Once done using the featureExtractor object dispose the object to release the resources and memory used for feature extraction
-
-    featureExtractor.dispose();
+    // Once done using the featureExtractor object dispose the object to release the resources and memory used for feature extraction 
+    featureExtractor.dispose(); 
 </code></pre>
 
 <hr>
 
 <h3 id="methods" class="anchor"><a class="heading-anchor" href="#methods"><span></span></a>Methods</h3>
 
-<h4 id="featureextractorsettingssettings" class="anchor"><a class="heading-anchor" href="#featureextractorsettingssettings"><span></span></a>FeatureExtractor (Settings settings)</h4>
+<h4 id="getfeatureextractorsettingssettingsexecutorexecutor" class="anchor"><a class="heading-anchor" href="#getfeatureextractorsettingssettingsexecutorexecutor"><span></span></a>getFeatureExtractor(Settings settings, Executor executor)</h4>
 
-<pre class="prettyprint"><code>    FeatureExtractor (Settings settings) throws IOException
+<pre class="prettyprint"><code>    CompletableFuture&lt;FeatureExtractor&gt; getFeatureExtractor(Settings settings, Executor executor) throws IOException, InvalidInputException, AIVisionSDKLicenseException, AIVisionSDKSNPEException, AIVisionSDKModelException, AIVisionSDKException 
 </code></pre>
 
-<p><strong>Description:</strong> Constructs a new <code>FeatureExtractor</code> object.</p>
+<p><strong>Description:</strong> Asynchronously loads the model and returns a <code>FeatureExtractor</code> object. </p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>settings -</strong> Configuration settings to construct a <code>FeatureExtractor</code> object.</li>
+<li><strong>settings -</strong> The <code>Settings</code> object containing configuration for the feature extractor. </li>
+
+<li><strong>executor -</strong> Executor for delivering the result; if null, the SDK default executor is used. </li>
 </ul>
+
+<p><strong>Return Value:</strong> Returns a <code>CompletableFuture</code> that resolves to a <code>FeatureExtractor</code> object. </p>
 
 <p><strong>Exceptions:</strong></p>
 
 <ul>
-<li><strong>IOException -</strong> Thrown if there is an issue accessing the archive (e.g., file not found).</li>
+<li><strong>InvalidInputException -</strong> Thrown if the <code>Settings</code> object is null. </li>
+
+<li><strong>AIVisionSDKLicenseException -</strong> Thrown if there are licensing issues related to the product-and-shelf-recognizer model. </li>
+
+<li><strong>AIVisionSDKSNPEException -</strong> Thrown if there is an error in the SNPE library. </li>
+
+<li><strong>AIVisionSDKModelException -</strong> Thrown if the SDK version is incompatible with the model. </li>
+
+<li><strong>AIVisionSDKException -</strong> Thrown if the AI Data Capture SDK is not initialized. </li>
 </ul>
 
 <hr>
@@ -449,10 +475,10 @@ featureExtractor.dispose();
 
 <h4 id="generatesingledescriptorbitmapbmpintorientationexecutorexecutor" class="anchor"><a class="heading-anchor" href="#generatesingledescriptorbitmapbmpintorientationexecutorexecutor"><span></span></a>generateSingleDescriptor (Bitmap bmp, int orientation, Executor executor)</h4>
 
-<pre class="prettyprint"><code>    CompletableFuture&lt;Descriptor&gt; generateSingleDescriptor(Bitmap bmp, int orientation, Executor executor) throws InvalidInputException, IllegalStateException
+<pre class="prettyprint"><code>    CompletableFuture&lt;Descriptor&gt; generateSingleDescriptor(Bitmap bmp, int orientation, Executor executor) throws InvalidInputException, AIVisionSDKException
 </code></pre>
 
-<p><strong>Description:</strong> Generates a descriptor for a whole image with a specified orientation, using a provided executor for asynchronous execution.</p>
+<p><strong>Description:</strong> Generates a descriptor for a whole image with a specified orientation.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -472,7 +498,7 @@ featureExtractor.dispose();
 <li><strong>3 -</strong> 270 degrees</li></ul>
 </li>
 
-<li><strong>executor -</strong> An <code>Executor</code> for asynchronous task execution.</li>
+<li><strong>executor -</strong> Results are returned in this executor.</li>
 </ul>
 
 <p><strong>Return Value:</strong> A <code>CompletableFuture</code> with a Descriptor object as the output for a given input image.</p>
@@ -480,26 +506,26 @@ featureExtractor.dispose();
 <p><strong>Exceptions:</strong></p>
 
 <ul>
-<li><strong>InvalidInputException -</strong> Thrown if bmp is null or orientation is invalid.</li>
+<li><strong>InvalidInputException -</strong> Thrown if bmp is null or the orientation is invalid.</li>
 
-<li><strong>IllegalStateException -</strong> Thrown if the feature extractor is not in a valid state to perform the operation.</li>
+<li><strong>AIVisionSDKException -</strong> Thrown if the image queue size is exceeded.</li>
 </ul>
 
 <hr>
 
 <h4 id="generatesingledescriptorbitmapbmpexecutorexecutor" class="anchor"><a class="heading-anchor" href="#generatesingledescriptorbitmapbmpexecutorexecutor"><span></span></a>generateSingleDescriptor (Bitmap bmp, Executor executor)</h4>
 
-<pre class="prettyprint"><code>    CompletableFuture&lt;Descriptor&gt; generateSingleDescriptor(Bitmap bmp, Executor executor) throws InvalidInputException, IllegalStateException
+<pre class="prettyprint"><code>    CompletableFuture&lt;Descriptor&gt; generateSingleDescriptor(Bitmap bmp, Executor executor) throws InvalidInputException, AIVisionSDKException 
 </code></pre>
 
-<p><strong>Description:</strong> Generates a descriptor for a whole image without specifying orientation, using a provided executor for asynchronous execution.</p>
+<p><strong>Description:</strong> Generates a descriptor for a whole image without specifying orientation.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
 <li><strong>bmp -</strong> The image to process.</li>
 
-<li><strong>executor -</strong> An <code>Executor</code> for asynchronous task execution.</li>
+<li><strong>executor -</strong> Results are returned in this executor.</li>
 </ul>
 
 <p><strong>Return Value:</strong> A <code>CompletableFuture</code> with a Descriptor object as the output for a given input image.</p>
@@ -507,19 +533,19 @@ featureExtractor.dispose();
 <p><strong>Exceptions:</strong></p>
 
 <ul>
-<li><strong>InvalidInputException -</strong> Thrown if bmp is null or orientation is invalid.</li>
+<li><strong>InvalidInputException -</strong> Thrown if bmp is null or the orientation is invalid.</li>
 
-<li><strong>IllegalStateException -</strong> Thrown if the feature extractor is not in a valid state to perform the operation.</li>
+<li><strong>AIVisionSDKException  -</strong> Thrown if the image queue size is exceeded.</li>
 </ul>
 
 <hr>
 
 <h4 id="generatedescriptorsbboxdetectionsbitmapbmpintorientationexecutorexecutor" class="anchor"><a class="heading-anchor" href="#generatedescriptorsbboxdetectionsbitmapbmpintorientationexecutorexecutor"><span></span></a>generateDescriptors (BBox[ ] detections, Bitmap bmp, int orientation, Executor executor)</h4>
 
-<pre class="prettyprint"><code>    CompletableFuture&lt;Descriptor&gt; generateDescriptors(BBox[] detections, Bitmap bmp, int orientation, Executor executor) throws InvalidInputException, IllegalStateException
+<pre class="prettyprint"><code>    CompletableFuture&lt;Descriptor&gt; generateDescriptors(BBox[] detections, Bitmap bmp, int orientation, Executor executor) throws InvalidInputException, AIVisionSDKException
 </code></pre>
 
-<p><strong>Description:</strong> Generates a set of descriptors for each item in an image determined by an array of bounding boxes with a specified orientation, using a provided executor for asynchronous execution.</p>
+<p><strong>Description:</strong> Generates a set of descriptors for each item in an image determined by an array of bounding boxes with a specified orientation.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -551,17 +577,17 @@ featureExtractor.dispose();
 <ul>
 <li><strong>InvalidInputException -</strong> Thrown if <code>bmp</code> or <code>detections</code> is null or <code>orientation</code> is invalid.</li>
 
-<li><strong>IllegalStateException -</strong> Thrown if a previous descriptor generation is still in progress.</li>
+<li><strong>AIVisionSDKException -</strong> Thrown if a the image queue size is exceeded.</li>
 </ul>
 
 <hr>
 
 <h4 id="generatedescriptorsbboxdetectionsbitmapbmpexecutorexecutor" class="anchor"><a class="heading-anchor" href="#generatedescriptorsbboxdetectionsbitmapbmpexecutorexecutor"><span></span></a>generateDescriptors (BBox[ ] detections, Bitmap bmp, Executor executor)</h4>
 
-<pre class="prettyprint"><code>    CompletableFuture&lt;Descriptor&gt; generateDescriptors(BBox[] detections, Bitmap bmp, Executor executor) throws InvalidInputException, IllegalStateException
+<pre class="prettyprint"><code>    CompletableFuture&lt;Descriptor&gt; generateDescriptors(BBox[] detections, Bitmap bmp, Executor executor) throws InvalidInputException, AIVisionSDKException
 </code></pre>
 
-<p><strong>Description:</strong> Generates a set of descriptors for each item in an image determined by an array of bounding boxes without specifying orientation, using a provided executor for asynchronous execution.</p>
+<p><strong>Description:</strong> Generates a set of descriptors for each item in an image determined by an array of bounding boxes without specifying orientation.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -570,7 +596,7 @@ featureExtractor.dispose();
 
 <li><strong>bmp -</strong> The image to process.</li>
 
-<li><strong>executor -</strong> An <code>Executor</code> for asynchronous task execution.</li>
+<li><strong>executor -</strong> Results are returned in this executor.</li>
 </ul>
 
 <p><strong>Return Value:</strong> A <code>CompletableFuture</code> with a Descriptor object as the output for each of the items defined by the bounding boxes adjusted for the specified orientation.</p>
@@ -580,14 +606,14 @@ featureExtractor.dispose();
 <ul>
 <li><strong>InvalidInputException -</strong> Thrown if <code>bmp</code> or <code>detections</code> is null.</li>
 
-<li><strong>IllegalStateException -</strong> Thrown if a previous descriptor generation is still in progress.</li>
+<li><strong>AIVisionSDKException -</strong> Thrown if the image queue size is exceeded.</li>
 </ul>
 
 <hr>
 
-<h4 id="getfeatureextractorsettingssettingsexecutorexecutor" class="anchor"><a class="heading-anchor" href="#getfeatureextractorsettingssettingsexecutorexecutor"><span></span></a>getFeatureExtractor (Settings settings, Executor executor)</h4>
+<h4 id="getfeatureextractorsettingssettingsexecutorexecutor-1" class="anchor"><a class="heading-anchor" href="#getfeatureextractorsettingssettingsexecutorexecutor-1"><span></span></a>getFeatureExtractor (Settings settings, Executor executor)</h4>
 
-<pre class="prettyprint"><code>    CompletableFuture&lt;FeatureExtractor&gt; getFeatureExtractor(Settings settings, Executor executor) throws InvalidInputException, RuntimeException
+<pre class="prettyprint"><code>     CompletableFuture&lt;FeatureExtractor&gt; getFeatureExtractor(Settings settings, Executor executor) throws IOException, InvalidInputException, AIVisionSDKLicenseException, AIVisionSDKSNPEException, AIVisionSDKModelException, AIVisionSDKException
 </code></pre>
 
 <p><strong>Description:</strong> Asynchronously loads the model and returns a <code>FeatureExtractor</code> object.</p>
@@ -597,7 +623,7 @@ featureExtractor.dispose();
 <ul>
 <li><strong>settings -</strong> Settings to construct a <code>FeatureExtractor</code> object.</li>
 
-<li><strong>executor -</strong> An <code>Executor</code> for asynchronous task execution.</li>
+<li><strong>executor -</strong> A <code>FeatureExtractor</code> object is returned in this executor.</li>
 </ul>
 
 <p><strong>Return Value:</strong> A <code>CompletableFuture</code> containing the initialized <code>FeatureExtractor</code> object.</p>
@@ -607,7 +633,13 @@ featureExtractor.dispose();
 <ul>
 <li><strong>InvalidInputException -</strong> Thrown if <code>settings</code> is null.</li>
 
-<li><strong>RuntimeException -</strong> Thrown if the SDK is not initialized.</li>
+<li><strong>AIVisionSDKLicenseException -</strong> Thrown if there is a licensing issue related to the product-and-shelf-recognizer model. </li>
+
+<li><strong>AIVisionSDKSNPEException -</strong> Thrown if there is an error in the SNPE library. </li>
+
+<li><strong>AIVisionSDKModelException -</strong> Thrown if the current SDK version is incompatible with the required version.  </li>
+
+<li><strong>AIVisionSDKException -</strong> Thrown if the AI Data Capture SDK is not initialized. </li>
 </ul>
 
 <hr>
@@ -620,10 +652,10 @@ featureExtractor.dispose();
 
 <h4 id="settingsstringmavenmodelname" class="anchor"><a class="heading-anchor" href="#settingsstringmavenmodelname"><span></span></a>Settings (String mavenModelName)</h4>
 
-<pre class="prettyprint"><code>    FeatureExtractor.Settings feSettings = new FeatureExtractor.Settings(mavenModelName) throws InvalidInputException,AIVisionSDKException;
+<pre class="prettyprint"><code>    FeatureExtractor.Settings feSettings = new FeatureExtractor.Settings(mavenModelName) throws InvalidInputException,AIVisionSDKException; 
 </code></pre>
 
-<p><strong>Description:</strong> Constructor for <code>Settings</code> object with model name.</p>
+<p><strong>Description:</strong> Constructor for the <code>Settings</code> object with the model name, in this case, "product-and-shelf-recognizer".</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -636,7 +668,7 @@ featureExtractor.dispose();
 <ul>
 <li><strong>InvalidInputException -</strong> Thrown if the mavenModelName is invalid.</li>
 
-<li><strong>AIVisionSDKException -</strong> Thrown if an error occurs while processing the specified model.</li>
+<li><strong>AIVisionSDKException -</strong> Thrown if an error occurs while reading the specified model or if the SDK is not initialized.</li>
 </ul>
 
 <hr>
@@ -646,12 +678,12 @@ featureExtractor.dispose();
 <pre class="prettyprint"><code>    FeatureExtractor.Settings feSettings = new FeatureExtractor.Settings(modelFile) throws InvalidInputException, AIVisionSDKException;
 </code></pre>
 
-<p><strong>Description:</strong> Constructs a new <code>Settings</code> object with a <code>File</code> object.</p>
+<p><strong>Description:</strong> Constructs a new <code>Settings</code> object with a <code>File</code> object passed.</p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>ModelFile -</strong> The location of the file with resources for the localizer (i.e. model).</li>
+<li><strong>ModelFile -</strong> The file object that contains the Product and Shelf Localizer model.</li>
 </ul>
 
 <p><strong>Exceptions:</strong></p>
@@ -659,7 +691,7 @@ featureExtractor.dispose();
 <ul>
 <li><strong>InvalidInputException -</strong> Thrown if the ModelFile is invalid.</li>
 
-<li><strong>AIVisionSDKException -</strong> Thrown if an error occurs while processing the ModelFile.</li>
+<li><strong>AIVisionSDKException -</strong> Thrown if an error occurs while reading the model of if the SDK is not initialized.</li>
 </ul>
 
 <hr>
@@ -710,107 +742,120 @@ featureExtractor.dispose();
 ---
 -->
 
-<h4 id="attributes" class="anchor"><a class="heading-anchor" href="#attributes"><span></span></a>Attributes</h4>
+#### Attributes
 
-<h5 id="stringmodelname" class="anchor"><a class="heading-anchor" href="#stringmodelname"><span></span></a>String modelName</h5>
+##### String modelName
 
-<p><strong>Description:</strong> Name of the model in the compressed file, identifying which model to use from the provided resources.</p>
+**Description:** Name of the model in the compressed file, identifying which model to use from the provided resources.
 
-<h5 id="inferenceroptionsnewinferenceroptions" class="anchor"><a class="heading-anchor" href="#inferenceroptionsnewinferenceroptions"><span></span></a>InferencerOptions = new InferencerOptions()</h5>
+##### InferencerOptions = new InferencerOptions()
 
-<p><strong>Description:</strong> An instance of <a href="../class/inferenceroptions/">InferencerOptions</a>, providing additional configuration options for the inferencer’s behavior.</p>
+**Description:** An instance of [InferencerOptions](../class/inferenceroptions/), providing additional configuration options for the inferencer’s behavior.
 
-<h5 id="staticfinalintmodel_type_feature_extractor" class="anchor"><a class="heading-anchor" href="#staticfinalintmodel_type_feature_extractor"><span></span></a>static final int MODEL_TYPE_FEATURE_EXTRACTOR</h5>
+---
 
-<p><strong>Description:</strong> The model type passed to <a href="#staticstringgetmodelnameintmodel_type">getModelName</a>. For Feature Extractor, the value is 1.</p>
+## Feature Storage
 
-<hr>
+**Feature Storage** is primarily responsible for storing and updating the descriptors of items generated by the `FeatureExtractor`. It stores them in a database along with their corresponding class names to be used for detection by the [Recognizer](#recognizer).
 
-<h2 id="featurestorage" class="anchor"><a class="heading-anchor" href="#featurestorage"><span></span></a>Feature Storage</h2>
+### Developer Guide
 
-<p><strong>Feature Storage</strong> is primarily responsible for storing and updating the descriptors of items generated by the <code>FeatureExtractor</code>. It stores them in a database along with their corresponding class names to be used for detection by the <a href="#recognizer">Recognizer</a>.</p>
+This guide demonstrates how to retrieve descriptors from Feature Extractor and store them into the database.
 
-<h3 id="developerguide-1" class="anchor"><a class="heading-anchor" href="#developerguide-1"><span></span></a>Developer Guide</h3>
+#### Step 1: Initialization
 
-<p>This guide demonstrates how to retrieve descriptors from Feature Extractor and store them into the database.</p>
+1. **Import the `FeatureStorage` class:** Use com.zebra.ai.vision.detector.FeatureStorage.
+2. **Initialize the SDK:** Use your application's context object and invoke `init()` from the [AIVisionSDK](../class/aivisionsdk/) class.
+3. **Initialize Settings:** Create a `Settings` object with the database file path (e.g., file_path/product.db) as the input parameter
+4. **Set up an Executor:** Create an `Executor` to receive the `FeatureStorage` object.
+5. **Instantiate `FeatureStorage`:** Use the `Settings` object to create an instance of `FeatureStorage` with a `CompletableFuture`. The `thenAccept()` method allows handling of the `FeatureStorage` for further operations.
 
-<h4 id="step1initialization-1" class="anchor"><a class="heading-anchor" href="#step1initialization-1"><span></span></a>Step 1: Initialization</h4>
+Sample Code:
 
-<ol>
-<li><strong>Import the <code>FeatureStorage</code> class:</strong> Use com.zebra.ai.vision.FeatureStorage.</li>
+        import com.zebra.ai.vision.detector.FeatureStorage; 
 
-<li><strong>Initialize the SDK:</strong> Use your application's context object and invoke <code>init()</code> from the <a href="../class/aivisionsdk/">AIVisionSDK</a> class.</li>
+        // initialize AI Vision SDK 
+        AIVisionSDK.getInstance(this.getApplicationContext()).init(); 
 
-<li><strong>Initialize Settings:</strong> Create a <code>Settings</code> object with the database file path (e.g., file_path/product.db) as the input parameter</li>
+        // Create settings 
+        FeatureStorage.Settings settings = new FeatureStorage.Settings(“data_base_file_path/product.db”); 
+        FeatureStorage featureStorage = null; 
 
-<li><strong>Set up an Executor:</strong> Create an <code>Executor</code> to handle the asynchronous operations. This is important for managing the execution of tasks without blocking the main application thread.</li>
+        // Initialize executor 
+        Executor executor = Executors.newFixedThreadPool(1); 
 
-<li><strong>Instantiate <code>FeatureStorage</code>:</strong> Use the <code>Settings</code> object to create an instance <code>FeatureStorage</code> with a <code>CompletableFuture</code>. The <code>thenAccept()</code> method allows handling of the <code>FeatureStorage</code> for further operations.</li>
-</ol>
+        // Initialize FeatureStorage object 
+        CompletableFuture<featurestorage> futureObject = FeatureStorage.getFeatureStorage(settings , executor); 
+        futureObject.thenAccept(featureStorageInstance -&gt; { 
+            // Use the featureStorageInstance returned here for storing Feature descriptors generated by Feature Extractor. 
+            featureStorage =  featureStorageInstance; 
+        }).exceptionally( e -&gt; { 
+            if (e instanceof AIVisionSDKException) { 
+                Log.e(TAG, "[AIVisionSDKException] FeatureStorage object creation failed: " + e.getMessage()); 
+            } 
+            return null; 
+        }); 
 
-<p>Sample Code:</p>
+---
 
-<pre class="prettyprint"><code>    import com.zebra.ai.vision.FeatureStorage;
+#### Step 2: Store Feature Descriptors
 
-    // Create settings
-    FeatureStorage.Settings settings = new FeatureStorage.Settings(“data_base_file_path/product.db”);
+1.  **Retrieve the feature descriptors:** Use the `FeatureExtractor` to obtain a Descriptor object, which contains descriptors of type float[][] from the provided bitmap image.
+2.  **Store descriptors:** Store these descriptors from the Descriptor object into the database. The `label_file` parameter serves as the identifier for the product represented by the descriptors, and `descriptorObj` contains product's descriptors.
 
-    FeatureStorage featureStorage = null;
+        // Obtain descriptorObj from FeatureExtractor and store the descriptors in the database using FeatureStorage
+        featureStorage.addDescriptors(label_file , descriptorObj);
 
-    // Initialize executor
-    Executor executor = Executors.newFixedThreadPool(1);
+        // Dispose of the FeatureStorage object once it is no longer needed
+        featureStorage.dispose();
 
-    // Initialize FeatureStorage object
-    CompletableFuture&lt;FeatureStorage&gt; futureObject = FeatureStorage.getFeatureStorage(settings , executor);
+---
 
-    futureObject.thenAccept(featureStorageInstance -&gt; {
-        // Use the featureStorageInstance returned here for storing Feature descriptors generated by Feature Extractor.
-        featureStorage =  featureStorageInstance;
-    });
+### Methods
+
+<!-- 
+#### FeatureStorage(Settings settings)
+
+        FeatureStorage (Settings settings) throws FileNotFoundException, IOException, RuntimeException
+
+**Description:** Constructs a new `FeatureStorage` object with the provided settings. Throws exceptions if the model is not found, the archive is corrupted, or if the SDK is not initialized.
+
+**Parameters:**
+
+- **settings:** Configuration settings used to initialize the feature storage.
+
+**Exceptions:**
+
+- **FileNotFoundException:** Thrown if the configuration file specified in the settings is not found.
+- **IOException:** Thrown if there is an issue reading or writing to the underlying storage.
+- **RuntimeException:** Thrown if the AI Data Capture SDK is not initialized.
+-->
+
+<h4 id="getfeaturestoragesettingssettingsexecutorexecutor" class="anchor"><a class="heading-anchor" href="#getfeaturestoragesettingssettingsexecutorexecutor"><span></span></a>getFeatureStorage(Settings settings, Executor executor)</h4>
+
+<pre class="prettyprint"><code>    CompletableFuture&lt;FeatureStorage&gt; getFeatureStorage(Settings settings, Executor executor) throws InvalidInputException, AIVisionSDKSNPEException, AIVisionSDKException 
 </code></pre>
 
-<hr>
-
-<h4 id="step2storefeaturedescriptors" class="anchor"><a class="heading-anchor" href="#step2storefeaturedescriptors"><span></span></a>Step 2: Store Feature Descriptors</h4>
-
-<ol>
-<li><p><strong>Retrieve the feature descriptors:</strong> Use the <code>FeatureExtractor</code> to obtain a Descriptor object, which contains descriptors of type float[][] from the provided bitmap image.</p></li>
-
-<li><p><strong>Store descriptors:</strong> Store these descriptors from the Descriptor object into the database. The <code>label_file</code> parameter serves as the identifier for the product represented by the descriptors, and <code>descriptorObj</code> contains product's descriptors.</p>
-
-<pre class="prettyprint"><code>// Obtain descriptorObj from FeatureExtractor and store the descriptors in the database using FeatureStorage
-featureStorage.addDescriptors(label_file , descriptorObj);
-
-// Dispose of the FeatureStorage object once it is no longer needed
-featureStorage.dispose();
-</code></pre></li>
-</ol>
-
-<hr>
-
-<h3 id="methods-1" class="anchor"><a class="heading-anchor" href="#methods-1"><span></span></a>Methods</h3>
-
-<h4 id="featurestoragesettingssettings" class="anchor"><a class="heading-anchor" href="#featurestoragesettingssettings"><span></span></a>FeatureStorage(Settings settings)</h4>
-
-<pre class="prettyprint"><code>    FeatureStorage (Settings settings) throws FileNotFoundException, IOException, RuntimeException
-</code></pre>
-
-<p><strong>Description:</strong> Constructs a new <code>FeatureStorage</code> object with the provided settings. Throws exceptions if the model is not found, the archive is corrupted, or if the SDK is not initialized.</p>
+<p><strong>Description:</strong> Asynchronously loads the model and returns a <code>FeatureStorage</code> object.  </p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>settings:</strong> Configuration settings used to initialize the feature storage.</li>
+<li><strong>settings -</strong> Configuration options for the FeatureStorage. </li>
+
+<li><strong>executor -</strong> <code>FeatureStorage</code> object is returned in this executor. </li>
 </ul>
+
+<p><strong>Return Value:</strong> Returns a <code>CompletableFuture&lt;FeatureStorage&gt;</code> object. </p>
 
 <p><strong>Exceptions:</strong></p>
 
 <ul>
-<li><strong>FileNotFoundException:</strong> Thrown if the configuration file specified in the settings is not found.</li>
+<li><strong>InvalidInputException -</strong> Thrown if the <code>Settings</code> object is null. </li>
 
-<li><strong>IOException:</strong> Thrown if there is an issue reading or writing to the underlying storage.</li>
+<li><strong>AIVisionSDKSNPEException -</strong> Thrown if there is an error related to the SNPE library. </li>
 
-<li><strong>RuntimeException:</strong> Thrown if the AI Data Capture SDK is not initialized.</li>
+<li><strong>AIVisionSDKException -</strong> ThrowniIf the AI Data Capture SDK is not initialized. </li>
 </ul>
 
 <hr>
@@ -834,13 +879,13 @@ featureStorage.dispose();
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>label -</strong> Identifier of the product.</li>
+<li><strong>label -</strong> Identifier of the product represented by the descriptors.</li>
 
-<li><strong>descriptorObj -</strong> Descriptor object consisting of model version used and descriptors of type float[][].</li>
+<li><strong>descriptorObj -</strong> A <code>Descriptor</code> object containing the descriptors to add.</li>
 
-<li><strong>forceSupport -</strong> Flag to mark descriptors as support.</li>
+<li><strong>forceSupport -</strong> If true, flags the descriptors as support.</li>
 
-<li><strong>randomTrim -</strong> If true, randomly removes descriptors exceeding <code>maxUpdateN</code>.</li>
+<li><strong>randomTrim -</strong> If true, random descriptors are removed when exceeding the maxUpdateN value; otherwise, descriptors at the back are removed. </li>
 </ul>
 
 <p><strong>Exceptions:</strong></p>
@@ -851,7 +896,7 @@ featureStorage.dispose();
 
 <hr>
 
-<h4 id="adddescriptorsstringlabeldescriptordescriptorsbooleanforcesupport" class="anchor"><a class="heading-anchor" href="#adddescriptorsstringlabeldescriptordescriptorsbooleanforcesupport"><span></span></a>addDescriptors(String label, Descriptor descriptors, boolean forceSupport)</h4>
+<h4 id="adddescriptorsstringlabeldescriptordescriptorobjbooleanforcesupport" class="anchor"><a class="heading-anchor" href="#adddescriptorsstringlabeldescriptordescriptorobjbooleanforcesupport"><span></span></a>addDescriptors(String label, Descriptor descriptorObj, boolean forceSupport)</h4>
 
 <pre class="prettyprint"><code>    void addDescriptors(String label, Descriptor descriptorObj, boolean forceSupport) throws InvalidInputException
 </code></pre>
@@ -861,11 +906,11 @@ featureStorage.dispose();
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>label -</strong> Identifier of the product.</li>
+<li><strong>label -</strong> Identifier of the product represented by the descriptors. </li>
 
-<li><strong>descriptorObj -</strong> Descriptor object consists of model version used and descriptors of type float[][].</li>
+<li><strong>descriptorObj -</strong> A <code>Descriptor</code> object containing the descriptors to add.</li>
 
-<li><strong>forceSupport -</strong> Flag to mark descriptors as support.</li>
+<li><strong>forceSupport -</strong> If true, flags the descriptors as support.</li>
 </ul>
 
 <p><strong>Exceptions:</strong></p>
@@ -876,7 +921,7 @@ featureStorage.dispose();
 
 <hr>
 
-<h4 id="adddescriptorsstringlabeldescriptordescriptor" class="anchor"><a class="heading-anchor" href="#adddescriptorsstringlabeldescriptordescriptor"><span></span></a>addDescriptors(String label, Descriptor descriptor)</h4>
+<h4 id="adddescriptorsstringlabeldescriptordescriptorobj" class="anchor"><a class="heading-anchor" href="#adddescriptorsstringlabeldescriptordescriptorobj"><span></span></a>addDescriptors(String label, Descriptor descriptorObj)</h4>
 
 <pre class="prettyprint"><code>    void addDescriptors(String label, Descriptor descriptorObj) throws InvalidInputException
 </code></pre>
@@ -886,9 +931,9 @@ featureStorage.dispose();
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>label:</strong> Identifier of the product.</li>
+<li><strong>label:</strong> Identifier of the product represented by the descriptors..</li>
 
-<li><strong>descriptorObj:</strong> Descriptor object consisting of the model version used and descriptors of type float[ ][ ].</li>
+<li><strong>descriptorObj:</strong> A <code>Descriptor</code> object consisting the descriptors to add.</li>
 </ul>
 
 <p><strong>Exceptions:</strong></p>
@@ -909,13 +954,13 @@ featureStorage.dispose();
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>label -</strong> Identifier of the product.</li>
+<li><strong>label -</strong> Identifier of the product represented b the descriptors.</li>
 
-<li><strong>descriptorObj -</strong> Descriptor object consists of model version used and descriptors of type float[ ][ ].</li>
+<li><strong>descriptorObj -</strong> A <code>Descriptor</code> object containing the descriptors to add.</li>
 
-<li><strong>images -</strong> List of images.</li>
+<li><strong>images -</strong> An array of images to add.</li>
 
-<li><strong>forceSupport -</strong> Flag to mark descriptors as support.</li>
+<li><strong>forceSupport -</strong> If true, flags the descriptors as support.</li>
 </ul>
 
 <p><strong>Exceptions:</strong></p>
@@ -936,17 +981,40 @@ featureStorage.dispose();
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>label -</strong> Identifier of the product.</li>
+<li><strong>label -</strong> Identifier of the product represented by the descriptors.</li>
 
-<li><strong>descriptorObj -</strong> Descriptor object consisting of the model version used and descriptors of type float[][].</li>
+<li><strong>descriptorObj -</strong> A <code>Descriptor</code> object containing the descriptors to add.</li>
 
-<li><strong>images -</strong> List of images.</li>
+<li><strong>images -</strong> An array of images to add.</li>
 </ul>
 
 <p><strong>Exceptions:</strong></p>
 
 <ul>
 <li><strong>InvalidInputException:</strong> Thrown when <code>descriptorObj</code> or <code>label</code> is null.</li>
+</ul>
+
+<hr>
+
+<h4 id="incrementdescriptorhitcountstringlabeldescriptordescriptorobj" class="anchor"><a class="heading-anchor" href="#incrementdescriptorhitcountstringlabeldescriptordescriptorobj"><span></span></a>incrementDescriptorHitCount(String label, Descriptor descriptorObj)</h4>
+
+<pre class="prettyprint"><code>    void incrementDescriptorHitCount(String label, Descriptor descriptorObj) throws InvalidInputException 
+</code></pre>
+
+<p><strong>Description:</strong> Increments the hit count for a specific product descriptor. </p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>label -</strong> Identifier of the product for which the hit count is updated. </li>
+
+<li><strong>descriptorObj -</strong> The descriptor for which to update the hit count. </li>
+</ul>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>InvalidInputException -</strong> Thrown if <code>descriptorObj</code> or label is null. </li>
 </ul>
 
 <hr>
@@ -961,10 +1029,10 @@ featureStorage.dispose();
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>label -</strong> Product identifier.</li>
+<li><strong>label -</strong> The product identifier for which to retrieve support descriptors.</li>
 </ul>
 
-<p><strong>Returns:</strong> Array of support descriptors for the specified class.</p>
+<p><strong>Returns:</strong> Array of support descriptors for the specified product.</p>
 
 <hr>
 
@@ -975,7 +1043,7 @@ featureStorage.dispose();
 
 <p><strong>Description:</strong> Retrieves the product labels from database with at least one supported descriptor.</p>
 
-<p><strong>Returns:</strong> List of labels of the found products.</p>
+<p><strong>Returns:</strong> List of product labels with support descriptors.</p>
 
 <hr>
 
@@ -1009,7 +1077,7 @@ featureStorage.dispose();
 
 <hr>
 
-<h3 id="developerguide-2" class="anchor"><a class="heading-anchor" href="#developerguide-2"><span></span></a>Developer Guide</h3>
+<h3 id="developerguide-1" class="anchor"><a class="heading-anchor" href="#developerguide-1"><span></span></a>Developer Guide</h3>
 
 <p>This guide demonstrates how use the <code>Recognizer</code> to find recognitions based on the descriptors generated. Setup the database to store feature descriptors. Initialize the Recognizer with an index.</p>
 
@@ -1028,34 +1096,37 @@ featureStorage.dispose();
 
 <li><p><strong>Handle Asynchronous Result:</strong> Use <code>thenAccept()</code> on the <code>CompletableFuture</code> to handle the <code>Recognizer</code> object once it becomes available. Assign the recognizer instance to a variable for further use.</p>
 
-<pre class="prettyprint"><code>import com.zebra.aivision.Recognizer;
+<pre class="prettyprint"><code>import com.zebra.aivision.detector.Recognizer; 
 
-// Initialize SDK
-AIVisionSDK.getInstance(Context).init(); // Context refers to application context object.
+// Initialize SDK 
+AIVisionSDK.getInstance(this.getApplicationContext()).init(); // Context refers to application context object.       
 
-// Initialize Recognizer settings object
-Recognizer.SettingsDb dbSettings = new Recognizer.SettingsIndex();
+// Initialize Recognizer settings object 
+Recognizer.SettingsDb dbSettings = new Recognizer.SettingsIndex(); 
+String database_file_path  = “path_of_db_file”; // Full path to the SQLite database file 
+dbSettings.dbSource = database_file_path ; 
 
-String database_file_path  = “path_of_db_file”; // Full path to the SQLite database file
+// Initialize Recognizer object 
+Recognizer recognizer = null; 
 
-dbSettings.dbSource = database_file_path ;
+// Initialize recognizer from a database 
+// settings = Recognizer.SettingsDb object created above 
 
-// Initialize Recognizer object
-Recognizer recognizer = null;
+// Initialize executor 
+Executor executor = Executors.newFixedThreadPool(1); 
 
-//Initialize recognizer from a database
-//settings = Recognizer.SettingsDb object created above
+CompletableFuture&lt;Recognizer&gt; futureObject = Recognizer.getRecognizer(dbSettings, executor); 
 
-// Initialize executor
-Executor executor = Executors.newFixedThreadPool(1);
-
-CompletableFuture&lt;Recognizer&gt; futureObject = getRecognizer(dbSettings, executor);
-
-// Use the futureObject to implement thenAccept() callback of CompletableFuture.
-futureObject.thenAccept (recognizerInstance -&gt; {
-    // Use the recognizer object returned here to recognize products
-    recognizer = recognizerInstance;
-});
+// Use the futureObject to implement thenAccept() callback of CompletableFuture. 
+futureObject.thenAccept (recognizerInstance -&gt; { 
+    // Use the recognizer object returned here to recognize products 
+    recognizer = recognizerInstance; 
+}).exceptionally( e -&gt; { 
+    if (e instanceof AIVisionSDKException) { 
+        Log.e(TAG, "[AIVisionSDKException] Recognizer object creation failed: " + e.getMessage()); 
+    } 
+    return null; 
+}); 
 </code></pre></li>
 </ol>
 
@@ -1068,34 +1139,40 @@ futureObject.thenAccept (recognizerInstance -&gt; {
 
 <li><p><strong>Configure SettingsIndex:</strong> Create an instance of <code>Recognizer.SettingsIndex</code> and set the <code>indexFilename</code> and <code>labelFilename</code> attributes to the paths of the FAISS (Facebook AI Similarity Search) index and label files, respectively.</p></li>
 
-<li><p><strong>Prepare Executor:</strong> Instantiate an <code>Executor</code> using <code>Executors.newFixedThreadPool(1)</code> to handle asynchronous tasks efficiently.
-4 <strong>Initialize Recognizer:</strong> Use <code>Recognizer.getRecognizer(reSettings, executor)</code> to obtain a <code>CompletableFuture&lt;Recognizer&gt;</code> object, which initializes the recognizer with the specified index settings.</p></li>
+<li><p><strong>Prepare Executor:</strong> Instantiate an <code>Executor</code> using <code>Executors.newFixedThreadPool(1)</code> to handle asynchronous tasks efficiently.</p></li>
+
+<li><p><strong>Initialize Recognizer:</strong> Use <code>Recognizer.getRecognizer(reSettings, executor)</code> to obtain a <code>CompletableFuture&lt;Recognizer&gt;</code> object, which initializes the recognizer with the specified index settings.</p></li>
 
 <li><p><strong>Handle Asynchronous Result:</strong> Use <code>thenAccept()</code> on the <code>CompletableFuture</code> to handle the <code>Recognizer</code> object once it’s ready. Assign the recognizer instance to a variable for further operations, such as product or shelf detection.</p>
 
-<pre class="prettyprint"><code>import com.zebra.CVSDK.Recognizer;
+<pre class="prettyprint"><code>import com.zebra.CVSDK.Recognizer; 
 
-// Initialize Recognizer
-Recognizer.SettingsIndex reSettings = new Recognizer.SettingsIndex()
+// Initialize Recognizer 
+Recognizer.SettingsIndex reSettings = new Recognizer.SettingsIndex() 
 
-//set product index file and product label file
-reSettings.indexFilename =  “path_to_product.index”;  // Fully qualified file path to FAISS index object for descriptors
-reSettings.labelFilename = “path_to_product.txt file”; // Fully qualified file path to FAISS index object for labels
+//set product index file and product label file 
+reSettings.indexFilename =  “path_to_product.index”;  // Fully qualified file path to FAISS index object for descriptors 
+reSettings.labelFilename = “path_to_product.txt file”; // Fully qualified file path to FAISS index object for labels       
 
-// Initialize Recognizer object
-Recognizer recognizer = null;
+// Initialize Recognizer object 
+Recognizer recognizer = null; 
 
-// Initialize executor
-Executor executor = Executors.newFixedThreadPool(1);
+// Initialize executor 
+Executor executor = Executors.newFixedThreadPool(1); 
 
-//Initialize recognizer from an index file
-CompletableFuture&lt;Recognizer&gt; futureObject = Recognizer.getRecognizer(reSettings,executor);
+//Initialize recognizer from an index file 
+CompletableFuture&lt;Recognizer&gt; futureObject = Recognizer.getRecognizer(reSettings,executor); 
 
-//Use the futureObject to implement thenAccept() callback of CompletableFuture.
-futureObject.thenAccept (recognizerInstance -&gt; {
-    //Use the recognizer object returned here for the detection of Shelves/products
-    recognizer = recognizerInstance;
-});
+//Use the futureObject to implement thenAccept() callback of CompletableFuture. 
+futureObject.thenAccept (recognizerInstance -&gt; { 
+    //Use the recognizer object returned here for the detection of Shelves/products 
+    recognizer = recognizerInstance; 
+}).exceptionally( e -&gt; { 
+    if (e instanceof AIVisionSDKException) { 
+        Log.e(TAG, "[AIVisionSDKException] Recognizer object creation failed: " + e.getMessage()); 
+    } 
+    return null; 
+}); 
 </code></pre></li>
 </ol>
 
@@ -1106,64 +1183,68 @@ futureObject.thenAccept (recognizerInstance -&gt; {
 <ol>
 <li><p><strong>Generate Descriptors:</strong> Use <code>FeatureExtractor.generateDescriptors()</code> to obtain descriptors required for the recognition process.</p></li>
 
-<li><p><strong>Perform Recognition:</strong> Invoke one of the following methods to find the appropriate matches for each descriptor.:</p>
+<li><p><strong>Perform Recognition:</strong> Invoke one of the following methods to find the appropriate matches for each descriptor:</p>
 
-<p></p><ul>
-<li><strong>Top 5 matches:</strong> <code>recognizer.findRecognitions(descriptors, executor)</code></li></ul><p></p>
+<ul>
+<li><strong>Top 5 matches:</strong> <code>recognizer.findRecognitions(descriptors, executor)</code></li>
 
-<p></p></li><li><strong>Top-k matches:</strong> <code>recognizer.findRecognitions(descriptors, k, executor)</code></li><p></p>
+<li><strong>Top-k matches:</strong> <code>recognizer.findRecognitions(descriptors, k, executor)</code></li></ul></li>
 
 <li><p><strong>Process Results:</strong> The results are handled asynchronously using <code>thenAccept()</code>. Iterate through the returned Recognition[] to process each recognition result.</p></li>
 
 <li><p><strong>Dispose Recognizer:</strong> After completing the recognition tasks, call recognizer.dispose() to release resources and memory utilized during the process.</p>
 
-<pre class="prettyprint"><code>import java.io.IOException;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+<pre class="prettyprint"><code>// Initializing the AIVision SDK 
+AIVisionSDK.getInstance(this.getApplicationContext()).init(); 
 
-// Create an instance of SettingsDb
-Recognizer.SettingsDb settingsDb = new Recognizer.SettingsDb();
+// Create an instance of SettingsDb 
+Recognizer.SettingsDb settingsDb = new Recognizer.SettingsDb(); 
 
-// Instantiate the Recognizer
-//settings = Recognizer.SettingsDb object created above
+// Instantiate the Recognizer 
+//settings = Recognizer.SettingsDb object created above 
 
-// Initialize executor
-Executor executor = Executors.newFixedThreadPool(1);
+// Initialize executor 
+Executor executor = Executors.newFixedThreadPool(1); 
 
-CompletableFuture&lt;Recognizer&gt; futureObject = Recognizer.getRecognizer(settings,executor);
+CompletableFuture&lt;Recognizer&gt; futureObject = Recognizer.getRecognizer(settings,executor); 
 
-// Use the futureObject to implement thenAccept() callback of CompletableFuture.
-futureObject.thenAccept (recognizerInstance -&gt; {
-    // Use the recognizer object returned here for the detection of barcodes/Shelves/products
-    recognizer = recognizerInstance;
-});
+// Use the futureObject to implement thenAccept() callback of CompletableFuture. 
+futureObject.thenAccept (recognizerInstance -&gt; { 
+    // Use the recognizer object returned here for the detection of barcodes/Shelves/products 
+    recognizer = recognizerInstance; 
+}).exceptionally( e -&gt; { 
+    if (e instanceof AIVisionSDKException) { 
+        Log.e(TAG, "[AIVisionSDKException] Recognizer object creation failed: " + e.getMessage()); 
+    } 
+    return null; 
+}); 
 
-// Get the Descriptors from FeatureExtractor.generateDescriptors()
-// Perform Recognition
-// Find top-k recognitions for each item represented by a descriptor
-CompletableFuture&lt;Recognition[]&gt; futureObject = recognizer.findRecognitions(descriptors, k, executor);
+// Get the Descriptors from FeatureExtractor.generateDescriptors() 
+// Perform Recognition 
+// Find top-k recognitions for each item represented by a descriptor 
 
-// Perform Recognition
-// Find top 5 recognitions for each item represented by a descriptor
-// CompletableFuture&lt;Recognition[]&gt; futureObject = recognizer.findRecognitions(descriptors, executor);
+CompletableFuture&lt;Recognition[]&gt; futureObject = recognizer.findRecognitions(descriptors, k, executor); 
 
-futureObject.thenAccept (results -&gt; {
-        // Process the returned array of recognitions.
-} );
+// Perform Recognition 
+// Find top 5 recognitions for each item represented by a descriptor 
+// CompletableFuture&lt;Recognition[]&gt; futureObject = recognizer.findRecognitions(descriptors, executor); 
+futureObject.thenAccept (results -&gt; { 
+    // Process the returned array of recognitions. 
+} ); 
 
-// Dispose resources
-// Once done using the recognizer object, dispose the object to release the resources and memory used for recognition
-recognizer.dispose();
+// Dispose resources 
+// Once done using the recognizer object, dispose the object to release the resources and memory used for recognition 
+recognizer.dispose(); 
 </code></pre></li>
 </ol>
 
 <hr>
 
-<h3 id="methods-2" class="anchor"><a class="heading-anchor" href="#methods-2"><span></span></a>Methods</h3>
+<h3 id="methods-1" class="anchor"><a class="heading-anchor" href="#methods-1"><span></span></a>Methods</h3>
 
 <h4 id="getrecognizersettingsdbsettingsexecutorexecutor" class="anchor"><a class="heading-anchor" href="#getrecognizersettingsdbsettingsexecutorexecutor"><span></span></a>getRecognizer (SettingsDb settings, Executor executor)</h4>
 
-<pre class="prettyprint"><code>    CompletableFuture&lt;Recognizer&gt; getRecognizer(SettingsDb settings, Executor executor) throws InvalidInputException, RuntimeException
+<pre class="prettyprint"><code>    CompletableFuture&lt;Recognizer&gt; getRecognizer(SettingsDb settings, Executor executor) throws InvalidInputException, AIVisionSDKException
 </code></pre>
 
 <p><strong>Description:</strong> Asynchronously retrieves a Recognizer using database settings.</p>
@@ -1173,24 +1254,24 @@ recognizer.dispose();
 <ul>
 <li><strong>SettingsDb settings -</strong> Settings for initialization from a database.</li>
 
-<li><strong>Executor executor -</strong> The executor to use for asynchronous operations.</li>
+<li><strong>Executor executor -</strong> The <code>Recognizer</code> object is returned in this executor.</li>
 </ul>
 
-<p><strong>Return Value:</strong> A future holding the Recognizer object.</p>
+<p><strong>Return Value:</strong> A <code>CompletableFuture&lt;Recognizer&gt;</code> object.</p>
 
 <p><strong>Exceptions:</strong></p>
 
 <ul>
-<li><strong>InvalidInputException -</strong> Thrown if the input settings are invalid.</li>
+<li><strong>InvalidInputException -</strong> Thrown if <code>SettingsIndex</code> object is null.</li>
 
-<li><strong>RuntimeException -</strong> Thrown if an unexpected error occurs.</li>
+<li><strong>AIVisionSDKException -</strong> Thrown if the AI Data Capture SDK is not initialized.</li>
 </ul>
 
 <hr>
 
 <h4 id="getrecognizersettingsindexsettingsexecutorexecutor" class="anchor"><a class="heading-anchor" href="#getrecognizersettingsindexsettingsexecutorexecutor"><span></span></a>getRecognizer (SettingsIndex settings, Executor executor)</h4>
 
-<pre class="prettyprint"><code>    CompletableFuture&lt;Recognizer&gt; getRecognizer (SettingsIndex settings, Executor executor) throws RuntimeException, InvalidInputException
+<pre class="prettyprint"><code>    CompletableFuture&lt;Recognizer&gt; getRecognizer (SettingsIndex settings, Executor executor) throws  InvalidInputException, AIVisionSDKException 
 </code></pre>
 
 <p><strong>Description:</strong> Asynchronously retrieves a <code>Recognizer</code> object using index file settings.</p>
@@ -1200,17 +1281,17 @@ recognizer.dispose();
 <ul>
 <li><strong>SettingsIndex settings -</strong> Settings for initialization from an index file.</li>
 
-<li><strong>Executor executor -</strong> The executor to use for asynchronous operations.</li>
+<li><strong>Executor executor -</strong> The <code>Recognizer</code> object is returned in this executor.</li>
 </ul>
 
-<p><strong>Return Value:</strong> A future holding the Recognizer object.</p>
+<p><strong>Return Value:</strong> A <code>CompletableFuture&lt;Recognizer&gt;</code> object.</p>
 
 <p><strong>Exceptions:</strong></p>
 
 <ul>
-<li><strong>RuntimeException -</strong> Thrown if an unexpected error occurs.</li>
+<li><strong>AIVisionSDKException -</strong> Thrown if the AI Data Capture SDK is not initialized.</li>
 
-<li><strong>InvalidInputException -</strong> Thrown if the input settings are invalid.</li>
+<li><strong>InvalidInputException -</strong> Thrown if the <code>SettingsIndex</code> object is null.</li>
 </ul>
 
 <hr>
@@ -1224,9 +1305,9 @@ recognizer.dispose();
 
 <hr>
 
-<h4 id="findrecognitionsfloatdescriptorsintkexecutorexecutor" class="anchor"><a class="heading-anchor" href="#findrecognitionsfloatdescriptorsintkexecutorexecutor"><span></span></a>findRecognitions(float[ ][ ] descriptors, int k, Executor executor)</h4>
+<h4 id="findrecognitionsdescriptordescriptorobjintkexecutorexecutor" class="anchor"><a class="heading-anchor" href="#findrecognitionsdescriptordescriptorobjintkexecutorexecutor"><span></span></a>findRecognitions(Descriptor descriptorObj, int k, Executor executor)</h4>
 
-<pre class="prettyprint"><code>    CompletableFuture&lt;Recognition[]&gt; findRecognitions(float[][] descriptors, int k, Executor executor) throws InvalidInputException, IllegalStateException
+<pre class="prettyprint"><code>    CompletableFuture&lt;Recognition[]&gt; findRecognitions(Descriptor descriptorObj, int k,Executor executor) throws InvalidInputException, AIVisionSDKException
 </code></pre>
 
 <p><strong>Description:</strong> Finds the top-k recognitions for the given descriptors asynchronously.</p>
@@ -1234,55 +1315,55 @@ recognizer.dispose();
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>float[][] descriptors -</strong> Array of descriptors for recognition.</li>
+<li><strong>descriptorObj -</strong> Descriptor to use for recognitions. </li>
 
-<li><strong>int k -</strong> Number of top recognitions to find.</li>
+<li><strong>k -</strong> Number of maximum top recognitions to return. </li>
 
-<li><strong>Executor executor -</strong> The executor for asynchronous operations.</li>
+<li><strong>executor -</strong> Results are returned in this executor.. </li>
 </ul>
 
-<p><strong>Return Value:</strong> A future containing an array of <code>Recognition</code> objects.</p>
+<p><strong>Return Value:</strong> A <code>CompletableFuture&lt;Recognition[]&gt;</code> array of recognitions.</p>
 
 <p><strong>Exceptions:</strong></p>
 
 <ul>
-<li><strong>IllegalStateException -</strong> Thrown if the recognizer is not properly initialized.</li>
+<li><strong>AIVisionSDKException -</strong> Thrown if the image queue is exceeded.</li>
 
-<li><strong>InvalidInputException -</strong> Thrown if descriptors are invalid.</li>
+<li><strong>InvalidInputException -</strong> Thrown if <code>descriptorObj</code> is null or <code>k</code> is not positive.</li>
 </ul>
 
 <hr>
 
-<h4 id="findrecognitionsfloatdescriptors" class="anchor"><a class="heading-anchor" href="#findrecognitionsfloatdescriptors"><span></span></a>findRecognitions(float descriptors[ ][ ])</h4>
+<h4 id="findrecognitionsdescriptordescriptorobjexecutorexecutor" class="anchor"><a class="heading-anchor" href="#findrecognitionsdescriptordescriptorobjexecutorexecutor"><span></span></a>findRecognitions(Descriptor descriptorObj, Executor executor)</h4>
 
-<pre class="prettyprint"><code>    CompletableFuture&lt;Recognition[]&gt; findRecognitions(float[][] descriptors, Executor executor) throws InvalidInputException, IllegalStateException
+<pre class="prettyprint"><code>    CompletableFuture&lt;Recognition[]&gt; findRecognitions( Descriptor descriptorObj, Executor executor) throws InvalidInputException, AIVisionSDKException 
 </code></pre>
 
-<p><strong>Description:</strong> Finds the top 5 classes for each item represented by a descriptor. A class is the product category of an item.</p>
+<p><strong>Description:</strong> Finds the top 5 classes for each item represented by a descriptor. A class is the product category of an item. </p>
 
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>float[ ][ ] descriptors -</strong> An array of descriptors to use for recognitions.</li>
+<li><strong>descriptorObj -</strong> <code>Descriptor</code> to use for recognitions. </li>
 
-<li><strong>Executor executor -</strong> The executor for asynchronous operations.</li>
+<li><strong>executor -</strong> Results are returned in this executor. </li>
 </ul>
 
-<p><strong>Return Value:</strong> A <code>CompletableFuture</code> containing an array of <code>Recognition</code> objects.</p>
+<p><strong>Return Value:</strong> A <code>CompletableFuture</code> containing an array of <code>Recognition</code> objects.</p>
 
 <p><strong>Exceptions:</strong></p>
 
 <ul>
-<li><strong>IllegalStateException -</strong> Thrown if the recognizer is not properly initialized.</li>
+<li><strong>InvalidInputException -</strong> Thrown if <code>descriptorObj</code> is null.</li>
 
-<li><strong>InvalidInputException -</strong> Thrown if descriptors are invalid.</li>
+<li><strong>AIVisionSDKException -</strong> Thrown if the image queue size is exceeded.</li>
 </ul>
 
 <hr>
 
 <h4 id="findrecommendationsdescriptordescriptorobjintk" class="anchor"><a class="heading-anchor" href="#findrecommendationsdescriptordescriptorobjintk"><span></span></a>findRecommendations (Descriptor descriptorObj, int k)</h4>
 
-<pre class="prettyprint"><code>    Recognizer.findRecommendations (Descriptor descriptorObj, int k) throws InvalidInputException
+<pre class="prettyprint"><code>    Recommendation[] Recognizer.findRecommendations(Descriptor descriptorObj, int k) throws InvalidInputException 
 </code></pre>
 
 <p><strong>Description:</strong> This method identifies the top-k labels that match a set of descriptors as a whole.</p>
@@ -1295,17 +1376,17 @@ recognizer.dispose();
 <li><strong>k -</strong> The maximum number of top matches to return.</li>
 </ul>
 
-<p><strong>Return Value:</strong> An array of Recommendation objects.</p>
+<p><strong>Return Value:</strong> An array of <code>Recommendation</code> objects.</p>
 
 <p><strong>Exceptions:</strong></p>
 
 <ul>
-<li><strong>InvalidInputException -</strong> Thrown if the descriptor array is null.</li>
+<li><strong>InvalidInputException -</strong> Thrown if <code>descriptorObj</code> is null or <code>k</code> is not positive.</li>
 </ul>
 
 <hr>
 
-<h4 id="saveindex" class="anchor"><a class="heading-anchor" href="#saveindex"><span></span></a>saveIndex()</h4>
+<h4 id="saveindexstringlabelfilenamestringindexfilename" class="anchor"><a class="heading-anchor" href="#saveindexstringlabelfilenamestringindexfilename"><span></span></a>saveIndex(String labelFilename, String indexFilename)</h4>
 
 <pre class="prettyprint"><code>    void Recognizer.saveIndex (String labelFilename, String indexFilename)
 </code></pre>
@@ -1345,21 +1426,21 @@ recognizer.dispose();
 
 <h4 id="similarity" class="anchor"><a class="heading-anchor" href="#similarity"><span></span></a>similarity</h4>
 
-<pre class="prettyprint"><code>    Recognizer.Recognition.similarity[]
+<pre class="prettyprint"><code>    float Recognizer.Recognition.similarity[]
 </code></pre>
 
 <p><strong>Description:</strong> This attribute stores the raw similarity scores, indicating the degree of similarity between the input data and each recognized product.</p>
 
 <h4 id="normalizedsimilarity" class="anchor"><a class="heading-anchor" href="#normalizedsimilarity"><span></span></a>normalizedSimilarity</h4>
 
-<pre class="prettyprint"><code>    Recognizer.Recognition.normalizedSimilarity[]
+<pre class="prettyprint"><code>    float Recognizer.Recognition.normalizedSimilarity[]
 </code></pre>
 
 <p><strong>Description:</strong> This array contains the normalized similarity scores for each recognized product, allowing for a more uniform comparison across different recognition tasks.</p>
 
 <h4 id="sku" class="anchor"><a class="heading-anchor" href="#sku"><span></span></a>sku</h4>
 
-<pre class="prettyprint"><code>    Recognizer.Recognition.sku[]
+<pre class="prettyprint"><code>    float Recognizer.Recognition.sku[]
 </code></pre>
 
 <p><strong>Description:</strong> This attribute contains the SKU identifiers for each recognized product, facilitating product identification and inventory management.</p>
@@ -1374,19 +1455,25 @@ recognizer.dispose();
 
 <h4 id="settingsdb" class="anchor"><a class="heading-anchor" href="#settingsdb"><span></span></a>SettingsDb()</h4>
 
-<pre class="prettyprint"><code>    Recognizer.SettingsDb.SettingsDb()
+<pre class="prettyprint"><code>    Recognizer.SettingsDb.SettingsDb() throws AIVisionSDKException
 </code></pre>
 
-<p><strong>Description:</strong> Constructs a new <code>SettingsDb</code> object with default settings, initializing the object without any file-specific overrides.</p>
+<p><strong>Description:</strong> Constructs a new <code>SettingsDb</code> object for initializing a <code>Recognizer</code> using database settings.</p>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>AIVisionSDKException -</strong> Thrown if the AI Data Capture SDK is not initialized.</li>
+</ul>
 
 <hr>
 
-<h4 id="settingsdbstringfilename" class="anchor"><a class="heading-anchor" href="#settingsdbstringfilename"><span></span></a>SettingsDb(String filename)</h4>
+<h4 id="settingsdbstringmodelfilepath" class="anchor"><a class="heading-anchor" href="#settingsdbstringmodelfilepath"><span></span></a>SettingsDb(String modelFilePath)</h4>
 
-<pre class="prettyprint"><code>    Recognizer.SettingsDb.SettingsDb (String filename)
+<pre class="prettyprint"><code>    Recognizer.SettingsDb.SettingsDb (String modelFilePath) throws AIVisionSDKException 
 </code></pre>
 
-<p><strong>Description:</strong> Constructs a new <code>SettingsDb</code> object using the specified file for resource overrides.</p>
+<p><strong>Description:</strong> Constructs a new <code>SettingsDb</code> object with a specified model file path for configuring a <code>Recognizer</code>.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -1398,7 +1485,7 @@ recognizer.dispose();
 
 <h4 id="resourcename" class="anchor"><a class="heading-anchor" href="#resourcename"><span></span></a>resourceName</h4>
 
-<pre class="prettyprint"><code>    Recognizer.SettingsDb.resourceName
+<pre class="prettyprint"><code>    String Recognizer.SettingsDb.resourceName
 </code></pre>
 
 <p><strong>Description:</strong> An optional parameter specifying the location of the file containing resources for the recognizer (i.e., meta files with configuration values). This allows for configuration overrides.</p>
@@ -1407,7 +1494,7 @@ recognizer.dispose();
 
 <h4 id="dbsource" class="anchor"><a class="heading-anchor" href="#dbsource"><span></span></a>dbSource</h4>
 
-<pre class="prettyprint"><code>    Recognizer.SettingsDb.dbSource
+<pre class="prettyprint"><code>    String Recognizer.SettingsDb.dbSource
 </code></pre>
 
 <p><strong>Description:</strong> Specifies the location of the database. This attribute is crucial for determining where the recognizer should source its data.</p>
@@ -1416,16 +1503,16 @@ recognizer.dispose();
 
 <h4 id="faissindexstring" class="anchor"><a class="heading-anchor" href="#faissindexstring"><span></span></a>faissIndexString</h4>
 
-<pre class="prettyprint"><code>    Recognizer.SettingsDb.faissIndexString
+<pre class="prettyprint"><code>    String Recognizer.SettingsDb.faissIndexString
 </code></pre>
 
-<p><strong>Description:</strong> Defines the type of the FAISS index, used to select the appropriate indexing strategy for the database.</p>
+<p><strong>Description:</strong> Defines the type of the FAISS (Facebook AI Similarity Search) index, used to select the appropriate indexing strategy for the database.</p>
 
 <hr>
 
 <h4 id="faissparamsstring" class="anchor"><a class="heading-anchor" href="#faissparamsstring"><span></span></a>faissParamsString</h4>
 
-<pre class="prettyprint"><code>Recognizer.SettingsDb.faissParamsString
+<pre class="prettyprint"><code>String Recognizer.SettingsDb.faissParamsString
 </code></pre>
 
 <p><strong>Description:</strong> Additional parameters for the FAISS index, allowing for fine-tuning the index settings beyond the default configuration.</p>
@@ -1434,7 +1521,7 @@ recognizer.dispose();
 
 <h4 id="labelfilter" class="anchor"><a class="heading-anchor" href="#labelfilter"><span></span></a>labelFilter</h4>
 
-<pre class="prettyprint"><code>    Recognizer.SettingsDb.labelFilter
+<pre class="prettyprint"><code>    String[] Recognizer.SettingsDb.labelFilter
 </code></pre>
 
 <p><strong>Description:</strong> A list of labels to ignore from the database, helping in filtering out unwanted data during the recognition process.</p>
@@ -1443,7 +1530,7 @@ recognizer.dispose();
 
 <h4 id="indexdimensions" class="anchor"><a class="heading-anchor" href="#indexdimensions"><span></span></a>indexDimensions</h4>
 
-<pre class="prettyprint"><code>    Recognizer.SettingsDb.indexDimensions
+<pre class="prettyprint"><code>    Integer Recognizer.SettingsDb.indexDimensions
 </code></pre>
 
 <p><strong>Description:</strong> Specifies the dimension of the vectors stored in the search index, ensuring compatibility between the data and the indexing method.</p>
@@ -1461,22 +1548,38 @@ recognizer.dispose();
 <pre class="prettyprint"><code>    Recognizer.SettingsIndex.SettingsIndex()
 </code></pre>
 
-<p><strong>Description:</strong> This is the default constructor for the <code>SettingsIndex</code> class, creating a new object without a predefined index or label file paths.</p>
+<p><strong>Description:</strong> Constructs a new <code>SettingsIndex</code> object for initializing a <code>Recognizer</code> using default settings. </p>
 
 <hr>
 
 <h4 id="settingsindexstringindexfilenamestringlabelfilename" class="anchor"><a class="heading-anchor" href="#settingsindexstringindexfilenamestringlabelfilename"><span></span></a>SettingsIndex(String index filename, String labelFilename)</h4>
 
-<pre class="prettyprint"><code>    Recognizer.SettingsIndex.SettingsIndex (String index filename, String labelFilename)
+<pre class="prettyprint"><code>    Recognizer.SettingsIndex.SettingsIndex (String IndexFilePath, String LabelFilePath) throws InvalidInputException, AIVisionSDKException 
 </code></pre>
 
 <p><strong>Description:</strong> This constructor creates a new <code>SettingsIndex</code> object with specified file locations for both the index and label files. This is useful when specific files are needed to initialize the system.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>String IndexFilePath -</strong> The location of the file to read the index data. </li>
+
+<li><strong>String LabelFilePath -</strong> The location of the file to read the label data. </li>
+</ul>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>InvalidInputException -</strong> Thrown if <code>IndexFilePath</code> or <code>LabelFilePath</code> is null or empty. </li>
+
+<li><strong>AIVisionSDKException -</strong> Thrown if the AI Data Capture SDK is not initialized. </li>
+</ul>
 
 <hr>
 
 <h4 id="indexfilename" class="anchor"><a class="heading-anchor" href="#indexfilename"><span></span></a>indexFilename</h4>
 
-<pre class="prettyprint"><code>    Recognizer.SettingsIndex.indexFilename
+<pre class="prettyprint"><code>    String Recognizer.SettingsIndex.indexFilename
 </code></pre>
 
 <p><strong>Description:</strong> A string attribute that specifies the location of the path to the index file, facilitating the system's initialization with structured input data.</p>
@@ -1485,7 +1588,7 @@ recognizer.dispose();
 
 <h4 id="labelfilename" class="anchor"><a class="heading-anchor" href="#labelfilename"><span></span></a>labelFilename</h4>
 
-<pre class="prettyprint"><code>    Recognizer.SettingsIndex.labelFilename
+<pre class="prettyprint"><code>    String Recognizer.SettingsIndex.labelFilename
 </code></pre>
 
 <p><strong>Description:</strong> A string attribute that specifies the path to the label file, enabling the system to effectively associate labels with the indexed data.</p>
@@ -1554,7 +1657,7 @@ recognizer.dispose();
                                         
 
 
-                                    </div>
+                                    </featurestorage></div>
                                 </div>
 
                             </div>
