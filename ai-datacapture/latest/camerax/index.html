@@ -297,61 +297,128 @@
 <ol>
 <li><p><strong>Initialize AI Data Capture SDK -</strong> Initialize the AI Data Capture SDK to enable Zebra-specific features in the application. This initialization should be performed in <code>MainActivity</code>. <em>Ensure this initialization step is completed before making any other calls to the AI Data Capture SDK.</em> If the initialization fails, it indicates a critical problem, and the application should not proceed further.</p>
 
-<pre class="prettyprint"><code>if (!AIVisionSDK.getInstance(this.getApplicationContext()).init()) {
-    throw new IllegalStateException("Critical component initialization failed");
+<pre class="prettyprint">try {
+    aiVisionSDK = AIVisionSDK.getInstance(application)
+    if (aiVisionSDK!!.init()) {
+        // Initialize Barcode Decoder with default settings
+        initializeBarcodeDecoder()
+    } else {
+        Log.e(TAG, "SDK initialization failed")
+    }
+}   
+catch (e: Exception) {
+    Log.e(TAG, "SDK initialization exception: ${e.message}", e)
 }
-</code></pre></li>
+</pre></li>
 
-<li><p><strong>Setup Barcode Decoder -</strong> Configure the barcode decoder settings and obtain an instance:</p>
+<li><p><strong>Initialize Barcode Decoder -</strong> Configure the barcode decoder settings and obtain an instance:</p>
 
-<pre class="prettyprint"><code>BarcodeDecoder.Settings settings = new BarcodeDecoder.Settings();
-decorderExecutor = Executors.newSingleThreadExecutor();
-BarcodeDecoder barcodeDecoder = BarcodeDecoder.getBarcodeDecoder(settings, decoderExecutor).get();
-</code></pre></li>
-
-<li><p><strong>Configure Camera Controller -</strong> Set up the camera controller to use the <code>EntityTrackerAnalyzer</code> as the <code>ImageAnalysis.Analyzer</code> for processing image frames:</p>
-
-<pre class="prettyprint"><code>resultsExecutor = Executors.newSingleThreadExecutor();
-
-cameraController.setImageAnalysisAnalyzer(
-    resultsExecutor,
-    new EntityTrackerAnalyzer(
-        Collections.singletonList(barcodeDecoder),
-        ImageAnalysis.COORDINATE_SYSTEM_VIEW_REFERENCED,
-        resultsExecutor,
-        new Consumer&lt;EntityTrackerAnalyzer.Result&gt;() {
-            @Override
-            public void accept(EntityTrackerAnalyzer.Result result) {
-                List&lt;? extends Entity&gt; entities = result.getValue(barcodeDecoder);
-                for (Entity entity : entities) {
-                    if (entity instanceof BarcodeEntity) {
-                        BarcodeEntity barcodeEntity = (BarcodeEntity) entity;
-                        Log.d(TAG, "value: " + barcodeEntity.getValue());
-                    }
-                }
-            }
+<pre class="prettyprint">try {
+    val barcodeSettings = BarcodeDecoder.Settings("barcode-localizer")
+    BarcodeDecoder.getBarcodeDecoder(barcodeSettings, cameraExecutor)
+        .thenAccept { decoderInstance -&gt;
+            barcodeDecoder = decoderInstance
         }
-    )
-);
-</code></pre></li>
+        .exceptionally { ex -&gt;
+            Log.e(TAG, "BarcodeDecoder initialization failed : ${ex.message}", ex)
+            null
+        }
+} 
 
-<li><p><strong>Configure the Camera Controller Lifecycle -</strong> Integrate the camera controller with the activity’s lifecycle.</p>
+catch (e: Exception) {
+    e.printStackTrace()
+}
+</pre></li>
 
-<pre class="prettyprint"><code>cameraController.bindToLifecycle(this); 
-previewView.setController(cameraController);
-</code></pre></li>
+<li><p><strong>Create <code>EntityTrackerAnalyzer</code> -</strong> This is used for processing image frames.</p>
+
+<pre class="prettyprint">entityTrackerAnalyzer = EntityTrackerAnalyzer(listOf(barcodeDecoder), ImageAnalysis.COORDINATE_SYSTEM_VIEW_REFERENCED, entityExecutor) 
+{ result -&gt; 
+    // User Logic 
+    result.getValue(barcodeDecoder)?.forEach {entity -&gt; 
+        if (entity is BarcodeEntity) { 
+            Log.d(TAG, "Detected barcode: ${entity.value} with id: ${entity.hashCode()} at ${entity.boundingBox}")
+        } 
+    }  
+} 
+</pre></li>
+
+<li><p><strong>Set <code>EntityTrackerAnalyzer</code> as the <code>ImageAnalysis.Analyzer</code>:</strong></p>
+
+<pre class="prettyprint">// EntityTrackerAnalyzer Usecase 
+val resolutionSelector = ResolutionSelector.Builder() 
+    .setAspectRatioStrategy( 
+        AspectRatioStrategy( 
+            AspectRatio.RATIO_16_9, 
+            AspectRatioStrategy.FALLBACK_RULE_NONE 
+        ) 
+    ) 
+    .setResolutionStrategy( 
+        ResolutionStrategy( 
+            Size(1920, 1080), 
+            ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER 
+        ) 
+    ) 
+    .build() 
+
+// Image analysis use case 
+imageAnalysis = ImageAnalysis.Builder() 
+    .setResolutionSelector(resolutionSelector) 
+    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST) 
+    .build() 
+
+// Set the analyzer 
+imageAnalysis?.setAnalyzer( 
+    cameraExecutor, 
+    entityTrackerAnalyzer as ImageAnalysis.Analyzer 
+) 
+</pre></li>
+
+<li><p><strong>Configure the Camera Lifecycle -</strong> Integrate CameraX with the activity’s lifecycle.</p>
+
+<pre class="prettyprint">val cameraProviderFuture = ProcessCameraProvider.getInstance(application) 
+cameraProviderFuture.addListener({ 
+    try { 
+        cameraProvider = cameraProviderFuture.get() 
+    } 
+    catch (e: Exception) { 
+        Log.e(TAG, "Camera initialization failed", e) 
+    } 
+}, ContextCompat.getMainExecutor(application)). 
+
+// Initialize Preview use case 
+preview = Preview.Builder() 
+    .build() 
+
+// Connect the preview to the PreviewView 
+preview?.surfaceProvider = previewView.surfaceProvider;
+
+// Update EntityTrackerAnalyzer transform when PreviewView is ready 
+previewView.previewStreamState.observe(lifecycleOwner) { streamState -&gt; 
+    if (streamState == PreviewView.StreamState.STREAMING) { 
+        entityTrackerAnalyzer?.updateTransform(previewView.sensorToViewTransform) 
+    } 
+} 
+
+// Bind use cases to camera 
+provider.bindToLifecycle( 
+    lifecycleOwner, 
+    CameraSelector.DEFAULT_BACK_CAMERA, 
+    preview, 
+    imageAnalysis 
+) 
+</pre></li>
 
 <li><p><strong>Resource Cleanup After Usage -</strong> Properly dispose of resources after use to prevent memory leaks and ensure that all resources are released after use:</p>
 
-<pre class="prettyprint"><code>protected void dispose() {
+<pre class="prettyprint">protected void dispose() {
+    // Shutdown executors to release threads
+    if (decorderExecutor!= null &amp;&amp; ! resultsExecutor.isShutdown()) {
+        decorderExecutor.shutdown();
+        decorderExecutor = null;
+    }
 
-<pre><code>// Shutdown executors to release threads
-if (decorderExecutor!= null &amp;amp;&amp;amp; ! resultsExecutor.isShutdown()) {
-    decorderExecutor.shutdown();
-    decorderExecutor = null;
-}
-
-if (resultsExecutor != null &amp;amp;&amp;amp; !resultsExecutor.isShutdown()) {
+<pre><code>if (resultsExecutor != null &amp;&amp; !resultsExecutor.isShutdown()) {
     resultsExecutor.shutdown();
     ResultsExecutor = null;
 }
@@ -364,14 +431,14 @@ if (barcodeDecoder != null) {
 </code></pre>
 
 }
-</code></pre></li>
+</pre></li>
 </ol>
 
 <hr>
 
 <h3 id="methods" class="anchor"><a class="heading-anchor" href="#methods"><span></span></a>Methods</h3>
 
-<h4 id="constructor-NaN" class="anchor"><a class="heading-anchor" href="#constructor-NaN"><span></span></a>Constructor</h4>
+<h4 id="constructorpublicentitytrackeranalyzer" class="anchor"><a class="heading-anchor" href="#constructorpublicentitytrackeranalyzer"><span></span></a>Constructor: public EntityTrackerAnalyzer()</h4>
 
 <pre class="prettyprint"><code>    public EntityTrackerAnalyzer(
             @NonNull List&lt;Detector&lt;? extends List&lt;? extends Entity&gt;&gt;&gt; detectors,
@@ -533,6 +600,114 @@ Sets the crop rectangle, which specifies the region of the image that the analyz
 Parameters:
 - **cropRect -** A `RectF` object with crop rectangle.
 -->
+
+<hr>
+
+<h3 id="entitytrackeranalyzerresult" class="anchor"><a class="heading-anchor" href="#entitytrackeranalyzerresult"><span></span></a>EntityTrackerAnalyzer.Result</h3>
+
+<pre class="prettyprint"><code>    public static final class EntityTrackerAnalyzer.Result 
+</code></pre>
+
+<p>The <code>Result</code> class is a static nested class within <code>EntityTrackerAnalyzer</code> that encapsulates the output of entity detection and tracking operations. It serves as a container for detected entities, error information, and timing metadata from the analysis process. </p>
+
+<p><strong>Sample Code:</strong></p>
+
+<pre class="prettyprint">Result result = // obtained from EntityTrackerAnalyzer 
+for (Detector detector : detectors) { 
+    List<!--? extends Entity--> entities = result.getValue(detector); 
+    if (entities != null) { 
+        // Process detected entities 
+        for (Entity entity : entities) { 
+            // Handle individual entity 
+        } 
+    } 
+
+Throwable error = result.getThrowable(detector); 
+    if (error != null) { 
+        // Handle detection error 
+    } 
+} 
+</pre>
+
+<p><strong>Error Handling:</strong></p>
+
+<pre class="prettyprint">Result result = // obtained from EntityTrackerAnalyzer 
+if (result.getThrowable(barcodeDetector) != null) { 
+    Log.e(TAG, "Barcode detection failed", result.getThrowable(barcodeDetector)); 
+} 
+</pre>
+
+<h4 id="methods-1" class="anchor"><a class="heading-anchor" href="#methods-1"><span></span></a>Methods</h4>
+
+<h5 id="constructor-NaN" class="anchor"><a class="heading-anchor" href="#constructor-NaN"><span></span></a>Constructor</h5>
+
+<pre class="prettyprint"><code>    public Result(@NonNull Map&lt;Detector&lt;? extends List&lt;? extends Entity&gt;&gt;, List&lt;? extends Entity&gt;&gt; values, long timestamp, @NonNull Map&lt;Detector&lt;? extends List&lt;? extends Entity&gt;&gt;, Throwable&gt; throwables) 
+</code></pre>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>values -</strong> Map of detectors to their detected entities.</li>
+
+<li><strong>timestamp -</strong> Time when the result was generated.</li>
+
+<li><strong>throwables -</strong> Map of detectors to any errors that occurred.</li>
+</ul>
+
+<h5 id="getvaluedetectorltextendslistltextendsentitygtgtdetector" class="anchor"><a class="heading-anchor" href="#getvaluedetectorltextendslistltextendsentitygtgtdetector"><span></span></a>getValue(Detector&lt;? extends List&lt;? extends Entity&gt;&gt; detector)</h5>
+
+<pre class="prettyprint"><code>    @Nullable 
+    public List&lt;? extends Entity&gt; getValue(@NonNull Detector&lt;? extends List&lt;? extends Entity&gt;&gt; detector) 
+</code></pre>
+
+<p>Retrieves the list of entities detected by a specific detector </p>
+
+<p><strong>Parameters:</strong> </p>
+
+<ul>
+<li><strong>detector -</strong> The detector for which the results are to be retrieved.</li>
+</ul>
+
+<p><strong>Returns:</strong> 
+List of detected entities if results are received, otherwise <code>null</code>. </p>
+
+<h5 id="getthrowabledetectorltextendslistltextendsentitygtgtdetector" class="anchor"><a class="heading-anchor" href="#getthrowabledetectorltextendslistltextendsentitygtgtdetector"><span></span></a>getThrowable(Detector &lt;? extends List &lt;? extends Entity&gt;&gt; detector)</h5>
+
+<pre class="prettyprint"><code>    @Nullable 
+    public Throwable getThrowable(@NonNull Detector&lt;? extends List&lt;? extends Entity&gt;&gt; detector) 
+</code></pre>
+
+<p>Retrieves any exception that occurred for a specific detector.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>detector -</strong> The detector used to check for errors.</li>
+</ul>
+
+<p><strong>Returns:</strong> 
+The exception that occurred if any error occurred, otherwise <code>null</code> if there are no errors.</p>
+
+<h5 id="publiclonggettimestamp" class="anchor"><a class="heading-anchor" href="#publiclonggettimestamp"><span></span></a>public long getTimestamp()</h5>
+
+<pre class="prettyprint"><code>    public long getTimestamp() 
+</code></pre>
+
+<p>Retrieves the timestamp when this result was created.</p>
+
+<p><strong>Returns:</strong> 
+The timestamp in milliseconds since the epoch.</p>
+
+<h5 id="publicresultcopy" class="anchor"><a class="heading-anchor" href="#publicresultcopy"><span></span></a>public Result copy()</h5>
+
+<pre class="prettyprint"><code>    @NonNull 
+    public Result copy() 
+</code></pre>
+
+<p>Creates a shallow copy of the Result object </p>
+
+<p><strong>Returns:</strong> 
+A new <code>Result</code> instance with copied data.</p>
 
 <hr>
 
@@ -752,50 +927,48 @@ private void initializeStylePens() {
 } 
 </code></pre></li>
 
-<li><p><strong>Apply StylePens and Render Entities -</strong> In the analyzer results consumer method, clear previous entities and retrieve detected entities. Apply the appropriate <code>StylePen</code> to each entity based on your application use case and add them to the <code>EntityViewController</code>. Finally, render all entities on the viewfinder at once for optimized performance. </p>
-
-<pre class="prettyprint"><code>// Analyzer results consumer method
-private void handleEntities(EntityTrackerAnalyzer.Result result) { 
-
-<pre><code>// Clear previous entities 
-entityViewController.removeAll(); 
-
-// Get detected entities 
-List&amp;lt;? extends Entity&amp;gt; entities = result.getValue(barcodeDecoder); 
-
-if (entities != null) { 
-    Log.i(TAG, "Handle entities: " + entities.size()); 
-    // Process each entity 
-    for (Entity entity : entities) { 
-        if (!(entity instanceof BarcodeEntity)) { 
-            continue; 
-        } 
-
-        BarcodeEntity barcodeEntity = (BarcodeEntity) entity;       
-
-        int symbology = barcodeEntity.getSymbology(); 
-
-        // QR Code symbology 
-        if (isQRCodeSymbology(symbology)) { 
-            // Associate style pen initialized for QR codes 
-            entityViewController.add(barcodeEntity, qrCodeBoundingBoxPen); 
-        } 
-
-        // UPCA symbology 
-        if (isUPCASymbology(symbology)) { 
-            // Associate style pen initialized for UPCA barcodes 
-            entityViewController.add(barcodeEntity, upcaIconPen); 
-        }             
-    } 
-} 
-
-// Render all entities at once 
-entityViewController.render(); 
-</code></pre>
-
-} 
-</code></pre></li>
+<li><p><strong>Apply StylePens and Render Entities -</strong> In the analyzer results consumer method, clear previous entities and retrieve detected entities. Apply the appropriate <code>StylePen</code> to each entity based on your application use case and add them to the <code>EntityViewController</code>. Finally, render all entities on the viewfinder at once for optimized performance. </p></li>
 </ol>
+
+<pre class="prettyprint">    // Analyzer results consumer method
+    private void handleEntities(EntityTrackerAnalyzer.Result result) { 
+
+        // Clear previous entities 
+        entityViewController.removeAll(); 
+
+        // Get detected entities 
+        List<!--? extends Entity--> entities = result.getValue(barcodeDecoder); 
+
+        if (entities != null) { 
+            Log.i(TAG, "Handle entities: " + entities.size()); 
+            // Process each entity 
+            for (Entity entity : entities) { 
+                if (!(entity instanceof BarcodeEntity)) { 
+                    continue; 
+                } 
+
+                BarcodeEntity barcodeEntity = (BarcodeEntity) entity;       
+
+                int symbology = barcodeEntity.getSymbology(); 
+
+                // QR Code symbology 
+                if (isQRCodeSymbology(symbology)) { 
+                    // Associate style pen initialized for QR codes 
+                    entityViewController.add(barcodeEntity, qrCodeBoundingBoxPen); 
+                } 
+
+                // UPCA symbology 
+                if (isUPCASymbology(symbology)) { 
+                    // Associate style pen initialized for UPCA barcodes 
+                    entityViewController.add(barcodeEntity, upcaIconPen); 
+                }             
+            } 
+        } 
+
+        // Render all entities at once 
+        entityViewController.render(); 
+    } 
+</pre>
 
 <p><img alt="image" style="height:1000px" src="./entity-viewfinder-steps.png"></p>
 
@@ -1073,7 +1246,7 @@ NOTE: This API is not intended for developers use.
 
 <p><code>EntityViewController</code> is a key component of the <code>EntityViewfinder</code>, providing a high-level interface for managing the camera preview, rendering detected entities, handling user interactions, and controlling viewfinder behavior.</p>
 
-<h4 id="methods-1" class="anchor"><a class="heading-anchor" href="#methods-1"><span></span></a>Methods</h4>
+<h4 id="methods-2" class="anchor"><a class="heading-anchor" href="#methods-2"><span></span></a>Methods</h4>
 
 <h5 id="entityviewcontrollerentityviewentityviewlifecycleownerlifecycleowner" class="anchor"><a class="heading-anchor" href="#entityviewcontrollerentityviewentityviewlifecycleownerlifecycleowner"><span></span></a>EntityViewController(EntityView entityView, LifecycleOwner lifecycleOwner)</h5>
 
@@ -1416,7 +1589,7 @@ entityViewController.registerViewfinderResizeListener(resizeListener);
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>specs -</strong> An <code>EntityViewResizeListener</code> object that contains the listener. </li>
+<li><strong>listener -</strong> An <code>EntityViewResizeListener</code> object that contains the listener. </li>
 </ul>
 
 <hr>
