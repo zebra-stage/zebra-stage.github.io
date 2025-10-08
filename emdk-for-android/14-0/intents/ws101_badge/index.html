@@ -651,7 +651,7 @@ class MyApp : Application() {
     ZebraAudioConnectSDK.initialize(...)
 
     // Delay before recording to allow SCO setup
-    val scoDelayMs = 1000L
+    val scoDelayMs = 50L // Adjust per device; can be 0-200 ms. See Best Practices and Error Handling (below)
 
     // Button events
     ZebraAudioConnectSDK.setButtonEventListener { btn, st -&gt; log("Btn $btn →
@@ -676,8 +676,7 @@ class MyApp : Application() {
 <h2 id="bestpracticesanderrorhandling" class="anchor"><a class="heading-anchor" href="#bestpracticesanderrorhandling"><span></span></a>Best Practices and Error Handling</h2>
 
 <ul>
-<li><strong>SCO timing</strong>: SCO link is asynchronous. Introduce a ~1 second delay before
-starting <code>MediaRecorder</code> after <code>startScoConnection()</code>.</li>
+<li><strong>SCO timing</strong>: Establishing an SCO link is asynchronous and varies by hardware. After invoking <code>startScoConnection()</code>, a brief delay (typically 50–200 ms) before starting <code>MediaRecorder</code> ensures that the audio pipeline is ready, and avoids clipping. Test with target device to determine the optimal delay. <strong>On Android 12 (and later)</strong>, it's OK to proceed after receiving the "SCO Ready" event.</li>
 
 <li><strong>Permission denial</strong>: Disable relevant UI <code>(btnRecord.isEnabled = false)</code> and
 show guidance to the user.</li>
@@ -688,6 +687,11 @@ Bluetooth. Retry or abort gracefully.</li>
 <li><strong>Multi-app</strong>: Initiate only one SCO session at a time. Use Android Audio Focus or custom
 locking if multiple apps integrate the SDK.</li>
 </ul>
+
+<!-- replaced below with above, per eng.
+* **SCO timing**: SCO link is asynchronous. Introduce a ~1 second delay before
+starting `MediaRecorder` after `startScoConnection()`.
+ -->
 
 <hr>
 
