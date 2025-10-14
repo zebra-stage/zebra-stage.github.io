@@ -79,28 +79,18 @@
                             </a>
                         </li>
                         <li>
-                            <a href="/rxlogger/15-0/guide/usage">
-                                    User Guide
-                            </a>
-                        </li>
-                        <li>
                             <a href="/rxlogger/15-0/guide/settings">
                                     Settings
                             </a>
                         </li>
                         <li>
-                            <a href="/rxlogger/15-0/guide/modules">
-                                    Modules
+                            <a href="/rxlogger/15-0/guide/usage">
+                                    User Guide
                             </a>
                         </li>
                         <li>
                             <a href="/rxlogger/15-0/guide/apis">
                                     APIs
-                            </a>
-                        </li>
-                        <li>
-                            <a href="/rxlogger/15-0/guide/utility">
-                                    Log Viewer
                             </a>
                         </li>
                         <li>
@@ -242,9 +232,45 @@
 
 <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>RxLogger settings can be configured via the RxLogger user interface or by deploying a configuration file to the device. All settings are stored in the <code>config.json</code> file, which can be exported and deployed across multiple devices within an enterprise. Within the <strong><a href="#androidworkprofile">Android Enterprise Work Profile</a>,</strong>  RxLogger settings vary based on whether the device is operating in the Work Profile or Personal Profile. </p>
+<p><strong>RxLogger settings</strong> can be configured through the RxLogger user interface or by deploying a configuration file (<code>config.json</code>) to the device. The <code>config.json</code> file can be exported and deployed across multiple devices. In devices using the <strong><a href="#androidworkprofile">Android Enterprise Work Profile</a>,</strong> RxLogger settings may differ based on whether the device is operating in the Work Profile or Personal Profile. </p>
 
 <p><strong>Secure Mode</strong> enhances Rxlogger security by restricting external access to logs and providing a secure method for broadcasting intents. Only authorized apps can access logs or use the secure method to call RxLogger APIs. This reduces the risk of misuse of potentially sensitive data, ensures access is limited to trusted users and creates a protected environment for deploying configuration files to adjust RxLogger settings.</p>
+
+<p><strong>RxLogger uses data collection modules to log various components of the Android system.</strong> These modules can be enabled, disabled, or customized as needed. Out of the 13 modules, 7 are enabled by default.</p>
+
+<p><strong>Modules Enabled by Default</strong>:</p>
+
+<ul>
+<li><a href="#anrmodule">ANR</a></li>
+
+<li><a href="#kernelmodule">Kernel</a></li>
+
+<li><a href="#logcatmodule">Logcat</a></li>
+
+<li><a href="#ramoopsmodule">Ramoops</a></li>
+
+<li><a href="#resourcemodule">Resource</a></li>
+
+<li><a href="#snapshotmodule">Snapshot</a></li>
+
+<li><a href="#tombstonemodule">Tombstone</a></li>
+</ul>
+
+<p><b>Modules Disabled by default</b>: </p>
+
+<ul>
+<li><a href="#btsnooplogmodule">BTSnooplog</a></li>
+
+<li><a href="#ltsmodule">LTS</a></li>
+
+<li><a href="#qxdmmodule">Qxdm</a></li>
+
+<li><a href="#recoverymodule">Recovery</a></li>
+
+<li><a href="#tcpdumpmodule">Tcpdump</a></li>
+
+<li><a href="#instantloggingmodule">Instant Logging Module</a></li>
+</ul>
 
 <hr>
 
@@ -285,20 +311,6 @@
 
 <hr>
 
-<h2 id="logs" class="anchor"><a class="heading-anchor" href="#logs"><span></span></a>Logs</h2>
-
-<p>Logs collected in Secure Mode are restricted and not accessible to the user. For user access, perform a Backup, which archives the logs in a password-protected .ZIP file to one of the following file paths:</p>
-
-<ul>
-<li><strong>Internal storage path:</strong> <code>/sdcard/Android/data/com.symbol.rxlogger/RxLogger/secure/log_data/</code></li>
-
-<li><strong>External storage path:</strong> <code>/storage/&lt;UUID&gt;/Android/data/com.symbol.rxlogger/RxLogger/secure/log_data/</code>, where <code>&lt;UUID&gt;</code> is the device's unique identifier</li>
-</ul>
-
-<p><br></p>
-
-<hr>
-
 <h2 id="rxloggersettings" class="anchor"><a class="heading-anchor" href="#rxloggersettings"><span></span></a>RxLogger Settings</h2>
 
 <p><strong>To configure general log settings through RxLogger Settings:</strong> </p>
@@ -312,7 +324,7 @@
 
 <li><p>Enable/disable desired settings:<br>
 &nbsp;&nbsp;&nbsp;• <strong>Notifications -</strong> If enabled, the RxLogger icon is displayed in the notification bar while running. This is enabled by default and helps confirm whether RxLogger is running in the background.<br>
-&nbsp;&nbsp;&nbsp;• <strong>Debug Logs -</strong> If enabled, collects debug logs from RxLogger and Diagdaemon, stored in the location specified in the <a href="#settingsfile">Settings File</a> section. <i>After enabling/disabling, tap the back button, tap <b>Save</b> and reboot the device for the change to take into effect.</i> This setting is disabled by default.<br>
+&nbsp;&nbsp;&nbsp;• <strong>Debug Logs -</strong> If enabled, collects debug logs from RxLogger and <code>diagdaemon</code> (its logging service), stored in the location specified in the <a href="#settingsfile">Settings File</a> section. <i>After enabling/disabling, tap the back button, tap <b>Save</b> and reboot the device for the change to take into effect.</i> This setting is disabled by default.<br>
 &nbsp;&nbsp;&nbsp;• <strong>Internal Storage Logging Only -</strong> If enabled, logs are saved to the internal SD card even if an external SD card is inserted. By default, logs are saved to the external SD card if available.
 <br>
 <img alt="image" style="height:400px" src="rxlogger-settings.png"></p>
@@ -320,45 +332,788 @@
 <p><br></p></li>
 </ol>
 
+<!-- 
+---
+
+### Configuration for Modules
+
+**General instructions to configure module settings through the UI:**
+
+1. Tap the **Settings** button to display a list of configurable modules loaded by `diagdaemon` (RxLogger's logging service):
+   <img alt="" style="height:350px" src="rxlogger_running.jpg"/>
+   <br>
+2. Tap the **module to be edited** to display a list of its parameters:
+   <img alt="" style="height:350px" src="rxlogger_settings.jpg"/>
+   <br>
+3. Edit settings as required. Tap the **BACK** button when done.
+   <img alt="" style="height:350px" src="rxlogger_module.png"/>
+   <br>
+4. **Repeat Steps 2 and 3** for all desired modules.
+5. On the modules listing screen, tap **SAVE** to preserve all changes.  
+   <img alt="" style="height:350px" src="rxlogger_settings.jpg"/>
+   <br>
+
+See the [Modules page](../modules) for settings information.
+-->
+
 <hr>
 
-<p><strong>To configure module settings through the GUI:</strong></p>
+<h2 id="anrmodule" class="anchor"><a class="heading-anchor" href="#anrmodule"><span></span></a>ANR Module</h2>
 
-<ol>
-<li>Tap the <strong>Settings</strong> button to display a list of configurable modules loaded by <code>diagdaemon</code>:
-<img alt="" style="height:350px" src="rxlogger_running.jpg">
-<br></li>
+<p>The <strong>ANR Module</strong> controls collection of data from Android's "application not responding" (ANR) events. Event data is copied directly from the Android system and saved in a file called <code>trace.txt</code> or some variant thereof. For example, the ANR event for a post-loaded app would be similar to <code>trace-&lt;app_package_name&gt;.txt</code>.</p>
 
-<li>Tap the <strong>module to be edited</strong> to display a list of its parameters:
-<img alt="" style="height:350px" src="rxlogger_settings.jpg">
-<br></li>
-
-<li>Edit settings as required. Tap the <strong>BACK</strong> button when done.
-<img alt="" style="height:350px" src="rxlogger_module.png">
-<br></li>
-
-<li><strong>Repeat Steps 2 and 3</strong> for all desired modules.</li>
-
-<li>On the modules listing screen, tap <strong>SAVE</strong> to preserve all changes. <br>
-<img alt="" style="height:350px" src="rxlogger_settings.jpg">
-<br></li>
-</ol>
-
-<p>See the <a href="../modules">Modules page</a> for settings information.</p>
-
-<h4 id="settingsdatatypes" class="anchor"><a class="heading-anchor" href="#settingsdatatypes"><span></span></a>Settings Data Types</h4>
-
-<p>Supported data types:</p>
+<p><strong>To configure the ANR Module:</strong></p>
 
 <ul>
-<li><strong>Integer -</strong> Numerical data (0 - 2,147,483,647), such as the number of files to store. For fields that do not allow a value of 0, such as file size, a 1 is substituted.</li>
+<li><p>From the RxLogger main screen, tap the settings icon at the top right, then tap <strong>ANR Module</strong> to display the ANR Module screen.</p>
 
-<li><strong>String -</strong> Text such as file names and storage paths. The UI accepts any alphanumeric input and symbols as permitted by the file system.</li>
-
-<li><strong>Boolean -</strong> True/false information, such as to enable/disable a module, represented as checkboxes.</li>
-
-<li><strong>List -</strong> Select the value from a list of pre-assigned values, represented as radio buttons.</li>
+<table>
+    <tbody><tr><td><img alt="image" style="height:400px" src="home-settings.png"></td>
+    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td><img alt="image" style="height:400px" src="settings-anr.png"></td>
+    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td><img alt="image" style="height:400px" src="module-anr.png"></td>
+</tr></tbody></table></li>
 </ul>
+
+<p><strong>Options:</strong></p>
+
+<table class="facelift" style="width:100%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>Option Name</th>
+    <th>Description</th>
+    <th>Type</th>
+    <th>Value(s)</th>
+  </tr>
+  <tr>
+    <td>Enable Module</td>
+   <td>Enable or disable collection of ANR files</td>
+   <td>Boolean</td>
+    <td>true <i>(default)</i><br>false</td>
+  </tr>
+  <tr>
+    <td>Log File path</td>
+    <td>The storage path for ANR files</td>
+    <td>String</td>
+    <td><code>/sdcard/Android/data/com.symbol.rxlogger/RxLogger/secure/log_data/anr/</code></td>
+  </tr>
+  <tr>
+    <td>Collect Historic ANR's</td>
+    <td></td>
+    <td></td>
+    <td></td>
+  </tr>
+</tbody></table>
+
+<hr>
+
+<h2 id="tombstonemodule" class="anchor"><a class="heading-anchor" href="#tombstonemodule"><span></span></a>Tombstone Module</h2>
+
+<p>The <strong>Tombstone Module</strong> collects Android native crash logs from the device, providing  stack traces and detailed information about the crashed process. Tombstone files are generated sequentially starting from <code>tombstone_00</code>through <code>tombstone_09</code>, and then the sequence restarts at <code>tombstone_00</code>. Starting with Android 11, the system can generate up to 32 tombstone log files (ranging from <code>tombstone_00</code> to <code>tombstone_31</code>), after which the sequence resets to <code>tombstone_00</code>. To identify the most recent logs, refer to the timestamps.</p>
+
+<p>For more information on Android native crash logs, visit <a href="https://source.android.com/devices/tech/debug/#debuggerd">Crash dumps and tombstones</a>.</p>
+
+<p><strong>To configure the Tombstone Module:</strong></p>
+
+<ul>
+<li><p>From the RxLogger main screen, tap the settings icon at the top right, then tap <strong>Tombstone Module</strong> to display the ANR Module screen.</p>
+
+<table>
+    <tbody><tr><td><img alt="image" style="height:400px" src="home-settings.png"></td>
+    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td><img alt="image" style="height:400px" src="settings-tombstone.png"></td>
+    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td><img alt="image" style="height:400px" src="module-tombstone.png"></td>
+</tr></tbody></table></li>
+</ul>
+
+<p><strong>Options:</strong></p>
+
+<table class="facelift" style="width:100%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>Option Name</th>
+    <th>Description</th>
+    <th>Type</th>
+    <th>Value(s)</th>
+  </tr>
+  <tr>
+    <td>Enable Module</td>
+   <td>Enable or disable tombstone collection</td>
+   <td>Boolean</td>
+    <td>true <i>(default)</i><br>false</td>
+  </tr>
+  <tr>
+    <td>Log File Path</td>
+   <td>The storage path for tombstone logs</td>
+   <td>String</td>
+   <td><code>/sdcard/Android/data/com.symbol.rxlogger/RxLogger/secure/log_data/tombstone/</code></td>
+  </tr>
+  <tr>
+    <td>Collect Historic Tombstone's</td>
+    <td></td>
+    <td></td>
+    <td></td>
+  </tr>
+</tbody></table>
+
+<hr>
+
+<h2 id="ramoopsmodule" class="anchor"><a class="heading-anchor" href="#ramoopsmodule"><span></span></a>Ramoops Module</h2>
+
+<p>The <strong>Ramoops Module</strong> captures the last kmsg from the device, writing it to persistent memory immediately prior to a system crash. Ramoops outputs text files generated by the system at boot or after a kernel panic. These files contain raw kmsg data from the boot immediately prior to the crash. More <a href="https://www.kernel.org/doc/html/v4.12/admin-guide/ramoops.html">about Ramoops</a>.</p>
+
+<p><strong>To configure the Ramoops Module:</strong></p>
+
+<ul>
+<li><p>From the RxLogger main screen, tap the settings icon at the top right, then tap <strong>Ramoops Module</strong> to display the Ramoops Module screen.</p>
+
+<table>
+    <tbody><tr><td><img alt="image" style="height:400px" src="home-settings.png"></td>
+    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td><img alt="image" style="height:400px" src="settings-tombstone.png"></td>
+    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td><img alt="image" style="height:400px" src="module-tombstone.png"></td>
+</tr></tbody></table></li>
+</ul>
+
+<p><strong>Options:</strong></p>
+
+<table class="facelift" style="width:100%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>Option Name</th>
+     <th>Description</th>
+    <th>Type</th>
+    <th>Value(s)</th>
+  </tr>
+  <tr>
+    <td>Enable Module</td>
+   <td>Enable or disable Ramoops collection</td>
+   <td>Boolean</td>
+    <td>true <i>(default)</i><br>false</td>
+  </tr>
+  <tr>
+    <td>Log File Path</td>
+   <td>The storage path for Ramoops files</td>
+   <td>String</td>
+   <td><code>/sdcard/Android/data/com.symbol.rxlogger/RxLogger/secure/log_data/ramoops/</code></td>
+  </tr>
+  <tr>
+    <td>Log File Name</td>
+   <td>The file name of the stored ramoops file</td>
+   <td>String</td>
+   <td>ramoops <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Log File Count</td>
+   <td>The maximum number of ramoops log files to keep at any one time</td>
+   <td>Integer</td>
+    <td>2 <i>(default)</i></td>
+  </tr>
+</tbody></table>
+
+<hr>
+
+<h2 id="kernelmodule" class="anchor"><a class="heading-anchor" href="#kernelmodule"><span></span></a>Kernel Module</h2>
+
+<p>The Kernel module captures <code>kmsg</code> data from the Android system and outputs it to a series of numbered files (i.e. <code>KLog0.txt</code>, <code>KLog1.txt</code>, <code>KLog2.txt</code>) with 0 being the newest.</p>
+
+<p><strong>To configure the Kernel Module:</strong></p>
+
+<ul>
+<li><p>From the RxLogger main screen, tap the settings icon at the top right, then tap <strong>Kernel Module</strong> to display the Kernel Module screen.</p>
+
+<table>
+    <tbody><tr><td><img alt="image" style="height:400px" src="home-settings.png"></td>
+    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td><img alt="image" style="height:400px" src="settings-kernel.png"></td>
+    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td><img alt="image" style="height:400px" src="module-kernel.jpg"></td>
+</tr></tbody></table></li>
+</ul>
+
+<p><strong>Options:</strong></p>
+
+<table class="facelift" style="width:100%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>Option Name</th>
+    <th>Description</th>
+    <th>Type</th>
+    <th>Value(s)</th>
+  </tr>
+  <tr>
+    <td>Enable Module</td>
+   <td>Enable or disable collection of kernel logs</td>
+   <td>Boolean</td>
+    <td>true <i>(default)</i><br>false</td>
+  </tr>
+  <tr>
+    <td>Log File Path</td>
+   <td>The storage path for kernel logs</td>
+   <td>String</td>
+   <td><code>/sdcard/Android/data/com.symbol.rxlogger/RxLogger/secure/log_data/</code></td>
+  </tr>
+  <tr>
+    <td>Log Interval</td>
+    <td>The rate in seconds in which kernel logs will be dumped into the collecting file</td>
+   <td>Integer</td>
+    <td>30 <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Log File Name</td>
+   <td>The base file name to save kernel logs</td>
+   <td>String</td>
+    <td>KLog <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Log File Size</td>
+   <td>The size (in MB) of each kernel log file before rotating</td>
+   <td>Integer</td>
+    <td>10 <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Log File Count</td>
+   <td>The maximum number of kernel log files to keep at any one time</td>
+   <td>Integer</td>
+    <td>2 <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>System Timestamp</td>
+   <td>Enable or disable time stamp in kernel logs</td>
+   <td>Boolean</td>
+    <td>true <i>(default)</i><br>false</td>
+  </tr>
+  <tr>
+    <td>System Timestamp Interval</td>
+   <td>The interval (in seconds) to add timestamp in kernel logs</td>
+   <td>Integer</td>
+    <td>60 <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Logcat Integration Override</td>
+   <td>Enable or disable logcat integration</td>
+   <td>Boolean</td>
+    <td>true<br>false <i>(default)</i></td>
+  </tr>
+</tbody></table>
+
+<hr>
+
+<h2 id="logcatmodule" class="anchor"><a class="heading-anchor" href="#logcatmodule"><span></span></a>Logcat Module</h2>
+
+<p>The <strong>Logcat Module</strong> collects data from Android's internal logging mechanism, commonly known as logcat buffers. This module captures logs from any or all of the following buffers:</p>
+
+<ul>
+<li>System</li>
+
+<li>Event</li>
+
+<li>Radio</li>
+
+<li>Main</li>
+
+<li>Crash</li>
+</ul>
+
+<p>User can configure the module to store data from selected buffers either in seprate files or combined into a single file. The output is stored as a series of sequentially numbered text files (e.g. <code>Main0.txt</code>, <code>Main1.txt</code>, <code>Main2.txt</code>) where <code>0</code> represents the most recent file.</p>
+
+<p><strong>To configure the Logcat Module:</strong></p>
+
+<ul>
+<li><p>From the RxLogger main screen, tap the settings icon at the top right, then tap <strong>Logcat Module</strong> to display the configuration screen.</p>
+
+<table>
+    <tbody><tr><td><img alt="image" style="height:400px" src="home-settings.png"></td>
+    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td><img alt="image" style="height:400px" src="settings-logcat.png"></td>
+    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td><img alt="image" style="height:400px" src="module-logcat.png"></td>
+</tr></tbody></table></li>
+</ul>
+
+<p><strong>Options:</strong></p>
+
+<table class="facelift" style="width:100%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>Option Name</th>
+     <th>Description</th>
+    <th>Type</th>
+    <th>Value(s)</th>
+  </tr>
+  <tr>
+    <td>Enable Module</td>
+   <td>Enable or disable collection of logcat logs</td>
+   <td>Boolean</td>
+    <td>true <i>(default)</i><br>false</td>
+  </tr>
+  <tr>
+    <td>Log File Path</td>
+   <td>The storage path for logcat logs</td>
+   <td>String</td>
+    <td><code>/sdcard/Android/data/com.symbol.rxlogger/RxLogger/secure/log_data/</code></td>
+  </tr>
+  <tr>
+    <td>Logcat Buffer Size</td>
+    <td>Select the logcat buffer size<br><b>Note:</b> For Android 11, the default is 4MB.</td>
+    <td>List</td>
+    <td>0 - 256K <i>(default)</i><br>1 - 1M<br>2 - 4M<br>3 - 8M<br>4 - 16M</td>
+  </tr>
+  <tr>
+    <td>Enable Main Logcat</td>
+   <td>Enable or disable the collection of the main buffer</td>
+   <td>Boolean</td>
+    <td>true <i>(default)</i><br>false</td>
+  </tr>
+  <tr>
+    <td>Main Log Interval</td>
+   <td>The rate (in seconds) in which the main buffer logs will be dumped into the collecting file</td>
+   <td>Integer</td>
+    <td>30 <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Main Log File Name</td>
+   <td>The base file name to save main buffer logs</td>
+   <td>String</td>
+    <td>Main <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Main Log File Size (MB)</td>
+   <td>The size of each main buffer log file (in MB) before rotating</td>
+   <td>Integer</td>
+    <td>5 <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Main Log File Count</td>
+   <td>The maximum number of main buffer log files to keep at any one time</td>
+   <td>Integer</td>
+    <td>2 <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Main Log Filter</td>
+   <td>Custom logcat filter to run on the main buffer</td>
+   <td>String</td>
+    <td>[Enter string]</td>
+  </tr>
+  <tr>
+    <td>Enable Event Logcat</td>
+   <td>Enable or disable the collection of the event buffer</td>
+   <td>Boolean</td>
+    <td>true <i>(default)</i><br>false</td>
+  </tr>
+  <tr>
+    <td>Event Log Interval</td>
+   <td>The rate (in seconds) in which event buffer logs will be dumped into the collecting file</td>
+   <td>Integer</td>
+    <td>30 <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Event Log File Name</td>
+   <td>The base file name to save event buffer logs</td>
+   <td>String</td>
+    <td>Event <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Event Log File Size</td>
+   <td>The size (in MB) of each event buffer log file before rotating</td>
+   <td>Integer</td>
+    <td>5 <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Event Log File Count</td>
+   <td>The maximum number of event buffer log files to keep at any one time</td>
+   <td>Integer</td>
+    <td>2 <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Event Log Filter</td>
+   <td>Custom logcat filter to run on the event buffer</td>
+   <td>String</td>
+    <td>[Enter string]</td>
+  </tr>
+  <tr>
+    <td>Enable Radio Logcat</td>
+   <td>Enable or disable the collection of the radio buffer</td>
+   <td>Boolean</td>
+    <td>true <i>(default)</i><br>false</td>
+  </tr>
+  <tr>
+    <td>Radio Log Interval</td>
+   <td>The rate (in seconds) in which radio buffer logs will be dumped into the collecting file</td>
+   <td>Integer</td>
+    <td>30 <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Radio Log File Name</td>
+   <td>The default base file name to save logs from the radio buffer</td>
+   <td>String</td>
+    <td>Radio <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Radio Log File Size</td>
+   <td>The size (in MB) of each radio buffer log file before rotating in megabytes</td>
+   <td>Integer</td>
+    <td>5 <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Radio Log File Count</td>
+   <td>The maximum number of radio buffer log files to keep at any one time</td>
+   <td>Integer</td>
+    <td>2 <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Radio Log Filter</td>
+   <td>Custom logcat filter to run on the radio buffer</td>
+   <td>String</td>
+    <td>[Enter string]</td>
+  </tr>
+  <tr>
+    <td>Enable System Logcat</td>
+   <td>Enable or disable the collection of the system buffer</td>
+   <td>Boolean</td>
+    <td>true <i>(default)</i><br>false</td>
+  </tr>
+  <tr>
+    <td>System Log Interval</td>
+   <td>The rate (in seconds) in which system buffer logs will be dumped into the collecting file</td>
+   <td>Integer</td>
+    <td>30 <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>System Log File Name</td>
+   <td>The base file name to save system buffer logs</td>
+   <td>String</td>
+    <td>System <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>System Log File Size</td>
+   <td>The size (in MB) of each system buffer log file before it is rotated</td>
+   <td>Integer</td>
+    <td>5 <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>System Log File Count</td>
+   <td>The maximum number of system buffer log files to keep at any one time</td>
+   <td>Integer</td>
+    <td>2 <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>System Log Filter</td>
+   <td>Custom logcat filter to run on the system buffer</td>
+   <td>String</td>
+    <td>[Enter string]</td>
+  </tr>
+  <tr>
+    <td>Enable Crash Logcat</td>
+   <td>Enable or disable the collection of the crash buffer</td>
+   <td>Boolean</td>
+    <td>true <i>(default)</i><br>false</td>
+  </tr>
+  <tr>
+    <td>Crash Log Interval</td>
+   <td>The rate (in seconds) in which crash buffer logs will be dumped into the collecting file</td>
+   <td>Integer</td>
+    <td>30 <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Crash Log File Name</td>
+   <td>The base file name to save crash buffer logs</td>
+   <td>String</td>
+    <td>Crash <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Crash Log File Size</td>
+   <td>The size (in MB) of each crash buffer log file before it is rotated</td>
+   <td>Integer</td>
+    <td>5 <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Crash Log File Count</td>
+   <td>The maximum number of crash buffer log files to keep at any one time</td>
+   <td>Integer</td>
+    <td>2 <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Crash Log Filter</td>
+   <td>Custom logcat filter to run on the crash buffer</td>
+   <td>String</td>
+    <td>[Enter string]</td>
+  </tr>
+  <tr>
+    <td>Enable Combined Logcat</td>
+   <td>Enable or disable the collection of the combined logcat buffer</td>
+   <td>Boolean</td>
+    <td>true <i>(default)</i><br>false</td>
+  </tr>
+  <tr>
+    <td>Combined Logcat Buffer</td>
+   <td></td>
+   <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>Combined Log Interval</td>
+   <td>The rate (in seconds) in which combined buffer logs will be dumped into the collecting file</td>
+   <td>Integer</td>
+    <td>30 <i>(default)</i></td>
+  </tr>
+  <tr>
+      <td>Combined Log File Name</td>
+   <td>The base file name to save combined buffer logs</td>
+   <td>String</td>
+    <td>Combined <i>(default)</i></td>
+  </tr>
+  <tr>
+      <td>Combined Log File Size</td>
+   <td>The size (in MB) of each combined buffer log file before it is rotated</td>
+   <td>Integer</td>
+    <td>10 <i>(default)</i></td>
+  </tr>
+  <tr>
+      <td>Combined Log File Count</td>
+   <td>The maximum number of crash buffer log files to keep at any one time</td>
+   <td>Integer</td>
+    <td>2 <i>(default)</i></td>
+  </tr>
+  <tr>
+      <td>Combined Log Filter</td>
+   <td>Custom logcat filter to run on the combined buffer</td>
+   <td>String</td>
+    <td>[Enter string]</td>
+  </tr>
+</tbody></table>
+
+<hr>
+
+<h2 id="resourcemodule" class="anchor"><a class="heading-anchor" href="#resourcemodule"><span></span></a>Resource Module</h2>
+
+<p>The <strong>Resource Module</strong> records device information and system statistics at defined intervals, providing insights into the health and behavior of device resources over time. The collected data is saved as a series of comma-separated values stored in .CSV files.</p>
+
+<p>While most metrics are consistent across devices with different chipsets, the data for <a href="#batterypower">Battery Power</a> may vary depending on the device's chipset.</p>
+
+<p><strong>To configure the Resource Module:</strong></p>
+
+<ul>
+<li><p>From the RxLogger main screen, tap the settings icon at the top right, then tap <strong>Resource Module</strong> to display the configuration screen.</p>
+
+<table>
+    <tbody><tr><td><img alt="image" style="height:400px" src="home-settings.png"></td>
+    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td><img alt="image" style="height:400px" src="settings-resource.png"></td>
+    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td><img alt="image" style="height:400px" src="module-resource.jpg"></td>
+</tr></tbody></table></li>
+</ul>
+
+<p><strong>Options:</strong></p>
+
+<table class="facelift" style="width:100%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>Option Name</th>
+     <th>Description</th>
+    <th>Type</th>
+    <th>Value(s)</th>
+  </tr>
+  <tr>
+    <td>Enable Module</td>
+   <td>Enable or disable Resource collection</td>
+   <td>Boolean</td>
+    <td>true <i>(default)</i><br>false</td>
+  </tr>
+  <tr>
+    <td>Log File Path</td>
+   <td>The storage path for Resource files</td>
+   <td>String</td>
+    <td><code>/sdcard/Android/data/com.symbol.rxlogger/RxLogger/secure/log_data/</code></td>
+  </tr>
+  <tr>
+    <td>Log Interval</td>
+   <td>The rate (in seconds) in which Resource collects and logs information</td>
+   <td>Integer</td>
+    <td>60 <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Log File Size</td>
+   <td>The size (in MB) of each Resource Log file before it is rotated</td>
+   <td>Integer</td>
+    <td>10 <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Log File Count</td>
+   <td>The maximum number of Resource files to keep at any one time</td>
+   <td>Integer</td>
+    <td>2 <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Resource Log Field</td>
+   <td>Select the resource type to log:</td>
+   <td>List</td>
+    <td>Power - Collect battery statistics, see <a href="#batterypower">Battery Power</a><br>System Resource - Collect  system resource information<br>Advanced CPU - Collect CPU status information<br>Network - Collect network status information<br>Bluetooth - Collect Bluetooth informaation<br>Light - Collect ambient light level information<br>Heater - Collect heater information<br>Hide Non-Applicable data - Collect data not applicable based on available device resources. For example, a WLAN only device will not log WAN data. <br>Hide Raw Data - Collect raw data information</td>
+  </tr>
+</tbody></table>
+
+<hr>
+
+<h2 id="snapshotmodule" class="anchor"><a class="heading-anchor" href="#snapshotmodule"><span></span></a>Snapshot Module</h2>
+
+<p>The <strong>Snapshot Module</strong> captures device information and system statistics at a specific point in time, offering a snapshot of the device's health and resource behavior over that given time period. It generates a single text file for each data collection interval, containing the collected metrics for the selected parameters. </p>
+
+<p>While similar to the Resource Module, the Snapshot Modules captures more granular data, including threads and <code>dumpsys</code> information, and a device fingerprint header for each file. Snapshot consolidates all enabled data selections into one text file per data collection cycle.</p>
+
+<p><strong>To configure the Snapshot Module:</strong></p>
+
+<ul>
+<li><p>From the RxLogger main screen, tap the settings icon at the top right, then scroll down and tap <strong>Snapshot Module</strong> to display the configuration screen.</p>
+
+<table>
+    <tbody><tr><td><img alt="image" style="height:400px" src="home-settings.png"></td>
+    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td><img alt="image" style="height:400px" src="settings-snapshot.png"></td>
+    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td><img alt="image" style="height:400px" src="module-snapshot.jpg"></td>
+</tr></tbody></table></li>
+</ul>
+
+<p><strong>Options:</strong></p>
+
+<table class="facelift" style="width:100%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>Option Name</th>
+     <th>Description</th>
+    <th>Type</th>
+    <th>Value(s)</th>
+  </tr>
+  <tr>
+    <td>Enable Module</td>
+   <td>Enable or disable Snapshot collection</td>
+   <td>Boolean</td>
+    <td>true <i>(default)</i><br>false</td>
+  </tr>
+  <tr>
+    <td>Log File Path</td>
+   <td>The storage path for Snapshot logs</td>
+   <td>String</td>
+   <td><code>/sdcard/Android/data/com.symbol.rxlogger/RxLogger/secure/log_data/snapshots/</code></td>
+  </tr>
+  <tr>
+    <td>Log Interval</td>
+   <td>The rate (in seconds) in which Snapshot will collect information and dump into its file</td>
+   <td>Integer</td>
+    <td>1800 <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Log File Name</td>
+   <td>The base file name of stored Snapshot file</td>
+   <td>String</td>
+    <td>snapshot <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Log File Count</td>
+   <td>The maximum number of Snapshot files to keep at any one time</td>
+   <td>Integer</td>
+    <td>50 <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Snapshot Log Field</td>
+   <td>Select the Snapshot log fields to include</td>
+   <td>List</td>
+    <td>Top - Run the <code>top</code> command for data collection<br>CPU Info - Run the <code>dumpsys cpuinfo</code> and <code>cat /proc/stat</code> commands for data collection<br>Battery Info -  Run the <code>dumpsys batterystats</code> and <code>dumpsys battery</code> commands for data collection<br>Thermal Service -<br>Wake Lock - Collect the sys/fs wake_lock information<br>Time In State - Collect the sys/fs cpufreq for each core<br>Process - Run the <code>ps -p</code> command for data collection<br>Threads - Run the <code>ps -t -p -P command for data collection<br>Properties - Run the <code>getprop</code> command for data collection<br>Interface - Run the <code>netcfg</code> command for data collection<br></code></td>
+  </tr>
+
+  <tr>
+    <td rowspan="2">Memory Info<br>(Choose <i>one</i> option)</td>
+   <td>Enable or disable running the “dumpsys meminfo -a” and “cat /proc/meminfo” commands to collect memory usage of installed apps. Disabled by default.</td>
+   <td>Boolean</td>
+    <td>true<br>false <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Enable or disable running the “dumpsys meminfo -s” and “cat /proc/meminfo” commands to collect memory usage of system processes. Enabled by default.  <i>Available on all devices except WS50.</i></td>
+    <td>Boolean</td>
+    <td>true <i>(default)</i><br>false</td>
+  </tr>
+
+  <tr>
+    <td>IP Routing Table</td>
+   <td>Enable or disable the collection of the net route for data collection</td>
+   <td>Boolean</td>
+    <td>true <i>(default)</i><br>false</td>
+  </tr>
+  <tr>
+    <td>Connectivity</td>
+   <td>Enable or disable running the “dumpsys connectivity” command for data collection</td>
+   <td>Boolean</td>
+    <td>true <i>(default)</i><br>false</td>
+  </tr>
+  <tr>
+    <td>Wifi</td>
+   <td>Enable or disable running the “dumpsys wifi” command for data collection</td>
+   <td>Boolean</td>
+    <td>true <i>(default)</i><br>false</td>
+  </tr>
+  <tr>
+    <td>File systems</td>
+   <td>Enable or disable running the “df” command for data collection</td>
+   <td>Boolean</td>
+    <td>true <i>(default)</i><br>false</td>
+  </tr>
+  <tr>
+    <td>Usage Stats</td>
+   <td>Enable or disable running the “dumpsys usagestats” command for data collection</td>
+   <td>Boolean</td>
+    <td>true<br>false <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>ISub</td>
+   <td>Captures information regarding SIM cards and the mobile network subscription</td>
+   <td>Boolean</td>
+    <td>true<br>false <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Telephony Debug Service</td>
+   <td>System service responsible for capturing debug information related to telephony services and cellular network connectivity. <i>This is only visible in <a href="../settings/#securemode">Secure Mode</a>.</i></td>
+   <td>Boolean</td>
+    <td>true<br>false <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Telephony Registry</td>
+   <td>Captures state of telephony-related components and services</td>
+   <td>Boolean</td>
+    <td>true<br>false <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Telecom</td>
+   <td>Collects telephony-related functionality, such as making and receiving calls, handling SIM cards, and managing call logs</td>
+   <td>Boolean</td>
+    <td>true<br>false <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Isms</td>
+   <td>Captures information about the SMS (Short Message Service) functionality through the Isms interface</td>
+   <td>Boolean</td>
+    <td>true<br>false <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Location</td>
+   <td>Captures detailed information about the device's location providers, location requests, and other location-related details</td>
+   <td>Boolean</td>
+    <td>true<br>false <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Phone</td>
+   <td>Captures information about the phone state, call-related details, signal strength, network information and other phone-related details</td>
+   <td>Boolean</td>
+    <td>true<br>false <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Carrier Config</td>
+   <td>Captures detailed information about the configuration settings that are applied by the device for a specific carrier</td>
+   <td>Boolean</td>
+    <td>true<br>false <i>(default)</i></td>
+  </tr>
+
+</tbody></table>
+
+<hr>
+
+<h2 id="memorymodule" class="anchor"><a class="heading-anchor" href="#memorymodule"><span></span></a>Memory Module</h2>
 
 <hr>
 
@@ -457,37 +1212,38 @@
 
 <hr>
 
-<h2 id="optionsmenu" class="anchor"><a class="heading-anchor" href="#optionsmenu"><span></span></a>Options Menu</h2>
+<!-- Not in  RxLogger 15.0
+## Options Menu
 
-<p>The RxLogger options menu, accessed via the three-dot icon at the top right of the main RxLogger screen, offers a variety of functionalities. The available options are described in the following subsections.</p>
+The RxLogger options menu, accessed via the three-dot icon at the top right of the main RxLogger screen, offers a variety of functionalities. The available options are described in the following subsections.
+
 
 <table>
-  <tbody><tr>
+  <tr>
    <td>
-     <img alt="image" style="height:400px" src="rxlogger-main-options.jpg">
+     <img alt="image" style="height:400px" src="rxlogger-main-options.jpg"/>
    </td>
    <td> &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp;
    </td>
    <td>
-     <img alt="image" style="height:400px" src="options-menu.png">
+     <img alt="image" style="height:400px" src="options-menu.png"/>
    </td>
   </tr>
-</tbody></table>
+</table>
 
-<p><i>RxLogger options menu</i>
-<br></p>
+<i>RxLogger options menu</i>
+<br />
 
-<hr>
+---
 
-<h3 id="togglechathead" class="anchor"><a class="heading-anchor" href="#togglechathead"><span></span></a>Toggle Chat Head</h3>
+### Toggle Chat Head
 
-<p>The <strong>Toggle Chat Head</strong> features, also known as RxLogger Utility, activates a floating icon named RxUtility that can be positioned anywhereon the device screen. Tapping this icon allows real-time viewing of RxLogger logs directly on the device. For more information, see <a href="../utility/">Log Viewer</a>.</p>
+The **Toggle Chat Head** features, also known as RxLogger Utility, activates a floating icon named RxUtility that can be positioned anywhereon the device screen. Tapping this icon allows real-time viewing of RxLogger logs directly on the device. For more information, see [Log Viewer](../utility/).
 
-<p><img style="height:350px" src="../utility/rxutility.jpg"></p>
+<img style="height:350px" src="../utility/rxutility.jpg"/>
 
-<hr>
+---
 
-<!-- Not in  RxLogger 15.0
 ### BackupNow
 
 **BackupNow** provides an on-demand option to generate a backup of the RxLogger logs. This is particularly useful to save logs on a device at a specific point in time after an issue occurs. Backup logs are saved on the device as a .zip file stored in `/sdcard/rxlogger/Backup-<date>-<HHMMSS>.zip`, with the date and timestamp as part of the file name. Backups are triggered by any of the following methods:
