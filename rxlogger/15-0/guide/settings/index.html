@@ -227,7 +227,7 @@
                                 <div class="service-box wow fadeInRight">
                                     <div class="">
 
-                                        <p></p><div class="alert alert-danger alert-dismissible fade in" role="alert"> <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span></button> <h4 id="-advisory" class="anchor"><a class="heading-anchor" href="#-advisory"><span></span></a><i class="fa fa-exclamation-circle" aria-hidden="true" style="color:#FF0000;"></i> ADVISORY</h4> <b>Starting with Android 15, RxLogger defaults to <a href="#securemode">Secure Mode.</a></b> with legacy mode deprecated in Android 14 and phased out in Android 15. Consequently, RxLogger will only process intents from third-party apps via the <a href="#securemode">AppOps</a> or <a href="../apis/#apptoken">Token</a> method, and <a href="../modules/#securebackup">Secure Backup</a> will replace the legacy backup method as the standard.
+                                        <p></p><div class="alert alert-info alert-dismissible fade in" role="alert"> <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span></button> <h4 id="-advisory" class="anchor"><a class="heading-anchor" href="#-advisory"><span></span></a><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> ADVISORY</h4> Starting with Android 15, RxLogger operates in <b>Secure Mode</b> by default, with legacy mode fully phased out. As a result, RxLogger only processes intents from third-party apps using the <b>AppOps</b> or <b>App Token</b> method; for more details, see <a href="#deployment">Deployment</a>. Additionally, the secure <a href="../usage/#backup">Backup</a> method, which replaces the legacy backup method, is now the standard.
 </div>
 
 <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
@@ -271,6 +271,63 @@
 
 <li><a href="#instantloggingmodule">Instant Logging Module</a></li>
 </ul>
+
+<hr>
+
+<h2 id="configurationfile" class="anchor"><a class="heading-anchor" href="#configurationfile"><span></span></a>Configuration File</h2>
+
+<p>All RxLogger settings are stored in a file on the device, permitting remote configuration and mass deployment of these files using an enterprise mobile management (EMM) system. <br></p>
+
+<ul>
+<li><strong>File name -</strong> <code>config.json</code></li>
+
+<li><strong>Internal storage:</strong> <code>/sdcard/RxLogger</code> (if the external SD card is not present on the device or <strong>Enable internal sdcard only</strong> option is activated)</li>
+
+<li><strong>External storage (SD card):</strong> <code>/storage/&lt;UUID&gt;/RxLogger</code>, where &lt;UUID&gt; represents the UUID of the SD card (if the external SD card is present)</li>
+</ul>
+
+<p>RxLogger settings can be configured through the RxLogger user interface (UI) or by editing the settings file.</p>
+
+<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <b>Note: Zebra recommends using the same <code>config.json</code> file across devices with the <i>same</i> Android platform version.</b> Use of the same file across <i>different</i> Android platform versions may lead to unexpected behavior.</p>
+
+<hr>
+
+<h3 id="configureviaui" class="anchor"><a class="heading-anchor" href="#configureviaui"><span></span></a>Configure via UI</h3>
+
+<p>To configure RxLogger settings via UI:</p>
+
+<ol>
+<li>Open RxLogger settings.</li>
+
+<li>Modify the desired configuration settings.</li>
+
+<li>Save the configuration. <code>Config.json</code> <a href="#configurationfile">configuration file</a> is created and saved to either internal or external storage. RxLogger restarts to apply the new configuration settings.</li>
+</ol>
+
+<p><strong>This method ensures accuracy and minimizes the risk of errors that can occur when manually editing values in <code>config.json</code>.</strong></p>
+
+<hr>
+
+<h3 id="configureviafile" class="anchor"><a class="heading-anchor" href="#configureviafile"><span></span></a>Configure via File</h3>
+
+<p>To manually configure RxLogger settings:</p>
+
+<ol>
+<li><p>Locate and retrieve the <code>config.json</code> <a href="#configurationfile">configuration file</a> from either internal or external storage.</p></li>
+
+<li><p>Manually update the <code>config.json</code> file with the required changes, modifying only the values in the "Value" field; all other fields are pre-defined. For parameter values, refer to the <a href="../modules/">Modules</a> section. Zebra recommends viewing the file in JSON format for easier editing.</p></li>
+
+<li><p><strong>For <em><a href="#securemode">secure mode</a>,</em></strong> broadcast the intent to trigger RxLogger to restart upon detecting an updated <code>config.json</code> file. This must be performed prior to file deployment. For instructions, see <a href="../settings/#deployment">Secure Mode Deployment</a>.</p></li>
+
+<li><p>Deploy the <code>config.json</code> file to the designated path in Step 1.</p></li>
+
+<li><p><strong>For <em>non-secure mode (legacy mode),</em></strong> broadcast the Refresh Config Intent API to trigger RxLogger to restart and apply the new settings:</p>
+
+<pre class="prettyprint"><code> com.symbol.dd.intent.action.REFRESH_CONFIG_ACTION
+</code></pre>
+
+<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <b>Note: Starting with RxLogger v13.0.12.76, Refresh Config Intent API is discontinued.</b> Instead, RxLogger will automatically refresh to implement changes whenever it detects an updated config file.</p></li>
+</ol>
 
 <hr>
 
@@ -324,7 +381,7 @@
 
 <li><p>Enable/disable desired settings:<br>
 &nbsp;&nbsp;&nbsp;• <strong>Notifications -</strong> If enabled, the RxLogger icon is displayed in the notification bar while running. This is enabled by default and helps confirm whether RxLogger is running in the background.<br>
-&nbsp;&nbsp;&nbsp;• <strong>Debug Logs -</strong> If enabled, collects debug logs from RxLogger and <code>diagdaemon</code> (its logging service), stored in the location specified in the <a href="#settingsfile">Settings File</a> section. <i>After enabling/disabling, tap the back button, tap <b>Save</b> and reboot the device for the change to take into effect.</i> This setting is disabled by default.<br>
+&nbsp;&nbsp;&nbsp;• <strong>Debug Logs -</strong> If enabled, collects debug logs from RxLogger and <code>diagdaemon</code> (its logging service), stored in the location specified in the <a href="#configurationfile">Configuration File</a> section. <i>After enabling/disabling, tap the back button, tap <b>Save</b> and reboot the device for the change to take into effect.</i> This setting is disabled by default.<br>
 &nbsp;&nbsp;&nbsp;• <strong>Internal Storage Logging Only -</strong> If enabled, logs are saved to the internal SD card even if an external SD card is inserted. By default, logs are saved to the external SD card if available.
 <br>
 <img alt="image" style="height:400px" src="rxlogger-settings.png"></p>
@@ -1117,98 +1174,323 @@ See the [Modules page](../modules) for settings information.
 
 <hr>
 
-<h3 id="resettodefault" class="anchor"><a class="heading-anchor" href="#resettodefault"><span></span></a>Reset to Default</h3>
+<h2 id="btsnooplogmodule" class="anchor"><a class="heading-anchor" href="#btsnooplogmodule"><span></span></a>BTSnoopLog Module</h2>
+
+<p>The <strong>BTSnooplog Module</strong> captures Bluetooth HCI (Host Controller Interface) snoop logs from the device, recording all Bluetooth transmissions with the connected Bluetooth peripheral. These logs are stored in the folder <code>/sdcard/Android/data/com.symbol.rxlogger/RxLogger/secure/log_data/btsnooplog/</code>. Each log file is named in the format <code>hci_snoop&lt;YYYYMMDDhhmmss&gt;.cfa</code>. A maximum of two log files can exist at any given time, with each file having a size limit of 64 MB. When a newer <code>.cfa</code> log reaches its maximum size, RxLogger overwrites the older log file with the updated HCI data. To collected the BTSnoopLog files, RxLogger must first be stopped.
+<br></p>
+
+<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>Important Notes:</strong></p>
+
+<ul>
+<li>BTSnoopLog is <strong>not supported on TC15 and TN28 devices.</strong></li>
+
+<li><strong>When a Bluetooth peripheral is paired and BTSnoopLog module is enabled,</strong> the Bluetooth connection will disconnect and re-connect to the peripheral. This is required for BTSnoopLog to start capturing snoop logs and will also occur when any configuration changes are made to the BTSnoopLog Module.</li>
+</ul>
+
+<p><strong>To configure the BTSnoopLog Module:</strong></p>
+
+<ul>
+<li><p>From the RxLogger main screen, tap the settings icon at the top right, then scroll down and tap <strong>BTSnoopLog Module</strong> to display the configuration screen.</p>
+
+<table>
+    <tbody><tr><td><img alt="image" style="height:400px" src="home-settings.png"></td>
+    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td><img alt="image" style="height:400px" src="settings-btsnooplog.png"></td>
+    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td><img alt="image" style="height:400px" src="module-btsnooplog.png"></td>
+</tr></tbody></table></li>
+</ul>
+
+<p><strong>Options:</strong></p>
+
+<table class="facelift" style="width:100%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>Option Name</th>
+     <th>Description</th>
+    <th>Type</th>
+    <th>Value(s)</th>
+  </tr>
+  <tr>
+    <td>Enable Module</td>
+    <td>Enable or disable BTSnooplog module log collection</td>
+    <td>Boolean</td>
+    <td>true<br>false <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Log File Path</td>
+    <td>The storage path for BTSnoopLog files</td>
+    <td>String</td>
+    <td><code>/sdcard/Android/data/com.symbol.rxlogger/RxLogger/secure/log_data/btsnooplog/</code></td>
+  </tr>
+  <tr>
+    <td>Log Filter</td>
+    <td>Determines the amount of information logged</td>
+    <td>List</td>
+    <td>NONE (0)<br>ERROR (1)<br>WARNING (0) <i>(default)</i><br>API (3)<br>EVENT DEBUG (4)<br>FULL DEBUG (5)<br>VERBOSE (6)</td>
+  </tr>
+</tbody></table>
+
+<hr>
+
+<h2 id="qxdmmodule" class="anchor"><a class="heading-anchor" href="#qxdmmodule"><span></span></a>QXDM Module</h2>
+
+<p>The <strong>QXDM Module</strong> captures Qualcomm Modem logs from the device, which are read using a Qualcomm utility. This module also accepts a user-defined or custom configuration file <code>Custom_filter.cfg</code> generated through Qualcomm tools. This configuration file is stored in the <code>/sdcard/Android/data/com.symbol.rxlogger/RxLogger/secure/log_data/qxdm/cfg</code> folder.</p>
+
+<p>For SD660 devices, QXDM Module is only available on WAN devices. However, for newer chipsets such as SD6490 and SD6375, it is available on both WAN and WLAN devices due to the inclusion of the battery filter. For more information, see <a href="https://supportcommunity.zebra.com/s/article/000022440?language=en_US">Zebra Platform Devices list</a>.</p>
+
+<blockquote>
+  <p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <b>IMPORTANT NOTE:</b> Output from this module can consume all available storage space if the "Custom Log" option is not enabled with a specified "Maximum Log File." <u><strong>Zebra recommends defining an appropriate log size and maximum log quantity based on the available storage capacity.</strong></u></p>
+</blockquote>
+
+<p><strong>To configure the QXDM Module:</strong></p>
+
+<ul>
+<li><p>From the RxLogger main screen, tap the settings icon at the top right, then scroll down and tap <strong>QXDM Module</strong> to display the configuration screen.</p>
+
+<table>
+    <tbody><tr><td><img alt="image" style="height:400px" src="home-settings.png"></td>
+    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td><img alt="image" style="height:400px" src="settings-qxdm.png"></td>
+    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td><img alt="image" style="height:400px" src="module-qxdm.jpg"></td>
+</tr></tbody></table></li>
+</ul>
+
+<p><strong>Options:</strong></p>
+
+<table class="facelift" style="width:100%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>Option Name</th>
+     <th>Description</th>
+    <th>Type</th>
+    <th>Value(s)</th>
+  </tr>
+  <tr>
+    <td>Enable Module</td>
+   <td>Enable or disable QXDM collection</td>
+   <td>Boolean</td>
+    <td>true<br>false <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Log File Path</td>
+    <td>The storage path for QXDM files</td>
+    <td>String</td>
+    <td><code>/sdcard/Android/data/com.symbol.rxlogger/RxLogger/secure/log_data/qxdm/logs</code></td>
+  </tr>
+  <tr>
+    <td>Log File Size</td>
+   <td>Specify the size (in MB) of each individual QXDM log file</td>
+   <td>Integer</td>
+    <td>100 <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Log Test Sets</td>
+   <td>Number of test sets to retain (each test consists of a start and stop)</td>
+   <td>Integer</td>
+    <td>3 <i>(default)</i></td>
+  </tr>
+    <tr>
+    <td>Log Filter</td>
+   <td>Select the log filter that QXDM needs to process<br><br><b>Note:</b><br>&nbsp;&nbsp;• The <b>Default-Lite</b> filter is <i>not available</i> on SD660-platform devices, see <a href="https://supportcommunity.zebra.com/s/article/000022440?language=en_US">Zebra Platform Devices</a>.</td>
+   <td>List</td>
+    <td>Default-Lite (0 - default)<br>Default (2)<br>Battery (3)<br>Audio (4)<br>User Defined (from <code>/sdcard/Android/data/com.symbol.rxlogger/RxLogger/secure/log_data/qxdm/cfg/Custom_filter.cfg</code>) (5) </td>
+  </tr>
+  <tr>
+    <td>Logging Limit Type</td>
+   <td>Select custom log option to specify the maximum number of log files to be generated</td>
+   <td>List</td>
+    <td>Default logging (0 - default)<br>Custom Log (1 - Specify <b>Max Log File</b>)</td>
+  </tr>
+  <tr>
+    <td>Maximum Log File</td>
+   <td>Applies to <b>Custom Log,</b> specifies the number of log files to keep on a test set which must be specified by user</td>
+   <td>Integer</td>
+    <td>3 <i>(default)</i></td>
+  </tr>
+</tbody></table>
+
+<hr>
+
+<h2 id="tcpdumpmodule" class="anchor"><a class="heading-anchor" href="#tcpdumpmodule"><span></span></a>TCPDump Module</h2>
+
+<p>The <strong>TCPDump Module</strong> captures packet data from all device network connections on the device and outputs a binary file. This file can be analyzed using Wireshark or other standard network analysis tools.</p>
+
+<p><strong>To configure the TCPDump Module:</strong></p>
+
+<ul>
+<li><p>From the RxLogger main screen, tap the settings icon at the top right, then scroll down and tap <strong>TCPDump Module</strong> to display the configuration screen.</p>
+
+<table>
+    <tbody><tr><td><img alt="image" style="height:400px" src="home-settings.png"></td>
+    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td><img alt="image" style="height:400px" src="settings-tcpdump.png"></td>
+    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td><img alt="image" style="height:400px" src="module-tcpdump.jpg"></td>
+</tr></tbody></table></li>
+</ul>
+
+<p><strong>Options:</strong></p>
+
+<table class="facelift" style="width:100%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>Option Name</th>
+     <th>Description</th>
+    <th>Type</th>
+    <th>Value(s)</th>
+  </tr>
+  <tr>
+    <td>Enable Module</td>
+   <td>Enable or disable tcpdump collection</td>
+   <td>Boolean</td>
+    <td>true<br>false <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Log File Path</td>
+    <td>The storage path for TCPDump logs</td>
+    <td>String</td>
+    <td><code>/sdcard/Android/data/com.symbol.rxlogger/RxLogger/secure/log_data/tcpdump</code></td>
+  </tr>
+  <tr>
+    <td>Log File Name</td>
+   <td>The file name of the stored TCPDump file</td>
+   <td>String</td>
+    <td>capture.pcap <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>File Size</td>
+   <td>The max file size (in MB) allowed before TCPDump files are rotated</td>
+   <td>Integer</td>
+    <td>5 <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Log File Count</td>
+   <td>The maximum number of TCPDump files to retain</td>
+   <td>Integer</td>
+    <td>2 <i>(default)</i></td>
+  </tr>
+  <tr>
+    <td>Backup</td>
+   <td></td>
+   <td></td>
+    <td></td>
+  </tr>
+</tbody></table>
+
+<hr>
+
+<h2 id="recoverymodule" class="anchor"><a class="heading-anchor" href="#recoverymodule"><span></span></a>Recovery Module</h2>
+
+<p>The <strong>Recovery Module</strong> captures recovery and OSUpdate logs, as well as Android's Rescue Party logs from the device. Rescue Party, supported in RxLogger starting with Android 9.0, helps prevent devices from getting stuck in reboot loops. When a boot loop is detected, Android initiates a "rescue party," which performs a series of actions in an attempt to recover the device. If all recovery attempts fail, Rescue Party reboots the device into recovery mode and prompts the user to perform a factory reset. </p>
+
+<p><strong>To configure the Recovery Module:</strong></p>
+
+<ul>
+<li><p>From the RxLogger main screen, tap the settings icon at the top right, then scroll down and tap <strong>Recovery Module</strong> to display the configuration screen.</p>
+
+<table>
+    <tbody><tr><td><img alt="image" style="height:400px" src="home-settings.png"></td>
+    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td><img alt="image" style="height:400px" src="settings-recovery.png"></td>
+    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td><img alt="image" style="height:400px" src="module-recovery.png"></td>
+</tr></tbody></table></li>
+</ul>
+
+<p><strong>Options:</strong></p>
+
+<table class="facelift" style="width:100%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>Option Name</th>
+     <th>Description</th>
+    <th>Type</th>
+    <th>Value(s)</th>
+  </tr>
+  <tr>
+      <td>Enable Module</td>
+   <td>Enable or disable Recovery module log collection</td>
+   <td>Boolean</td>
+    <td>true<br>false <i>(default)</i></td>
+  </tr>
+    <tr>
+    <td>Log File Path</td>
+    <td>The storage path for TCPDump logs</td>
+    <td>String</td>
+    <td><code>/sdcard/Android/data/com.symbol.rxlogger/RxLogger/secure/log_data/recovery</code></td>
+  </tr>
+</tbody></table>
+
+<hr>
+
+<h2 id="ltsmodule" class="anchor"><a class="heading-anchor" href="#ltsmodule"><span></span></a>LTS Module</h2>
+
+<p>The <strong>Long Term Storage (LTS) Module</strong> collects log files generated by other active modules and consolidates them for analyzing device health and behavior over a period of time. The output files are compressed using gzip and stored in a specified path, which follows the structure outlined below. If multiple logs are stored within in the same hour (recorded in military time), they are sequentially numbered from 00 to 99.
+<br></p>
+
+<p><strong>Storage Path Format</strong>:
+<code>/&lt;device_model&gt;/&lt;BSP_build_number&gt;/&lt;device_serial_number&gt;/&lt;YYMMDD&gt;/&lt;HHxx&gt;/</code>
+    - <strong>Example</strong>: <code>TC51/91-01-21-NN-00/16885225D0029/170621/2100/</code></p>
+
+<p><strong>To configure the LTS Module:</strong></p>
+
+<ul>
+<li><p>From the RxLogger main screen, tap the settings icon at the top right, then scroll down and tap <strong>LTS Module</strong> to display the configuration screen.</p>
+
+<table>
+    <tbody><tr><td><img alt="image" style="height:400px" src="home-settings.png"></td>
+    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td><img alt="image" style="height:400px" src="settings-lts.png"></td>
+    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td><img alt="image" style="height:400px" src="module-lts.png"></td>
+</tr></tbody></table></li>
+</ul>
+
+<p><strong>Options:</strong></p>
+
+<table class="facelift" style="width:100%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>Option Name</th>
+     <th>Description</th>
+    <th>Type</th>
+    <th>Value(s)</th>
+  </tr>
+  <tr>
+    <td>Enable Module</td>
+   <td>Enable or disable LTS collection</td>
+   <td>Boolean</td>
+    <td>true<br>false <i>(default)</i></td>
+  </tr>
+  
+    <tr>
+    <td>Log File Path</td>
+    <td>The storage path for TCPDump logs</td>
+    <td>String</td>
+    <td><code>/sdcard/Android/data/com.symbol.rxlogger/RxLogger/secure/log_data/RxLoggerLTS</code></td>
+  </tr>
+</tbody></table>
+
+<hr>
+
+<h2 id="resettodefault" class="anchor"><a class="heading-anchor" href="#resettodefault"><span></span></a>Reset to Default</h2>
 
 <p><strong>Reset to Default</strong> restores all configurations to their original settings, facilitating recovery from misconfigurations and enabling a fresh start with default values. This option is not available when RxLogger is active to prevent configuration changes from disrupting logging.</p>
 
-<p>To enable Reset to Default (ensure RxLogger is disabled):</p>
-
-<ol>
-<li>Use one of the two methods to access the feature:
-
+<p>To activate <strong>Reset to Default,</strong> ensure RxLogger is disabled and then use one of the following methods:</p>
 
 <ul>
-<li><strong>RxLogger Settings:</strong> From the RxLogger main screen, tap <strong>Settings.</strong> Tap the options menu in the upper right corner and select <strong>Reset to default.</strong>
+<li><strong>RxLogger Settings:</strong> From the RxLogger main screen, tap the settings icon at the top right, tap the reset icon, then select <strong>Yes</strong> to reset settings.
 <table>
-<tbody><tr>
-<td><img alt="image" style="height:350px" src="rxlogger_settings_tile.jpg"></td>
-<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
-<td><img alt="image" style="height:400px" src="settings.png"></td>
-<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
-<td><img alt="image" style="height:400px" src="settings-reset.png"></td>
-</tr>
-</tbody></table></li>
+    <tbody><tr><td><img alt="image" style="height:400px" src="home-settings.png"></td>
+    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td><img alt="image" style="height:400px" src="settings-reset.png"></td>
+</tr></tbody></table></li>
 
-<li><strong>Instant Logging Settings:</strong> Follow instructions to <a href="../modules/#launchinstantlogging">Launch Instant Logging</a>. On the <strong>Report an Issue screen,</strong> open the options menu in the upper right corner and select <strong>Reset to default.</strong>
+<li><strong>Module Settings:</strong> From any of the module settings screen, for example <a href="#logcatmodule">Logcat Module</a>, tap the reset icon at the top-right, then select <strong>Yes</strong> to reset settings.
 <table>
-<tbody><tr>
-<td><img alt="image" style="height:400px" src="report-issue.png"></td>
-<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
-<td><img alt="image" style="height:400px" src="report-issue-reset.png"></td>
-</tr></tbody></table></li></ul>
-</li>
-
-<li>A notification appears indicating success or failure.</li>
-</ol>
-
-<hr>
-
-<h2 id="settingsfile" class="anchor"><a class="heading-anchor" href="#settingsfile"><span></span></a>Settings File</h2>
-
-<p>All RxLogger settings are stored in a file on the device, permitting remote configuration and mass deployment of these files using an enterprise mobile management (EMM) system. <br></p>
-
-<ul>
-<li><strong>File name -</strong> <code>config.json</code></li>
-
-<li><strong>Internal storage:</strong> <code>/sdcard/RxLogger</code> (if the external SD card is not present on the device or <strong>Enable internal sdcard only</strong> option is activated)</li>
-
-<li><strong>External storage (SD card):</strong> <code>/storage/&lt;UUID&gt;/RxLogger</code>, where &lt;UUID&gt; represents the UUID of the SD card (if the external SD card is present)</li>
+    <tbody><tr><td><img alt="image" style="height:400px" src="home-settings.png"></td>
+    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td><img alt="image" style="height:400px" src="settings-logcat.png"></td>
+</tr></tbody></table></li>
 </ul>
-
-<p>RxLogger settings can be configured through the RxLogger user interface (UI) or by editing the settings file.</p>
-
-<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <b>Note: Zebra recommends using the same <code>config.json</code> file across devices with the <i>same</i> Android platform version.</b> Use of the same file across <i>different</i> Android platform versions may lead to unexpected behavior.</p>
-
-<!--* **A `config.json` file from a WWAN device cannot be used interchangeably on a WLAN device, and vice versa.** WWAN related modules, such as qxdm, are not available on WLAN devices and can result to unexpected behavior.-->
-
-<hr>
-
-<h3 id="configureviaui" class="anchor"><a class="heading-anchor" href="#configureviaui"><span></span></a>Configure via UI</h3>
-
-<p>To configure RxLogger settings via UI:</p>
-
-<ol>
-<li>Open RxLogger settings.</li>
-
-<li>Modify the desired configuration settings.</li>
-
-<li>Save the configuration. <code>Config.json</code> <a href="#settingsfile">settings file</a> is created and saved to either internal or external storage. RxLogger restarts to apply the new configuration settings.</li>
-</ol>
-
-<p><strong>This method ensures accuracy and minimizes the risk of errors that can occur when manually editing values in <code>config.json</code>.</strong></p>
-
-<hr>
-
-<h3 id="configureviafile" class="anchor"><a class="heading-anchor" href="#configureviafile"><span></span></a>Configure via File</h3>
-
-<p>To manually configure RxLogger settings:</p>
-
-<ol>
-<li><p>Locate and retrieve the <code>config.json</code> <a href="#settingsfile">settings file</a> from either internal or external storage.</p></li>
-
-<li><p>Manually update the <code>config.json</code> file with the required changes, modifying only the values in the "Value" field; all other fields are pre-defined. For parameter values, refer to the <a href="../modules/">Modules</a> section. Zebra recommends viewing the file in JSON format for easier editing.</p></li>
-
-<li><p><strong>For <em><a href="#securemode">secure mode</a>,</em></strong> broadcast the intent to trigger RxLogger to restart upon detecting an updated <code>config.json</code> file. This must be performed prior to file deployment. For instructions, see <a href="../settings/#deployment">Secure Mode Deployment</a>.</p></li>
-
-<li><p>Deploy the <code>config.json</code> file to the designated path in Step 1.</p></li>
-
-<li><p><strong>For <em>non-secure mode (legacy mode),</em></strong> broadcast the Refresh Config Intent API to trigger RxLogger to restart and apply the new settings:</p>
-
-<pre class="prettyprint"><code> com.symbol.dd.intent.action.REFRESH_CONFIG_ACTION
-</code></pre>
-
-<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <b>Note: Starting with RxLogger v13.0.12.76, Refresh Config Intent API is discontinued.</b> Instead, RxLogger will automatically refresh to implement changes whenever it detects an updated config file.</p></li>
-</ol>
 
 <hr>
 
@@ -1291,9 +1573,9 @@ To delete logs:
     - **Delete Backup Files -** Deletes only files generated from a [Backup](../modules/#backup).
     <img alt="image" style="height:400px" src="delete-logs.png"/>
 4. Confirm the action to proceed with file deletion.
--->
 
-<hr>
+---
+-->
 
 <!-- Added to RxLogger 15.0
 ### Bug Report
@@ -1438,16 +1720,21 @@ Passwords must be at least 8 characters long and include an uppercase letter, a 
 
 <br>
 <br>
+-->
 
----
+<hr>
 
-## Related Links
+<h2 id="relatedlinks" class="anchor"><a class="heading-anchor" href="#relatedlinks"><span></span></a>Related Links</h2>
 
-- [About RxLogger](../about) - Provides an overview of RxLogger and how to use
-- [Modules](../modules) - Explains data collection module parameters and settings
-- [APIs](../apis) - Used to start and stop RxLogger and back up all data
-- [Log Viewer](../utility) - View RxLogger logs in realtime
---><p></p>
+<ul>
+<li><a href="../about">About RxLogger</a> - Provides an overview of RxLogger and how to use</li>
+
+<li><a href="../settings">Settings</a> - Explains data collection module parameters and settings</li>
+
+<li><a href="../usage">User Guide</a> - Explains data collection module parameters and settings</li>
+
+<li><a href="../apis">APIs</a> - Used to start and stop RxLogger and back up all data</li>
+</ul><p></p>
                                         
 
 
