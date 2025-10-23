@@ -229,18 +229,15 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>RxLogger's functionality can be controlled through Android intents within third-party applications.</p>
-
-<hr>
-
-<h2 id="securemode" class="anchor"><a class="heading-anchor" href="#securemode"><span></span></a>Secure Mode</h2>
-
-<p>In <a href="../settings/#securemode">Secure Mode</a>, third-party apps must gain access to RxLogger APIs through one of two methods:</p>
+<p>RxLogger's functionality can be controlled through Android intents within third-party applications.
+For security, third-party apps must gain access to RxLogger APIs through one of two methods:</p>
 
 <ul>
 <li><strong><a href="#appops">AppOps</a> (Recommended)-</strong> Use Android's AppOpsManager to control access to RxLogger, enhancing security by managing permissions for RxLogger operations.</li>
 
-<li><strong><a href="#apptoken">App Token</a> -</strong> Include a token as an extra within intents to access to the RxLogger APIs.</li>
+<li><strong>Shell Command -</strong> Execute the specified command through adb shell.</li>
+
+<li><strong><a href="#apptoken">App Token</a> -</strong> Include a token as an extra within intents to access the Deploy Config API.</li>
 </ul>
 
 <h3 id="appops" class="anchor"><a class="heading-anchor" href="#appops"><span></span></a>AppOps</h3>
@@ -321,32 +318,157 @@ sendBroadcast(intent);
 
 <hr>
 
+<h2 id="deployconfig" class="anchor"><a class="heading-anchor" href="#deployconfig"><span></span></a>Deploy Config</h2>
+
+<p>Any third-party app deploying the configuration file must follow either the AppOps or AppToken approach. <em>The process requires broadcasting the intent before deploying the configuration file,</em> which must be completed within approximately 1 minute of the broadcast. If the deployment is not completed within this timeframe, it may fail. </p>
+
+<p><strong>To broadcast the intent for deploying the configuration file, choose one of the following methods:</strong></p>
+
+<ul>
+<li><p><strong>AppOps -</strong> Use the following command:</p>
+
+<pre class="prettyprint"><code>com.zebra.rxlogger.intent.action.DEPLOY_CONFIG_ZSX
+</code></pre></li>
+
+<li><p><strong>AppToken -</strong> Use the following command:</p>
+
+<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.DEPLOY_CONFIG -e "token" "&lt;token-id&gt;"
+</code></pre>
+
+<p>Replace <code>&lt;token-id&gt;</code> with the obtained token; see <a href="#apptoken">App Token</a> for details.</p></li>
+
+<li><p><strong>Shell Command -</strong> Execute the following command through adb shell:</p>
+
+<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.DEPLOY_CONFIG_SHELL
+</code></pre></li>
+</ul>
+
+<h3 id="status" class="anchor"><a class="heading-anchor" href="#status"><span></span></a>Status</h3>
+
+<p>This informs the third-party app that RxLogger has deployed the configuration file.</p>
+
+<p>Intent:</p>
+
+<pre class="prettyprint"><code>    com.symbol.rxlogger.intent.action.DEPLOY_CONFIG_STATUS
+</code></pre>
+
+<p>Extras returned from the result include the following:</p>
+
+<table class="facelift" style="width:80%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>error_code</th>
+    <th>result</th>
+    <th>status</th>
+    <th>message</th>
+  </tr>
+  <tr>
+      <td>0</td>
+    <td>0</td>
+    <td>success</td>
+    <td>Rx Deploy Config Success</td>
+  </tr>
+  <tr>
+      <td>1</td>
+    <td>-1</td>
+    <td>failure</td>
+    <td>Deploy Config already received waiting for config file to push</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td>-1</td>
+    <td>failure</td>
+    <td>Deploy Config timeout, no config found after 1 min</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td>-1</td>
+    <td>failure</td>
+    <td>Failed to deploy config file</td>
+  </tr>
+</tbody></table>
+
+<p><br></p>
+
+<hr>
+
+<h2 id="getrxloggerstate" class="anchor"><a class="heading-anchor" href="#getrxloggerstate"><span></span></a>Get RxLogger State</h2>
+
+<p>Get RxLogger State retrieves information about the state of RxLogger.</p>
+
+<p><strong>To retrieve the RxLogger state, using one of the following methods:</strong></p>
+
+<ul>
+<li><p><strong>AppOps -</strong> Use the following command:</p>
+
+<pre class="prettyprint"><code>com.zebra.rxlogger.intent.action.GET_RX_STATE_ZSX
+</code></pre></li>
+
+<li><p><strong>Shell Command -</strong> Execute the following command through adb shell:</p>
+
+<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.GET_RX_STATE
+</code></pre></li>
+</ul>
+
+<h3 id="status-1" class="anchor"><a class="heading-anchor" href="#status-1"><span></span></a>Status</h3>
+
+<p>This informs the third-party app that RxLogger has retrieved the RxLogger state.</p>
+
+<p>Intent:</p>
+
+<pre class="prettyprint"><code>    com.symbol.rxlogger.intent.action.GET_RX_STATE_STATUS
+</code></pre>
+
+<p>Extras returned from the result include the following:</p>
+
+<table class="facelift" style="width:80%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>error_code</th>
+    <th>result</th>
+    <th>status</th>
+    <th>message</th>
+  </tr>
+  <tr>
+      <td>0</td>
+    <td>0</td>
+    <td>success</td>
+    <td>secure-cope</td>
+  </tr>
+  <tr>
+      <td>0</td>
+    <td>0</td>
+    <td>success</td>
+    <td>secure</td>
+  </tr>
+  <tr>
+    <td>0</td>
+    <td>0</td>
+    <td>success</td>
+    <td>legacy</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td>-1</td>
+    <td>failure</td>
+    <td>Failed to get RxLogger State</td>
+  </tr>
+</tbody></table>
+
+<p><br></p>
+
+<hr>
+
 <h2 id="enablerxlogger" class="anchor"><a class="heading-anchor" href="#enablerxlogger"><span></span></a>Enable RxLogger</h2>
 
-<p>This initiates data collection for all enabled modules, equivalent to tapping the Start button. Special instructions apply when RxLogger is operated in <a href="../settings/#securemode">Secure Mode</a>.</p>
+<p>Enabling RxLogger initiates the data collection process for all enabled modules. This action is equivalent to tapping the <strong>Start</strong> button in the application interface.</p>
 
-<p>Standard method using an intent to start RxLogger:</p>
-
-<pre class="prettify prettyprint">    <code>com.symbol.rxlogger.intent.action.ENABLE</code>
-</pre>
-
-<h3 id="securemethod" class="anchor"><a class="heading-anchor" href="#securemethod"><span></span></a>Secure Method</h3>
-
-<p>To start RxLogger when in <a href="../settings/#securemode">Secure Mode</a>, use one of the following methods:</p>
+<p>To start RxLogger, use one of the following methods:</p>
 
 <ul>
 <li><p><strong><a href="#appops">AppOps</a> (Recommended) -</strong> Send an intent from a third-party app:</p>
 
-<p>com.symbol.rxlogger.intent.action.ENABLE</p></li>
+<p>com.symbol.rxlogger.intent.action.ENABLE_ZSX</p></li>
 
-<li><p><strong>App Token -</strong> Send an intent with a token from a third-party app:</p>
-
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.ENABLE -e "token" "&lt;token-id&gt;"
-</code></pre>
-
-<p>Include a token as an extra in the intent. Replace <code>&lt;token-id&gt;</code> with the obtained token, see <a href="#apptoken">App Token</a>.</p></li>
-
-<li><p><strong>Shell Command -</strong> Execute the following command:</p>
+<li><p><strong>Shell Command -</strong> Execute the following command through adb shell:</p>
 
 <pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.ENABLE_SHELL
 </code></pre></li>
@@ -354,44 +476,55 @@ sendBroadcast(intent);
 
 <hr>
 
-<h2 id="enablestatus" class="anchor"><a class="heading-anchor" href="#enablestatus"><span></span></a>Enable Status</h2>
+<h3 id="enablestatus" class="anchor"><a class="heading-anchor" href="#enablestatus"><span></span></a>Enable Status</h3>
 
-<p>This intent informs the third-party app that RxLogger has begun capturing logs. RxLogger sends this acknowledgment intent once it enters the running state.</p>
+<p>The <code>ENABLE_STATUS</code> intent notifies the third-party app that RxLogger has started capturing logs. This acknowledgment is sent by RxLogger once it transitions to the running state.</p>
 
 <p>Intent:</p>
 
 <pre class="prettyprint"><code>    com.symbol.rxlogger.intent.action.ENABLE_STATUS
 </code></pre>
 
+<p>Extras included in the intent:</p>
+
+<table class="facelift" style="width:80%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>Extra</th>
+    <th>Values</th>
+  </tr>
+  <tr>
+    <td>result</td>
+   <td>0<br>-1</td>
+  </tr>
+  <tr>
+    <td>status</td>
+    <td>success<br>failure</td>
+  </tr>
+  <tr>
+    <td>error_code</td>
+    <td>0<br>1</td>
+  </tr>
+  <tr>
+    <td>message</td>
+    <td>Enable RxLogger Success<br>Intent failed, RxLogger already in running state</td>
+  </tr>
+</tbody></table>
+
 <hr>
 
 <h2 id="disablerxlogger" class="anchor"><a class="heading-anchor" href="#disablerxlogger"><span></span></a>Disable RxLogger</h2>
 
-<p>This stops data collection for all modules; the equivalent of tapping the Stop button. Special instructions apply when RxLogger is operated in <a href="../settings/#securemode">Secure Mode</a>.</p>
+<p>This stops data collection for all modules; the equivalent of tapping the Stop button. </p>
 
-<p>Standard method using an intent to stop RxLogger:</p>
-
-<pre class="prettify prettyprint">    <code>com.symbol.rxlogger.intent.action.DISABLE</code>
-</pre>
-
-<h3 id="securemethod-1" class="anchor"><a class="heading-anchor" href="#securemethod-1"><span></span></a>Secure Method</h3>
-
-<p>To stop RxLogger when in <a href="../settings/#securemode">Secure Mode</a>, use one of the following methods:</p>
+<p>To stop RxLogger, use one of the following methods:</p>
 
 <ul>
 <li><p><strong><a href="#appops">AppOps</a> (Recommended) -</strong> Send an intent from a third-party app:</p>
 
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.DISABLE
+<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.DISABLE_ZSX
 </code></pre></li>
 
-<li><p><strong>App Token -</strong> Send an intent with a token from a third-party app:</p>
-
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.DISABLE -e "token" "&lt;token-id&gt;"
-</code></pre>
-
-<p>Include a token as an extra in the intent. Replace <code>&lt;token-id&gt;</code> with the obtained token, see <a href="#apptoken">App Token</a>.</p></li>
-
-<li><p><strong>Shell Command -</strong> Execute the following command:</p>
+<li><p><strong>Shell Command -</strong> Execute the following command through adb shell:</p>
 
 <pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.DISABLE_SHELL
 </code></pre></li>
@@ -399,7 +532,7 @@ sendBroadcast(intent);
 
 <hr>
 
-<h2 id="disablestatus" class="anchor"><a class="heading-anchor" href="#disablestatus"><span></span></a>Disable Status</h2>
+<h3 id="disablestatus" class="anchor"><a class="heading-anchor" href="#disablestatus"><span></span></a>Disable Status</h3>
 
 <p>This informs the third-party app that RxLogger has stopped capturing logs. RxLogger sends this acknowledgment intent once it stops log capture.</p>
 
@@ -408,104 +541,138 @@ sendBroadcast(intent);
 <pre class="prettyprint"><code>    com.symbol.rxlogger.intent.action.DISABLE_STATUS
 </code></pre>
 
+<p>Extras included in the intent:</p>
+
+<table class="facelift" style="width:80%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>Extra</th>
+    <th>Values</th>
+  </tr>
+  <tr>
+    <td>result</td>
+   <td>0<br>-1</td>
+  </tr>
+  <tr>
+    <td>status</td>
+    <td>success<br>failure</td>
+  </tr>
+  <tr>
+    <td>error_code</td>
+    <td>0<br>1</td>
+  </tr>
+  <tr>
+    <td>message</td>
+    <td>Disable RxLogger Success<br>Intent failed, RxLogger already in running state</td>
+  </tr>
+</tbody></table>
+
 <hr>
 
 <h2 id="backupnow" class="anchor"><a class="heading-anchor" href="#backupnow"><span></span></a>BackupNow</h2>
 
-<p>This initiates a backup of log files in the RxLogger folder, compressing them into a zip file named <code>Backup-&lt;date&gt;-&lt;HHMMSS&gt;.zip</code>, where <code>&lt;date&gt;-&lt;HHMMSS&gt;</code> is time stamp. Special instructions apply when operating RxLogger in <a href="../settings/#securemode">Secure Mode</a>.</p>
+<p>BackupNow triggers the collection of log files and stores in the RxLogger folder. These files are compressed into a password-protected zip file with the naming format <code>Backup-&lt;date&gt;-&lt;HHMMSS&gt;.zip</code>, where <code>&lt;date&gt;-&lt;HHMMSS&gt;</code> represents the timestamp of the backup. </p>
 
-<p>Standard method using an intent to stop RxLogger:</p>
+<p>The passwords for the .zip file must meet the following requirements:</p>
 
-<pre class="prettify prettyprint">    <code>com.symbol.rxlogger.intent.action.BACKUP_NOW</code>
-</pre>
+<ul>
+<li>Be at least 8 characters long </li>
 
-<h3 id="securemethod-2" class="anchor"><a class="heading-anchor" href="#securemethod-2"><span></span></a>Secure Method</h3>
+<li>Contain at least one uppercase letter</li>
 
-<p>To trigger a backup in <a href="../settings/#securemode">Secure Mode</a>, use one of the following methods:</p>
+<li>Contain at least one lowercase letter</li>
+
+<li>Include at least one digit</li>
+
+<li>Include t least one special character, such as <code>@#$%^&amp;*+-=!</code>.</li>
+</ul>
+
+<p>To trigger a backup, use one of the following methods:</p>
 
 <ul>
 <li><p><strong><a href="#appops">AppOps</a> (Recommended) -</strong> Send an intent from a third-party app:</p>
 
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.BACKUP_NOW  -e "password" "&lt;password&gt;"
+<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.BACKUP_NOW_ZSX  -e "password" "&lt;password&gt;"
 </code></pre>
 
-<p>Replace <code>&lt;password&gt;</code> with the password set for app access, see <a href="#appops">AppOps</a>.</p></li>
+<p>Replace <code>&lt;password&gt;</code> with your own desired password based on the specified criteria. </p></li>
 
-<li><p><strong>App Token -</strong> Send an intent with a token from a third-party app:</p>
-
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.BACKUP_NOW -e "token" "&lt;token-id&gt;" -e "password" "&lt;password&gt;"
-</code></pre>
-
-<p>Include a token as an extra in the intent. Replace <code>&lt;token-id&gt;</code> with the obtained token and <code>&lt;password&gt;</code> with the password set, see <a href="#apptoken">App Token</a>.</p></li>
-
-<li><p><strong>Shell Command -</strong> Execute the command:</p>
+<li><p><strong>Shell Command -</strong> Execute the command through adb shell:</p>
 
 <pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.BACKUP_NOW_SHELL  -e "password" "&lt;password&gt;"
 </code></pre>
 
-<p>Replace <code>&lt;password&gt;</code> with the password set for app access, see <a href="#appops">AppOps</a>.</p></li>
+<p>Replace <code>&lt;password&gt;</code> with your own desired password based on the specified criteria. </p></li>
 </ul>
 
 <hr>
 
-<h2 id="backupnowstatus" class="anchor"><a class="heading-anchor" href="#backupnowstatus"><span></span></a>BackupNow Status</h2>
+<h3 id="backupnowstatus" class="anchor"><a class="heading-anchor" href="#backupnowstatus"><span></span></a>BackupNow Status</h3>
 
-<p>This provides the status of the backup operation. RxLogger sends an acknowledgment intent to convey the backup status, including extras such as status, message and the absolute path of the backup zip file. These extras vary based on whether <a href="../settings/#securemode">Secure Mode</a> is enabled.</p>
+<p>This provides the status of the backup operation. RxLogger sends an acknowledgment intent to convey the backup status.</p>
 
 <p>Intent:</p>
 
 <pre class="prettyprint"><code>    com.symbol.rxlogger.intent.action.BACKUP_NOW_STATUS
 </code></pre>
 
-<p><strong>Non-secure (Legacy) RxLogger:</strong></p>
-
-<table class="facelift" style="width:60%" border="1" padding="5px">
-  <tbody><tr bgcolor="#dce8ef">
-    <th>Extra</th>
-    <th>Success Message</th>
-    <th>Failure Message</th>
-  </tr>
-  <tr>
-      <td>status</td>
-    <td>success</td>
-    <td>failed</td>
-  </tr>
-  <tr>
-      <td>message</td>
-    <td>Backup Success</td>
-    <td>Backup Failed</td>
-  </tr>
-  <tr>
-      <td>filepath</td>
-    <td>/sdcard/rxlogger/Backup-&lt;date&gt;-&lt;HHMMSS&gt;.zip</td>
-    <td>null</td>
-  </tr>
-</tbody></table>
-
-<p><br></p>
-
-<p><strong>Secure RxLogger:</strong></p>
+<p>Extras returned from the intent include: result, status, error_code, message &amp; filepath.</p>
 
 <table class="facelift" style="width:80%" border="1" padding="5px">
   <tbody><tr bgcolor="#dce8ef">
-    <th>Extra</th>
-    <th>Success Message</th>
-    <th>Failure Message</th>
+    <th>error_code</th>
+    <th>result</th>
+    <th>status</th>
+    <th>message</th>
+    <th>filepath</th>
   </tr>
   <tr>
-      <td>status</td>
+      <td>0</td>
+    <td>0</td>
     <td>success</td>
-    <td>failed</td>
+    <td>Rx Backup Success</td>
+    <td><code>/sdcard/Android/data/com.symbol.rxlogger/RxLogger/secure/log_data/SecureBackup-<date>-<hhmmss>.zip</hhmmss></date></code></td>
   </tr>
   <tr>
-      <td>message</td>
-    <td>Backup Success</td>
-    <td>Backup Failed</td>
+      <td>1</td>
+    <td>-1</td>
+    <td>failure</td>
+    <td>Intent failed, Backup is currently running</td>
+    <td>N/A</td>
   </tr>
   <tr>
-      <td>filepath</td>
-    <td>/&lt;Secure_RxLogger_Path&gt;/SecureBackup-&lt;date&gt;-&lt;HHMMSS&gt;.zip <br><br>Where "&lt;Secure_RxLogger_Path&gt;" represents one of the following:<br>&nbsp;&nbsp;&nbsp;• <b>Internal storage path:</b> <i>/sdcard/Android/data/com.symbol.rxlogger/RxLogger/secure/log_data/</i><br>&nbsp;&nbsp;&nbsp;• <b>External storage path:</b> <i>/storage/&lt;UUID&gt;/Android/data/com.symbol.rxlogger/RxLogger/secure/log_data/</i></td>
-    <td>null</td>
+    <td>2</td>
+    <td>-1</td>
+    <td>failure</td>
+    <td>Invalid/Empty Password</td>
+    <td>N/A</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td>-1</td>
+    <td>failure</td>
+    <td>Failed to get User Handle from dd service</td>
+    <td>N/A</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td>-1</td>
+    <td>failure</td>
+    <td>Failed to copy backup file to U10 storage</td>
+    <td>N/A</td>
+  </tr>
+  <tr>
+    <td>5</td>
+    <td>-1</td>
+    <td>failure</td>
+    <td>Failed to delete file in U0 path</td>
+    <td>N/A</td>
+  </tr>
+  <tr>
+    <td>6</td>
+    <td>-1</td>
+    <td>failure</td>
+    <td>Zipping of secure files failed</td>
+    <td>N/A</td>
   </tr>
 </tbody></table>
 
@@ -513,7 +680,7 @@ sendBroadcast(intent);
 
 <h2 id="remoteinfologging" class="anchor"><a class="heading-anchor" href="#remoteinfologging"><span></span></a>Remote Info Logging</h2>
 
-<p>When operating in <a href="../settings/#securemode">Secure Mode</a>, all events related to use of remote intents, including both success and failure information, are captured in the file <code>RxInfo.txt</code>. Error details may include instances where remote intents failed to start, stop, or back up RxLogger. This file is located in one of the following folders:</p>
+<p>All events related to use of remote intents, including both success and failure information, are captured in the file <code>RxInfo.txt</code>. Error details may include instances where remote intents failed to start, stop, or back up RxLogger. This file is located in one of the following folders:</p>
 
 <ul>
 <li>Internal storage path: <code>/sdcard/RxLogger/</code></li>
@@ -525,33 +692,23 @@ sendBroadcast(intent);
 
 <h2 id="resettodefault" class="anchor"><a class="heading-anchor" href="#resettodefault"><span></span></a>Reset to Default</h2>
 
-<p>This resets RxLogger settings to their default values across all modules. Special instructions apply when RxLogger is in <a href="../settings/#securemode">Secure Mode</a>.</p>
+<p>This resets RxLogger settings to their default values across all modules. </p>
 
-<p>Select the method to perform a reset to default based on whether secure mode is enabled:</p>
-
-<ul>
-<li><p><strong>Standard Method (Non-secure) -</strong> Send an intent:</p>
-
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.RESET_TO_DEFAULT
-</code></pre></li>
-
-<li><p><strong>Secure Method -</strong> Choose one of the following:</p>
+<p>Choose one of the following to reset to the default settings:</p>
 
 <ul>
 <li><p><strong>AppOps (Recommended) -</strong> Send an intent from a third-party app:</p>
 
-<p>com.symbol.rxlogger.intent.action.RESET_TO_DEFAULT</p></li>
+<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.RESET_TO_DEFAULT_ZSX
+</code></pre></li>
 
-<li><p><strong>App Token -</strong> Send an intent with a token from a third-party app, replacing <code>&lt;token-id&gt;</code> with the obtained token (see <a href="#apptoken">App Token</a>):</p>
+<li><p><strong>Shell Command -</strong> Execute the following command through adb shell:</p>
 
-<p>com.symbol.rxlogger.intent.action.RESET_TO_DEFAULT  -e "token" "<token-id>"</token-id></p></li>
-
-<li><p><strong>Shell Command -</strong> Execute the following command:</p>
-
-<p>com.symbol.rxlogger.intent.action.RESET_TO_DEFAULT_SHELL</p></li></ul></li>
+<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.RESET_TO_DEFAULT_SHELL
+</code></pre></li>
 </ul>
 
-<h3 id="status" class="anchor"><a class="heading-anchor" href="#status"><span></span></a>Status</h3>
+<h3 id="status-2" class="anchor"><a class="heading-anchor" href="#status-2"><span></span></a>Status</h3>
 
 <p>This intent notifies the third-party app that RxLogger settings have been restored to their default state. RxLogger dispatches this acknowledgment intent upon completing the reset process.</p>
 
@@ -560,42 +717,51 @@ sendBroadcast(intent);
 <pre class="prettyprint"><code>    com.symbol.rxlogger.intent.action.RESET_TO_DEFAULT_STATUS
 </code></pre>
 
+<p>Extras returned from the result include the following:</p>
+
+<table class="facelift" style="width:80%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>error_code</th>
+    <th>result</th>
+    <th>status</th>
+    <th>message</th>
+  </tr>
+  <tr>
+      <td>0</td>
+    <td>0</td>
+    <td>success</td>
+    <td>N/A</td>
+  </tr>
+  <tr>
+      <td>1</td>
+    <td>-1</td>
+    <td>failure</td>
+    <td>Intent failed, Reset to default currently running</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td>-1</td>
+    <td>failure</td>
+    <td>RxLogger running, cannot do reset to default</td>
+  </tr>
+</tbody></table>
+
 <hr>
 
 <h2 id="deletelogs" class="anchor"><a class="heading-anchor" href="#deletelogs"><span></span></a>Delete Logs</h2>
 
-<p>This removes logs located in the RxLogger folder. Special instructions apply when RxLogger is in <a href="../settings/#securemode">Secure Mode</a>.</p>
+<p>This removes logs located in the RxLogger folder. </p>
 
-<p>Select the method to delete logs based on whether secure mode is enabled:</p>
-
-<ul>
-<li><p><strong>Standard Method (Non-secure) -</strong> Send an intent:</p>
-
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.DELETE_LOGS -e logType &lt;logType&gt;
-</code></pre>
-
-<p>Replace <code>&lt;logType&gt;</code> with one of the following values:</p>
-
-<ul>
-<li><strong>0 -</strong> (default) Delete all logs and backup files</li>
-
-<li><strong>1 -</strong> Delete only log files</li>
-
-<li><strong>2 -</strong> Delete only backup files
-Any other value or absence of this value defaults to deleting all files.</li></ul></li>
-
-<li><p><strong>Secure Method -</strong> Choose one of the following:</p>
+<p>Choose one of the following methods to delete logs:</p>
 
 <ul>
 <li><p><strong>AppOps (Recommended) -</strong> Send an intent from a third-party app:</p>
 
-<p>com.symbol.rxlogger.intent.action.DELETE_LOGS  -e logType <logtype></logtype></p></li>
+<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.DELETE_LOGS_ZSX
+</code></pre>
 
-<li><p><strong>App Token -</strong> Send an intent with a token from a third-party app, replacing <code>&lt;token-id&gt;</code> with the obtained token (see <a href="#apptoken">App Token</a>):</p>
-
-<p>com.symbol.rxlogger.intent.action.DELETE_LOGS   -e "token" "<token-id>" -e logType <logtype></logtype></token-id></p></li>
-
-<li><p><strong>Shell Command -</strong> Execute the following command:</p>
+<ul>
+<li><p><strong>Shell Command -</strong> Execute the following command through adb shell:</p>
 
 <p>com.symbol.rxlogger.intent.action.DELETE_LOGS _SHELL -e logType <logtype></logtype></p></li></ul>
 
@@ -606,11 +772,12 @@ Any other value or absence of this value defaults to deleting all files.</li></u
 
 <li><strong>1 -</strong> Delete only log files</li>
 
-<li><strong>2 -</strong> Delete only backup files
-Any other value or absence of this value defaults to deleting all files.</li></ul></li>
+<li><strong>2 -</strong> Delete only backup files</li></ul>
+
+<p>Any other value or absence of this <code>&lt;logType&gt;</code> value defaults to deleting all files.</p></li>
 </ul>
 
-<h3 id="status-1" class="anchor"><a class="heading-anchor" href="#status-1"><span></span></a>Status</h3>
+<h3 id="status-3" class="anchor"><a class="heading-anchor" href="#status-3"><span></span></a>Status</h3>
 
 <p>This intent notifies the third-party app that the RxLogger logs have been deleted. RxLogger issues this acknowledgment after completing the deletion process.</p>
 
@@ -619,37 +786,56 @@ Any other value or absence of this value defaults to deleting all files.</li></u
 <pre class="prettyprint"><code>    com.symbol.rxlogger.intent.action.DELETE_LOGS_STATUS
 </code></pre>
 
+<p>Extras returned from the result include the following:</p>
+
+<table class="facelift" style="width:80%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>error_code</th>
+    <th>result</th>
+    <th>status</th>
+    <th>message</th>
+  </tr>
+  <tr>
+      <td>0</td>
+    <td>0</td>
+    <td>success</td>
+    <td>N/A</td>
+  </tr>
+  <tr>
+      <td>1</td>
+    <td>-1</td>
+    <td>failure</td>
+    <td>Intent failed, Delete Logs currently running</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td>-1</td>
+    <td>failure</td>
+    <td>RxLogger running, Cannot delete its log</td>
+  </tr>
+</tbody></table>
+
 <hr>
 
 <h2 id="bugreport" class="anchor"><a class="heading-anchor" href="#bugreport"><span></span></a>Bug Report</h2>
 
-<p>This initiates the process of generating a <a href="../settings/#bugreport">bug report</a>, providing comprehensive diagnostic information to aid in troubleshooting and performance analysis. Special instructions apply when RxLogger operates in <a href="../settings/#securemode">Secure Mode</a>.</p>
+<p>This initiates the process of generating a <a href="../settings/#bugreport">bug report</a>, providing comprehensive diagnostic information to aid in troubleshooting and performance analysis. </p>
 
-<p>Select the method to delete logs based on whether secure mode is enabled:</p>
-
-<ul>
-<li><p><strong>Standard Method (Non-secure) -</strong> Send an intent:</p>
-
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.RX_BUGREPORT
-</code></pre></li>
-
-<li><p><strong>Secure Method -</strong> Choose one of the following:</p>
+<p>Choose one of the following to create a bug report:</p>
 
 <ul>
 <li><p><strong>AppOps (Recommended) -</strong> Send an intent from a third-party app:</p>
 
-<p>com.symbol.rxlogger.intent.action.RX_BUGREPORT</p></li>
+<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.RX_BUGREPORT_ZSX
+</code></pre></li>
 
-<li><p><strong>App Token -</strong> Send an intent with a token from a third-party app, replacing <code>&lt;token-id&gt;</code> with the obtained token (see <a href="#apptoken">App Token</a>):</p>
+<li><p><strong>Shell Command -</strong> Execute the following command through adb shell:</p>
 
-<p>com.symbol.rxlogger.intent.action.RX_BUGREPORT -e "token" "<token-id>"</token-id></p></li>
-
-<li><p><strong>Shell Command -</strong> Execute the following command:</p>
-
-<p>com.symbol.rxlogger.intent.action.RX_BUGREPORT_SHELL</p></li></ul></li>
+<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.RX_BUGREPORT_SHELL
+</code></pre></li>
 </ul>
 
-<h3 id="status-2" class="anchor"><a class="heading-anchor" href="#status-2"><span></span></a>Status</h3>
+<h3 id="status-4" class="anchor"><a class="heading-anchor" href="#status-4"><span></span></a>Status</h3>
 
 <p>This intent alerts the third-party app that RxLogger has successfully generated the bug report. RxLogger issues this acknowledgment once the bug report is generated.</p>
 
@@ -658,18 +844,51 @@ Any other value or absence of this value defaults to deleting all files.</li></u
 <pre class="prettyprint"><code>    com.symbol.rxlogger.intent.action.RX_BUGREPORT_STATUS
 </code></pre>
 
+<p>Extras returned from the result include the following:</p>
+
+<table class="facelift" style="width:80%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>error_code</th>
+    <th>result</th>
+    <th>status</th>
+    <th>message</th>
+  </tr>
+  <tr>
+      <td>0</td>
+    <td>0</td>
+    <td>success</td>
+    <td>N/A</td>
+  </tr>
+  <tr>
+      <td>1</td>
+    <td>-1</td>
+    <td>failure</td>
+    <td>Intent failed, Bugreport currently running</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td>-1</td>
+    <td>failure</td>
+    <td>Copy Bugreport file from source to RxLogger folder failed</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td>-1</td>
+    <td>failure</td>
+    <td>Bugreport file not generated at source</td>
+  </tr>
+</tbody></table>
+
 <hr>
 
 <h2 id="relatedlinks" class="anchor"><a class="heading-anchor" href="#relatedlinks"><span></span></a>Related Links</h2>
 
 <ul>
-<li><a href="../about">About RxLogger</a> - Provides an overview of RxLogger and how to use</li>
+<li><a href="../about">About RxLogger</a> - Provides an overview of RxLogger</li>
 
-<li><a href="../settings">Settings</a> - How to configure data collection module parameters</li>
+<li><a href="../settings">Settings</a> - Guides how to configure settings and modules</li>
 
-<li><a href="../modules">Modules</a> - Explains data collection module parameters and settings</li>
-
-<li><a href="../utility">Log Viewer</a> - View RxLogger logs in realtime</li>
+<li><a href="../usage">User Guide</a> - Provides instrucdtions on using RxLogger</li>
 </ul><p></p>
                                         
 
