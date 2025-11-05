@@ -268,7 +268,7 @@
 
 <p><code>EntityTrackerAnalyzer</code> implements the <code>ImageAnalysis.Analyzer</code> interface for real-time detection and tracking of <a href="../entity/">entities</a>. It integrates seamlessly with CameraX, processing image frames using a list of detectors to deliver aggregated entity tracking results. The analyzer efficiently manages image buffers and executes detectors asynchronously, ensuring optimal performance. It also handles coordinate system transformations based on the coordinate system value passed to the constructor. </p>
 
-<p>Currently, <a href="../barcodedecoder/">BarcodeDecoder</a> is supported as a detector in <code>EntityTrackerAnalyzer</code>, which uses the <strong>barcode-localizer</strong> model. For more information and to download the model, refer to <a href="../model/barcode-localizer/">Barcode Localizer Model</a>.</p>
+<p>Currently, <a href="../barcodedecoder/">BarcodeDecoder</a> and <a href="../textocr/">Text OCR</a> are supported as detectors in <code>EntityTrackerAnalyzer</code>.</p>
 
 <p><strong>Use Cases:</strong></p>
 
@@ -283,7 +283,7 @@
 <p><strong>Notes:</strong></p>
 
 <ul>
-<li><strong>Extensibility -</strong> The analyzer is designed to be extended with additional detectors and consumer logic. However, <em>currently only <a href="../barcodedecoder/">BarcodeDecoder</a> is supported as a detector.</em> Only a single instance of each detector type should be passed in to the constructor.</li>
+<li><strong>Extensibility -</strong> The analyzer is designed to be extended with additional detectors and consumer logic. However, <em>currently only <a href="../barcodedecoder/">BarcodeDecoder</a> and <a href="../textocr/">Text OCR</a> are supported as detectors.</em> Only a single instance of each detector type should be passed in to the constructor.</li>
 
 <li><strong>Lifecycle handling -</strong> Developers are responsible for managing the session throughout the Android application lifecycle. The application must manage the session, since <code>EntityTrackerAnalyzer</code> does not handle this internally.   </li>
 
@@ -452,7 +452,7 @@ if (barcodeDecoder != null) {
 
 <p>Constructs an <code>EntityTrackerAnalyzer</code> using specified entity detectors, target coordinate system, an executor, and an <a href="../entity/">Entity</a> consumer. It initializes components for entity tracking, including a buffer manager and an entity tracker, using specified detectors. The analyzer configures entity processing and sets the coordinate system for analysis. The executor is used to execute the consumer. </p>
 
-<p>Currently, only <a href="../barcodedecoder/">BarcodeDecoder</a> is supported as a detector. Only one instance of BarcodeDecoder detector is accepted. Providing multiple detectors of the same type results in undefined behavior.</p>
+<p>Currently, only <a href="../barcodedecoder/">BarcodeDecoder</a> and <a href="../textocr/">Text OCR</a> are supported as detectors in <code>EntityTrackerAnalyzer</code>. Only one instance of BarcodeDecoder detector is accepted. Providing multiple detectors of the same type results in undefined behavior.</p>
 
 <p>The <code>EntityTrackerAnalyzer</code> calculates the output bounding box coordinates based on the <code>targetCoordinateSystem</code> set by the user:</p>
 
@@ -739,20 +739,78 @@ A new <code>Result</code> instance with copied data.</p>
 
 <h2 id="detectors" class="anchor"><a class="heading-anchor" href="#detectors"><span></span></a>Detectors</h2>
 
-<p>The <code>BarcodeDecoder</code> and <code>TextOCR</code> classes implement a CameraX <code>Detector</code> interface allowing users to use CameraX as the frame source and build custom analyzers to detect and decode barcodes or recognize text in the frame delivered to the analyze() interface: This is particularly useful for applications that require to combining multiple detectors within the CameraX analyzer. </p>
+<p>The <code>BarcodeDecoder</code> and <code>TextOCR</code> classes implement Zebra's AI Data Capture SDK's <code>Detector</code> interface, which defines the core contract for all detection modules in the AI Data Capture SDK. A detector processes image data and returns detection results asynchronously, enabling efficient and non-blocking image analysis for applications such as barcode scanning, object detection, and text recognition.</p>
 
-<p>Available detectors:</p>
+<p>Type Parameters:</p>
 
 <ul>
-<li><p><a href="../barcodedecoder/">BarcodeDecoder</a> – Processes <code>ImageData</code> and generates a list of <code>BarcodeEntity</code> objects. It uses the <a href="../barcodedecoder/#processimagedataimagedataexecutorexecutor">process()</a> method from <strong>BarcodeDecoder:</strong></p>
+<li><code>&lt;T&gt;</code>: The generic type parameter <code>&lt;T&gt;</code> represents the type of detection result returned by the detector implementation. The actual type varies based on the detector being used: 
 
-<pre class="prettyprint"><code>process (ImageData imageData) 
-</code></pre></li>
 
-<li><p><a href="../textocr/">TextOCR</a> - Processes <code>ImageData</code> and generates a list of <code>ParagraphEntity</code> objects. It uses the <a href="../textocr/#processimagedataimagedataexecutorexecutor">process()</a> method from TextOCR:</p>
+<ul>
+<li><strong>Barcode Detection:</strong> Processes <code>ImageData</code> and generates a <code>List&lt;BarcodeEntity&gt;</code> containing detected barcode entities. </li>
 
-<pre class="prettyprint"><code>process (ImageData imageData) 
-</code></pre></li>
+<li><strong>Text Recognition (OCR):</strong> Processes <code>ImageData</code> and generates a <code>List&lt;ParagraphEntity&gt;</code> containing detected text paragraphs. </li></ul>
+</li>
+</ul>
+
+<!-- 
+Available detectors:
+- [BarcodeDecoder](../barcodedecoder/) – Processes `ImageData` and generates a list of `BarcodeEntity` objects. It uses the [process()](../barcodedecoder/#processimagedataimagedataexecutorexecutor) method from **BarcodeDecoder:**
+
+        process (ImageData imageData) 
+
+- [TextOCR](../textocr/) - Processes `ImageData` and generates a list of `ParagraphEntity` objects. It uses the [process()](../textocr/#processimagedataimagedataexecutorexecutor) method from TextOCR:
+
+        process (ImageData imageData) 
+-->
+
+<h3 id="methods-2" class="anchor"><a class="heading-anchor" href="#methods-2"><span></span></a>Methods</h3>
+
+<h4 id="completablefuturelttgtprocessimagedataimagedata" class="anchor"><a class="heading-anchor" href="#completablefuturelttgtprocessimagedataimagedata"><span></span></a>CompletableFuture&lt;T&gt; process(ImageData imageData)</h4>
+
+<pre class="prettyprint"><code>    CompletableFuture&lt;T&gt; process(ImageData imageData) 
+</code></pre>
+
+<p>Processes the provided image data and returns the detection results asynchronously. This method nalyzes the given image data according to the detector’s implementation and returns a <code>CompletableFuture</code> that completes with the detection results. Processing is performed asynchronously to avoid blocking the UI thread. </p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>imageData:</strong> The image data to be processed. </li>
+</ul>
+
+<p><strong>Returns:</strong>
+A <code>CompletableFuture</code> that will complete with the detection results. </p>
+
+<p><strong>Throws:</strong></p>
+
+<ul>
+<li><strong>AIVisionSDKException:</strong> Thrown if the image data is invalid or if processing fails. </li>
+</ul>
+
+<h4 id="completablefuturelttgtprocessimagedataimagedataexecutorexecutor" class="anchor"><a class="heading-anchor" href="#completablefuturelttgtprocessimagedataimagedataexecutorexecutor"><span></span></a>CompletableFuture&lt;T&gt; process(ImageData imageData, Executor executor)</h4>
+
+<pre class="prettyprint"><code>    CompletableFuture&lt;T&gt; process(ImageData imageData, Executor executor) 
+</code></pre>
+
+<p>Processes the provided image data and returns the detection results asynchronously in the specified executor thread. This method analyzes the given image data and returns a <code>CompletableFuture</code> that completes with the detection results. The result is delivered asynchronously using the provided executor, allowing control over the threading context. </p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>imageData:</strong> The image data to be processed. </li>
+
+<li><strong>executor:</strong> The executor used to return the results of detector. </li>
+</ul>
+
+<p><strong>Returns:</strong>
+A <code>CompletableFuture</code> that completes with the detection results. </p>
+
+<p><strong>Throws:</strong></p>
+
+<ul>
+<li><strong>AIVisionSDKException:</strong> If the image data is invalid or if processing fails. </li>
 </ul>
 
 <hr>
@@ -1274,7 +1332,7 @@ NOTE: This API is not intended for developers use.
 
 <p><code>EntityViewController</code> is a key component of the <code>EntityViewfinder</code>, providing a high-level interface for managing the camera preview, rendering detected entities, handling user interactions, and controlling viewfinder behavior.</p>
 
-<h4 id="methods-2" class="anchor"><a class="heading-anchor" href="#methods-2"><span></span></a>Methods</h4>
+<h4 id="methods-3" class="anchor"><a class="heading-anchor" href="#methods-3"><span></span></a>Methods</h4>
 
 <h5 id="entityviewcontrollerentityviewentityviewlifecycleownerlifecycleowner" class="anchor"><a class="heading-anchor" href="#entityviewcontrollerentityviewentityviewlifecycleownerlifecycleowner"><span></span></a>EntityViewController(EntityView entityView, LifecycleOwner lifecycleOwner)</h5>
 
