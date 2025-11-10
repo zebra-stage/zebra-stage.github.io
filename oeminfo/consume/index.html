@@ -439,16 +439,94 @@ return cursor;
 
 <h2 id="dataacquisitionapis" class="anchor"><a class="heading-anchor" href="#dataacquisitionapis"><span></span></a>Data Acquisition APIs</h2>
 
-<h3 id="acquirebatteryinfo" class="anchor"><a class="heading-anchor" href="#acquirebatteryinfo"><span></span></a>Acquire Battery Info</h3>
+<h3 id="acquireosupdateinfo" class="anchor"><a class="heading-anchor" href="#acquireosupdateinfo"><span></span></a>Acquire OS Update Info</h3>
+
+<p>The process for acquiring the device OS varies slightly from others. The APIs below are defined by Zebra.  </p>
+
+<h4 id="uri" class="anchor"><a class="heading-anchor" href="#uri"><span></span></a>URI:</h4>
+
+<ul>
+<li><code>content://oem_info/oem.zebra.osupdate/</code></li>
+</ul>
+
+<h4 id="apis" class="anchor"><a class="heading-anchor" href="#apis"><span></span></a>APIs:</h4>
+
+<ul>
+<li><code>status</code>: SUCCESS (Android 8 only), FAILED, PASSED, CANCELLED, IN_PROGRESS, IN_SUSPEND, WAITING_FOR_REBOOT</li>
+
+<li><code>detail</code>: Verbose text describing the status</li>
+
+<li><code>ts</code>: Returns an epoch timestamp indicating when the intent was received</li>
+</ul>
+
+<p><strong>1. Get the AUTHORITY, PROVIDER and API</strong> using the following Java code:<br></p>
+
+<pre class="prettyprint"><code>    
+    // OS UPDATE URI
+    String OSU_URI = “content://oem_info/oem.zebra.osupdate”;
+
+    // APIs
+    String OSU_STATUS = “status”; 
+
+    String OSU_DETAIL = “detail”;
+
+    String OSU_TS = “ts”;
+</code></pre>
+
+<p><strong>2. Get the data</strong> (in this case the device OS update info) by parsing the string using Android cursor query methods implemented in the following Java code:<br></p>
+
+<pre class="prettyprint"><code>            
+            // Prepare the URI
+            public void getData() {
+                final Uri myUri = Uri.parse(OSU_URI);
+                new UpdateAsync().execute(myUri.toString());
+            }
+
+            // Always query for data in Async task or background thread
+                class UpdateAsync extends AsyncTask&lt;String,Void,Cursor&gt; {
+                private String myUri;
+
+            @Override
+            protected Cursor doInBackground(String... args) {
+                myUri = args[0];
+
+                // Query the content provider
+                ContentResolver cr = getContentResolver();
+                Cursor cursor = cr.query(Uri.parse(myUri),
+                                null, null, null, null);
+
+                // Read the cursor
+                While (cursor.moveToNext()) {
+                String status = cursor.getString(
+                cursor.getColumnIndex(OSU_STATUS));
+
+                String detail = cursor.getString(
+                cursor.getColumnIndex(OSU_DETAIL));
+
+                String time = cursor.getString(
+                cursor.getColumnIndex(OSU_TS));
+
+                Log.i(TAG, "STATUS : " + status + “, DETAIL : ” + detail
+                    + “, TIME : ” + time);
+
+            }
+            return cursor;
+        }
+    }
+</code></pre>
+
+<hr>
+
+<h3 id="acquireperipheralbatteryinfo" class="anchor"><a class="heading-anchor" href="#acquireperipheralbatteryinfo"><span></span></a>Acquire Peripheral Battery Info</h3>
 
 <p>Battery information can be retrieved only on peripherals connected to the mobile computer at the time of the query. Information is stored as a single JSON string that can be queried based on application requirements. API values match those of Android system properties.</p>
 
-<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>To retrieve information about a connected peripheral (e.g. battery status)</strong>:<br></p>
+<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>To retrieve information about a connected peripheral (e.g. its battery status, etc.)</strong>:<br></p>
 
 <ul>
 <li><strong>Zebra <a href="/devicecentral/latest/guide/setup/">Device Central</a> must be installed and running</strong> on the mobile device.</li>
 
-<li><strong>The peripheral must be connected</strong> to—and enabled on—the device.</li>
+<li><strong>The target peripheral must be connected</strong> to—and enabled on—the device.</li>
 
 <li><strong>To query battery information of RS-series scanners</strong>: 
 
@@ -462,7 +540,7 @@ return cursor;
 
 <p><i class="fa fa-check-circle" style="color:#27AE60;"></i> <strong>Where to <a href="https://www.zebra.com/us/en/support-downloads/lifeguard-security.html">get LifeGuard updates</a></strong></p>
 
-<h4 id="uri" class="anchor"><a class="heading-anchor" href="#uri"><span></span></a>URI:</h4>
+<h4 id="uri-1" class="anchor"><a class="heading-anchor" href="#uri-1"><span></span></a>URI:</h4>
 
 <ul>
 <li><code>content://com.symbol.devicecentral.provider/peripheral_info/</code></li>
@@ -557,12 +635,156 @@ protected Cursor doInBackground(String... args) {
 </ul>
 
 <blockquote>
-  <p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>To retrieve peripheral battery information</strong>:<br></p>
+  <p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>To retrieve information about a peripheral (e.g. battery status, etc.)</strong>:<br></p>
   
   <ul>
   <li><strong>Zebra <a href="/devicecentral/latest/guide/setup/">Device Central</a> must be installed and running</strong> on the mobile device <br></li>
   
-  <li><strong>The peripheral must be connected to and enabled</strong> on the device<br></li>
+  <li><strong>The target peripheral must be connected to—and enabled on—the device</strong><br></li>
+  </ul>
+</blockquote>
+
+<hr>
+
+<h3 id="acquireperipheraldeviceinfo" class="anchor"><a class="heading-anchor" href="#acquireperipheraldeviceinfo"><span></span></a>Acquire Peripheral Device Info</h3>
+
+<p>Device information can be retrieved only on peripherals connected to the mobile computer at the time of the query. Information is stored as a single JSON string that can be queried based on application requirements. API values match those of Android system properties. </p>
+
+<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i><strong>To retrieve information about a connected peripheral</strong>: </p>
+
+<ul>
+<li><strong>Zebra <a href="/devicecentral/latest/guide/setup/">Device Central</a> 4.4  (or later) must be installed and running</strong> on the mobile device.</li>
+
+<li><strong>The target peripheral must be connected</strong> to—and enabled on—the device.</li>
+
+<li><strong>To query device information of RS-series scanners</strong>: 
+
+
+<ul>
+<li><strong>Devices running Android 13</strong> must have the Nov. 2025 LifeGuard update (or later, with emdkservice version 13.0.33 or later)  </li>
+
+<li><strong>Devices running Android 11</strong> must have the Nov. 2025 LifeGuard update (or later, with emdkservice version 11.0.149 or later)</li></ul>
+</li>
+</ul>
+
+<p><i class="fa fa-check-circle" style="color:#27AE60;"></i> <strong>Where to <a href="https://www.zebra.com/us/en/support-downloads/lifeguard-security.html">get LifeGuard updates</a></strong></p>
+
+<h4 id="uri-2" class="anchor"><a class="heading-anchor" href="#uri-2"><span></span></a>URI:</h4>
+
+<ul>
+<li><code>content://com.symbol.devicecentral.provider/peripheral_info/</code> </li>
+</ul>
+
+<h4 id="api-1" class="anchor"><a class="heading-anchor" href="#api-1"><span></span></a>API:</h4>
+
+<ul>
+<li><code>device_info</code> </li>
+</ul>
+
+<h4 id="properties-1" class="anchor"><a class="heading-anchor" href="#properties-1"><span></span></a>Properties:</h4>
+
+<ul>
+<li><code>/accessory_name</code> </li>
+
+<li><code>/device_serial_number</code> </li>
+
+<li><code>/device_model_number</code> </li>
+
+<li><code>/device_firmware_version</code> </li>
+
+<li><code>/device_123scan_config_name</code> </li>
+
+<li><code>/device_fw_package_version</code> </li>
+</ul>
+
+<p><em>(Properties are returned in JSON format)</em> </p>
+
+<p>To retrieve device information from a connected peripheral programmatically, perform the following in the app: </p>
+
+<p><strong>1. Declare the content URI</strong> that identifies the data in the provider: </p>
+
+<pre class="prettyprint"><code>    
+    String DEVICE_INFO_URI = "content://com.symbol.devicecentral.provider/peripheral_info/device_info"; 
+</code></pre>
+
+<p><strong>2. Parse the JSON string</strong> using Android cursor query methods: </p>
+
+<pre class="prettyprint"><code>
+retrieveDeviceButton.setOnClickListener(new View.OnClickListener() { 
+    @Override 
+    public void onClick(View v) { 
+        fetchData(DEVICE_INFO_URI); 
+    } 
+}); 
+private void fetchData(String uri) { 
+    new FetchInfoTask().execute(uri); 
+} 
+private class FetchInfoTask extends AsyncTask&lt;String, Void, String&gt; { 
+        @Override 
+        protected String doInBackground(String... args) { 
+            String uri = args[0]; 
+            StringBuilder info = new StringBuilder(); 
+            try { 
+                Cursor cursor = getContentResolver().query(Uri.parse(uri), null, null, null, null); 
+                if (cursor != null &amp;&amp; cursor.moveToFirst()) { 
+                    JSONObject jsonObject = new JSONObject(cursor.getString(0)); 
+                    Iterator&lt;String&gt; keys = jsonObject.keys(); 
+                    if (keys.hasNext()) { 
+                        String key = keys.next(); 
+                        JSONObject details = jsonObject.getJSONObject(key); 
+                        for (Iterator&lt;String&gt; it = details.keys(); it.hasNext(); ) { 
+                            String field = it.next(); 
+                            info.append(field).append(": ").append(details.optString(field)).append("\n"); 
+                        } 
+                    } 
+                } 
+                if (cursor != null) { 
+                    cursor.close(); 
+                } 
+            } catch (Exception e) { 
+                Log.e(TAG, "Error fetching details", e); 
+                info.append("Error fetching details"); 
+            } 
+            return info.toString(); 
+        } 
+        @Override 
+        protected void onPostExecute(String result) { 
+            infoTextView.setText(result); 
+        } 
+    } 
+</code></pre>
+
+<h4 id="supportedbluetoothscanners-1" class="anchor"><a class="heading-anchor" href="#supportedbluetoothscanners-1"><span></span></a>Supported Bluetooth Scanners</h4>
+
+<ul>
+<li>DS2278</li>
+
+<li>DS3678</li>
+
+<li>DS8178</li>
+
+<li>LI3678</li>
+
+<li>RS2100</li>
+
+<li>RS5000</li>
+
+<li>RS507</li>
+
+<li>RS5100</li>
+
+<li>RS6000</li>
+
+<li>RS6100</li>
+</ul>
+
+<blockquote>
+  <p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>To retrieve information about a peripheral (e.g. battery status, etc.)</strong>:<br></p>
+  
+  <ul>
+  <li><strong>Zebra <a href="/devicecentral/latest/guide/setup/">Device Central</a> must be installed and running</strong> on the mobile device <br></li>
+  
+  <li><strong>The target peripheral must be connected to—and enabled on—the device</strong><br></li>
   </ul>
 </blockquote>
 
@@ -572,13 +794,13 @@ protected Cursor doInBackground(String... args) {
 
 <p>Data acquired with the APIs in this section is considered <strong><em>sensitive</em></strong>. API values match those of Android system properties.</p>
 
-<h4 id="uri-1" class="anchor"><a class="heading-anchor" href="#uri-1"><span></span></a>URI:</h4>
+<h4 id="uri-3" class="anchor"><a class="heading-anchor" href="#uri-3"><span></span></a>URI:</h4>
 
 <ul>
 <li><code>content://oem_info/oem.zebra.secure/</code></li>
 </ul>
 
-<h4 id="apis" class="anchor"><a class="heading-anchor" href="#apis"><span></span></a>APIs:</h4>
+<h4 id="apis-1" class="anchor"><a class="heading-anchor" href="#apis-1"><span></span></a>APIs:</h4>
 
 <ul>
 <li><code>ro_product_model</code></li>
@@ -625,7 +847,7 @@ protected Cursor doInBackground(String... args) {
 
 <p>* <em>Wildcard supported for adb shell commands; exact API values vary by device</em></p>
 
-<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>To retrieve peripheral information (for example an Ethernet or Wi-Fi MAC address), the peripheral must be connected to and/or enabled on the device</strong>.</p>
+<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>To retrieve peripheral information (for example an Ethernet or Wi-Fi MAC address), the target peripheral must be connected to and/or enabled on the device</strong>.</p>
 
 <hr>
 
@@ -633,13 +855,13 @@ protected Cursor doInBackground(String... args) {
 
 <p>The API values below match those of Android system properties. </p>
 
-<h4 id="uri-2" class="anchor"><a class="heading-anchor" href="#uri-2"><span></span></a>URI:</h4>
+<h4 id="uri-4" class="anchor"><a class="heading-anchor" href="#uri-4"><span></span></a>URI:</h4>
 
 <ul>
 <li><code>content://oem_info/oem.zebra.software/</code></li>
 </ul>
 
-<h4 id="apis-1" class="anchor"><a class="heading-anchor" href="#apis-1"><span></span></a>APIs:</h4>
+<h4 id="apis-2" class="anchor"><a class="heading-anchor" href="#apis-2"><span></span></a>APIs:</h4>
 
 <ul>
 <li><code>ro.os.delta.support.version</code></li>
@@ -677,7 +899,7 @@ protected Cursor doInBackground(String... args) {
 
 <p>The API values below match those of Android system properties. <i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> To retrieve information about the cellular provider, subscriber ID or WWAN circuitry in use on a device, <strong>a SIM and/or corresponding circuitry must be installed and/or enabled</strong> on the device. </p>
 
-<h4 id="uri-3" class="anchor"><a class="heading-anchor" href="#uri-3"><span></span></a>URI:</h4>
+<h4 id="uri-5" class="anchor"><a class="heading-anchor" href="#uri-5"><span></span></a>URI:</h4>
 
 <ul>
 <li><code>content://oem_info/wan/</code></li>
@@ -687,7 +909,7 @@ protected Cursor doInBackground(String... args) {
     * `content://com.zebra.phone.provider/wan`
  -->
 
-<h4 id="apis-2" class="anchor"><a class="heading-anchor" href="#apis-2"><span></span></a>APIs:</h4>
+<h4 id="apis-3" class="anchor"><a class="heading-anchor" href="#apis-3"><span></span></a>APIs:</h4>
 
 <p>The following APIs can be used with the URI above to return the information described below. </p>
 
@@ -699,13 +921,13 @@ protected Cursor doInBackground(String... args) {
 <li><code>telephony_sim_operator</code> - Mobile country code and mobile network code (MCCMNC) of the SIM's mobile service provider. <strong><a href="https://zebra-stage.github.io/mx/cellularmgr/#mcc-mnc-list">Learn more</a></strong>.</li>
 </ul>
 
-<h4 id="uri-4" class="anchor"><a class="heading-anchor" href="#uri-4"><span></span></a>URI:</h4>
+<h4 id="uri-6" class="anchor"><a class="heading-anchor" href="#uri-6"><span></span></a>URI:</h4>
 
 <ul>
 <li><code>content://com.zebra.phone.provider/wan</code></li>
 </ul>
 
-<h4 id="apis-3" class="anchor"><a class="heading-anchor" href="#apis-3"><span></span></a>APIs:</h4>
+<h4 id="apis-4" class="anchor"><a class="heading-anchor" href="#apis-4"><span></span></a>APIs:</h4>
 
 <p>The following APIs can be used with the URI above to return the information described below. </p>
 
@@ -797,88 +1019,6 @@ protected Cursor doInBackground(String... args) {
         ]        
     }
  -->
-
-<hr>
-
-<h3 id="acquireosupdateinfo" class="anchor"><a class="heading-anchor" href="#acquireosupdateinfo"><span></span></a>Acquire OS Update Info</h3>
-
-<p>The process for acquiring the device OS varies slightly from others. The APIs below are defined by Zebra.  </p>
-
-<h4 id="uri-5" class="anchor"><a class="heading-anchor" href="#uri-5"><span></span></a>URI:</h4>
-
-<ul>
-<li><code>content://oem_info/oem.zebra.osupdate/</code></li>
-</ul>
-
-<h4 id="apis-4" class="anchor"><a class="heading-anchor" href="#apis-4"><span></span></a>APIs:</h4>
-
-<ul>
-<li><code>status</code>: SUCCESS (Android 8 only), FAILED, PASSED, CANCELLED, IN_PROGRESS, IN_SUSPEND, WAITING_FOR_REBOOT</li>
-
-<li><code>detail</code>: Verbose text describing the status</li>
-
-<li><code>ts</code>: Returns an epoch timestamp indicating when the intent was received</li>
-</ul>
-
-<ol>
-<li><p><strong>Get the AUTHORITY, PROVIDER and API</strong> using the following Java code:<br></p>
-
-<pre class="prettyprint"><code>
-// OS UPDATE URI
-String OSU_URI = “content://oem_info/oem.zebra.osupdate”;
-
-// APIs
-String OSU_STATUS = “status”; 
-
-String OSU_DETAIL = “detail”;
-
-String OSU_TS = “ts”;
-</code></pre></li>
-
-<li><p><strong>Get the data</strong> (in this case the device OS update info) by parsing the string using Android cursor query methods implemented in the following Java code:<br></p>
-
-<pre class="prettyprint"><code>        
-        // Prepare the URI
-        public void getData() {
-            final Uri myUri = Uri.parse(OSU_URI);
-            new UpdateAsync().execute(myUri.toString());
-        }
-
-<pre><code>    // Always query for data in Async task or background thread
-        class UpdateAsync extends AsyncTask&amp;lt;String,Void,Cursor&amp;gt; {
-        private String myUri;
-
-    @Override
-    protected Cursor doInBackground(String... args) {
-        myUri = args[0];
-
-        // Query the content provider
-        ContentResolver cr = getContentResolver();
-        Cursor cursor = cr.query(Uri.parse(myUri),
-                        null, null, null, null);
-
-        // Read the cursor
-        While (cursor.moveToNext()) {
-        String status = cursor.getString(
-        cursor.getColumnIndex(OSU_STATUS));
-
-        String detail = cursor.getString(
-        cursor.getColumnIndex(OSU_DETAIL));
-
-        String time = cursor.getString(
-        cursor.getColumnIndex(OSU_TS));
-
-        Log.i(TAG, "STATUS : " + status + “, DETAIL : ” + detail
-            + “, TIME : ” + time);
-
-    }
-    return cursor;
-}
-</code></pre>
-
-}
-</code></pre></li>
-</ol>
 
 <hr>
 
