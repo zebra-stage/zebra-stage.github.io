@@ -232,9 +232,9 @@
 
 <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p><strong>RxLogger settings</strong> can be configured through the RxLogger user interface or by deploying a configuration file (<code>config.json</code>) to the device. The <code>config.json</code> file can be exported and deployed across multiple devices. In devices using the <strong><a href="#androidworkprofile">Android Enterprise Work Profile</a>,</strong> RxLogger settings may differ based on whether the device is operating in the Work Profile or Personal Profile. </p>
+<p><strong>RxLogger settings</strong> can be configured either through the RxLogger user interface or by deploying a configuration file (<code>config.json</code>) to the device. The <code>config.json</code> file can be exported and used to deploy consistent settings across multiple devices. For devices using the <strong><a href="#androidworkprofile">Android Enterprise Work Profile</a>,</strong> RxLogger settings may differ based on whether the device is operating in the Work Profile or Personal Profile. </p>
 
-<p><strong>Secure Mode</strong> enhances Rxlogger security by restricting external access to logs and providing a secure method for broadcasting intents. Only authorized apps can access logs or use the secure method to call RxLogger APIs. This reduces the risk of misuse of potentially sensitive data, ensures access is limited to trusted users and creates a protected environment for deploying configuration files to adjust RxLogger settings.</p>
+<p>Starting with Android 15, RxLogger defaults to <strong>Secure Mode,</strong> enhancing its security by restricting external access to logs and providing a secure method for broadcasting intents. In this mode, only authorized apps can access logs or use the secure method to call RxLogger APIs. This minimizes the risk of unauthorized access to potentially sensitive data, ensures access is limited to trusted users and establishes a protected environment for deploying configuration files to adjust RxLogger settings.</p>
 
 <p><strong>RxLogger uses data collection modules to log various components of the Android system.</strong> These modules can be enabled, disabled, or customized as needed. Out of the 13 modules, 8 are enabled by default.</p>
 
@@ -385,39 +385,109 @@
 
 <h2 id="androidworkprofile" class="anchor"><a class="heading-anchor" href="#androidworkprofile"><span></span></a>Android Work Profile</h2>
 
-<p><strong>Android Enterprise Work Profile</strong> for mixed-use company-owned devices enables organizations to enforce corporate policies and restrictions while preserving the privacy of personal data. Formerly known as Corporate-Owned, Personally Enabled (COPE), this allows a single device to serve both professional and personal needs by providing separate work and personal profiles. The Work Profile ensures that corporate data remains secure and separate from personal applications, safeguarding user privacy.</p>
+<p><strong>Android Enterprise Work Profile</strong> is designed for mixed-use, company-owned devices, enabling organizations to enforce corporate policies and restrictions while preserving the privacy of personal data. Formerly known as <strong>Corporate-Owned, Personally Enabled (COPE),</strong> this allows a single device to serve both professional and personal purposes by providing separate <strong>Work</strong> and <strong>Personal Profiles.</strong> The Work Profile ensures corporate data remains secure and isolated from personal applications, safeguarding user privacy.</p>
 
-<h3 id="behavior" class="anchor"><a class="heading-anchor" href="#behavior"><span></span></a>Behavior</h3>
-
-<p>RxLogger behavior varies by profile type:</p>
+<p>When Work Profile is active on a company-owned device, RxLogger operates exclusively in <strong>Secure Mode.</strong> Application developers must use one of the following supported methods to interact with RxLogger:</p>
 
 <ul>
-<li><strong>Work Profile:</strong> 
+<li>Permissions via <a href="../apis/#appops">AppOps</a></li>
+
+<li>Tokenization using <a href="../apis/#apptoken">App Token</a></li>
+</ul>
+
+<h3 id="behaviorandrestrictions" class="anchor"><a class="heading-anchor" href="#behaviorandrestrictions"><span></span></a>Behavior and Restrictions</h3>
+
+<p>The Work Profile introduces specific restrictions and behaviors for RxLogger. Below are the key guidelines:</p>
+
+<p><strong>Accessibility:</strong></p>
+
+<ul>
+<li><strong>RxLogger is disabled in the Personal Profile</strong> and is only accessible within the Work Profile. </li>
+
+<li>In the Work Profile, logs can only be accessed through a <strong>backup process.</strong> Refer to the <a href="../usage/#backupcollectlogs">Backup</a> section for more details. </li>
+</ul>
+
+<p><strong>Micro SD Card Compliance:</strong></p>
+
+<ul>
+<li>Since RxLogger operates in Secure Mode within the Work Profile, <strong>the external storage must be encrypted</strong> to enable logging to the external storage path. </li>
+</ul>
+
+<h3 id="backup" class="anchor"><a class="heading-anchor" href="#backup"><span></span></a>Backup</h3>
+
+<p><strong>Work Profile:</strong></p>
+
+<ul>
+<li>To access logs in the Work Profile, users must initiate a <strong>backup</strong> operation. This process zips all logs into a file and stores it in the following path: <code>/storage/emulated/10/RxLogger/</code></li>
+</ul>
+
+<p><strong>Personal Profile:</strong></p>
+
+<ul>
+<li>Users have the option to retain a copy of logs in their Personal Profile for additional debugging purposes. Although logs are not directly accessible in the Personal Profile, the <strong>"Keep a Copy"</strong> option ensures a copy of the logs is saved. By default, this option is disabled. </li>
+</ul>
+
+<h3 id="configurationdeployment" class="anchor"><a class="heading-anchor" href="#configurationdeployment"><span></span></a>Configuration Deployment</h3>
+
+<p>In Work Profile mode, configurations must be deployed using <strong>AppOps</strong> or <strong>Tokenization.</strong> After triggering the intent, the configuration file <em><strong>must</strong></em> be deployed within <strong>60 seconds</strong> into the Work Profile’s RxLogger storage path: <code>/storage/emulated/10/RxLogger/</code>. Once the timer expires, RxLogger automatically reconfigures itself with the new settings. These changes can be verified in the RxLogger Settings interface. </p>
+
+<h3 id="storagepath" class="anchor"><a class="heading-anchor" href="#storagepath"><span></span></a>Storage Path</h3>
+
+<p><strong>Logs &amp; Bug Report:</strong> </p>
+
+<p>RxLogger stores logs and bug report files in the following paths: </p>
+
+<ul>
+<li><strong>Personal Profile:</strong>
 
 
 <ul>
-<li><strong>Access:</strong> RxLogger is accessible. When enabled, users receive a consent dialog to inform them about data collection.</li>
+<li>Internal storage path: <code>/sdcard/Android/data/com.symbol.rxlogger/RxLogger/secure/log_data/</code> </li>
 
-<li><strong>Utility:</strong> The <a href="../utility/">RxLogger Utility</a>, also known as Toggle Chat Head, is disabled. It normally displays the floating RxLogger icon for quick access to its options. </li>
-
-<li><strong>APIs:</strong> RxLogger intent APIs are disabled.</li>
-
-<li><strong>Logs:</strong> Log path remains the same; see <a href="#logs">Logs</a>. 
-<img alt="image" style="height:400px" src="work-profile.png">
-<em>Work Profile - RxLogger is accessible</em></li></ul>
+<li>External storage path: <code>/storage/&lt;UUID&gt;/Android/data/com.symbol.rxlogger/RxLogger/secure/log_data/</code>, where <code>&lt;UUID&gt;</code> represents the device's unique identifier</li></ul>
 </li>
 
-<li><strong>Personal Profile:</strong> 
+<li><strong>Work Profile:</strong>
 
 
 <ul>
-<li><strong>Access:</strong> RxLogger is fully disabled, with options grayed out and inaccessible. </li>
-
-<li><strong>APIs:</strong> RxLogger intent APIs are disabled.
-<img alt="image" style="height:400px" src="personal-profile.png">
-<em>Personal Profile - RxLogger is inaccessible</em></li></ul>
+<li>Storage path: <code>/storage/emulated/10/RxLogger/</code></li></ul>
 </li>
 </ul>
+
+<p><strong>Backup &amp; Config.json file:</strong></p>
+
+<p>RxLogger stores the backup and <code>config.json</code> files in the following paths: </p>
+
+<ul>
+<li><p><strong>Personal Profile:</strong></p>
+
+<ul>
+<li>Internal storage path: <code>/sdcard/RxLogger/</code></li>
+
+<li>External storage path: <code>/storage/&lt;UUID&gt;RxLogger/</code></li></ul></li>
+
+<li><p><strong>Work Profile:</strong></p>
+
+<p></p><ul>
+<li>Storage path: <code>/storage/emulated/10/RxLogger/</code></li></ul><p></p></li>
+</ul>
+
+<!-- 
+RxLogger behavior varies by profile type:
+- **Work Profile:** 
+    - **Access:** RxLogger is accessible. When enabled, users receive a consent dialog to inform them about data collection.
+    - **Utility:** The [RxLogger Utility](../utility/), also known as Toggle Chat Head, is disabled. It normally displays the floating RxLogger icon for quick access to its options. 
+    - **APIs:** RxLogger intent APIs are disabled.
+    - **Logs:** Log path remains the same; see [Logs](#logs). 
+    <img alt="image" style="height:400px" src="work-profile.png"/>
+    _Work Profile - RxLogger is accessible_
+- **Personal Profile:** 
+    - **Access:** RxLogger is fully disabled, with options grayed out and inaccessible. 
+    - **APIs:** RxLogger intent APIs are disabled.
+    <img alt="image" style="height:400px" src="personal-profile.png"/>
+    _Personal Profile - RxLogger is inaccessible_
+-->
 
 <hr>
 
