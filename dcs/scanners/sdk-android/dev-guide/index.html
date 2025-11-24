@@ -1624,6 +1624,103 @@ public void dcssdkEventCommunicationSessionEstablished(DCSScannerInfo activeScan
 </code>
 </pre>
 
+                                                    <h3 id="android-sdk-config-update" class="anchor"><a class="heading-anchor" href="#android-sdk-config-update"><span></span></a>Configuration Update</h3>
+
+                                                    <p>The process of updating the configuration involves the use of .scncfg files, which are created based on the scanner by utilizing the 123Scan Configuration Utility (a Windows application). These files are then copied to the Android device's <strong>Downloads</strong> folder to ensure easy access.</p>
+
+                                                    <p>A user interface should be designed with two buttons to allow the selection and updating of the configuration file.</p>
+
+                                                    <p>The Update Config File button can be hidden either in the XML layout or programmatically as shown below, and the design is displayed as shown below.</p>
+
+<pre class="prettyprint">
+<code>
+android:visibility="gone"
+</code>
+</pre>
+
+                                                    <p>Or,</p>
+
+<pre class="prettyprint">
+<code>
+btn_select_config.setVisibility(View.GONE);
+btn_update_config.setVisibility(View.VISIBLE);
+</code>
+</pre>
+
+                                                    <div style="display: block; margin: 0 auto; text-align: center;">
+                                                        <img src="../../images/android/0020-scanner-sdk-android-select-config-file.png" style="display: block; margin: 0 auto;"><strong>Figure 12:</strong> Select Configuration File
+                                                    </div><br />
+
+                                                    <p>The required variables should be declared and initialized.</p>
+
+<pre class="prettyprint">
+<code>
+static final int FILE_SELECT_REQUEST_READ_EX_STORAGE = 10;
+int scannerID;
+int communicationMode = -1;
+SDKHandler sdkHandler;
+Uri documentUri;
+String documentUriString;
+ProgressDialog progressDialog;
+Button btn_select_config, btn_update_config;
+</code>
+</pre>
+
+                                                    <p>selectConfigFile(): A configuration file can be selected from the device's storage using this method. An intent is created to open a document picker, the selectable files are filtered, and the initial directory is set to the "Download" folder. Read and write permissions are granted for the selected file, and the activity to handle the file selection is initiated.</p>
+                                                    
+<pre class="prettyprint">
+<code>
+public void selectConfigFile(){
+    Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+    intent.addCategory(Intent.CATEGORY_OPENABLE);
+    intent.setType("*/*");
+    Uri uri = Uri.parse("content://com.android.externalstorage.documents/document/primary:Download");
+    intent.putExtra("DocumentsContract.EXTRA_INITIAL_URI", uri);
+    intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+    startActivityForResult(intent, FILE_SELECT_REQUEST_READ_EX_STORAGE);
+}
+</code>
+</pre>
+
+                                                    <p>The result of an activity started with 'startActivityForResult' is handled by the 'onActivityResult' method. In this case, the result of the file selection activity is processed.</p>
+                                                    
+<pre class="prettyprint">
+<code>
+@Override
+protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+    super.onActivityResult(requestCode, resultCode, data);
+    if (requestCode == FILE_SELECT_REQUEST_READ_EX_STORAGE) {
+        if (data != null) {
+            documentUri =data.getData();
+            if(documentUri.toString().contains("content://com.android.providers")){
+                Toast.makeText(this, "Invalid Path", Toast.LENGTH_SHORT).show();
+            } 
+            else{
+                documentUriString = documentUri.toString();
+                if(documentUriString.contains(".scncfg")){
+		            btn_select_config.setVisibility(View.GONE);
+		            btn_update_config.setVisibility(View.VISIBLE);
+                    Toast.makeText(this, "Config File Selected: " + sdkHandler.getFileName(this,documentUri), Toast.LENGTH_SHORT).show();
+                }
+                else{
+                    Toast.makeText(this, "Please select a valid configuration file with .scncfg extension", Toast.LENGTH_SHORT).show();
+                }
+            }
+        }
+    }
+}
+</code>
+</pre>
+
+                                                    <p>After the configuration file is selected, if it is a valid file, the <strong>Update Config</strong> button will be enabled, and the method below will be called when the <strong>Update Config</strong> button is clicked.</p>
+
+                                                    <div style="display: block; margin: 0 auto; text-align: center;">
+                                                        <img src="../../images/android/0021-scanner-sdk-android-update-config-file.png" style="display: block; margin: 0 auto;"><strong>Figure 13:</strong> Update Configuration File
+                                                    </div><br />
+
+                                                    <p>updateConfigFile(): This method is used to update the scanner's configuration with a selected configuration file. A progress dialog is displayed, an XML command string is constructed with the scanner ID and file path, and the configuration update command is executed using the SDK. The result is logged, temporary files are cleaned up, and the progress dialog is dismissed. Based on the result, a success or failure message is displayed to the user via a toast.</p>
+                                                    
                                                     <h3 id="sms-android" class="anchor"><a class="heading-anchor" href="#sms-android"><span></span></a>Remote Scanner Management Solution (SMS)</h3>
 
                                                     <p>SMS Packages are used for updating the firmware on the scanners and at the same time the configurations on the scanners could be modified with the configuration files which resides inside the SMS packages.</p>
