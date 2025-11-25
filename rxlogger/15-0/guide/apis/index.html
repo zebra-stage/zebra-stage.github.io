@@ -229,12 +229,12 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>The functionality of RxLogger can be controlled through Android intents initiated from third-party applications. These intents can be processed using one of the following methods:</p>
+<p>The functionality of RxLogger can be managed through Android intents initiated from third-party applications. These intents can be processed using one of the following methods:</p>
 
 <ul>
-<li><strong><a href="#permissionsmethod">Permissions Method</a> (Recommended) -</strong> Uses Android's AppOpsManager to control access to RxLogger, enhancing security by managing permissions for RxLogger operations.</li>
+<li><strong><a href="#permissionsmethod">Permissions Method</a> (Recommended) -</strong> Uses Android's AppOpsManager to control access to RxLogger. It provides enhanced security by managing permissions for RxLogger operations.</li>
 
-<li><strong><a href="#tokenizationmethod">Tokenization Method</a> -</strong> Include a token as an extra within intents to access the Deploy Config API.
+<li><strong><a href="#tokenizationmethod">Tokenization Method</a> -</strong> Requires an app token as an extra parameter within intents interact with RxLogger APIs.
 <!--  
 - **Shell Command -** Execute the specified command through adb shell.
 --></li>
@@ -244,81 +244,11 @@
 
 <h2 id="permissionsmethod" class="anchor"><a class="heading-anchor" href="#permissionsmethod"><span></span></a>Permissions Method</h2>
 
-<p>RxLogger uses a custom permission-granting approach that extends the standard Android AppOps framework. This implementation provides a secure interface and a controlled mechanism for interacting with RxLogger by granting custom permissions to authorized applications. It enhances both security and flexibility when managing sensitive intent broadcasts.</p>
-
-<p>To implement this, the application must declare the following permission in the <code>AndroidManifest.xml</code> file:</p>
-
-<pre class="prettyprint"><code>    &lt;uses-permission android:name="com.zebra.permission.ACCESS_RXLOGGER" /&gt;
-</code></pre>
-
-<p>Once the permission is granted, the application is authorized to broadcast intents to RxLogger. Information about supported intents and their actions is provided in the subsequent sections of this guide.</p>
+<p>The Permissions method extends Android's standard AppOps framework, offering a secure and controlled mechanism for interacting with RxLogger. It allows authorized applications to broadcast intents securely by granting custom permissions. Zebra recommends the Permissions Method over the Tokenization Method due to its simplicity and enhanced security.</p>
 
 <hr>
 
-<h2 id="tokenizationmethod" class="anchor"><a class="heading-anchor" href="#tokenizationmethod"><span></span></a>Tokenization Method</h2>
-
-<p>To grant an app access to RxLogger APIs using an app token, the token must be generated and included as an extra in the intents. This token can be obtained through <strong>Access Manager</strong> from <a href="/stagenow/">StageNow</a>. Then grant the app access to the RxLogger APIs through <strong><a href="/stagenow/latest/csp/access/#service-access-action">Service Access Action</a></strong> using the following:</p>
-
-<ul>
-<li>Service Identifier: <code>delegation-zebra-com-symbol-secure-rxlogger</code></li>
-
-<li>Caller Package Name: <code>&lt;your-app-package-name&gt;</code></li>
-
-<li>Caller Signature: <code>&lt;your-app-signature-certificate&gt;</code></li>
-</ul>
-
-<p>After installing your app to the devices, follow the steps below to add your app to the allowlist and allow it to call RxLogger intents.</p>
-
-<!--
-- [Zebra Device Manager with Delegation Scope](/flux/delegation/)
-  - Use “token” and “password” as keys.
-  - Delegation scope: `delegation-zebra-com-symbol-secure-rxlogger`-->
-
-<h3 id="iacquireapptoken" class="anchor"><a class="heading-anchor" href="#iacquireapptoken"><span></span></a>I. Acquire App Token</h3>
-
-<p>Steps to acquire your app token:</p>
-
-<ol>
-<li><p>Download and import the library <a href="./broadcastprotection-1.6.aar">BroadcastProtectionLibrary.aar</a> into your application project.</p>
-
-<pre class="prettyprint"><code>import com.zebra.security.broadcastprotection.BroadCastAuthenticator;
-</code></pre></li>
-
-<li><p>Instantiate <code>BroadCastAuthenticator</code> in your activity, fragment or service.</p>
-
-<pre class="prettyprint"><code>BroadCastAuthenticator vIntentprotect = new BroadCastAuthenticator();
-</code></pre></li>
-
-<li><p>In the <code>onCreate()</code> method, add the following:</p>
-
-<pre class="prettyprint"><code>vIntentprotect.initialize(getApplicationContext(), new OnInitCallback() { 
-    @Override 
-    public void onInitialized() {} 
-}); 
-</code></pre></li>
-
-<li><p>Request a token using the <code>getToken()</code> API:</p>
-
-<pre class="prettyprint"><code>String token = vIntentprotect.getToken("delegation-zebra-com-symbol-secure-rxlogger");
-</code></pre></li>
-
-<li><p>Send the intent with the token as extras, received earlier:</p>
-
-<pre class="prettyprint"><code>Intent intent = new Intent();
-intent.setAction("&lt;rxlogger_intent&gt;");
-intent.putExtra("token", token);
-sendBroadcast(intent);
-</code></pre>
-
-<p>Replace <code>&lt;rxlogger_intent&gt;</code> with the specific intent, e.g. <code>com.symbol.rxlogger.intent.action.ENABLE</code>.</p></li>
-
-<li><p>In the <code>onDestroy()</code> method, terminate with:</p>
-
-<pre class="prettyprint"><code>vIntentprotect.terminate();
-</code></pre></li>
-</ol>
-
-<h3 id="iigenerateappsignaturecertificate" class="anchor"><a class="heading-anchor" href="#iigenerateappsignaturecertificate"><span></span></a>II. Generate App Signature Certificate</h3>
+<h3 id="igenerateappsignaturecertificate" class="anchor"><a class="heading-anchor" href="#igenerateappsignaturecertificate"><span></span></a>I. Generate App Signature Certificate</h3>
 
 <p>An application signature for app certification is required for StageNow to configure Access Manager for your app. For reference and steps to generate the certificate, refer to <a href="/mx/accessmgr/#app-signature">App Signature</a> in Access Manager. </p>
 
@@ -347,11 +277,13 @@ sendBroadcast(intent);
   </ul>
 </blockquote>
 
-<h3 id="iiiallowlistyourapp" class="anchor"><a class="heading-anchor" href="#iiiallowlistyourapp"><span></span></a>III. AllowList Your App</h3>
+<hr>
 
-<p>Use StageNow to configure Access Manager for your app to be permitted to call the RxLogger APIs. Generate a StageNow barcode or .bin file to deploy to the devices through your EMM.</p>
+<h3 id="iiallowlistyourapp" class="anchor"><a class="heading-anchor" href="#iiallowlistyourapp"><span></span></a>II. AllowList Your App</h3>
 
-<p>Steps to generate the StageNow barcode or .bin file:</p>
+<p>Once the app signature certificate is generated, use StageNow to configure Access Manager and allowlist your app for RxLogger API access. </p>
+
+<p>Steps to generate the StageNow profile:</p>
 
 <ol>
 <li><p>Launch <a href="/stagenow/">StageNow</a> on the host computer.</p></li>
@@ -362,7 +294,7 @@ sendBroadcast(intent);
 <li><p>Perform the following:</p>
 
 <ul>
-<li>Select <strong>MX version 14.2 or higher.</strong> <em>The MX version on the device should match this version selected.</em> See <a href="/mx/mx-version-on-device/">MX documentation</a> for instructions on how to check the version.</li>
+<li>Select <strong>MX version 14.1 or higher.</strong> <em>The MX version on the device should match this version selected.</em> See <a href="/mx/mx-version-on-device/">MX documentation</a> for instructions on how to check the version.</li>
 
 <li>Select <strong>Xpert Mode.</strong></li>
 
@@ -370,7 +302,128 @@ sendBroadcast(intent);
 <img alt="image" style="height:400px" src="stagenow-2.png"></li></ul></li>
 
 <li><p>Enter the desired profile name and click <strong>Start.</strong>
-<img alt="image" style="height:250px" src="stagenow-3.png"></p></li>
+<img alt="image" style="height:350px" src="stagenow-3.png"></p></li>
+
+<li><p>Scroll down and click the plus (+) sign next to <strong>AccessMgr.</strong> This adds <strong>AccessMgr</strong> to the Config tab on the right side.
+<img alt="image" style="height:400px" src="stagenow-5.jpg"></p></li>
+
+<li><p>Click <strong>Add.</strong>
+<img alt="image" style="height:400px" src="stagenow-6.jpg"></p></li>
+
+<li><p>In the AccessMgr settings, enter/select the following:</p>
+
+<ul>
+<li><strong>Permission Access Action:</strong> Grant Permission to an Application (To deny permission, select: "Deny Permission to an Application")</li>
+
+<li><strong>Permission Name:</strong> Access RxLogger</li>
+
+<li><strong>Application Package Name:</strong> [Enter your app package name]</li>
+
+<li><strong>Caller Signature:</strong> [Browse to your app signature certificate created from <a href="#igenerateappsignaturecertificate">Step I</a> above]</li></ul>
+
+<p><img alt="image" style="height:650px" src="stagenow-7p.png"></p></li>
+
+<li><p>Scroll down and click <strong>Continue.</strong>
+<img alt="image" style="height:400px" src="stagenow-8p.png"></p></li>
+
+<li><p>Click <strong>Complete Profile.</strong>
+<img alt="image" style="height:400px" src="stagenow-8.png"></p></li>
+
+<li><p>The device must be connected to the network during deployment. Use one of the following methods based on the desired tool to deploy your application access permission:</p>
+
+<ul>
+<li><strong>Barcode Staging:</strong> Generate the barcode from the StageNow profile. Open StageNow client on the device and scan the barcode.</li>
+
+<li><strong>Local File Staging:</strong> Generate the .BIN file from the StageNow profile (NFC/SD/USB). Deploy the .BIN file to the device. Use StageNow client on the device to browse to the .BIN file and stage the device.   </li>
+
+<li><strong>EMM:</strong> Export the StageNow XML file from the StageNow installation. Send the XML using either <a href="/oemconfig">OEMConfig</a> or <a href="/mx/overview">MX</a>.</li></ul></li>
+</ol>
+
+<hr>
+
+<h3 id="iiigrantapppermissions" class="anchor"><a class="heading-anchor" href="#iiigrantapppermissions"><span></span></a>III. Grant App Permissions</h3>
+
+<p>For an application to broadcast secure intents to RxLogger, it must meet the following requirements:</p>
+
+<ul>
+<li><p>The app must target Android API 33 or higher.</p></li>
+
+<li><p>The following permission must be added to the <code>AndroidManifest.xml</code> file:</p>
+
+<pre class="prettyprint"><code>&lt;uses-permission android:name="com.zebra.permission.ACCESS_RXLOGGER" /&gt;
+</code></pre></li>
+</ul>
+
+<p>Once this permission is granted, the application will be authorized to send secure intents to RxLogger. </p>
+
+<hr>
+
+<h2 id="tokenizationmethod" class="anchor"><a class="heading-anchor" href="#tokenizationmethod"><span></span></a>Tokenization Method</h2>
+
+<p>The Tokenization Method allows an app to access to RxLogger APIs by utilizing an app token. To implement this method, the app's signature certificate must first be created and deployed to devices via  <strong>Access Manager</strong> using <a href="/stagenow/">StageNow</a>. This process adds your app to RxLogger's allowlist, granting permission to invoke RxLogger APIs. An app token must be generated and included as a parameter when invoking RxLogger APIs. </p>
+
+<!--
+- [Zebra Device Manager with Delegation Scope](/flux/delegation/)
+  - Use “token” and “password” as keys.
+  - Delegation scope: `delegation-zebra-com-symbol-secure-rxlogger`-->
+
+<hr>
+
+<h3 id="igenerateappsignaturecertificate-1" class="anchor"><a class="heading-anchor" href="#igenerateappsignaturecertificate-1"><span></span></a>I. Generate App Signature Certificate</h3>
+
+<p>An application signature certificate is required for StageNow to configure Access Manager for your app. For reference and steps to generate the certificate, refer to <a href="/mx/accessmgr/#app-signature">App Signature</a> in Access Manager. </p>
+
+<p>For example, use the following steps to generate an app signature certificate encoded as a binary DER (<code>.crt</code>):</p>
+
+<ol>
+<li><p><strong>Download the <a href="/sigtools/">App Signature Tool</a></strong> as a <code>.zip</code> file and extract the <code>.jar</code> file.</p></li>
+
+<li><p><strong>Open the command line interface (CLI).</strong> Navigate to the directory where the extracted <code>.jar</code> file is located.</p></li>
+
+<li><p><strong>Generate the certificate.</strong> Execute the following command in the CLI to generate the certificate file encoded as a binary DER (<code>.crt</code>). Replace <code>&lt;app_name&gt;.apk</code> with the file path to your application's .APK and <code>&lt;cert_name&gt;.crt</code> with the desired name of the output certificate file:</p>
+
+<pre class="prettyprint"><code>java -jar SigTools.jar getcert -inform apk -outform der -in &lt;app_name&gt;.apk -outfile &lt;cert_name&gt;.crt
+</code></pre></li>
+
+<li><p>The <code>.crt</code> file is created in the folder specified in the command.</p></li>
+</ol>
+
+<blockquote>
+  <p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>Important Notes:</strong></p>
+  
+  <ul>
+  <li>Ensure that the paths for <code>SigTools.jar</code> and <code>&lt;app_name&gt;.apk</code> are correctly specified. Incorrect paths will result in errors. </li>
+  
+  <li>The generated <code>.crt</code> file can be assigned any name by modifying <code>&lt;cert_name&gt;.crt</code> in the command. </li>
+  </ul>
+</blockquote>
+
+<hr>
+
+<h3 id="iiallowlistyourapp-1" class="anchor"><a class="heading-anchor" href="#iiallowlistyourapp-1"><span></span></a>II. AllowList Your App</h3>
+
+<p>Once the app signature certificate is generated, use StageNow to configure Access Manager and allowlist your app for RxLogger API access. </p>
+
+<p>Steps to generate the StageNow profile:</p>
+
+<ol>
+<li><p>Launch <a href="/stagenow/">StageNow</a> on the host computer.</p></li>
+
+<li><p>In the StageNow home screen, click <strong>Create New Profile</strong> from the left menu.
+<img alt="image" style="height:400px" src="stagenow-1.jpg"></p></li>
+
+<li><p>Perform the following:</p>
+
+<ul>
+<li>Select <strong>MX version 14.1 or higher.</strong> <em>The MX version on the device should match this version selected.</em> See <a href="/mx/mx-version-on-device/">MX documentation</a> for instructions on how to check the version.</li>
+
+<li>Select <strong>Xpert Mode.</strong></li>
+
+<li>Click <strong>Create.</strong>
+<img alt="image" style="height:400px" src="stagenow-2.png"></li></ul></li>
+
+<li><p>Enter the desired profile name and click <strong>Start.</strong>
+<img alt="image" style="height:350px" src="stagenow-3.png"></p></li>
 
 <li><p>Scroll down and click the plus (+) sign next to <strong>AccessMgr.</strong> This adds <strong>AccessMgr</strong> to the Config tab on the right side.
 <img alt="image" style="height:400px" src="stagenow-5.jpg"></p></li>
@@ -387,7 +440,7 @@ sendBroadcast(intent);
 
 <li><strong>Caller Package Name:</strong> [Enter your app package name]</li>
 
-<li><strong>Caller Signature:</strong> [Browse to your app signature certificate created from <a href="#iigenerateappsignaturecertificate">Step II</a> above]</li></ul>
+<li><strong>Caller Signature:</strong> [Browse to your app signature certificate created from <a href="#igenerateappsignaturecertificate">Step I</a> above]</li></ul>
 
 <table>
     <tbody><tr>
@@ -409,9 +462,65 @@ sendBroadcast(intent);
 <li><p>The device must be connected to the network during deployment. Use one of the following methods based on the desired tool to deploy your application signature certificate:</p>
 
 <ul>
-<li><strong>StageNow:</strong> Generate the barcode from the StageNow profile. Open StageNow client on the device and scan the barcode.</li>
+<li><strong>Barcode Staging:</strong> Generate the barcode from the StageNow profile. Open StageNow client on the device and scan the barcode.</li>
+
+<li><strong>Local File Staging:</strong> Generate the .BIN file from the StageNow profile (NFC/SD/USB). Deploy the .BIN file to the device. Use StageNow client on the device to browse to the .BIN file and stage the device.   </li>
 
 <li><strong>EMM:</strong> Export the StageNow XML file from the StageNow installation. Send the XML using either <a href="/oemconfig">OEMConfig</a> or <a href="/mx/overview">MX</a>.</li></ul></li>
+</ol>
+
+<hr>
+
+<h3 id="iiiobtainapptoken" class="anchor"><a class="heading-anchor" href="#iiiobtainapptoken"><span></span></a>III. Obtain App Token</h3>
+
+<p>After allowlisting your app, generate aan app token to use with RxLogger APIs:</p>
+
+<ol>
+<li><p>Download and import the library <a href="./broadcastprotection-1.6.aar">BroadcastProtectionLibrary.aar</a> into your application project.</p>
+
+<pre class="prettyprint"><code>import com.zebra.security.broadcastprotection.BroadCastAuthenticator;
+</code></pre></li>
+
+<li><p>Instantiate <code>BroadCastAuthenticator</code> in your activity, fragment or service.</p>
+
+<pre class="prettyprint"><code>BroadCastAuthenticator vIntentprotect = new BroadCastAuthenticator();
+</code></pre></li>
+
+<li><p>In the <code>onCreate()</code> method, add the following:</p>
+
+<pre class="prettyprint"><code>vIntentprotect.initialize(getApplicationContext(), new OnInitCallback() { 
+    @Override 
+    public void onInitialized() {} 
+}); 
+</code></pre></li>
+
+<li><p>Request the app token using the <code>getToken()</code> method:</p>
+
+<pre class="prettyprint"><code>String token = vIntentprotect.getToken("delegation-zebra-com-symbol-secure-rxlogger");
+</code></pre></li>
+</ol>
+
+<hr>
+
+<h3 id="ivcallrxloggerapis" class="anchor"><a class="heading-anchor" href="#ivcallrxloggerapis"><span></span></a>IV. Call RxLogger APIs</h3>
+
+<p>Once the app token is created, RxLogger APIs can be invoked by sending intents with the token included as a parameter. Ensure your app targets Android API 33 or higher:</p>
+
+<ol>
+<li><p>Send an intent with the token. Attach the obtained token as n extra in the intent and broadcast it:</p>
+
+<pre class="prettyprint"><code>Intent intent = new Intent();
+intent.setAction("&lt;rxlogger_intent&gt;");
+intent.putExtra("token", token);
+sendBroadcast(intent);
+</code></pre>
+
+<p>Replace <code>&lt;rxlogger_intent&gt;</code> with the specific intent you want to invoke, such as <code>com.symbol.rxlogger.intent.action.ENABLE</code>.</p></li>
+
+<li><p>Terminate the <code>BroadCastAuthenticator</code> in the <code>onDestroy()</code> method:</p>
+
+<pre class="prettyprint"><code>vIntentprotect.terminate();
+</code></pre></li>
 </ol>
 
 <hr>
@@ -420,20 +529,22 @@ sendBroadcast(intent);
 
 <p>This initiates the data collection for all enabled modules. It is equivalent to tapping the <strong>Start</strong> button in the app.</p>
 
-<p>To enable RxLogger, an intent can be sent from a third-party application using one of the following methods:</p>
+<p>To enable RxLogger, send an intent using one of the following methods:</p>
 
 <ul>
-<li><p><strong><a href="#appops">AppOps</a> (Recommended) -</strong> Use the following intent action:</p>
+<li><p><strong><a href="#permissionsmethod">Permissions</a> (Recommended) -</strong> Use the following intent:</p>
 
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.ENABLE_ZSX
+<pre class="prettyprint"><code>com.zebra.rxlogger.intent.action.ENABLE_ZSX 
 </code></pre></li>
 
-<li><p><strong>App Token Method -</strong> Requires a token that must be obtained from step 4 in the <a href="#apptoken">App Token</a> section. Replace <code>&lt;token&gt;</code> with the actual token:</p>
+<li><p><strong><a href="#tokenizationmethod">Tokenization</a> -</strong> This method requires a token, which can obtained by following section <a href="#iiiobtainapptoken">III. Obtain App Token</a>. Use the following intent:</p>
 
 <pre class="prettyprint"><code>intent.setAction("com.symbol.rxlogger.intent.action.ENABLE"); 
 intent.putExtra("token", "&lt;token&gt;");  
 sendBroadcast(intent); 
-</code></pre></li>
+</code></pre>
+
+<p>Replace <code>&lt;token&gt;</code> with the token obtained from the tokenization process.</p></li>
 </ul>
 
 <!-- 
@@ -455,7 +566,7 @@ sendBroadcast(intent);
 
 <p>Extras included in the intent:</p>
 
-<table class="facelift" style="width:80%" border="1" padding="5px">
+<table class="facelift" style="width:50%" border="1" padding="5px">
   <tbody><tr bgcolor="#dce8ef">
     <th>Extra</th>
     <th>Values</th>
@@ -484,20 +595,22 @@ sendBroadcast(intent);
 
 <p>This stops data collection for all modules. It is the equivalent of tapping the <strong>Stop</strong> button in the app. </p>
 
-<p>To stop RxLogger, an intent can be sent from a third-party application using one of the following methods:</p>
+<p>To stop RxLogger, using one of the following methods:</p>
 
 <ul>
-<li><p><strong><a href="#appops">AppOps</a> (Recommended) -</strong> Use the following intent action:</p>
+<li><p><strong><a href="#permissionsmethod">Permissions</a> (Recommended) -</strong> Use the following intent:</p>
 
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.DISABLE_ZSX
+<pre class="prettyprint"><code>com.zebra.rxlogger.intent.action.DISABLE_ZSX 
 </code></pre></li>
 
-<li><p><strong>App Token Method -</strong> Requires a token that must be obtained from step 4 in the <a href="#apptoken">App Token</a> section. Replace <code>&lt;token&gt;</code> with the actual token:</p>
+<li><p><strong><a href="#tokenizationmethod">Tokenization</a> -</strong> This method requires a token, which can obtained by following section <a href="#iiiobtainapptoken">III. Obtain App Token</a>. Use the following intent:</p>
 
 <pre class="prettyprint"><code>intent.setAction("com.symbol.rxlogger.intent.action.DISABLE"); 
 intent.putExtra("token", "&lt;token&gt;");  
 sendBroadcast(intent); 
-</code></pre></li>
+</code></pre>
+
+<p>Replace <code>&lt;token&gt;</code> with the token obtained from the tokenization process.</p></li>
 </ul>
 
 <hr>
@@ -513,7 +626,7 @@ sendBroadcast(intent);
 
 <p>Extras included in the intent:</p>
 
-<table class="facelift" style="width:80%" border="1" padding="5px">
+<table class="facelift" style="width:50%" border="1" padding="5px">
   <tbody><tr bgcolor="#dce8ef">
     <th>Extra</th>
     <th>Values</th>
@@ -561,16 +674,23 @@ sendBroadcast(intent);
 <ul>
 <li><p><strong><a href="#appops">AppOps</a> (Recommended) -</strong> Use the following intent action, replacing <code>&lt;password&gt;</code> with the desired password that meets the criteria above:</p>
 
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.BACKUP_NOW_ZSX  -e "password" "&lt;password&gt;"
+<pre class="prettyprint"><code>com.zebra.rxlogger.intent.action.BACKUP_NOW_ZSX 
 </code></pre></li>
 
-<li><p><strong>App Token Method -</strong> Requires a token that must be obtained from step 4 in the <a href="#apptoken">App Token</a> section. Replace <code>&lt;token&gt;</code> with the actual token and <code>&lt;password&gt;</code> with the desired password that meets the criteria above:</p>
+<li><p><strong><a href="#tokenizationmethod">Tokenization</a> -</strong> This method requires a token, which can obtained by following section <a href="#iiiobtainapptoken">III. Obtain App Token</a>. Use the following intent:</p>
 
 <pre class="prettyprint"><code>intent.setAction("com.symbol.rxlogger.intent.action.BACKUP_NOW"); 
 intent.putExtra("token", "&lt;token&gt;"); 
 intent.putExtra( "password", "&lt;password&gt;"); 
 sendBroadcast(intent);
-</code></pre></li>
+</code></pre>
+
+<p>Replace the following</p>
+
+<ul>
+<li><code>&lt;token&gt;</code> - The token obtained from the tokenization process.</li>
+
+<li><code>&lt;password&gt;</code> - The desired password that meets the criteria above.</li></ul></li>
 </ul>
 
 <p>When accessing the backup .zip file, users are prompted to enter the password initially set for the file.</p>
@@ -653,19 +773,22 @@ sendBroadcast(intent);
 
 <p>When a third-party app deploys a configuration file, the <strong>intent for deployment must be broadcast <u>before</u> the configuration file is deployed</strong> to the RxLogger storage path <code>/sdcard/RxLogger</code>. The deployment must then be completed within approximately one minute of the broadcast. If the deployment is not completed within this timeframe, the operation may fail. These changes can be validated in the RxLogger Settings interface.</p>
 
-<p>To deploy the configuration file, an intent can be sent from a third-party application using one of the following methods:</p>
+<p>To deploy the configuration file, use one of the following methods:</p>
 
 <ul>
-<li><p><strong><a href="#appops">Permissions</a> (Recommended) -</strong> Use the following intent action:</p>
+<li><p><strong><a href="#permissionsmethod">Permissions</a> (Recommended) -</strong> Use the following intent:</p>
 
-<p>com.zebra.rxlogger.intent.action.DEPLOY_CONFIG_ZSX</p></li>
+<pre class="prettyprint"><code>com.zebra.rxlogger.intent.action.DEPLOY_CONFIG_ZSX
+</code></pre></li>
 
-<li><p><strong>Tokenization Method -</strong> Requires a token that must be obtained from step 4 in the <a href="#apptoken">App Token</a> section. Replace <code>&lt;token&gt;</code> with the actual token:</p>
+<li><p><strong><a href="#tokenizationmethod">Tokenization</a> -</strong> This method requires a token, which can obtained by following section <a href="#iiiobtainapptoken">III. Obtain App Token</a>. Use the following intent:</p>
 
 <pre class="prettyprint"><code>intent.setAction("com.symbol.rxlogger.intent.action.DEPLOY_CONFIG");  
 intent.putExtra("token", "&lt;token&gt;");  
 sendBroadcast(intent); 
-</code></pre></li>
+</code></pre>
+
+<p>Replace <code>&lt;token&gt;</code> with the token obtained from the tokenization process.</p></li>
 </ul>
 
 <!-- 
@@ -685,7 +808,7 @@ sendBroadcast(intent);
 
 <p>Extras returned from the result include the following:</p>
 
-<table class="facelift" style="width:80%" border="1" padding="5px">
+<table class="facelift" style="width:50%" border="1" padding="5px">
   <tbody><tr bgcolor="#dce8ef">
     <th>error_code</th>
     <th>result</th>
@@ -724,10 +847,33 @@ sendBroadcast(intent);
 
 <h2 id="getrxloggerstate" class="anchor"><a class="heading-anchor" href="#getrxloggerstate"><span></span></a>Get RxLogger State</h2>
 
-<p><strong>Get RxLogger State</strong> retrieves information about the state of RxLogger. To perform this retrieval, send an intent from a third-party application using the AppOps method with the following action:</p>
+<p><strong>Get RxLogger State</strong> retrieves information about the state of RxLogger, which returns one of the following values: </p>
 
-<pre class="prettyprint"><code>    com.zebra.rxlogger.intent.action.GET_RX_STATE_ZSX
+<ul>
+<li>secure-cope</li>
+
+<li>secure</li>
+
+<li>legacy</li>
+</ul>
+
+<p>To get the RxLogger state, use one of the following methods:</p>
+
+<ul>
+<li><p><strong><a href="#permissionsmethod">Permissions</a> (Recommended) -</strong> Use the following intent:</p>
+
+<pre class="prettyprint"><code>com.zebra.rxlogger.intent.action.GET_RX_STATE_ZSX 
+</code></pre></li>
+
+<li><p><strong><a href="#tokenizationmethod">Tokenization</a> -</strong> This method requires a token, which can obtained by following section <a href="#iiiobtainapptoken">III. Obtain App Token</a>. Use the following intent:</p>
+
+<pre class="prettyprint"><code>intent.setAction("com.symbol.rxlogger.intent.action.GET_RX_STATE");  
+intent.putExtra("token", "&lt;token&gt;");  
+sendBroadcast(intent); 
 </code></pre>
+
+<p>Replace <code>&lt;token&gt;</code> with the token obtained from the tokenization process.</p></li>
+</ul>
 
 <h3 id="status-1" class="anchor"><a class="heading-anchor" href="#status-1"><span></span></a>Status</h3>
 
@@ -740,7 +886,7 @@ sendBroadcast(intent);
 
 <p>Extras returned from the result include the following:</p>
 
-<table class="facelift" style="width:80%" border="1" padding="5px">
+<table class="facelift" style="width:50%" border="1" padding="5px">
   <tbody><tr bgcolor="#dce8ef">
     <th>error_code</th>
     <th>result</th>
@@ -779,10 +925,50 @@ sendBroadcast(intent);
 
 <h2 id="deletelogs" class="anchor"><a class="heading-anchor" href="#deletelogs"><span></span></a>Delete Logs</h2>
 
-<p><strong>Delete Logs</strong> removes logs located in the RxLogger folder. To remove logs, send an action intent from a third-party application using the AppOps method with the following action::</p>
+<p><strong>Delete Logs</strong> removes logs located in the RxLogger folder. </p>
 
-<pre class="prettyprint"><code>    com.zebra.rxlogger.intent.action.DELETE_LOGS_ZSX
+<p>To delete logs, send an intent using one of the following methods:</p>
+
+<ul>
+<li><p><strong><a href="#permissionsmethod">Permissions</a> (Recommended) -</strong> Use the following intent:</p>
+
+<pre class="prettyprint"><code>com.zebra.rxlogger.intent.action.DELETE_LOGS_ZSX 
 </code></pre>
+
+<p>Include the <code>logType</code> extra parameter to specify the type of files to remove:</p>
+
+<ul>
+<li><strong>0 -</strong> Deletes all files in the RxLogger folder, including both logs and backups, except for <code>config.json</code> and <code>RxInfo.txt</code>. </li>
+
+<li><strong>1 -</strong> Deletes only the log files while retaining the backup files. </li>
+
+<li><strong>2 -</strong> Deletes only the backup files while retaining the log files. </li></ul></li>
+
+<li><p><strong><a href="#tokenizationmethod">Tokenization</a> -</strong> This method requires a token, which can obtained by following section <a href="#iiiobtainapptoken">III. Obtain App Token</a>. Use the following intent:</p>
+
+<pre class="prettyprint"><code>intent.setAction("com.symbol.rxlogger.intent.action.DELETE_LOGS");  
+intent.putExtra("token", "&lt;token&gt;"); 
+intent.putExtra( "logType", "&lt;logtype&gt;");  
+sendBroadcast(intent); 
+</code></pre>
+
+<p>Replace the following</p>
+
+<ul>
+<li><code>&lt;token&gt;</code> - The token obtained from the tokenization process.</li>
+
+<li><code>&lt;logtype&gt;</code> - The type of files to delete:
+
+
+<ul>
+<li><strong>0 -</strong> Deletes all files in the RxLogger folder, including both logs and backups, except for <code>config.json</code> and <code>RxInfo.txt</code>. </li>
+
+<li><strong>1 -</strong> Deletes only the log files while retaining the backup files. </li>
+
+<li><strong>2 -</strong> Deletes only the backup files while retaining the log files. </li></ul>
+
+<p></p></li></ul><p></p></li>
+</ul>
 
 <h3 id="status-2" class="anchor"><a class="heading-anchor" href="#status-2"><span></span></a>Status</h3>
 
@@ -795,7 +981,7 @@ sendBroadcast(intent);
 
 <p>Extras returned from the result include the following:</p>
 
-<table class="facelift" style="width:80%" border="1" padding="5px">
+<table class="facelift" style="width:50%" border="1" padding="5px">
   <tbody><tr bgcolor="#dce8ef">
     <th>error_code</th>
     <th>result</th>
@@ -826,10 +1012,25 @@ sendBroadcast(intent);
 
 <h2 id="bugreport" class="anchor"><a class="heading-anchor" href="#bugreport"><span></span></a>Bug Report</h2>
 
-<p><strong>Bug Report</strong> initiates the process of generating a <a href="../settings/#bugreport">bug report</a>, providing comprehensive diagnostic information to aid in troubleshooting and performance analysis. To generate a bug report, send an intent from a third-party application using the AppOps method with the following action:</p>
+<p>Generate a <a href="../usage/#bugreport">Bug Report</a> containing comprehensive diagnostic information to aid in troubleshooting and performance analysis. The report is saved as a .ZIP file in a secure storage location that is not directly accessible. To access it, use <a href="#backupnow">BackupNow</a>, which exports the file as a password-protected and accessible version. </p>
 
-<pre class="prettyprint"><code>    com.zebra.rxlogger.intent.action.RX_BUGREPORT_ZSX
+<p>To create a bug report, send an intent using one of the following methods:</p>
+
+<ul>
+<li><p><strong><a href="#permissionsmethod">Permissions</a> (Recommended) -</strong> Use the following intent action:</p>
+
+<pre class="prettyprint"><code>com.zebra.rxlogger.intent.action.DEPLOY_CONFIG_ZSX
+</code></pre></li>
+
+<li><p><strong><a href="#tokenizationmethod">Tokenization</a> -</strong> This method requires a token, which can obtained by following section <a href="#iiiobtainapptoken">III. Obtain App Token</a>. Use the following intent:</p>
+
+<pre class="prettyprint"><code>intent.setAction("com.symbol.rxlogger.intent.action.RX_BUGREPORT");  
+intent.putExtra("token", "&lt;token&gt;");  
+sendBroadcast(intent); 
 </code></pre>
+
+<p>Replace <code>&lt;token&gt;</code> with the token obtained from the tokenization process.</p></li>
+</ul>
 
 <h3 id="status-3" class="anchor"><a class="heading-anchor" href="#status-3"><span></span></a>Status</h3>
 
@@ -842,7 +1043,7 @@ sendBroadcast(intent);
 
 <p>Extras returned from the result include the following:</p>
 
-<table class="facelift" style="width:80%" border="1" padding="5px">
+<table class="facelift" style="width:50%" border="1" padding="5px">
   <tbody><tr bgcolor="#dce8ef">
     <th>error_code</th>
     <th>result</th>
@@ -891,10 +1092,25 @@ All events related to use of remote intents, including both success and failure 
 
 <h2 id="resettodefault" class="anchor"><a class="heading-anchor" href="#resettodefault"><span></span></a>Reset to Default</h2>
 
-<p><strong>Reset to Default</strong> restores all RxLogger settings to their default values across all modules. To perform this reset, send an intent from a third-party application using the AppOps method with the following action:</p>
+<p><strong>Reset to Default</strong> restores all RxLogger settings to their default values across all modules. </p>
 
-<pre class="prettyprint"><code>    com.zebra.rxlogger.intent.action.RESET_TO_DEFAULT_ZSX
+<p>To perform a reset to default RxLogger settings, send an intent using one of the following methods:</p>
+
+<ul>
+<li><p><strong><a href="#permissionsmethod">Permissions</a> (Recommended) -</strong> Use the following intent action:</p>
+
+<pre class="prettyprint"><code>com.zebra.rxlogger.intent.action.RESET_TO_DEFAULT_ZSX
+</code></pre></li>
+
+<li><p><strong><a href="#tokenizationmethod">Tokenization</a> -</strong> This method requires a token, which can obtained by following section <a href="#iiiobtainapptoken">III. Obtain App Token</a>. Use the following intent:</p>
+
+<pre class="prettyprint"><code>intent.setAction("com.symbol.rxlogger.intent.action.RESET_TO_DEFAULT");  
+intent.putExtra("token", "&lt;token&gt;");  
+sendBroadcast(intent); 
 </code></pre>
+
+<p>Replace <code>&lt;token&gt;</code> with the token obtained from the tokenization process.</p></li>
+</ul>
 
 <h3 id="status-4" class="anchor"><a class="heading-anchor" href="#status-4"><span></span></a>Status</h3>
 
@@ -907,7 +1123,7 @@ All events related to use of remote intents, including both success and failure 
 
 <p>Extras returned from the result include the following:</p>
 
-<table class="facelift" style="width:80%" border="1" padding="5px">
+<table class="facelift" style="width:50%" border="1" padding="5px">
   <tbody><tr bgcolor="#dce8ef">
     <th>error_code</th>
     <th>result</th>
