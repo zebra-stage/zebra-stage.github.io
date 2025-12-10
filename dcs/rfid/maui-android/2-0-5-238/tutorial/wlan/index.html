@@ -158,7 +158,7 @@
                                                 RFID SDK for MAUI 2.0.5.238
                                           
                                             </p>
-                                            <p>Applicable devices : Handheld</p>
+                                            <p>Applicable devices : RFD40XX/90XX premium and premium plus</p>
                                         </div>
                                     </section>
                                 </div>
@@ -170,7 +170,42 @@
                                         <div class="service-box wow fadeInRight">
                                             <div class="">
 
-                                                
+                                                 <h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
+
+                                                <p>This Tutorial provides a walk-through of the steps to perform WIFI operation using MAUI RFID3 API</a>. <br>
+                                              Wifi is supported only with RFD40XX/90XX premium and premium plus devices.</p>
+
+
+                                           <h3 id="createtheproject" class="anchor"><a class="heading-anchor" href="#createtheproject"><span></span></a>Create the Project</h3>
+                                                <ul>
+                                                    <li>Start by creating a new project in Visual Studio. For help, see the <a href="../../tutorial/tutCreateProjectVisualStudio">Create Project</a>. </li>
+                                                    <li>Refer <a href="../../samples/hellorfid">Hello RFID</a> to prepare basic setup to work with RFID Reader and then follow this guide</li>
+                                                </ul>
+
+                                                <h3 id="tutorial1" class="anchor"><a class="heading-anchor" href="#tutorial1"><span></span></a>Details</h3>
+                                               <p>												
+												 New WIFI API in the SDK enables user to use RFD40/RFD90 devices to perform WIFI operations. Following wifi operations can be executed.	
+												</p>
+												<ol>
+												  <li>WIFI SCAN</li>
+												  <li>WIFI Profile creation</li>
+												  <li>WIFI Profile save</li>
+												  <li>WIFI Profile connect/disconnect.</li>
+												</ol>
+<p>NOTE: Certificates that needs to be used for WIFI profile needs to be installed on the device using Certificate Management feature</p>
+												
+												
+												</p>
+
+                                                <h2 id="code1" class="anchor"><a class="heading-anchor" href="#code1"><span></span></a>Wifi Scan</h2>
+										  	<p>Call API wifiScan() to start scan. Once scan is started notification will be triggered for scan started and scan stopped events, these events are pushed to application via RfidEventsListener.</p>
+
+			                                <p>To enable the event notifications:</p>
+<pre class="prettyprint"><code>
+EventHandler eventHandler = new EventHandler();
+rfidReader.Events.AddEventsListener(eventHandler);
+rfidReader.Events.SetWPAEvent(true);
+</code></pre>
 
                                                         <h2 id="code1" class="anchor"><a class="heading-anchor" href="#code1"><span></span></a>WiFi Scan</h2>
                                                         <p>Call API wifiScan() to start scan. Once scan is started notification will be triggered for scan started and scan stopped events, these events are pushed to application via Readers.IRFIDReaderEventHandler</p>
@@ -180,38 +215,20 @@
 RFIDResults rFIDResults = rfidReader.Config.WifiScan();
 
 //wifi Events
-public class ReaderModel : Readers.IRFIDReaderEventHandler, IWifiScanDataEventsListener                   
+public class EventHandler  : Java.Lang.Object, IRfidEventsListener, IWifiScanDataEventsListener                   
 {
     public void EventStatusNotify (RfidStatusEvents rfidStatusEvents)
     {
         if (rfidStatusEvents.StatusEventData.StatusEventType == STATUS_EVENT_TYPE.WpaEvent) {    
             string scanStatus = rfidStatusEvents.StatusEventData.WPAEventData.Type;
-            WiFiNotificationEvent(scanStatus);
+           
         }
     }
-
 }
-
-public void WiFiNotificationEvent(string scanStatus)
-{
-    switch (scanStatus)
-    {
-        case "ScanStart":
-            //update UI for scan start
-            break;
-        case "ScanStop":
-            //update UI for scan stop
-            break;
-        case "Operation Failed":
-            break;
-    }
-}
-
-
 </code></pre>												
 <p> Scan data results will be pushed to application via IWifiScanDataEventsListener</p>												
 <pre class="prettyprint"><code>
-    public class ReaderModel : Readers.IRFIDReaderEventHandler, IWifiScanDataEventsListener
+    public class  EventHandler  : Java.Lang.Object,  IWifiScanDataEventsListener
     { 
         //wifi Scan Data
         public void EventWifiScanNotify(RfidWifiScanEvents wifiScanEvent)
@@ -293,37 +310,19 @@ wifiSecureConfig.PrivateKey = "key.pem";
                                                         <p>This API used to connect the Reader WiFi from the saved profile list. Pass the SSID to connect.  </p>
 
                                                         <pre class="prettyprint"><code>
-rFIDResults=rfidReader.Config.WifiConnectNonRoaming("Zebra WiFi");
+RFIDResults rFIDResults=rfidReader.Config.WifiConnectNonRoaming("Zebra WiFi");
 
 //wifi Events
-public class ReaderModel : Readers.IRFIDReaderEventHandler
+public class  EventHandler : Java.Lang.Object, IRfidEventsListener, IWifiScanDataEventsListener         
 {
     public void EventStatusNotify (RfidStatusEvents rfidStatusEvents)
     {
         if (rfidStatusEvents.StatusEventData.StatusEventType == STATUS_EVENT_TYPE.WpaEvent) {
             string scanStatus = rfidStatusEvents.StatusEventData.WPAEventData.Type;
-            WiFiNotificationEvent(scanStatus);
         }
     }
 
 }
-
-public void WiFiNotificationEvent(string scanStatus)
-{
-    switch (scanStatus)
-    {
-        case "Connect":
-    	//update UI on connection 
-    	    break;
-        case "Disconnect":
-    	//update UI on disconnect 
-            break;
-        case "Operation Failed":
-            break;
-    }
-}
-
-
 </code></pre>
 
                                                         <h2 id="code8" class="anchor"><a class="heading-anchor" href="#code8"><span></span></a>WiFi Disconnect </h2>
@@ -331,11 +330,10 @@ public void WiFiNotificationEvent(string scanStatus)
                                                         <p>Call WiFi disconnect API as shown in code below</p>
 														
 														<pre class="prettyprint"><code>
-
 RFIDResults rFIDResults = rfidReader.Config.WifiDisconnect();
 
 //wifi Events
-public class ReaderModel : Readers.IRFIDReaderEventHandler
+public class  EventHandler  : Java.Lang.Object, IRfidEventsListener, IWifiScanDataEventsListener         
 {
     public void EventStatusNotify (RfidStatusEvents rfidStatusEvents)
     {
@@ -345,20 +343,19 @@ public class ReaderModel : Readers.IRFIDReaderEventHandler
         }
     }
 
-}
-
-public void WiFiNotificationEvent(string scanStatus)
-{
-    switch (scanStatus)
+    public void WiFiNotificationEvent(string scanStatus)
     {
-        case "Disconnect":
-    	//update UI on disconnect 
-            break;
-        case "Operation Failed":
-            break;
+        switch (scanStatus)
+        {
+            case "Disconnect":
+            //update UI on disconnect 
+                break;
+            case "Operation Failed":
+                break;
+        }
     }
-}
 
+}
 </code></pre>
 														
 											
@@ -368,7 +365,31 @@ public void WiFiNotificationEvent(string scanStatus)
                                                        <p>WiFi Status API will return back RSSI, Address, channel, state, band, ssid name, mac, netmask as a key pair values as shown in below code</p>
 													   
 <pre class="prettyprint"><code>
-RFIDResults rFIDResults = rfidReader.Config.WifiGetStatus(rfidWifi);
+try
+{
+    if (rfidReader != null && rfidReader.IsConnected)
+    {
+        IDictionary&lt;string, string&gt;? statusResults = new Dictionary&lt;string, string&gt;();
+        statusResults = rfidModel.rfidReader.Config.WifiStatusMap(statusResults); // API call
+
+        if (statusResults.Count > 0)
+        {
+            foreach (var key in statusResults.Keys)
+            {
+                System.Diagnostics.Debug.WriteLine($"Key {key} Value {statusResults[key]}");      
+            }
+        }
+
+    }
+}
+catch (InvalidUsageException iuex)
+{
+    System.Diagnostics.Debug.WriteLine("InvalidUsageException in Getting WifiStatus: " + iuex.Message);
+}
+catch (OperationFailureException ofex)
+{
+    System.Diagnostics.Debug.WriteLine("OperationFailureException in Getting WifiStatus: " + ofex.Message);
+}
 </code></pre>
 
                                                 <h2 id="code10" class="anchor"><a class="heading-anchor" href="#code9"><span></span></a>WiFi ChannelBand Enable</h2>
