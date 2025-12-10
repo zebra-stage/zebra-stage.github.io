@@ -213,8 +213,8 @@
 try {
     // get the configuration                                                
     Antennas.AntennaRfConfig antennaRfConfig = reader.Config.Antennas.getAntennaRfConfig(1); 
-    antennaRfConfig.setrfModeTableIndex(0); 
-    antennaRfConfig.setTari(0); 
+    antennaRfConfig.setrfModeTableIndex(38); //M4 640K profile with pie value 1500 with index 38
+    antennaRfConfig.setTari(6250); 
     antennaRfConfig.setTransmitPowerIndex(270); 
     // set the configuration
     reader.Config.Antennas.setAntennaRfConfig(1,antennaRfConfig);
@@ -227,8 +227,64 @@ try {
                                                 <h2 id="code2" class="anchor"><a class="heading-anchor" href="#code2"><span></span></a>Closer look</h2>
                                                 <ul>
                                                     <li>Get the reader supported power levels for particular regulatory using <code>reader.ReaderCapabilities.getTransmitPowerLevelValues()</code></li>
-                                                    <li><code>setrfModeTableIndex</code> sets particular link profile as provided by <code>Reader.ReaderCapabilities.RFModes.getRFModeTableInfo(0)</code> and supported for specific regulatory. In general default link profile is always referred to index 0</li>
+                                                                                                       <li><code>SetrfModeTableIndex</code> sets particular link profile as provided by <code>RFModeTable rfModeTable = reader.ReaderCapabilities.RFModes.getRFModeTableInfo(0)</code> and supported for specific regulatory. In general default link profile is always referred to index 0</li>
+
                                                 </ul>
+                                               <p> Populated rfModeTable will have entries like shown below. The following two entries are illustrative examples; actual indices and values depend on the device and regulatory settings.</p>
+                                                        <ul>
+                                                            <li>Profile: M4 640K | Index 38 | Modulation: MV_4 | BDR: 160000 | MaxTari: 10400 | MinTari: 6250 | PieValue: 1500 | SpectralMaskIndicator: SMI_DI | StepTariValue: 4150 | ForwardLinkModulationType: FORWARD_LINK_MODULATION_PR_ASK | DivideRatio: DR_8 | isEpcHAGTCConformance false</li>
+                                                            <li>Profile: M4 640K | Index 39 | Modulation: MV_4 | BDR: 160000 | MaxTari: 10400 | MinTari: 6250 | PieValue: 2000 | SpectralMaskIndicator: SMI_DI | StepTariValue: 4150 | ForwardLinkModulationType: FORWARD_LINK_MODULATION_PR_ASK | DivideRatio: DR_8 | isEpcHAGTCConformance false</li>
+                                                        </ul>
+                                                    <p>Below code snippet can be used to populate the above rfModeTable.</p>
+                                                         <pre class="prettyprint"><code>
+public void populateLinkProfiles() {
+    RFModeTableEntry rfModeTableEntry = null;
+    String profile;
+    
+    RFModeTable rfModeTable = reader.ReaderCapabilities.RFModes.getRFModeTableInfo(0);
+    
+    for (int i = 0; i < rfModeTable.length(); i++) {
+        rfModeTableEntry = rfModeTable.getRFModeTableEntryInfo(i);
+
+        int bdr = rfModeTableEntry.getBdrValue();
+        int miller = 1;
+        switch (rfModeTableEntry.getModulation().getValue()) {
+            case 1:
+                miller = 2;
+                break;
+            case 2:
+                miller = 4;
+                break;
+            case 3:
+                miller = 8;
+                break;
+        }
+        if (miller == 1) {
+            if (rfModeTableEntry.getMaxTariValue() == 668)
+                profile = "AUTOMAC" + " " + "668";
+            else
+                profile = "FM0" + " " + bdr * miller / 1000 + "K";
+        } else
+            profile = "M" + miller + " " + bdr * miller / 1000 + "K";
+
+        Log.d(TAG, "Profile: " + profile +
+                " | Index " + rfModeTableEntry.getModeIdentifer() +
+                " | Modulation: " + rfModeTableEntry.getModulation().toString() +
+                " | BDR: " + rfModeTableEntry.getBdrValue() +
+                " | MaxTari: " + rfModeTableEntry.getMaxTariValue() +
+                " | MinTari: " + rfModeTableEntry.getMinTariValue() +
+                " | PieValue: " + rfModeTableEntry.getPieValue() +
+                " | SpectralMaskIndicator: " + rfModeTableEntry.getSpectralMaskIndicator() +
+                " | StepTariValue: " + rfModeTableEntry.getStepTariValue()
+            +     " | ForwardLinkModulationType: " + rfModeTableEntry.getForwardLinkModulationType() +
+                " | DivideRatio: " + rfModeTableEntry.getDivideRatio() +
+                " | isEpcHAGTCConformance " + rfModeTableEntry.isEpcHAGTCConformance()
+        );
+    }
+}
+                                                         </code></pre>
+
+
 
                                                 <h2 id="code2" class="anchor"><a class="heading-anchor" href="#code2"><span></span></a>What's Next</h2>
                                                 <ul>
