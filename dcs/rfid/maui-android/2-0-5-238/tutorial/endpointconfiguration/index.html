@@ -279,6 +279,65 @@ public RFIDResults activateEndPointConfiguration(string endPointName) {
 IotConfigInfo iotConfigInfo = rfidModel.rfidReader.Config.ActiveEndpoints;
 string activeEndpoint = iotConfigInfo.Activemgmtep;                                         
 </code></pre>
+                                                <h2 id="code6" class="anchor"><a class="heading-anchor" href="#code6"><span></span></a>Endpoint Status</h2>
+                                                <p>Endpoint Status gives the status of active endpoint as notification status events. These status events are pushed to application via RfidEventsListener.</p> 
+                                                <p>Enable the notification by calling the following method:</p>
+<pre class="prettyprint"><code>
+EventHandler eventHandler = new EventHandler();
+rfidReader.Events.AddEventsListener(eventHandler);
+rfidReader.Events.SetIotEvent(true);                                                
+</code></pre>
+
+                                                <p>Call the endpoint status api.</p>
+<pre class="prettyprint"><code>try {
+    RFIDResults rFIDResults = rfidReader.Config.EndpointStatus;
+} catch (OperationFailureException ofex)
+ {
+     Status = $"Error: {ofex.VendorMessage}";
+     System.Diagnostics.Debug.WriteLine(Status);
+ }
+ catch (Exception ex)
+ {
+     Status = $"Error: {ex.Message}";
+     System.Diagnostics.Debug.WriteLine($"Error loading endpoint status: {ex}");
+ }</code></pre>
+
+                                                <p>Receiving event notifications:</p>
+                                                <pre class="prettyprint"><code>
+public class EventHandler : Java.Lang.Object, IRfidEventsListener
+{
+    public void EventStatusNotify(RfidStatusEvents rfidStatusEvents)
+    {
+        if (rfidStatusEvents.StatusEventData.StatusEventType == STATUS_EVENT_TYPE.IotEventMgmt)
+                {
+                    IEvents.IotEventMgmt iotEventMgmtStat = rfidStatusEvents.StatusEventData.IotEventMgmt;
+                    System.Diagnostics.Debug.WriteLine( " STATUS_EVENT_TYPE.IotEventMgmt " + iotEventMgmtStat.EpType+ " "+ iotEventMgmtStat.EpName + " " + iotEventMgmtStat.Status + " " + iotEventMgmtStat.Reason);
+                }
+                else if (rfidStatusEvents.StatusEventData.StatusEventType == STATUS_EVENT_TYPE.IotEventMgmtEvt)
+                {
+                    IEvents.IotEventMgmtEvt iotEvent = rfidStatusEvents.StatusEventData.IotEventMgmtEvt;
+                    System.Diagnostics.Debug.WriteLine(" STATUS_EVENT_TYPE.IotEventMgmtEvt " + iotEvent.EpType + " " + iotEvent.EpName + " " + iotEvent.Status + " " + iotEvent.Reason);
+                }
+
+                else if (rfidStatusEvents.StatusEventData.StatusEventType == STATUS_EVENT_TYPE.IotEventControl)
+                {
+                    IEvents.IotEventControl iotEvent = rfidStatusEvents.StatusEventData.IotEventControl;
+                    System.Diagnostics.Debug.WriteLine(" STATUS_EVENT_TYPE.IotEventMgmtEvt " + iotEvent.EpType + " " + iotEvent.EpName + " " + iotEvent.Status + " " + iotEvent.Reason);
+
+                }
+                else if (rfidStatusEvents.StatusEventData.StatusEventType == STATUS_EVENT_TYPE.IotEventData1)
+                {
+                    IEvents.IotEventData1 iotEvent = rfidStatusEvents.StatusEventData.IotEventData1;
+                    System.Diagnostics.Debug.WriteLine(" STATUS_EVENT_TYPE.IotEventMgmtEvt " + iotEvent.EpType + " " + iotEvent.EpName + " " + iotEvent.Status + " " + iotEvent.Reason);
+                }
+                else if (rfidStatusEvents.StatusEventData.StatusEventType == STATUS_EVENT_TYPE.IotEventData2)
+                {
+                    IEvents.IotEventData2 iotEvent = rfidStatusEvents.StatusEventData.IotEventData2;
+                    System.Diagnostics.Debug.WriteLine(" STATUS_EVENT_TYPE.IotEventMgmtEvt " + iotEvent.EpType + " " + iotEvent.EpName + " " + iotEvent.Status + " " + iotEvent.Reason);
+                }
+    }
+}
+</code></pre>
 
                                             </div>
                                         </div>
