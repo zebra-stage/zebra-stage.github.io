@@ -248,17 +248,47 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p><strong>Product Recognition</strong> utilizes the <strong>Feature Extractor, Feature Storage,</strong> and <strong>Recognizer</strong> classes to identify products that have been enrolled for recognition. Typically used alongside the <a href="../localizer/">Localizer</a> class, this approach builds a comprehensive knowledge base that enhances inventory tracking and facilitates automated checkouts.</p>
+<p><strong>Product Recognition</strong> identifies enrolled products from an image by detecting them, extracting their visual features, and matching those features against a product database. This workflow is optimized for retail scenarios such as inventory tracking, shelf intelligence, and automated checkout.</p>
 
-<ul>
-<li><strong><a href="#featureextractor">Feature Extractor</a> -</strong> Extracts key features from images to produce descriptors that characterize these features.</li>
+<p>Product recognition follows a three-step process:</p>
 
-<li><strong><a href="#featurestorage">Feature Storage</a> -</strong> Stores these descriptors in a vector database, allowing users to build a comprehensive product recognition database.</li>
+<ol>
+<li><strong>Localize -</strong> A detector finds shelves, labels, and products within the image. This is performed by either the <a href="#modulerecognizer">ModuleRecognizer’s</a> built-in detector (Unified Workflow) or the stand-alone <a href="../localizer/">Shelf and Product Localizer</a> (Modular workflow). </li>
 
-<li><strong><a href="#recognizer">Recognizer</a> -</strong> Initializes the database to perform semantic searches, identifying the most similar embeddings in the knowledge base and predicting the identity of detected products.</li>
-</ul>
+<li><strong>Extract -</strong> Detected product locations are sent along with the image to the <a href="#featureextractor">Feature Extractor</a>, which generates a unique digital signature (features) for each product. </li>
 
-<p>With the <a href="../localizer/">Shelf and Product Localizer</a>, products within an image are first detected, then ‘cropped’ products are submitted for recognition, streamlining the process for efficient and accurate identification. This system is particularly optimized for retail product recognition.</p>
+<li><strong>Match -</strong> The extracted features are matched against the product database to find the corresponding product SKU and accurately identify the product. </li>
+</ol>
+
+<!-- 
+**Product Recognition** utilizes the **Feature Extractor, Feature Storage,** and **Recognizer** classes to identify products that have been enrolled for recognition. Typically used alongside the [Localizer](../localizer/) class, this approach builds a comprehensive knowledge base that enhances inventory tracking and facilitates automated checkouts.
+-->
+
+<p>Two methods for implementation: </p>
+
+<ol>
+<li><p><strong>Unified Workflow (Recommended) -</strong> Uses the <strong>ModuleRecognizer</strong> - a single, high-level pipeline that handles all three steps automatically, from detection to recognition. <strong>This is best for most uses cases,</strong> simplifying integration by combining all steps into one configurable module, while still allowing configuration of detection-only or detection-plus-recognition modes. </p></li>
+
+<li><p><strong>Modular Workflow -</strong> Provides direct access to the low-level components to build a custom pipeline for each step. This is best for advanced or highly customized use cases requiring full control over each step of the process. Low–level components: </p>
+
+<p></p><ul>
+<li><strong><a href="#featureextractor">Feature Extractor</a> –</strong> Generates descriptors from detected product images. </li></ul><p></p>
+
+<p></p></li><li><strong><a href="#featurestorage">Feature Storage</a> -</strong> Stores these descriptors in a vector database, creating a product knowledge base. </li><p></p>
+
+<p></p><li><strong><a href="#recognizer">Recognizer</a> -</strong> Searches the database to find the most similar product and predict its SKU. </li><p></p>
+
+<p></p><li><strong><a href="../localizer/">Localizer</a> –</strong> Detects shelves, labels, and products; cropped product regions can then be passed to the recognizer. </li><p></p>
+</ol>
+
+<!--
+- **[Feature Extractor](#featureextractor) -** Extracts key features from images to produce descriptors that characterize these features.
+- **[Feature Storage](#featurestorage) -** Stores these descriptors in a vector database, allowing users to build a comprehensive product recognition database.
+- **[Recognizer](#recognizer) -** Initializes the database to perform semantic searches, identifying the most similar embeddings in the knowledge base and predicting the identity of detected products.
+
+With the [Shelf and Product Localizer](../localizer/), products within an image are first detected, then ‘cropped’ products are submitted for recognition, streamlining the process for efficient and accurate identification. This system is particularly optimized for retail product recognition.
+
+-->
 
 <!--  // Part of new Cloud API
 **Product Enrollment** is crucial for effective identification and recognition of items within an AI product recognition system. By enrolling products, the AI system is equipped with essential data, such as images, descriptions, and attributes, that enable it to accurately differentiate and identify products. A fundamental step of Product Enrollment is creating a product index. Leverage the **Product Recognition <a href="#indexcreator">Index Creator Cloud APIs</a>** to convert enrolled product images into searchable digital fingerprints using advanced computer vision technology, enabling seamless recognition through the Data Capture SDK.
@@ -270,63 +300,431 @@
 
 <p>The <strong>product-and-shelf-recognizer</strong> model is designed specifically for product and shelf recognition tasks. For more information and to download the model, refer to <a href="../model/prod-recognizer/">Product and Shelf Recognizer Model</a>.</p>
 
-<h2 id="partofnewcloudapireleasetbd" class="anchor"><a class="heading-anchor" href="#partofnewcloudapireleasetbd"><span></span></a><!-- // Part of new Cloud API, release TBD</h2>
+<!-- // Part of new Cloud API, release TBD
 
-<h2 id="indexcreator">Index Creator</h2>
+## Index Creator
 
-<p>Creating an index of products is a critical step within the process of product enrollment in an AI product recognition system. The index serves as the backbone of the system, enabling the AI to efficiently and accurately retrieve and recognize products based on user inputs (such as images, text, or barcodes).</p>
+Creating an index of products is a critical step within the process of product enrollment in an AI product recognition system. The index serves as the backbone of the system, enabling the AI to efficiently and accurately retrieve and recognize products based on user inputs (such as images, text, or barcodes).
 
-<h3 id="understandingproductenrollment">Understanding Product Enrollment</h3>
+### Understanding Product Enrollment
 
-<p>Product enrollment is the process of registering products into an AI system by collecting and processing their attributes (e.g., images, descriptions, metadata, etc.) to make them recognizable and searchable. This involves:</p>
+Product enrollment is the process of registering products into an AI system by collecting and processing their attributes (e.g., images, descriptions, metadata, etc.) to make them recognizable and searchable. This involves:
 
-<ul>
-<li>Uploading data about the product.</li>
+- Uploading data about the product.
+- Extracting features from that data.
+- Organizing and storing these features in a structured format for efficient retrieval.
 
-<li>Extracting features from that data.</li>
+The index is the structured database or framework that organizes this information for easy access during recognition tasks.
 
-<li>Organizing and storing these features in a structured format for efficient retrieval.</li>
-</ul>
+### The Role of an Index in Product Recognition
 
-<p>The index is the structured database or framework that organizes this information for easy access during recognition tasks.</p>
+An index in an AI product recognition system is a database or catalog where products are stored in a format that allows for efficient searching and matching. It is not just a simple list of products, but a highly optimized structure designed for:
 
-<h3 id="theroleofanindexinproductrecognition">The Role of an Index in Product Recognition</h3>
+- **Fast retrieval:** Matching user inputs (e.g., a photo of a product) with products in the database.
+- **Similarity comparisons:** Comparing features of enrolled products with new data to find the closest match.
+- **Categorization:** Grouping products into categories or hierarchies for better organization.
 
-<p>An index in an AI product recognition system is a database or catalog where products are stored in a format that allows for efficient searching and matching. It is not just a simple list of products, but a highly optimized structure designed for:</p>
+### The Role of the Product Recognition Index Creator
 
-<ul>
-<li><strong>Fast retrieval:</strong> Matching user inputs (e.g., a photo of a product) with products in the database.</li>
+The **Product Recognition Index Creator** is Zebra’s cloud-based platform designed to analyze and classify products from images using advanced computer vision technology. It generates a searchable digital index or database of products for use with the Zebra Frontline AI Enabler. Key features include:
 
-<li><strong>Similarity comparisons:</strong> Comparing features of enrolled products with new data to find the closest match.</li>
+- **Digital Fingerprints:** Converts product images into unique digital identifiers, enabling users to search and retrieve items by uploading similar images.
+- **Automated Catalog Management:** Groups similar products, categorizes them, and detects duplicates, streamlining catalog organization and improving inventory accuracy.
+- **Optimized Search Indexes:** Builds efficient search tools for visual search, reducing catalog management time and improving inventory accuracy.
+- **Enhanced Workflow Efficiency:** Automates tasks from image capture to index creation, minimizing manual effort and resource usage.
 
-<li><strong>Categorization:</strong> Grouping products into categories or hierarchies for better organization.</li>
-</ul>
+**Product Recognition Index Creator Workflow:**
+<img alt="image" style="height:1200px"  src="index-creator-workflow.jpg" />
 
-<h3 id="theroleoftheproductrecognitionindexcreator">The Role of the Product Recognition Index Creator</h3>
+For more details on the available Cloud APIs, visit [Frontline AI Enabler Product Recognition Index Creator](https://developer.zebra.com/apis/ai-suite-product-recognition-index-creator).
 
-<p>The <strong>Product Recognition Index Creator</strong> is Zebra’s cloud-based platform designed to analyze and classify products from images using advanced computer vision technology. It generates a searchable digital index or database of products for use with the Zebra Frontline AI Enabler. Key features include:</p>
-
-<ul>
-<li><strong>Digital Fingerprints:</strong> Converts product images into unique digital identifiers, enabling users to search and retrieve items by uploading similar images.</li>
-
-<li><strong>Automated Catalog Management:</strong> Groups similar products, categorizes them, and detects duplicates, streamlining catalog organization and improving inventory accuracy.</li>
-
-<li><strong>Optimized Search Indexes:</strong> Builds efficient search tools for visual search, reducing catalog management time and improving inventory accuracy.</li>
-
-<li><strong>Enhanced Workflow Efficiency:</strong> Automates tasks from image capture to index creation, minimizing manual effort and resource usage.</li>
-</ul>
-
-<p><strong>Product Recognition Index Creator Workflow:</strong>
-<img alt="image" style="height:1200px"  src="index-creator-workflow.jpg" /></p>
-
-<p>For more details on the available Cloud APIs, visit <a href="https://developer.zebra.com/apis/ai-suite-product-recognition-index-creator">Frontline AI Enabler Product Recognition Index Creator</a>.</p>
-
-<p>Zebra also provides the ability to enroll products and create a product index through the AI Data Capture SDK, along with its <a href="#sampleapps">sample application</a>.
---><p></p>
+Zebra also provides the ability to enroll products and create a product index through the AI Data Capture SDK, along with its [sample application](#sampleapps).
+-->
 
 <hr>
 
-</h2><h2 id="featureextractor" class="anchor"><a class="heading-anchor" href="#featureextractor"><span></span></a>Feature Extractor</h2>
+<h2 id="modulerecognizer" class="anchor"><a class="heading-anchor" href="#modulerecognizer"><span></span></a>ModuleRecognizer</h2>
+
+<p>The <strong>ModuleRecognizer</strong> class provides a unified pipeline for detecting shelves, labels, and optionally recognizing products (SKUs) using feature extraction and database/index matching. It combines localization and recognition into a single workflow, supporting both bounding box detection and product identification. </p>
+
+<p>Key Features:</p>
+
+<ul>
+<li><strong>Shelf, Label, and Product Detection -</strong> Detects shelves, labels, and products in an image, returning bounding boxes for each entity. </li>
+
+<li><strong>Product Recognition (Optional) -</strong> When enabled, recognizes products (SKUs) by extracting features and matching them against a product database or index. </li>
+
+<li><strong>Configurable Pipeline -</strong> Supports localization-only mode for shelves, labels and products or full recognition mode, if the following APIs are called: enableProductRecognitionWithIndex, enableProductRecognitionWithDb.</li>
+</ul>
+
+<hr>
+
+<h3 id="developerguide" class="anchor"><a class="heading-anchor" href="#developerguide"><span></span></a>Developer Guide</h3>
+
+<p>This guide demonstrates how to detect shelves, labels, products, and optionally recognize products (SKUs) using the unified ModuleRecognizer pipeline. </p>
+
+<h4 id="step1initialization" class="anchor"><a class="heading-anchor" href="#step1initialization"><span></span></a>Step 1: Initialization</h4>
+
+<ol>
+<li><strong>Import the ModuleRecognizer class:</strong> Use <code>com.zebra.ai.vision.detector.ModuleRecognizer</code>. </li>
+
+<li><strong>Initialize the SDK:</strong> Use your application's context object and invoke <code>init()</code> from the AIVisionSDK class. </li>
+
+<li><strong>Initialize Settings:</strong> Create a <code>ModuleRecognizer.Settings</code> object with the model name or model file for localization. Optionally, enable product recognition by providing a feature product recognitioon  model and either an index with label file or a database file. </li>
+
+<li><strong>Instantiate ModuleRecognizer:</strong> Use the <code>Settings</code> object to create an instance of <code>ModuleRecognizer</code> with a <code>CompletableFuture</code>. 
+The thenAccept() method allows handling of the instantiated ModuleRecognizer for further operations. </li>
+</ol>
+
+<p>Sample Code:</p>
+
+<pre class="prettyprint"><code>    import com.zebra.ai.vision.detector.ModuleRecognizer; 
+
+    // Developer must Initialize SDK by calling below API: 
+    AIVisionSDK.getInstance(this.getApplicationContext()).init(); 
+
+    // Context refers to application context object. 
+    String mavenModelName = "product-and-shelf-recognizer"; 
+
+    // Create settings for localization only 
+    ModuleRecognizer.Settings settings = new ModuleRecognizer.Settings(mavenModelName); 
+
+    // Optional – Enable product recognition with a database file 
+    String productDbFile = "/path/to/product-db-file"; 
+    mrSettings settings.enableProductRecognitionWithDb(mavenModelName, productDbFile); 
+
+    // Optional – Set runtime processor order to load the model 
+    Integer[] rpo = new Integer[3]; 
+    rpo[0] = InferencerOptions.DSP; 
+    rpo[1] = InferencerOptions.CPU; 
+    rpo[2] = InferencerOptions.GPU; 
+
+    mrSettings settings.inferencerOptions.runtimeProcessorOrder = rpo; 
+    settings.inferencerOptions.defaultDims.height = 640; 
+    settings.inferencerOptions.defaultDims.width = 640; 
+
+    // Initialize ModuleRecognizer object 
+    final ModuleRecognizer moduleRecognizer = null; 
+
+    CompletableFuture&lt;ModuleRecognizer&gt; futureObject = ModuleRecognizer.getModuleRecognizer(mrSettings settings, executor); 
+
+    // Use the futureObject to implement thenAccept() callback of CompletableFuture 
+    futureObject.thenAccept(moduleRecognizerInstance -&gt; { 
+
+            // Use the moduleRecognizer object returned here for detection and recognition 
+            moduleRecognizer = moduleRecognizerInstance; 
+
+        }).exceptionally(e -&gt; { 
+
+        if (e instanceof AIVisionSDKException) { 
+
+            Log.e(TAG, "[AIVisionSDKException] ModuleRecognizer object creation failed: " + e.getMessage()); 
+        } 
+
+        return null; 
+
+    }); 
+</code></pre>
+
+<h4 id="step2detectandrecognizeentities" class="anchor"><a class="heading-anchor" href="#step2detectandrecognizeentities"><span></span></a>Step 2: Detect and Recognize Entities</h4>
+
+<ol>
+<li><strong>Detection and Recognition:</strong> Call <code>process(imageData, executor)</code> to detect shelves, labels, and products in the image. If product recognition is enabled, the returned products will include top-K SKU predictions. </li>
+
+<li><strong>Asynchronous Processing:</strong> Use the <code>thenAccept</code> method of <code>CompletableFuture</code> to handle the result once entity detection and recognition is complete. This allows processing without blocking the main thread. </li>
+
+<li><strong>Resource Management:</strong> After processing is complete, call <code>dispose()</code> on the <code>ModuleRecognizer</code> object to free resources and memory used during detection and recognition. </li>
+</ol>
+
+<p>Sample Code: </p>
+
+<pre class="prettyprint"><code>    import com.zebra.ai.vision.detector.ImageData; 
+    import com.zebra.ai.vision.entity.Entity; 
+    import com.zebra.ai.vision.entity.ShelfEntity; 
+    import com.zebra.ai.vision.entity.LabelEntity; 
+    import com.zebra.ai.vision.entity.ProductEntity; 
+    import com.zebra.ai.vision.detector.SKUInfo; 
+
+    // Prepare image data and executor 
+    ImageData imageData = ImageData.fromBitmap(bitmap); 
+
+    // Input params: imageData and an executor thread object for running the recognizer functionality 
+
+    CompletableFuture&lt;List&lt;Entity&gt;&gt; futureEntities = moduleRecognizer.process(imageData, executor); 
+
+    futureEntities.thenAccept(entities -&gt; { 
+
+        for (Entity entity : entities) { 
+            if (entity instanceof ShelfEntity) { 
+                ShelfEntity shelf = (ShelfEntity) entity; 
+                // Access shelf bounding box and detection confidence 
+                android.graphics.Rect shelfBox = shelf.getBoundingBox(); 
+                float shelfConfidence = shelf.getAccuracy(); 
+
+                // Access corner points if needed to draw on screen 
+                List&lt;Point&gt; shelfCorners = shelf.getCorners(); 
+            } 
+
+            else if (entity instanceof LabelEntity) { 
+                LabelEntity label = (LabelEntity) entity; 
+
+                // Access label bounding box and class ID 
+                android.graphics.Rect labelBox = label.getBoundingBox(); 
+                LabelEntity.ClassId classId = label.getClassId(); 
+
+                float labelConfidence = label.getAccuracy(); 
+                List&lt;Point&gt; labelCorners = label.getCorners(); 
+
+            } 
+
+            else if (entity instanceof ProductEntity) { 
+                ProductEntity product = (ProductEntity) entity; 
+
+                // Access product bounding box and SKU predictions 
+                android.graphics.Rect productBox = product.getBoundingBox(); 
+                List&lt;SKUInfo&gt; topKSKUs = product.getTopKSKUs(); 
+
+                float accuracy = product.getAccuracy(); 
+                List&lt;Point&gt; productCorners = product.getCorners(); 
+            } 
+        } 
+
+    }).exceptionally(e -&gt; { 
+        if (e instanceof AIVisionSDKException) { 
+            Log.e(TAG, "[AIVisionSDKException] Failed to process image : " + e.getMessage()); 
+        } 
+        return null; 
+
+    }); 
+
+    // Once done using the moduleRecognizer object, dispose the object to release the resources and memory used for detection and recognition 
+    moduleRecognizer.dispose(); 
+</code></pre>
+
+<p><strong>Notes:</strong></p>
+
+<ul>
+<li><strong>Localization Only -</strong> If product recognition is not enabled <code>ProductEntity</code> objects will contain only bounding box information. </li>
+
+<li><strong>Full Recognition -</strong> If product recognition is enabled, <code>ProductEntity</code> objects will include top-K SKU predictions and accuracy scores. </li>
+
+<li><strong>Thread Safety -</strong> The <code>ModuleRecognizer</code> class is thread-safe; however, always dispose of the instance when finished. </li>
+</ul>
+
+<hr>
+
+<h3 id="methods" class="anchor"><a class="heading-anchor" href="#methods"><span></span></a>Methods</h3>
+
+<h4 id="getmodulerecognizersettingssettingsexecutorexecutor" class="anchor"><a class="heading-anchor" href="#getmodulerecognizersettingssettingsexecutorexecutor"><span></span></a>getModuleRecognizer(Settings settings, Executor executor)</h4>
+
+<pre class="prettyprint"><code>    CompletableFuture&lt;ModuleRecognizer&gt; getModuleRecognizer(Settings settings, Executor executor) throws IOException, InvalidInputException, AIVisionSDKLicenseException, AIVisionSDKSNPEException, AIVisionSDKModelException, AIVisionSDKException 
+</code></pre>
+
+<p><strong>Description:</strong> Asynchronously loads the localization model and, if configured, the product recognition models and resources. Returns a <code>ModuleRecognizer</code> object that can detect shelves, labels, and products in images, and optionally recognize products (SKUs). </p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>settings -</strong> The <code>ModuleRecognizer.Settings</code> object containing configuration for localization and optional product recognition.</li>
+
+<li><strong>executor -</strong> Executor for delivering the result; if null, the SDK default executor is used.</li>
+</ul>
+
+<p><strong>Return Value:</strong> Returns a <code>CompletableFuture</code> that resolves to a <code>ModuleRecognizer</code> object.</p>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>InvalidInputException -</strong> Thrown if the <code>Settings</code> object is null or required fields are missing.</li>
+
+<li><strong>AIVisionSDKLicenseException -</strong> Thrown if there are licensing issues related to the model.</li>
+
+<li><strong>AIVisionSDKSNPEException -</strong> Thrown if SNPE fails to initialize.</li>
+
+<li><strong>AIVisionSDKModelException -</strong> Thrown if the current SDK version is below the minimum required version. To resolve this, update the SDK to a newer or the latest version.</li>
+
+<li><strong>AIVisionSDKException -</strong> Thrown if the AI Data Capture SDK is not initialized or if other SDK error occur.</li>
+
+<li><strong>IOException -</strong> Thrown if the model or resource fails to load during initialization.</li>
+</ul>
+
+<hr>
+
+<h4 id="voiddispose" class="anchor"><a class="heading-anchor" href="#voiddispose"><span></span></a>void Dispose()</h4>
+
+<pre class="prettyprint"><code>    void ModuleRecognizer.dispose()
+</code></pre>
+
+<p><strong>Description:</strong> Releases all internal resources used by the ModuleRecognizer object, including models and native handles for localization, feature extraction, and recognition. This method should be called manually when the recognizer is no longer needed to free resources and prevent memory leaks. </p>
+
+<hr>
+
+<h4 id="enableproductrecognitionwithdbstringmodelnamestringproductdb_filepath" class="anchor"><a class="heading-anchor" href="#enableproductrecognitionwithdbstringmodelnamestringproductdb_filepath"><span></span></a>enableProductRecognitionWithDb(String modelName, String productDB_Filepath)</h4>
+
+<pre class="prettyprint"><code>    void enableProductRecognitionWithDb(String modelName, String productDB_Filepath) throws InvalidInputException, AIVisionSDKException 
+</code></pre>
+
+<p><strong>Description:</strong> Enables product recognition using a feature extractor model (by name) and a product database file. This configures the recognizer to match detected products against entries in the specified database.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>modelName -</strong> The name of the model to be used for product recognition. Refer to <a href="../setup/#featuresmodels">feature models</a>.</li>
+
+<li><strong>productDB_Filepath -</strong> The file path to the product database.</li>
+</ul>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>InvalidInputException -</strong> Thrown if the <code>productDB_Filepath</code> is null or empty.</li>
+
+<li><strong>AIVisionSDKException -</strong> Thrown if an error occurs during processing.</li>
+</ul>
+
+<hr>
+
+<h4 id="enableproductrecognitionwithdbfilemodelfilestringproductdb_filepath" class="anchor"><a class="heading-anchor" href="#enableproductrecognitionwithdbfilemodelfilestringproductdb_filepath"><span></span></a>enableProductRecognitionWithDb(File modelFile, String productDB_Filepath)</h4>
+
+<pre class="prettyprint"><code>    void enableProductRecognitionWithDb(File modelFile, String productDB_Filepath) throws InvalidInputException, AIVisionSDKException 
+</code></pre>
+
+<p><strong>Description:</strong> Enables product recognition using a feature extractor model (as a file) and a product database file. This configures the recognizer to match detected products against entries in the specified database.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>modelFile -</strong> The feature extractor model file to use for product recognition. </li>
+
+<li><strong>productDB_Filepath -</strong> The file path to the product database.</li>
+</ul>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>InvalidInputException -</strong> Thrown if <code>modelFile</code> is invalid or if <code>productDB_Filepath</code> is null or empty.</li>
+
+<li><strong>AIVisionSDKException -</strong> Thrown if an error occurs during processing.</li>
+</ul>
+
+<hr>
+
+<h4 id="enableproductrecognitionwithindexstringmodelnamestringindexfilepathstringlabelfilepath" class="anchor"><a class="heading-anchor" href="#enableproductrecognitionwithindexstringmodelnamestringindexfilepathstringlabelfilepath"><span></span></a>enableProductRecognitionWithIndex(String modelName, String indexFilePath, String labelFilePath)</h4>
+
+<pre class="prettyprint"><code>    void enableProductRecognitionWithIndex(String modelName, String indexFilePath, String labelFilePath) throws InvalidInputException, AIVisionSDKException 
+</code></pre>
+
+<p><strong>Description:</strong> Enables product recognition using a feature extractor model (by name), a product index file, and a label file. This configures the recognizer to match detected products against entries in the specified index and label files.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>modelName -</strong> The name of the model to be used for product recognition. Refer to <a href="../setup/#featuresmodels">feature models</a>.</li>
+
+<li><strong>indexFilePath –</strong> The file path to the product index file. </li>
+
+<li><strong>labelFilePath –</strong> The file path to the product label file. </li>
+</ul>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>InvalidInputException -</strong> Thrown if <code>indexFilePath</code> or <code>labelFilePath</code> is null or empty.</li>
+
+<li><strong>AIVisionSDKException -</strong> Thrown if an error occurs during processing.</li>
+</ul>
+
+<hr>
+
+<h4 id="enableproductrecognitionwithindexfilemodelfilestringindexfilepathstringlabelfilepath" class="anchor"><a class="heading-anchor" href="#enableproductrecognitionwithindexfilemodelfilestringindexfilepathstringlabelfilepath"><span></span></a>enableProductRecognitionWithIndex(File modelFile, String indexFilePath, String labelFilePath)</h4>
+
+<pre class="prettyprint"><code>    void enableProductRecognitionWithIndex(File modelFile, String indexFilePath, String labelFilePath) throws InvalidInputException, AIVisionSDKException 
+</code></pre>
+
+<p><strong>Description:</strong> Enables product recognition using a feature extractor model (as a file), a product index file, and a label file. This configures the recognizer to match detected products against entries in the specified index and label files.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>modelFile -</strong> The feature extractor model file to use for product recognition.</li>
+
+<li><strong>indexFilePath –</strong> The file path to the product index file. </li>
+
+<li><strong>labelFilePath –</strong> The file path to the product label file. </li>
+</ul>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>InvalidInputException -</strong> Thrown if <code>modelFile</code> is invalid or <code>indexFilePath</code> or <code>labelFilePath</code> is null or empty.</li>
+
+<li><strong>AIVisionSDKException -</strong> Thrown if an error occurs during processing.</li>
+</ul>
+
+<hr>
+
+<h3 id="modulerecognizersettings" class="anchor"><a class="heading-anchor" href="#modulerecognizersettings"><span></span></a>ModuleRecognizer.Settings</h3>
+
+<p>The <code>ModuleRecognizer.Settings</code> class is a nested class within the <code>ModuleRecognizer</code> class. It provides configuration options for the module recognizer, allowing the ability to specify localization models and optionally enable product recognition using various sources. Multiple constructors and methods are available to tailor the configuration for different use cases.</p>
+
+<hr>
+
+<h4 id="settingsstringmodelname" class="anchor"><a class="heading-anchor" href="#settingsstringmodelname"><span></span></a>Settings (String modelName)</h4>
+
+<pre class="prettyprint"><code>    ModuleRecognizer.Settings settings = new ModuleRecognizer.Settings(modelName) throws InvalidInputException, AIVisionSDKException; 
+</code></pre>
+
+<p><strong>Description:</strong> Constructor for the <code>Settings</code> object using the model name (e.g."product-and-shelf-recognizer"). This sets up the configuration for shelf, label, and product localization. Product recognition can be enabled later using the provided methods.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>ModelName -</strong> The name of the model to be used for product recognition. Refer to <a href="../setup/#featuresmodels">feature models</a>.</li>
+</ul>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>InvalidInputException -</strong> Thrown if the <code>ModelName</code> is invalid.</li>
+
+<li><strong>AIVisionSDKException -</strong> Thrown if an error occurs while reading the specified model or if the SDK is not initialized.</li>
+</ul>
+
+<hr>
+
+<h4 id="settingsfilemodelfile" class="anchor"><a class="heading-anchor" href="#settingsfilemodelfile"><span></span></a>Settings (File modelFile)</h4>
+
+<pre class="prettyprint"><code>    ModuleRecognizer.Settings settings = new ModuleRecognizer.Settings(modelFile) throws InvalidInputException, AIVisionSDKException; 
+</code></pre>
+
+<p><strong>Description:</strong> Constructs a new <code>Settings</code> object using a <code>File</code> object for the localization model. Product recognition can be enabled later using the provided methods. </p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>modelFile –</strong> The file object containing the localization model. </li>
+</ul>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>InvalidInputException –</strong> Thrown if the <code>modelFile</code> is invalid. </li>
+
+<li><strong>AIVisionSDKException –</strong> Thrown if an error occurs while reading the model or if the SDK is not initialized. </li>
+</ul>
+
+<hr>
+
+<h4 id="inferenceroptionsinferenceroptions" class="anchor"><a class="heading-anchor" href="#inferenceroptionsinferenceroptions"><span></span></a>InferencerOptions inferencerOptions</h4>
+
+<pre class="prettyprint"><code>    InferencerOptions = new InferencerOptions()
+</code></pre>
+
+<p><strong>Description:</strong> An instance of <code>InferencerOptions</code>, providing additional configuration options for the inferencer’s behavior, such as runtime processor order and input dimensions. </p>
+
+<hr>
+
+<h2 id="featureextractor" class="anchor"><a class="heading-anchor" href="#featureextractor"><span></span></a>Feature Extractor</h2>
 
 <p>The <code>FeatureExtractor</code> class generates a set of <a href="../types/#descriptor">Descriptors</a>, vectors of float numbers that offer a meaningful representation of the features of items identified within an image. It supports processing both entire images and specific regions defined by <a href="../types/#bbox/">bounding boxes</a>, accommodating various input formats and orientations. After the descriptors are generated, integration with Feature Storage allows for storage and retrieval of the descriptors for use.</p>
 
@@ -346,11 +744,11 @@
 
 <hr>
 
-<h3 id="developerguide" class="anchor"><a class="heading-anchor" href="#developerguide"><span></span></a>Developer Guide</h3>
+<h3 id="developerguide-1" class="anchor"><a class="heading-anchor" href="#developerguide-1"><span></span></a>Developer Guide</h3>
 
 <p>This guide demonstrates how to create descriptors for entire images or specific regions, with the option to adjust for orientation if necessary.</p>
 
-<h4 id="step1initialization" class="anchor"><a class="heading-anchor" href="#step1initialization"><span></span></a>Step 1: Initialization</h4>
+<h4 id="step1initialization-1" class="anchor"><a class="heading-anchor" href="#step1initialization-1"><span></span></a>Step 1: Initialization</h4>
 
 <ol>
 <li><strong>Import the FeatureExtractor class:</strong> Use <code>com.zebra.ai.vision.detector.FeatureExtractor</code>.</li>
@@ -492,7 +890,7 @@ featureExtractor.dispose();
 
 <hr>
 
-<h3 id="methods" class="anchor"><a class="heading-anchor" href="#methods"><span></span></a>Methods</h3>
+<h3 id="methods-1" class="anchor"><a class="heading-anchor" href="#methods-1"><span></span></a>Methods</h3>
 
 <h4 id="getfeatureextractorsettingssettingsexecutorexecutor" class="anchor"><a class="heading-anchor" href="#getfeatureextractorsettingssettingsexecutorexecutor"><span></span></a>getFeatureExtractor(Settings settings, Executor executor)</h4>
 
@@ -527,7 +925,7 @@ featureExtractor.dispose();
 
 <hr>
 
-<h4 id="voiddispose" class="anchor"><a class="heading-anchor" href="#voiddispose"><span></span></a>void Dispose()</h4>
+<h4 id="voiddispose-1" class="anchor"><a class="heading-anchor" href="#voiddispose-1"><span></span></a>void Dispose()</h4>
 
 <pre class="prettyprint"><code>    void FeatureExtractor.dispose()
 </code></pre>
@@ -736,7 +1134,7 @@ featureExtractor.dispose();
 
 <hr>
 
-<h4 id="settingsfilemodelfile" class="anchor"><a class="heading-anchor" href="#settingsfilemodelfile"><span></span></a>Settings (File ModelFile)</h4>
+<h4 id="settingsfilemodelfile-1" class="anchor"><a class="heading-anchor" href="#settingsfilemodelfile-1"><span></span></a>Settings (File ModelFile)</h4>
 
 <pre class="prettyprint"><code>    FeatureExtractor.Settings feSettings = new FeatureExtractor.Settings(modelFile) throws InvalidInputException, AIVisionSDKException;
 </code></pre>
@@ -775,11 +1173,11 @@ featureExtractor.dispose();
 
 <p><strong>Feature Storage</strong> is primarily responsible for storing and updating the descriptors of items generated by the <code>FeatureExtractor</code>. It stores them in a database along with their corresponding class names to be used for detection by the <a href="#recognizer">Recognizer</a>.</p>
 
-<h3 id="developerguide-1" class="anchor"><a class="heading-anchor" href="#developerguide-1"><span></span></a>Developer Guide</h3>
+<h3 id="developerguide-2" class="anchor"><a class="heading-anchor" href="#developerguide-2"><span></span></a>Developer Guide</h3>
 
 <p>This guide demonstrates how to retrieve descriptors from Feature Extractor and store them into the database.</p>
 
-<h4 id="step1initialization-1" class="anchor"><a class="heading-anchor" href="#step1initialization-1"><span></span></a>Step 1: Initialization</h4>
+<h4 id="step1initialization-2" class="anchor"><a class="heading-anchor" href="#step1initialization-2"><span></span></a>Step 1: Initialization</h4>
 
 <ol>
 <li><strong>Import the <code>FeatureStorage</code> class:</strong> Use com.zebra.ai.vision.detector.FeatureStorage.</li>
@@ -839,7 +1237,7 @@ featureStorage.dispose();
 
 <hr>
 
-<h3 id="methods-1" class="anchor"><a class="heading-anchor" href="#methods-1"><span></span></a>Methods</h3>
+<h3 id="methods-2" class="anchor"><a class="heading-anchor" href="#methods-2"><span></span></a>Methods</h3>
 
 <!--
 #### FeatureStorage(Settings settings)
@@ -1105,7 +1503,7 @@ featureStorage.dispose();
 
 <hr>
 
-<h3 id="developerguide-2" class="anchor"><a class="heading-anchor" href="#developerguide-2"><span></span></a>Developer Guide</h3>
+<h3 id="developerguide-3" class="anchor"><a class="heading-anchor" href="#developerguide-3"><span></span></a>Developer Guide</h3>
 
 <p>This guide demonstrates how use the <code>Recognizer</code> to find recognitions based on the descriptors generated. Setup the database to store feature descriptors. Initialize the Recognizer with an index.</p>
 
@@ -1268,7 +1666,7 @@ recognizer.dispose();
 
 <hr>
 
-<h3 id="methods-2" class="anchor"><a class="heading-anchor" href="#methods-2"><span></span></a>Methods</h3>
+<h3 id="methods-3" class="anchor"><a class="heading-anchor" href="#methods-3"><span></span></a>Methods</h3>
 
 <h4 id="getrecognizersettingsdbsettingsexecutorexecutor" class="anchor"><a class="heading-anchor" href="#getrecognizersettingsdbsettingsexecutorexecutor"><span></span></a>getRecognizer (SettingsDb settings, Executor executor)</h4>
 
