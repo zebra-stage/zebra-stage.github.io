@@ -294,19 +294,30 @@
 
 <h3 id="developerguide" class="anchor"><a class="heading-anchor" href="#developerguide"><span></span></a>Developer Guide</h3>
 
-<p>This section provides a step-by-step guide to setting up a barcode detection system using the <a href="../barcodedecoder/">Barcode Decoder</a> and <a href="#entitytrackeranalyzer">EntityTrackerAnalyzer</a>. </p>
+<p>This section provides a step-by-step guide to setting up a barcode detection system using the <a href="../barcodedecoder/">Barcode Decoder</a>, <a href="../textocr/">Text OCR</a>, <a href="../productrecognition/">Product Recognition</a>, and <a href="#entitytrackeranalyzer">EntityTrackerAnalyzer</a>. </p>
 
 <ol>
-<li><p><strong>Initialize AI Data Capture SDK -</strong> Initialize the AI Data Capture SDK to enable Zebra-specific features in the application. This initialization should be performed in <code>MainActivity</code>. <em>Ensure this initialization step is completed before making any other calls to the AI Data Capture SDK.</em> If the initialization fails, it indicates a critical problem, and the application should not proceed further.</p>
+<li><p><strong>Initialize AI Data Capture SDK -</strong> Initialize the AI Data Capture SDK to enable Zebra-specific features in the application. This initialization should be performed in <code>MainActivity</code>. <em>Ensure this initialization step is completed <u>before</u> making any other calls to the AI Data Capture SDK.</em> If the initialization fails, it indicates a critical problem, and the application should not proceed further.</p>
 
 <pre class="prettyprint">try {
     aiVisionSDK = AIVisionSDK.getInstance(application)
     if (aiVisionSDK!!.init()) {
         // Initialize Barcode Decoder with default settings
         initializeBarcodeDecoder()
-    } else {
-        Log.e(TAG, "SDK initialization failed")
-    }
+
+<pre><code>    // Initialize Text OCR with default settings 
+    initializeTextOCR() 
+
+<pre><code>// Initialize Product Recognition with default settings 
+initializeProductRecognition()
+</code></pre>
+
+} 
+else {
+    Log.e(TAG, "SDK initialization failed")
+}
+</code></pre>
+
 }   
 catch (e: Exception) {
     Log.e(TAG, "SDK initialization exception: ${e.message}", e)
@@ -317,8 +328,8 @@ catch (e: Exception) {
 
 <pre class="prettyprint">try {
     val barcodeSettings = BarcodeDecoder.Settings("barcode-localizer")
-    BarcodeDecoder.getBarcodeDecoder(barcodeSettings, cameraExecutor)
-        .thenAccept { decoderInstance -&gt;
+    BarcodeDecoder.getBarcodeDecoder(barcodeSettings, Executor)
+        .thenAccept { decoderInstance -&gt; 
             barcodeDecoder = decoderInstance
         }
         .exceptionally { ex -&gt;
@@ -332,6 +343,53 @@ catch (e: Exception) {
 }
 </pre></li>
 
+<li><p><strong>Initialize Text OCR -</strong> Configure the TextOCR settings and obtain an instance: </p>
+
+<pre class="prettyprint"><code>try { 
+
+<pre><code>val textOCRSettings = TextOCR.Settings("text-ocr-recognizer") 
+
+// (Optional) Configure settings as needed, e.g. runtime processor order, dims, etc. 
+TextOCR.getTextOCR(textOCRSettings, ocrExecutor) 
+    .thenAccept { ocrInstance -&amp;gt; 
+        textOCR = ocrInstance 
+        ocrAnalyzer = TextOCRAnalyzer(callback, ocrInstance) 
+        } 
+
+    .exceptionally { ex -&amp;gt; 
+        Log.e(TAG, "TextOCR initialization failed: ${ex.message}", ex) 
+        null 
+    } 
+</code></pre>
+
+} catch (e: Exception) { 
+    Log.e(TAG, "TextOCR initialization exception: ${e.message}", e) 
+
+} 
+</code></pre></li>
+
+<li><p><strong>Initialize Product Recognition -</strong> Configure the product recognition settings and obtain an instance: </p>
+
+<pre class="prettyprint"><code>try { 
+    val moduleRecognizerSettings = ModuleRecognizer.Settings("product-and-shelf-recognizer") 
+
+<pre><code>ModuleRecognizer.getModuleRecognizer(moduleRecognizerSettings, productExecutor) 
+    .thenAccept { recognizerInstance -&amp;gt; 
+        moduleRecognizer = recognizerInstance 
+        productRecognitionAnalyzer = ProductRecognitionAnalyzer(callback, recognizerInstance) 
+    } 
+
+    .exceptionally { ex -&amp;gt; 
+        Log.e(TAG, "Product Recognition initialization failed: ${ex.message}", ex) 
+        null 
+    } 
+</code></pre>
+
+} catch (e: Exception) { 
+    Log.e(TAG, "Product Recognition initialization exception: ${e.message}", e) 
+} 
+</code></pre></li>
+
 <li><p><strong>Create <code>EntityTrackerAnalyzer</code> -</strong> This is used for processing image frames.</p>
 
 <pre class="prettyprint">entityTrackerAnalyzer = EntityTrackerAnalyzer(listOf(barcodeDecoder), ImageAnalysis.COORDINATE_SYSTEM_VIEW_REFERENCED, entityExecutor) 
@@ -342,6 +400,54 @@ catch (e: Exception) {
             Log.d(TAG, "Detected barcode: ${entity.value} with id: ${entity.hashCode()} at ${entity.boundingBox}")
         } 
     }  
+} 
+
+// Create EntityTrackerAnalyzer for TextOCR 
+entityTrackerAnalyzer = EntityTrackerAnalyzer(listOf(textOCR), ImageAnalysis.COORDINATE_SYSTEM_VIEW_REFERENCED, entityExecutor) { result -&gt; 
+    // User Logic 
+    result.getValue(textOCR)?.forEach { entity -&gt; 
+
+<pre><code>If(entity is ParagraphEntity ){ 
+        Log.d(TAG, "Detected text: ${entity.text} at ${entity.boundingBox}") 
+    } 
+} 
+</code></pre>
+
+} 
+
+// Create EntityTrackerAnalyzer for Product Recognition 
+entityTrackerAnalyzer = EntityTrackerAnalyzer(listOf(moduleRecognizer), ImageAnalysis.COORDINATE_SYSTEM_VIEW_REFERENCED, entityExecutor) { result -&gt; 
+    result.getValue(moduleRecognizer)?.forEach { entity -&gt; 
+        when (entity) { 
+            is ShelfEntity -&gt; { 
+                val shelfBox = entity.boundingBox 
+                val shelfConfidence = entity.accuracy 
+                val shelfCorners = entity.corners 
+                Log.d(TAG, "Detected shelf: box=$shelfBox, confidence=$shelfConfidence, corners=$shelfCorners") 
+            } 
+
+<pre><code>        is LabelEntity -&gt; { 
+            val labelBox = entity.boundingBox 
+            val classId = entity.classId 
+            val labelConfidence = entity.accuracy 
+            val labelCorners = entity.corners 
+
+<pre><code>        Log.d(TAG, "Detected label: box=$labelBox, classId=$classId, confidence=$labelConfidence, corners=$labelCorners") 
+    } 
+
+    is ProductEntity -&amp;gt; { 
+        val productBox = entity.boundingBox 
+        val topKSKUs = entity.topKSKUs 
+        val accuracy = entity.accuracy 
+        val productCorners = entity.corners 
+        Log.d(TAG, "Detected product: box=$productBox, topKSKUs=$topKSKUs, accuracy=$accuracy, corners=$productCorners") 
+    } 
+} 
+</code></pre>
+
+} 
+</code></pre>
+
 } 
 </pre></li>
 
@@ -413,27 +519,47 @@ provider.bindToLifecycle(
 
 <li><p><strong>Resource Cleanup After Usage -</strong> Properly dispose of resources after use to prevent memory leaks and ensure that all resources are released after use:</p>
 
-<pre class="prettyprint">protected void dispose() {
-    // Shutdown executors to release threads
-    if (decorderExecutor!= null &amp;&amp; ! decoderExecutor) {
-        decorderExecutor.shutdown();
-        decorderExecutor = null;
-    }
+<p>Barcode Decoder: </p>
 
-<pre><code>if (resultsExecutor != null &amp;&amp; !resultsExecutor.isShutdown()) {
-    resultsExecutor.shutdown();
-    ResultsExecutor = null;
-}
+<pre class="prettyprint"><code>fun dispose() { 
+    // Shutdown executor to release threads 
+    executor.shutdownNow() 
 
-// Close any clients or scanners to free up resources
-if (barcodeDecoder != null) {
-    barcodeDecoder.dispose();
-    barcodeDecoder = null;
-}
+<pre><code>// Dispose the BarcodeDecoder instance 
+barcodeDecoder?.dispose() 
+barcodeDecoder = null 
 </code></pre>
 
-}
-</pre></li>
+} 
+</code></pre>
+
+<p>Text OCR: </p>
+
+<pre class="prettyprint"><code>fun dispose() { 
+    // Shutdown executor to release threads 
+    ocrExecutor.shutdownNow() 
+
+<pre><code>// Dispose the TextOCR instance 
+textOCR?.dispose() 
+textOCR = null 
+</code></pre>
+
+} 
+</code></pre>
+
+<p>Product Recognition: </p>
+
+<pre class="prettyprint"><code>fun dispose() { 
+    // Shutdown executor to release threads 
+    productExecutor.shutdownNow() 
+
+<pre><code>// Dispose the ModuleRecognizer instance 
+moduleRecognizer?.dispose() 
+moduleRecognizer = null 
+</code></pre>
+
+} 
+</code></pre></li>
 </ol>
 
 <hr>
@@ -750,7 +876,9 @@ A new <code>Result</code> instance with copied data.</p>
 <ul>
 <li><strong>Barcode Detection:</strong> Processes <code>ImageData</code> and generates a <code>List&lt;BarcodeEntity&gt;</code> containing detected barcode entities. </li>
 
-<li><strong>Text Recognition (OCR):</strong> Processes <code>ImageData</code> and generates a <code>List&lt;ParagraphEntity&gt;</code> containing detected text paragraphs. </li></ul>
+<li><strong>Text Recognition (OCR):</strong> Processes <code>ImageData</code> and generates a <code>List&lt;ParagraphEntity&gt;</code> containing detected text paragraphs. </li>
+
+<li><strong>Product Recognition:</strong> Processes <code>ImageData</code> and generates a <code>List&lt;Entity&gt;</code> containing detected shelf, label, and product entities. If product recognition is enabled, each <code>ProductEntity</code> may include associated SKU predictions (<code>SKUInfo</code>). </li></ul>
 </li>
 </ul>
 
