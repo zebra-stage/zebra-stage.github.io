@@ -299,7 +299,7 @@
 <ol>
 <li><p><strong>Initialize AI Data Capture SDK -</strong> Initialize the AI Data Capture SDK to enable Zebra-specific features in the application. This initialization should be performed in <code>MainActivity</code>. <em>Ensure this initialization step is completed <u>before</u> making any other calls to the AI Data Capture SDK.</em> If the initialization fails, it indicates a critical problem, and the application should not proceed further.</p>
 
-<pre class="prettyprint">try {
+<pre class="prettyprint"><code>try {
     aiVisionSDK = AIVisionSDK.getInstance(application)
     if (aiVisionSDK!!.init()) {
         // Initialize Barcode Decoder with default settings
@@ -308,10 +308,8 @@
 <pre><code>    // Initialize Text OCR with default settings 
     initializeTextOCR() 
 
-<pre><code>// Initialize Product Recognition with default settings 
-initializeProductRecognition()
-</code></pre>
-
+    // Initialize Product Recognition with default settings 
+    initializeProductRecognition()
 } 
 else {
     Log.e(TAG, "SDK initialization failed")
@@ -322,8 +320,11 @@ else {
 catch (e: Exception) {
     Log.e(TAG, "SDK initialization exception: ${e.message}", e)
 }
-</pre></li>
+</code></pre></li>
 
+<li><p>Select one or more the following options to initialize the detectors:</p>
+
+<ul>
 <li><p><strong>Initialize Barcode Decoder -</strong> Configure the barcode decoder settings and obtain an instance:</p>
 
 <pre class="prettyprint">try {
@@ -337,7 +338,6 @@ catch (e: Exception) {
             null
         }
 } 
-
 catch (e: Exception) {
     e.printStackTrace()
 }
@@ -345,54 +345,57 @@ catch (e: Exception) {
 
 <li><p><strong>Initialize Text OCR -</strong> Configure the TextOCR settings and obtain an instance: </p>
 
-<pre class="prettyprint"><code>try { 
+<pre class="prettyprint">try {
+    val textOCRSettings = TextOCR.Settings("text-ocr-recognizer") 
 
-<pre><code>val textOCRSettings = TextOCR.Settings("text-ocr-recognizer") 
-
-// (Optional) Configure settings as needed, e.g. runtime processor order, dims, etc. 
+<pre><code>// (Optional) Configure settings as needed, e.g. runtime processor order, dims, etc. 
 TextOCR.getTextOCR(textOCRSettings, ocrExecutor) 
-    .thenAccept { ocrInstance -&amp;gt; 
+    .thenAccept { ocrInstance -&gt; 
         textOCR = ocrInstance 
         ocrAnalyzer = TextOCRAnalyzer(callback, ocrInstance) 
         } 
 
-    .exceptionally { ex -&amp;gt; 
-        Log.e(TAG, "TextOCR initialization failed: ${ex.message}", ex) 
-        null 
-    } 
+<pre><code>.exceptionally { ex -&amp;gt; 
+    Log.e(TAG, "TextOCR initialization failed: ${ex.message}", ex) 
+    null 
+} 
 </code></pre>
 
-} catch (e: Exception) { 
-    Log.e(TAG, "TextOCR initialization exception: ${e.message}", e) 
+</code></pre>
 
 } 
-</code></pre></li>
+catch (e: Exception) { 
+    Log.e(TAG, "TextOCR initialization exception: ${e.message}", e) 
+} 
+</pre></li>
 
 <li><p><strong>Initialize Product Recognition -</strong> Configure the product recognition settings and obtain an instance: </p>
 
-<pre class="prettyprint"><code>try { 
+<pre class="prettyprint">try { 
     val moduleRecognizerSettings = ModuleRecognizer.Settings("product-and-shelf-recognizer") 
 
 <pre><code>ModuleRecognizer.getModuleRecognizer(moduleRecognizerSettings, productExecutor) 
-    .thenAccept { recognizerInstance -&amp;gt; 
+    .thenAccept { recognizerInstance -&gt; 
         moduleRecognizer = recognizerInstance 
         productRecognitionAnalyzer = ProductRecognitionAnalyzer(callback, recognizerInstance) 
     } 
 
-    .exceptionally { ex -&amp;gt; 
-        Log.e(TAG, "Product Recognition initialization failed: ${ex.message}", ex) 
-        null 
-    } 
+<pre><code>.exceptionally { ex -&amp;gt; 
+    Log.e(TAG, "Product Recognition initialization failed: ${ex.message}", ex) 
+    null 
+} 
+</code></pre>
+
 </code></pre>
 
 } catch (e: Exception) { 
     Log.e(TAG, "Product Recognition initialization exception: ${e.message}", e) 
 } 
-</code></pre></li>
+</pre></li></ul></li>
 
 <li><p><strong>Create <code>EntityTrackerAnalyzer</code> -</strong> This is used for processing image frames.</p>
 
-<pre class="prettyprint">entityTrackerAnalyzer = EntityTrackerAnalyzer(listOf(barcodeDecoder), ImageAnalysis.COORDINATE_SYSTEM_VIEW_REFERENCED, entityExecutor) 
+<pre class="prettyprint"><code>entityTrackerAnalyzer = EntityTrackerAnalyzer(listOf(barcodeDecoder), ImageAnalysis.COORDINATE_SYSTEM_VIEW_REFERENCED, entityExecutor) 
 { result -&gt; 
     // User Logic 
     result.getValue(barcodeDecoder)?.forEach {entity -&gt; 
@@ -426,30 +429,28 @@ entityTrackerAnalyzer = EntityTrackerAnalyzer(listOf(moduleRecognizer), ImageAna
                 Log.d(TAG, "Detected shelf: box=$shelfBox, confidence=$shelfConfidence, corners=$shelfCorners") 
             } 
 
-<pre><code>        is LabelEntity -&gt; { 
+<pre><code>        is LabelEntity -&amp;gt; { 
             val labelBox = entity.boundingBox 
             val classId = entity.classId 
             val labelConfidence = entity.accuracy 
             val labelCorners = entity.corners 
 
-<pre><code>        Log.d(TAG, "Detected label: box=$labelBox, classId=$classId, confidence=$labelConfidence, corners=$labelCorners") 
-    } 
+            Log.d(TAG, "Detected label: box=$labelBox, classId=$classId, confidence=$labelConfidence, corners=$labelCorners") 
+        } 
 
-    is ProductEntity -&amp;gt; { 
-        val productBox = entity.boundingBox 
-        val topKSKUs = entity.topKSKUs 
-        val accuracy = entity.accuracy 
-        val productCorners = entity.corners 
-        Log.d(TAG, "Detected product: box=$productBox, topKSKUs=$topKSKUs, accuracy=$accuracy, corners=$productCorners") 
+        is ProductEntity -&amp;gt; { 
+            val productBox = entity.boundingBox 
+            val topKSKUs = entity.topKSKUs 
+            val accuracy = entity.accuracy 
+            val productCorners = entity.corners 
+            Log.d(TAG, "Detected product: box=$productBox, topKSKUs=$topKSKUs, accuracy=$accuracy, corners=$productCorners") 
+        } 
     } 
 } 
 </code></pre>
 
 } 
-</code></pre>
-
-} 
-</pre></li>
+</code></pre></li>
 
 <li><p><strong>Set <code>EntityTrackerAnalyzer</code> as the <code>ImageAnalysis.Analyzer</code>:</strong></p>
 
@@ -865,7 +866,7 @@ A new <code>Result</code> instance with copied data.</p>
 
 <h2 id="detectors" class="anchor"><a class="heading-anchor" href="#detectors"><span></span></a>Detectors</h2>
 
-<p>The <code>BarcodeDecoder</code> and <code>TextOCR</code> classes implement Zebra's AI Data Capture SDK's <code>Detector</code> interface, which defines the core contract for all detection modules in the AI Data Capture SDK. A detector processes image data and returns detection results asynchronously, enabling efficient and non-blocking image analysis for applications such as barcode scanning, object detection, and text recognition.</p>
+<p>The <code>BarcodeDecoder</code>, <code>TextOCR</code>, and <code>ModuleRecognizer</code> classes implement Zebra's AI Data Capture SDK's <code>Detector</code> interface, which defines the core contract for all detection modules in the AI Data Capture SDK. A detector processes image data and returns detection results asynchronously, enabling efficient and non-blocking image analysis for applications such as barcode scanning, object detection, and text recognition.</p>
 
 <p>Type Parameters:</p>
 
