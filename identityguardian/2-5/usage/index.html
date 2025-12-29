@@ -1371,23 +1371,6 @@ Even if certain settings, like access to printer configurations, are disabled by
 </li>
 </ul>
 
-<p><strong>Preparation:</strong></p>
-
-<ol>
-<li>Install the Zebra app that receives user session information, such as Device Guardian.</li>
-
-<li>Revise the custom screen blocking app by using <a href="../api/#currentsession">Current Session API</a>. Set <strong>signed_in_state</strong> to <code>true</code> when users sign in and <code>false</code> when they sign out. Parse the result for user session details.</li>
-
-<li>Configure <a href="../mc">Managed Configurations</a>:
-
-
-<ul>
-<li>In <a href="../mc/#usagemode">Usage Mode</a>, set <strong>Application Mode</strong> to Proxy.</li></ul>
-</li>
-
-<li>Save the changes and deploy them to the devices.</li>
-</ol>
-
 <p><br></p>
 
 <h4 id="adminsetup-5" class="anchor"><a class="heading-anchor" href="#adminsetup-5"><span></span></a>Admin Setup</h4>
@@ -1544,34 +1527,80 @@ Even if certain settings, like access to printer configurations, are disabled by
 
 <h3 id="proxymode" class="anchor"><a class="heading-anchor" href="#proxymode"><span></span></a>Proxy Mode</h3>
 
-<p>Proxy mode enables third-party apps to function as screen blocking apps instead of Identity Guardian. It allows these apps to send user sign-in and sign-out events to Identity Guardian, which can then be shared with other Zebra apps like <a href="/devicetracker">Device Tracker</a>. This mode is designed for organizations using their own screen blocking apps for device access, while having the ability to notify Identity Guardian of these events. As a result, these notifications are automatically relayed to other Zebra apps, such as Device Tracker, to track user accountability.</p>
+<p><strong>Proxy Mode</strong> allows a third-party screen blocking application (e.g. Imprivata) to replace Identity Guardian's native screen blocking. In this mode, the third-party app relays device events (like user sign-in/sign-out) through Identity Guardian to registered Line of Business (LOB) apps or Zebra apps like <a href="/devicetracker">Device Tracker</a> for centralized user accountability.</p>
 
-<p><strong>Requirements:</strong></p>
+<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>Note:</strong> When Proxy Mode is active, attempting to launch the Identity Guardian app directly displays a message indicating that it is not intended to be launched in its current configuration.</p>
+
+<h4 id="adminsetup-6" class="anchor"><a class="heading-anchor" href="#adminsetup-6"><span></span></a>Admin Setup</h4>
+
+<p>Configuring <strong>Proxy Mode</strong> involves preparing the third-party app, setting the managed configurations for Identity Guardian, and deploying the changes.</p>
 
 <ol>
-<li>Install the Zebra app that receives user session information, such as Device Tracker.</li>
+<li>Install the third-party screen blocking app (e.g., Imprivata).</li>
 
-<li>Revise the custom screen blocking app using <a href="../api/#currentsession">Current Session API</a>. Set <strong>signed_in_state</strong> to <strong>true</strong> when users sign in and <strong>false</strong> when they sign out. Parse the result for user session details.</li>
+<li><strong>Optional:</strong> Install the Zebra (e.g. Device Tracker) or LOB app that receives user session information.</li>
+
+<li>Implement application logic based on the third-party screen blocking app being used:
+
+
+<ul>
+<li><strong>Imprivata -</strong> To receive device lock/unlock status based on user sign-in/sign-out, the Line of Business (LOB) app must be registered with Identity Guardian using the <a href="../api/#registerfornotifications">Register For Notifications API</a>.</li>
+
+<li><strong>All Other Custom Apps -</strong> The custom screen blocking app must be modified using the <a href="../api/#currentsession">Current Session API</a>. Set the <code>signed_in_state</code> to <code>true</code> on user sign-in and <code>false</code> on sign-out.</li></ul>
+</li>
 
 <li>Configure <a href="../mc">Managed Configurations</a>:
 
 
 <ul>
-<li>In <a href="../mc/#usagemode">Usage Mode</a>, set <strong>Application Mode</strong> to Proxy.</li></ul>
+<li>In <a href="../mc/#usagemode">Usage Mode</a>, set the following:
+
+
+<ul>
+<li><strong>Application Mode:</strong> Proxy</li></ul>
 </li>
 
-<li>Save the changes and deploy them to the devices.</li>
+<li>In <a href="../mc/#authenticationconfiguration">Authentication Configuration</a>, set the following:
+
+
+<ul>
+<li><strong>Preferred Authentication App:</strong> Imprivata (Only applies when using Imprivata)</li></ul>
+</li></ul>
+</li>
+
+<li>Save the configuration changes and deploy them to the devices.</li>
 </ol>
+
+<p><br></p>
 
 <h4 id="usage-6" class="anchor"><a class="heading-anchor" href="#usage-6"><span></span></a>Usage</h4>
 
-<ul>
-<li><strong>User Login:</strong> When a user <em>logs into</em> the custom blocking screen app, Identity Guardian receives the sign-in event and transmits the information to the other Zebra app, which takes action accordingly. E.g., in Device Tracker, the user appears in the <strong>Checked Out</strong> field.</li>
+<p><strong>User Sign-In/Sign-Out Events:</strong> </p>
 
-<li><strong>User Logout:</strong> When a user <em>logs out</em>, Identity Guardian receives the sign-out event and transmits this information to the other Zebra app, which takes action accordingly. E.g., in Device Tracker the user name is cleared from the <strong>Checked Out</strong> field.</li>
-</ul>
+<p>When a user signs into or out of the third-party screen blocking app, Identity Guardian receives the event and relays it to other listening applications, which can then take action. The table below describes the resulting behavior in Device Tracker as an example.</p>
 
-<p><strong>Note:</strong> If the user attempts to open Identity Guardian, a message appears indicating that it is not intended to be launched in its current configuration.</p>
+<table class="facelift" style="width:50%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>User Action</th>
+    <th>Example Behavior in Device Tracker</th>
+  </tr>
+
+  <tr>
+    <td>Sign-In</td>
+    <td>The user's name populates the <b>Checked Out</b> field.</td>
+  </tr>
+
+  <tr>
+    <td>Sign-Out</td>
+    <td>The user's name is cleared from the <b>Checked Out</b> field.</td>
+  </tr>
+</tbody></table>
+
+<p><br></p>
+
+<p><strong>Imprivata-specific Events:</strong></p>
+
+<p>For Imprivata integrations, Identity Guardian also notifies the registered LOB app of device lock/unlock state changes through the JSON response from the <a href="../api/#registerfornotifications">Register For Notifications API</a>.</p>
 
 <hr>
 
@@ -1618,7 +1647,7 @@ Even if certain settings, like access to printer configurations, are disabled by
 
 <p><strong>Global Sign-Out</strong> enables any applications using Microsoft Entra ID Single Sign-On (SSO) on devices in shared mode to perform a universal logout across all supported apps. This feature clears previously signed-in accounts and displays the Identity Guardian lock screen. For example, if Microsoft Teams is installed, a user who logs into to the device with their Microsoft Entra ID credentials is automatically signed into the Teams app. With Global Sign-Out enabled, signing out from either Teams or Identity Guardian triggers the removal of user data and presents the Identity Guardian lock screen for the next user login.</p>
 
-<h4 id="adminsetup-6" class="anchor"><a class="heading-anchor" href="#adminsetup-6"><span></span></a>Admin Setup</h4>
+<h4 id="adminsetup-7" class="anchor"><a class="heading-anchor" href="#adminsetup-7"><span></span></a>Admin Setup</h4>
 
 <p><strong>Prerequisites:</strong></p>
 
@@ -1656,7 +1685,7 @@ Even if certain settings, like access to printer configurations, are disabled by
   <p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>Important Note:</strong> The package name for Identity Guardian (com.zebra.mdna.els) cannot be added as an app for this feature. This restriction is in place to ensure that Identity Guardian operates without unintended disruptions.</p>
 </blockquote>
 
-<h4 id="adminsetup-7" class="anchor"><a class="heading-anchor" href="#adminsetup-7"><span></span></a>Admin Setup</h4>
+<h4 id="adminsetup-8" class="anchor"><a class="heading-anchor" href="#adminsetup-8"><span></span></a>Admin Setup</h4>
 
 <p><strong>Steps to Configure "Clear Application Data" in Identity Guardian Managed Configurations:</strong></p>
 
@@ -1711,7 +1740,7 @@ Even if certain settings, like access to printer configurations, are disabled by
 
 <p><br></p>
 
-<h4 id="adminsetup-8" class="anchor"><a class="heading-anchor" href="#adminsetup-8"><span></span></a>Admin Setup</h4>
+<h4 id="adminsetup-9" class="anchor"><a class="heading-anchor" href="#adminsetup-9"><span></span></a>Admin Setup</h4>
 
 <p>Configure <a href="../mc">Managed Configurations</a>:</p>
 
@@ -1771,7 +1800,7 @@ Even if certain settings, like access to printer configurations, are disabled by
 
 <p><br></p>
 
-<h4 id="adminsetup-9" class="anchor"><a class="heading-anchor" href="#adminsetup-9"><span></span></a>Admin Setup</h4>
+<h4 id="adminsetup-10" class="anchor"><a class="heading-anchor" href="#adminsetup-10"><span></span></a>Admin Setup</h4>
 
 <p>Configure <a href="../mc">Managed Configurations</a>:</p>
 
@@ -1839,7 +1868,7 @@ When unlocking the device (e.g. pressing the power button or swiping to unlock),
 
 <p><br></p>
 
-<h4 id="adminsetup-10" class="anchor"><a class="heading-anchor" href="#adminsetup-10"><span></span></a>Admin Setup</h4>
+<h4 id="adminsetup-11" class="anchor"><a class="heading-anchor" href="#adminsetup-11"><span></span></a>Admin Setup</h4>
 
 <p>To enable Microsoft SSO Session Persistence, configure the following <a href="../mc">Managed Configurations</a>:</p>
 
@@ -2289,7 +2318,7 @@ To edit the login credentials for an app through Guardian Safe:</p>
 
 <p>The <strong>Device Alarm</strong> is an audible alert activated when a user is not logged into the device or it is not returned to the powered cradle within the specified timeout period. These conditions can be configured and managed by the administrator via Managed Configurations. This feature is designed to prevent devices from remaining idle in unauthorized locations and to ensure they are returned to their cradle after use.</p>
 
-<h3 id="adminsetup-11" class="anchor"><a class="heading-anchor" href="#adminsetup-11"><span></span></a>Admin Setup</h3>
+<h3 id="adminsetup-12" class="anchor"><a class="heading-anchor" href="#adminsetup-12"><span></span></a>Admin Setup</h3>
 
 <p>Configure <a href="../mc">Managed Configurations</a>:</p>
 
@@ -2347,7 +2376,7 @@ To edit the login credentials for an app through Guardian Safe:</p>
 
 <p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>Note:</strong> This feature is designed to work in WSC Mirror Mode only. Desktop Mode is not supported.</p>
 
-<h3 id="adminsetup-12" class="anchor"><a class="heading-anchor" href="#adminsetup-12"><span></span></a>Admin Setup</h3>
+<h3 id="adminsetup-13" class="anchor"><a class="heading-anchor" href="#adminsetup-13"><span></span></a>Admin Setup</h3>
 
 <p>Configure the following <a href="../mc/#lockscreenconfiguration">Managed Configurations</a>:</p>
 
