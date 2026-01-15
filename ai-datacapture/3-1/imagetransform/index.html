@@ -275,22 +275,26 @@
 <table class="facelift" align="" style="width:100%" border="1" padding="5px">
     <tbody><tr bgcolor="#dce8ef">
             <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Transformation Action</th>
+            <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Model Type</th>
             <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Description</th>
             <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Model Name</th>
         </tr>
     </tbody><tbody>
         <tr>
             <td style="padding: 12px; border: 1px solid #ddd;"><code>TransformationAction.LocalizeAndBlurBarcode</code></td>
+            <td style="padding: 12px; border: 1px solid #ddd;">ModelType.ImageTransformBarcodeLocalizer</td>
             <td style="padding: 12px; border: 1px solid #ddd;">Identify the barcodes visible in the image and blur them in the output image returned to the user.</td>
             <td style="padding: 12px; border: 1px solid #ddd;"><code>barcode-localizer</code></td>
         </tr>
         <tr>
-             <td style="padding: 12px; border: 1px solid #ddd;"><code>TransformationAction.LocalizeAndBlurText</code></td>
+            <td style="padding: 12px; border: 1px solid #ddd;"><code>TransformationAction.LocalizeAndBlurText</code></td>
+            <td style="padding: 12px; border: 1px solid #ddd;">ModelType.ImageTransformTextLocalizer</td>
             <td style="padding: 12px; border: 1px solid #ddd;">Identify the bounding boxes of text areas in the image and blur them.</td>
             <td style="padding: 12px; border: 1px solid #ddd;"><code>text-ocr-recognizer</code></td>
         </tr>
         <tr>
-             <td style="padding: 12px; border: 1px solid #ddd;"><code>TransformationAction.LocalizeAndBlurPeopleAndPets</code></td>
+            <td style="padding: 12px; border: 1px solid #ddd;"><code>TransformationAction.LocalizeAndBlurPeopleAndPets</code></td>
+            <td style="padding: 12px; border: 1px solid #ddd;">ModelType.ImageTransformPersonLocalizer</td>
             <td style="padding: 12px; border: 1px solid #ddd;">Identify any person, cat, or cog in the image and blur them in the output image returned to the user.</td>
             <td style="padding: 12px; border: 1px solid #ddd;"><code>FCN-ResNet50-object-segmentation</code></td>
         </tr>        
@@ -320,25 +324,12 @@ import com.zebra.ai.vision.detector.ImageTransformResult;
 import com.zebra.ai.vision.AIVisionSDK;
 import com.zebra.ai.vision.InferencerOptions;
 import com.zebra.ai.vision.ImageData;
-
-// Standard Java and Android classes
-import android.graphics.Bitmap;
-import android.util.Log;
-import java.util.Arrays;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 </code></pre></li>
 
-<li><p><strong>Initialize the SDK:</strong> This is typically done in your app's <code>onCreate()</code> method:</p>
+<li><p><strong>Initialize the SDK:</strong> Use your application's context object and invoke <code>init()</code> from the AIVisionSDK class.</p>
 
-<pre class="prettyprint"><code>// In your Application class or main Activity
-try {
-    AIVisionSDK.init(getApplicationContext(), "YOUR_LICENSE_KEY_HERE");
-    Log.i("MyApp", "AI Vision SDK Initialized Successfully");
-} catch (AIVisionSDKException e) {
-    Log.e("MyApp", "Failed to initialize AI Vision SDK: " + e.getMessage());
-}
+<pre class="prettyprint"><code>// Initialize SDK with context
+boolean isInitDone = AIVisionSDK.getInstance(getApplicationContext()).init();
 </code></pre></li>
 </ol>
 
@@ -348,11 +339,9 @@ try {
 
 <p>Create an instance of <code>ImageTransformDetector.Settings</code>. Specify which transformations to apply and configure hardware acceleration options for each model to optimize performance.</p>
 
-<p><strong>Configuring Inference Options:</strong> Different processors (DSP, GPU, CPU) can be assigned to different models to balance performance and resource usage. For example, run the barcode localizer on the high-performance DSP and the text localizer on the GPU.</p>
+<p><strong>Configuring Inference Options:</strong> Different processors (DSP, CPU) can be assigned to different models to balance performance and resource usage. For example, run the barcode localizer on the high-performance DSP.</p>
 
-<blockquote>
-  <p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>Important:</strong> At least <u>one</u> transformation action must be enabled, otherwise <code>getImageTransformDetector</code> will throw an InvalidInputException.</p>
-</blockquote>
+<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>Important:</strong> At least <u>one</u> transformation action must be enabled, otherwise <code>getImageTransformDetector</code> will throw an InvalidInputException.</p>
 
 <p>Sample Code:</p>
 
@@ -381,12 +370,7 @@ try {
     barcodeOptions.runtimeProcessorOrder = new Integer[]{ InferencerOptions.DSP };
     transformSettings.configureInferencerOptions(ModelType.ImageTransformBarcodeLocalizer, barcodeOptions);
 
-    // Use GPU for text detection
-    InferencerOptions textOptions = new InferencerOptions();
-    textOptions.runtimeProcessorOrder = new Integer[]{ InferencerOptions.GPU };
-    transformSettings.configureInferencerOptions(ModelType.ImageTransformTextLocalizer, textOptions);
-
-    // Let the SDK decide for people detection (default behavior)
+    // Let the SDK decide for other detections (default behavior)
 </code></pre>
 
 <hr>
@@ -419,19 +403,49 @@ try {
 
 <h3 id="step4processtheimage" class="anchor"><a class="heading-anchor" href="#step4processtheimage"><span></span></a>Step 4: Process the Image</h3>
 
-<p>Once the detector is initialized, call one of the <code>process</code> methods with the image data.</p>
+<p>Once the detector is initialized, call one of the <code>process</code> methods with the image data. The following examples show two approaches: using the default executor or providing a custom executor.</p>
 
-<p>Sample Code:</p>
+<p>Processing with the Default Executor:</p>
 
-<pre class="prettyprint"><code>    // Assume 'myBitmap' is the Bitmap you want to process
-    Bitmap myBitmap = ...;
-    ImageData imageData = ImageData.fromBitmap(myBitmap, 0);
+<pre class="prettyprint"><code>    // Process with default executor
+    try {
+        ImageData imageData = ImageData.fromBitmap(bitmap, 0);
 
-    // Get the initialized detector from the future (in a real app, manage this properly)
-    ImageTransformDetector transformDetector = detectorFuture.get(); // .get() blocks, use thenApply for non-blocking
+        detector.process(imageData)
+            .thenApply(result -&gt; {
+                // Process result asynchronously
+                return result;
+            })
+            .exceptionally(ex -&gt; {
+                Log.e("TAG", "Processing failed: " + ex.getMessage());
+                return null;
+            });
+    } 
+    catch (AIVisionSDKException e) {
+        Log.e("TAG", "Error: " + e.getMessage());
+    }
+</code></pre>
 
-    // Process the image and get a future for the result
-    CompletableFuture&lt;ImageTransformResult&gt; resultFuture = transformDetector.process(imageData);
+<p>Processing with a Custom Executor:</p>
+
+<pre class="prettyprint"><code>    // Process with custom executor
+    try {
+        ExecutorService customExecutor = Executors.newSingleThreadExecutor();
+        ImageData imageData = ImageData.fromBitmap(bitmap, 0);
+
+        detector.process(imageData, customExecutor)
+            .thenApply(result -&gt; {
+                // Results delivered on custom executor
+                return result;
+            })
+            .exceptionally(ex -&gt; {
+                Log.e("TAG", "Processing failed: " + ex.getMessage());
+                return null;
+            });
+    } 
+    catch (AIVisionSDKException e) {
+        Log.e("TAG", "Error: " + e.getMessage());
+    }
 </code></pre>
 
 <hr>
@@ -734,6 +748,29 @@ None</p>
 
 <hr>
 
+<h3 id="getmodeltypeforactiontransformationactionaction" class="anchor"><a class="heading-anchor" href="#getmodeltypeforactiontransformationactionaction"><span></span></a>getModelTypeForAction(TransformationAction action)</h3>
+
+<pre class="prettyprint"><code>    public ModelType getModelTypeForAction(TransformationAction action)
+</code></pre>
+
+<p><strong>Description:</strong> Get the model type associated with a given transformation action. This method helps identify which model is responsible for executing a specific transformation.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>TransformationAction action -</strong> TransformationAction action (must not be null)</li>
+</ul>
+
+<p><strong>Return Value:</strong> <code>ModelType</code> - The model type associated with the action.</p>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>IllegalArgumentException -</strong> Thrown if <code>action</code> is null.</li>
+</ul>
+
+<hr>
+
 <h2 id="outputimagepropertiesconfiguration" class="anchor"><a class="heading-anchor" href="#outputimagepropertiesconfiguration"><span></span></a>OutputImageProperties Configuration</h2>
 
 <p>The <code>OutputImageProperties</code> class is used to configure the resolution and aspect ratio of the final transformed image. It is created using a Builder pattern.</p>
@@ -910,7 +947,7 @@ None</p>
             <div class="container-fluid">
                 <div class="row">
                     <div class="col-sm-10">
-                        ZEBRA and the stylized Zebra head are trademarks of Zebra Technologies Corp., registered in many jurisdictions worldwide. All other trademarks are the property of their respective owners. ©2025 Zebra Technologies Corp. and/or its affiliates.<br> <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal.html">Legal</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/compliance/information-privacy/terms-of-use.html">Terms of Use</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal/privacy-statement.html">Privacy Policy</a> 
+                        ZEBRA and the stylized Zebra head are trademarks of Zebra Technologies Corp., registered in many jurisdictions worldwide. All other trademarks are the property of their respective owners. ©2026 Zebra Technologies Corp. and/or its affiliates.<br> <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal.html">Legal</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/compliance/information-privacy/terms-of-use.html">Terms of Use</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal/privacy-statement.html">Privacy Policy</a> 
                     </div>
                      <!--
                      <div class="col-sm-2">
