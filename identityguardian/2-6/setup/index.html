@@ -777,9 +777,13 @@
 
 <h4 id="authenticationprocess" class="anchor"><a class="heading-anchor" href="#authenticationprocess"><span></span></a>Authentication Process</h4>
 
-<p>To authenticate users on a shared device, administrators must deploy the authentication key. This key is an <em>encrypted private key derived from the organization’s certificate</em> and configured through Identity Guardian Managed Configuration. For details on generating the authentication key, see <a href="../mc/#authenticationconfiguration">Authentication Configuration</a>. The device must be provisioned with the proper Authentication configuration.</p>
+<p>User authentication on shared devices requires an <strong>Authentication Key,</strong> an <em>encrypted private key derived from the organization’s certificate</em> and configured through Identity Guardian's Managed Configuration. To support seamless cryptographic key rotation, an optional <strong>Alternate Authentication Key</strong> can also be configured. This provides a migration period where both the primary and alternate keys are active, ensuring zero downtime for end-users. For details on key generation, see <a href="../mc/#authenticationconfiguration">Authentication Configuration</a>. The target device must be provisioned with the proper Authentication configuration.</p>
 
-<p>When a user scans their enrollment barcode or NFC card (based on their administrator's configuration), the data stored within is decrypted using the authentication key and verified through additional authentication checks. <strong>The data <em>cannot be decrypted or reverse-engineered on any device without the corresponding authentication key.</em></strong> It is essential that organizations <em>maintain the security and confidentiality of the authentication key</em> to ensure protection of user data.</p>
+<p>When a user scans their enrollment barcode or NFC card, the system decrypts the stored data using either the Authentication Key or Alternate Authentication Key. </p>
+
+<ul>
+<li><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>Security Warning:</strong> The data <em>cannot be decrypted or reverse-engineered on any device without the corresponding authentication key.</em>** It is essential that organizations <em>maintain the security and confidentiality of the authentication key</em> to ensure protection of user data.</li>
+</ul>
 
 <blockquote>
   <p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <b><code>IMPORTANT:</code> Administrators MUST provision their own enrollment and authentication keys on the respective devices used for enrollment and authentication.</b> Failure to do so will result in Identity Guardian using default keys, which may allow any device with those keys to decrypt the barcode, compromising security.</p>
@@ -1392,7 +1396,10 @@ Identity Guardian integrates with identity providers (IdPs) to streamline the au
 <p>Follow these steps:</p>
 
 <ol>
-<li>In the Microsoft Entra admin center, navigate to <strong>Applications &gt; App registrations.</strong> In the <strong>Register an application</strong> screen, enter/select the following:
+<li>In the Microsoft Entra admin center, navigate to <strong>Applications &gt; App registrations.</strong> Click <strong>New registration.</strong>
+<img alt="image" style="height:525px" src="register-app-new.jpg"></li>
+
+<li>In the <strong>Register an application</strong> screen, enter/select the following, then click <strong>Register.</strong>:
 
 
 <ul>
@@ -1404,10 +1411,8 @@ Identity Guardian integrates with identity providers (IdPs) to streamline the au
 <img alt="image" style="height:525px" src="register-app.png"></li></ul>
 </li>
 
-<li>Click <strong>Register.</strong></li>
-
 <li>Navigate to <strong>Applications &gt; App registrations &gt; Authentication.</strong> Click <strong>Add a platform</strong> then click <strong>Android</strong>.
-<img alt="image" style="height:500px" src="configure-platform.jpg"></li>
+<img alt="image" style="height:475px" src="configure-platform.jpg"></li>
 
 <li>Enter the following, then click <strong>Configure.</strong>
 
@@ -1460,7 +1465,7 @@ Identity Guardian integrates with identity providers (IdPs) to streamline the au
 
 <li><strong>Shared Device Mode Tenant Identifier:</strong> [Enter the tenant ID recorded from the previous step]</li>
 
-<li><strong>Shared Device Mode Registration token:</strong> %SHARED*DEVICE*REG*TOKEN%
+<li><strong>Shared Device Mode Registration token:</strong> %SHARED_DEVICE_REG_TOKEN%
 <img alt="image" style="height:400px" src="managed-config-shared-device.png">
 <em>Sample of Managed App Config from SOTI MobiControl. Other EMMs may vary.</em></li></ul></li>
 
@@ -1594,35 +1599,23 @@ Identity Guardian integrates with identity providers (IdPs) to streamline the au
 <p>Configure built-in or custom attributes as claims in Microsoft Entra ID, which are then sent to your application in the SSO response for mapping to application-specific roles.</p>
 
 <ol>
-<li>In the Microsoft Entra admin center, navigate to <strong>Entra ID &gt; App registrations.</strong>
-<img alt="image" style="height:300px" src="eid-app-reg-1.png"></li>
-
-<li>Select your application in the list.
-<img alt="image" style="height:350px" src="eid-app-reg-2.png"></li>
+<li>In the Microsoft Entra admin center, navigate to <strong>Entra ID &gt; App registrations.</strong> Click on your application in the list.
+<img alt="image" style="height:300px" src="eid-app-reg-1.jpg"></li>
 
 <li>In the <strong>Essentials</strong> section, click the name of your app under <strong>Managed application in local directory.</strong>
-<img alt="image" style="height:350px" src="eid-app-reg-3.png">
+<img alt="image" style="height:300px" src="eid-app-reg-2.jpg"></li>
 
+<li>Under <strong>Manage,</strong> click <strong>Single sign-on.</strong> Under <strong>Attributes &amp; Claims,</strong> click <strong>Edit.</strong>
+<img alt="image" style="height:450px" src="eid-app-reg-3.jpg"></li>
 
-<ul>
-<li>If the app is not found under the <strong>Owned aapplications</strong> section, search for it under the <strong>All applications</strong> section.
-<img alt="image" style="height:350px" src="eid-app-reg-4.png"></li></ul>
-</li>
-
-<li>Under <strong>Manage,</strong> click <strong>Single sign-on.</strong>
-<img alt="image" style="height:475px" src="eid-app-reg-5.png"></li>
-
-<li>In <strong>Attributes &amp; Claims,</strong> click <strong>Edit.</strong>
-<img alt="image" style="height:450px" src="eid-app-reg-6.png"></li>
-
-<li>Add a built-in attribute to the token as a claim, select <strong>Add new claim.</strong>
+<li>Add a built-in attribute to the token as a claim. Click <strong>Add new claim.</strong>
 <img alt="image" style="height:400px" src="eid-app-reg-7.png"></li>
 
 <li>Enter or select the following, then click <strong>Save:</strong>
 
 
 <ul>
-<li><strong>Name:</strong> [Enter the <strong>SSO Key</strong>  configured in Identity Guardian's <a href="../mc/#ssomapping">SSO Mapping</a> configuration.]</li>
+<li><strong>Name:</strong> [Enter a name for the claim. Record this case-sensitive value, as it serves as the <strong>SSO Key</strong> in Identity Guardian's <a href="../mc/#ssomapping">SSO Mapping</a> configuration for a later step.]</li>
 
 <li><strong>Name format:</strong> Basic</li>
 
@@ -1632,10 +1625,10 @@ Identity Guardian integrates with identity providers (IdPs) to streamline the au
 <img alt="image" style="height:350px" src="eid-app-reg-8.png"></li></ul>
 </li>
 
-<li>Repeat step 7 for all built-in attributes to be added.
+<li>Repeat the previous step for all built-in attributes to be added.
 <img alt="image" style="height:350px" src="eid-app-reg-9.png"></li>
 
-<li>Update the application manifest to accept mapped claims in Microsoft Entra app manifest. In the Microsoft Entra admin center, navigate to <strong>Entra ID &gt; App registrations.</strong> Select your app under <strong>Owned applications.</strong>
+<li>Update the application manifest to accept these claims. Navigate to <strong>Entra ID &gt; App registrations.</strong> Select your app under <strong>Owned applications.</strong>
 <img alt="image" style="height:350px" src="eid-app-reg-10.png"></li>
 
 <li>In the left menu, select <strong>Manifest</strong> under <strong>Manage</strong> to open the app manifest.
@@ -1652,7 +1645,7 @@ Identity Guardian integrates with identity providers (IdPs) to streamline the au
 </li>
 
 <li>Configure role(s) for each user. Navigate to <strong>Entra ID &gt; Users.</strong>
-<img alt="image" style="height:300px" src="eid-app-reg-13.png"></li>
+<img alt="image" style="height:275px" src="eid-app-reg-13.png"></li>
 
 <li>Search for the user to assign the role, then click on the user name from the results.
 <img alt="image" style="height:300px" src="eid-app-reg-14.png"></li>
@@ -1663,22 +1656,15 @@ Identity Guardian integrates with identity providers (IdPs) to streamline the au
 <li>Click <strong>Job Information.</strong> 
 <img alt="image" style="height:350px" src="eid-app-reg-16.png"></li>
 
-<li>Complete the required fields:
-
-
-<ul>
-<li><strong>Department:</strong> [Enter the SSO Key based on the Claim name from step 7 above. This is case-sensitive.]</li>
-
-<li><strong>Employee ID:</strong> [Enter the SSO Value based on the Claim value from step 7 above. This is case-sensitive.]
+<li>For the <strong>Department</strong> field, enter the desired value. Record this case-sensitive value, as it serves as the <strong>SSO Value</strong> in Identity Guardian's <a href="../mc/#ssomapping">SSO Mapping</a> configuration for a later step.
 <img alt="image" style="height:500px" src="eid-app-reg-17.png">
-Make any other required edits for the user, including multiple roles if needed, then click <strong>Save.</strong></li></ul>
-</li>
+Make any other required edits for the user, including multiple roles if needed, then click <strong>Save.</strong></li>
 
 <li>Enter the <a href="../mc">Managed Configuration</a> settings for SSO Mapping via your EMM: 
 
 
 <ul>
-<li><strong>SSO Mapping:</strong> [Tick to enable the recognition and mapping of the Single Sign-On (SSO) response to application-specific roles. Click <strong>Add Role Identifier</strong> as needed to add additional roles.]
+<li><strong>SSO Mapping -</strong> Tick to enable the recognition and mapping of the Single Sign-On (SSO) response to application-specific roles. Click <strong>Add Role Identifier</strong> as needed to add additional roles.
 
 
 <ul>
@@ -1690,13 +1676,13 @@ Make any other required edits for the user, including multiple roles if needed, 
 
 
 <ul>
-<li><strong>SSO Key-Value Pair -</strong> Choose whether the SSO response, which contains the user key and values, should be mapped to a corresponding user role in Identity Guardian
+<li><strong>SSO Key-Value Pair -</strong> Enable this option to assign a user based on a specific key-value pair received in the SSO response.
 
 
 <ul>
-<li><strong>SSO Key -</strong> Enter the SSO key to map it to an Identity Guardian role.</li>
+<li><strong>SSO Key -</strong> Enter the attribute key from the SSO response (from step 5).</li>
 
-<li><strong>SSO Value -</strong> Enter the SSO value(s) to map to the Identity Guardian role. Use commas to separate multiple entries.
+<li><strong>SSO Value -</strong> Enter the corresponding attribute value(s) (from step 14). To assign multiple values, separate them with a comma.
 <img alt="image" style="height:450px" src="eid-mc-sso-mapping.png"></li></ul>
 </li></ul>
 </li></ul>
@@ -1707,6 +1693,61 @@ Make any other required edits for the user, including multiple roles if needed, 
 
 <li>Deploy the Managed Configurations to the devices through your EMM.</li>
 </ol>
+
+<!-- 
+1. In the Microsoft Entra admin center, navigate to **Entra ID > App registrations.**
+    <img alt="image" style="height:300px" src="eid-app-reg-1.png" />
+2. Select your application in the list.
+    <img alt="image" style="height:350px" src="eid-app-reg-2.png" />
+3. In the **Essentials** section, click the name of your app under **Managed application in local directory.**
+    <img alt="image" style="height:350px" src="eid-app-reg-3.png" />
+    - If the app is not found under the **Owned aapplications** section, search for it under the **All applications** section.
+        <img alt="image" style="height:350px" src="eid-app-reg-4.png" />
+4. Under **Manage,** click **Single sign-on.**
+    <img alt="image" style="height:475px" src="eid-app-reg-5.png" />
+5. In **Attributes & Claims,** click **Edit.**
+    <img alt="image" style="height:450px" src="eid-app-reg-6.png" />
+6. Add a built-in attribute to the token as a claim, select **Add new claim.**
+    <img alt="image" style="height:400px" src="eid-app-reg-7.png" />
+7. Enter or select the following, then click **Save:**
+    - **Name:** [Enter the **SSO Key** configured in Identity Guardian's [SSO Mapping](../mc/#ssomapping) configuration. This is case-sensitive.]
+    - **Name format:** Basic
+    - **Source:** Attribute
+    - **Source attribute:** [Select the appropriate built-in attribute.]
+    <img alt="image" style="height:350px" src="eid-app-reg-8.png" />
+8. Repeat step 7 for all built-in attributes to be added.
+    <img alt="image" style="height:350px" src="eid-app-reg-9.png" />
+9. Update the application manifest to accept mapped claims in Microsoft Entra app manifest. In the Microsoft Entra admin center, navigate to **Entra ID > App registrations.** Select your app under **Owned applications.**
+    <img alt="image" style="height:350px" src="eid-app-reg-10.png" />
+10. In the left menu, select **Manifest** under **Manage** to open the app manifest.
+    <img alt="image" style="height:450px" src="eid-app-reg-11.png" />
+11. Locate the following keys and set them to the specified values, then click **Save:**
+    - **acceptMappedClaims:** true
+    - **isFallbackPublicClient:** true
+    <img alt="image" style="height:450px" src="eid-app-reg-12.png" />
+12. Configure role(s) for each user. Navigate to **Entra ID > Users.**
+    <img alt="image" style="height:300px" src="eid-app-reg-13.png" />
+13. Search for the user to assign the role, then click on the user name from the results.
+    <img alt="image" style="height:300px" src="eid-app-reg-14.png" />
+14. Click **Edit Properties.**
+    <img alt="image" style="height:350px" src="eid-app-reg-15.png" />
+15. Click **Job Information.** 
+    <img alt="image" style="height:350px" src="eid-app-reg-16.png" />
+16. For the **Department** field, enter the **SSO Value** configured in Identity Guardian's [SSO Mapping](../mc/#ssomapping) configuration. This is case-sensitive.
+    <img alt="image" style="height:500px" src="eid-app-reg-17.png" />
+    Make any other required edits for the user, including multiple roles if needed, then click **Save.**
+17. Enter the [Managed Configuration](../mc) settings for SSO Mapping via your EMM: 
+    - **SSO Mapping:** [Tick to enable the recognition and mapping of the Single Sign-On (SSO) response to application-specific roles. Click **Add Role Identifier** as needed to add additional roles.]
+        - **Role Identifier -** Establishes links between roles in SSO responses and their corresponding roles within the Identity Guardian app.
+        - **Identity Guardian Role Name -** Enter the Identity Guardian user role to be assigned based on SSO response during user sign-in
+        - **Key-value Pair for Role Assignment -** Add one or more SSO key-value pairs to identify and map users to a predefined Identity Guardian user role. Click **Add SSO Key-Value Pair** as needed.
+            - **SSO Key-Value Pair -** Choose whether the SSO response, which contains the user key and values, should be mapped to a corresponding user role in Identity Guardian
+                - **SSO Key -** Enter the SSO key to map it to an Identity Guardian role.
+                - **SSO Value -** Enter the SSO value(s) to map to the Identity Guardian role. Use commas to separate multiple entries.
+            <img alt="image" style="height:450px" src="eid-mc-sso-mapping.png" />
+18. See [Managed Configurations](../mc) to configure any other non-SSO settings.
+19. Deploy the Managed Configurations to the devices through your EMM.
+-->
 
 <p>When a device receives the new configurations, Zebra Identity Guardian activates the lock screen. The user must then authenticate via Single Sign-On (SSO) to access the device. For more details, see <a href="../usage/">User Guide</a>.</p>
 
@@ -2407,7 +2448,7 @@ Make any other required edits for the user, including multiple roles if needed, 
             <div class="container-fluid">
                 <div class="row">
                     <div class="col-sm-10">
-                        ZEBRA and the stylized Zebra head are trademarks of Zebra Technologies Corp., registered in many jurisdictions worldwide. All other trademarks are the property of their respective owners. ©2025 Zebra Technologies Corp. and/or its affiliates.<br> <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal.html">Legal</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/compliance/information-privacy/terms-of-use.html">Terms of Use</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal/privacy-statement.html">Privacy Policy</a> 
+                        ZEBRA and the stylized Zebra head are trademarks of Zebra Technologies Corp., registered in many jurisdictions worldwide. All other trademarks are the property of their respective owners. ©2026 Zebra Technologies Corp. and/or its affiliates.<br> <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal.html">Legal</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/compliance/information-privacy/terms-of-use.html">Terms of Use</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal/privacy-statement.html">Privacy Policy</a> 
                     </div>
                      <!--
                      <div class="col-sm-2">
