@@ -253,53 +253,37 @@
 <p>Key Capabilities:</p>
 
 <ul>
-<li><strong>Barcode Blurring -</strong> Detects and blurs barcodes to protect sensitive data.</li>
+<li><strong>Content Blurring -</strong> Detects and blurs sensitive in-image content - including barcodes, text, people, and pets — to ensure privacy and data protection.</li>
 
-<li><strong>Text Blurring -</strong> Identifies and redacts textual information.</li>
+<li><strong>Configurable Blur Intensity -</strong> Supports three levels of blur intensity (Low, Medium, High) for customizable content obscuring.</li>
 
-<li><strong>People Blurring -</strong> Detects and blurs individuals (and pets like cats/dogs) for privacy compliance.</li>
-
-<li><strong>Configurable Transformations -</strong> Allows to enable or disable specific transformation actions.</li>
-
-<li><strong>Integrated Workflow -</strong> Combines compliance checks (via <code>ImageAttributesDetector</code>) and image transformations into a single, complete solution for "Guided PPOD" (Picture Proof of Delivery) use case.</li>
+<li><strong>Flexible Transformation Actions -</strong> Allows enabling or disabling specific transformation actions independently to meet specific use case requirements.</li>
 
 <li><strong>Asynchronous Processing -</strong> Ensures efficient, non-blocking processing through a design based on <code>CompletableFuture</code>.</li>
 </ul>
 
 <hr>
 
-<h2 id="supportedtransformationsandmodels" class="anchor"><a class="heading-anchor" href="#supportedtransformationsandmodels"><span></span></a>Supported Transformations and Models</h2>
+<h2 id="aimodel" class="anchor"><a class="heading-anchor" href="#aimodel"><span></span></a>AI Model</h2>
 
-<p>The supported transformation actions are provided below, each powered by a specific model. To use a transformation, include its corresponding model dependency in the <code>build.gradle</code> file. The SDK uses these specified models by default, unless a custom model is provided via <code>loadModelFromFilePath()</code>.</p>
+<p>The <code>ImageTransformDetector</code> class orchestrates image transformations by selecting and applying the appropriate model based on user-defined configurations. Each model is capable of performing one or more specific transform actions. For more information and to download the model, refer to <a href="../model/image-trans/">Object Detector Model</a>.</p>
 
-<table class="facelift" align="" style="width:100%" border="1" padding="5px">
-    <tbody><tr bgcolor="#dce8ef">
-            <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Transformation Action</th>
-            <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Model Type</th>
-            <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Description</th>
-            <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Model Name</th>
-        </tr>
-    </tbody><tbody>
-        <tr>
-            <td style="padding: 12px; border: 1px solid #ddd;"><code>TransformationAction.LocalizeAndBlurBarcode</code></td>
-            <td style="padding: 12px; border: 1px solid #ddd;">ModelType.ImageTransformBarcodeLocalizer</td>
-            <td style="padding: 12px; border: 1px solid #ddd;">Identify the barcodes visible in the image and blur them in the output image returned to the user.</td>
-            <td style="padding: 12px; border: 1px solid #ddd;"><code>barcode-localizer</code></td>
-        </tr>
-        <tr>
-            <td style="padding: 12px; border: 1px solid #ddd;"><code>TransformationAction.LocalizeAndBlurText</code></td>
-            <td style="padding: 12px; border: 1px solid #ddd;">ModelType.ImageTransformTextLocalizer</td>
-            <td style="padding: 12px; border: 1px solid #ddd;">Identify the bounding boxes of text areas in the image and blur them.</td>
-            <td style="padding: 12px; border: 1px solid #ddd;"><code>text-ocr-recognizer</code></td>
-        </tr>
-        <tr>
-            <td style="padding: 12px; border: 1px solid #ddd;"><code>TransformationAction.LocalizeAndBlurPeopleAndPets</code></td>
-            <td style="padding: 12px; border: 1px solid #ddd;">ModelType.ImageTransformPersonLocalizer</td>
-            <td style="padding: 12px; border: 1px solid #ddd;">Identify any person, cat, or cog in the image and blur them in the output image returned to the user.</td>
-            <td style="padding: 12px; border: 1px solid #ddd;"><code>FCN-ResNet50-object-segmentation</code></td>
-        </tr>        
-    </tbody>
-</table>
+<h3 id="modelloadingoptions" class="anchor"><a class="heading-anchor" href="#modelloadingoptions"><span></span></a>Model Loading Options</h3>
+
+<p>There are two methods for loading a model into your application:</p>
+
+<ul>
+<li><p><strong>Using Gradle -</strong> Automatically loads the model configured as a dependency in the <code>build.gradle</code> file. </p>
+
+<pre class="prettyprint"><code>ImageTransformDetector.Settings settings = new ImageTransformDetector.Settings();
+</code></pre></li>
+
+<li><p><strong>Independent Loading -</strong> Provides more control by allowing a model to be loaded from a specific file path on the device. First, the model file must be transferred to a path on the device that the app can access. This can be done using a tool like Android Debug Bridge (adb) or an Enterprise Mobility Management (EMM). The model file must be readable and have a supported file format: <code>.tar.crypt</code>, <code>.tar</code>, and <code>.aar</code>. </p>
+
+<pre class="prettyprint"><code>File modelFile = new File("/path/to/model.tar.crypt");
+settings.loadModelFromFilePath(ModelType.ImageTransformPersonLocalizer, modelFile);
+</code></pre></li>
+</ul>
 
 <hr>
 
@@ -352,7 +336,8 @@ boolean isInitDone = AIVisionSDK.getInstance(getApplicationContext()).init();
     transformSettings.configureTransformationActions(Arrays.asList(
         TransformationAction.LocalizeAndBlurBarcode,
         TransformationAction.LocalizeAndBlurText,
-        TransformationAction.LocalizeAndBlurPeopleAndPets
+        TransformationAction.LocalizeAndBlurPeople,
+        TransformationAction.LocalizeAndBlurPets
     ));
 
     // 3. (Optional) Configure output image resolution
@@ -640,7 +625,7 @@ None</p>
 <pre class="prettyprint"><code>    public void configureTransformationActions(@NonNull List&lt;TransformationAction&gt; actions)
 </code></pre>
 
-<p><strong>Description:</strong> Enables specific image transformation operations by providing a list of TransformationAction enums. At least one action must be enabled for the detector to be useful.</p>
+<p><strong>Description:</strong> Enables specific image transformation operations by providing a list of <code>TransformationAction</code> enums. At least one action must be enabled for the detector to be useful.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -652,6 +637,51 @@ None</p>
 
 <ul>
 <li><strong>IllegalArgumentException -</strong> Thrown if the <code>actions</code> list is null.</li>
+</ul>
+
+<hr>
+
+<h3 id="configuretransformationactionsnonnulltransformactiondescriptordescriptor" class="anchor"><a class="heading-anchor" href="#configuretransformationactionsnonnulltransformactiondescriptordescriptor"><span></span></a>configureTransformationActions(@NonNull TransformActionDescriptor descriptor)</h3>
+
+<pre class="prettyprint"><code>    public void configureTransformationActions(@NonNull TransformActionDescriptor descriptor)
+</code></pre>
+
+<p><strong>Description:</strong> Configure transformation actions with blur settings using a descriptor. This method allows to specify both the transformation action to enable and the blur radius to use for these transformations.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>TransformActionDescriptor descriptor -</strong> The transformation action descriptor containing actions and blur settings. Must not be null.</li>
+</ul>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>IllegalArgumentException -</strong> Thrown if the <code>actions</code> list is null.</li>
+</ul>
+
+<hr>
+
+<h3 id="getblurradius" class="anchor"><a class="heading-anchor" href="#getblurradius"><span></span></a>getBlurRadius()</h3>
+
+<pre class="prettyprint"><code>    public BlurRadius getBlurRadius()
+</code></pre>
+
+<p><strong>Description:</strong> Returns the current blur radius configuration used for image transformations. This value determines the strength of the blur applied when blurring detected regions (for example: barcodes, text, or people) in the processed image.</p>
+
+<p><strong>Returns:</strong></p>
+
+<ul>
+<li><strong>BlurRadius -</strong> The currently configured blur radius value:
+
+
+<ul>
+<li><code>BlurRadius.Low</code> - A light blur effect that applies subtle obscuring of content.</li>
+
+<li><code>BlurRadius.Medium</code> - The default blur level, offering a balance between visibility and privacy.</li>
+
+<li><code>BlurRadius.High</code> - A strong blur effect for maximum content obscuring.</li></ul>
+</li>
 </ul>
 
 <hr>
@@ -758,7 +788,7 @@ None</p>
 <p><strong>Parameters:</strong></p>
 
 <ul>
-<li><strong>TransformationAction action -</strong> TransformationAction action (must not be null)</li>
+<li><strong>TransformationAction action -</strong> The transformation action (must not be null)</li>
 </ul>
 
 <p><strong>Return Value:</strong> <code>ModelType</code> - The model type associated with the action.</p>
@@ -768,6 +798,86 @@ None</p>
 <ul>
 <li><strong>IllegalArgumentException -</strong> Thrown if <code>action</code> is null.</li>
 </ul>
+
+<hr>
+
+<h2 id="transformactiondescriptorandblurradius" class="anchor"><a class="heading-anchor" href="#transformactiondescriptorandblurradius"><span></span></a>TransformActionDescriptor and BlurRadius</h2>
+
+<h3 id="blurradiusenum" class="anchor"><a class="heading-anchor" href="#blurradiusenum"><span></span></a>BlurRadius Enum</h3>
+
+<p><strong>Description:</strong> The <code>BlurRadius enum</code> defines the intensity of the blur effect applied to a detected region. Three levels of blur are available.</p>
+
+<table class="facelift" align="" style="width:100%" border="1" padding="5px">
+    <tbody><tr bgcolor="#dce8ef">
+            <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Value</th>
+            <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Description</th>
+        </tr>
+    </tbody><tbody>
+        <tr>
+            <td style="padding: 12px; border: 1px solid #ddd;"><code>BlurRadius.Low</code></td>
+            <td style="padding: 12px; border: 1px solid #ddd;">A light blur effect that applies subtle obscuring of content.</td>
+        </tr>
+        <tr>
+            <td style="padding: 12px; border: 1px solid #ddd;"><code>BlurRadius.Medium</code></td>
+            <td style="padding: 12px; border: 1px solid #ddd;">The default blur level, offering a balance between visibility and privacy.</td>
+        </tr>
+        <tr>
+            <td style="padding: 12px; border: 1px solid #ddd;"><code>BlurRadius.High</code></td>
+            <td style="padding: 12px; border: 1px solid #ddd;">A strong blur effect for maximum content obscuring.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3 id="transformactiondescriptor" class="anchor"><a class="heading-anchor" href="#transformactiondescriptor"><span></span></a>TransformActionDescriptor</h3>
+
+<p><strong>Description:</strong> The <code>TransformActionDescriptor</code> class configures transformation actions along with blur settings using a Builder pattern. This provides a convenient way to specify both the transformations to apply and the strength of the blur.</p>
+
+<h4 id="transformactiondescriptorbuilder" class="anchor"><a class="heading-anchor" href="#transformactiondescriptorbuilder"><span></span></a>TransformActionDescriptor.Builder</h4>
+
+<p><strong>Builder Methods:</strong></p>
+
+<table class="facelift" align="" style="width:100%" border="1" padding="5px">
+    <tbody><tr bgcolor="#dce8ef">
+            <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Method</th>
+            <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Description</th>
+        </tr>
+    </tbody><tbody>
+        <tr>
+            <td style="padding: 12px; border: 1px solid #ddd;"><code>setActions(List<transformationaction> actions)</transformationaction></code></td>
+            <td style="padding: 12px; border: 1px solid #ddd;">Sets the list of transformation actions to apply. Must not be null or empty.</td>
+        </tr>
+        <tr>
+            <td style="padding: 12px; border: 1px solid #ddd;"><code>setBlurRadius(BlurRadius radius)</code></td>
+            <td style="padding: 12px; border: 1px solid #ddd;">Sets the blur radius for all transformations. Defaults to <code>BlurRadius.Medium</code>.</td>
+        </tr>
+        <tr>
+            <td style="padding: 12px; border: 1px solid #ddd;"><code>build()</code></td>
+            <td style="padding: 12px; border: 1px solid #ddd;">Constructs and returns the immutable <code>TransformActionDescriptor</code> instance.</td>
+        </tr>
+    </tbody>
+</table>
+
+<p><strong>Accessor Methods:</strong></p>
+
+<table class="facelift" align="" style="width:100%" border="1" padding="5px">
+    <tbody><tr bgcolor="#dce8ef">
+            <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Method</th>
+            <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Return Type</th>
+            <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Description</th>
+        </tr>
+    </tbody><tbody>
+        <tr>
+            <td style="padding: 12px; border: 1px solid #ddd;"><code>getActions()</code></td>
+            <td style="padding: 12px; border: 1px solid #ddd;"><code>List<transformationaction></transformationaction></code></td>
+            <td style="padding: 12px; border: 1px solid #ddd;">Returns an unmodifiable list of configured transformation actions.</td>
+        </tr>
+        <tr>
+            <td style="padding: 12px; border: 1px solid #ddd;"><code>getBlurRadius()</code></td>
+            <td style="padding: 12px; border: 1px solid #ddd;"><code>BlurRadius</code></td>
+            <td style="padding: 12px; border: 1px solid #ddd;">    Returns the configured blur radius.</td>
+        </tr>
+    </tbody>
+</table>
 
 <hr>
 
