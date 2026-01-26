@@ -266,7 +266,7 @@
 
 <h2 id="aimodel" class="anchor"><a class="heading-anchor" href="#aimodel"><span></span></a>AI Model</h2>
 
-<p>The <code>ImageTransformDetector</code> class orchestrates image transformations by selecting and applying the appropriate model based on user-defined configurations. Each model is capable of performing one or more specific transform actions. For more information and to download the model, refer to <a href="../model/image-trans/">Object Detector Model</a>.</p>
+<p>The <code>ImageTransformDetector</code> class orchestrates image transformations by selecting and applying the appropriate model based on user-defined configurations. It utilizes the Qualcomm FCN-ResNet50-object-segmentation model to detect people and pets in an image. To download the object segmenter model, refer to <a href="../model/image-trans/">Object Detector Model</a>.</p>
 
 <h3 id="modelloadingoptions" class="anchor"><a class="heading-anchor" href="#modelloadingoptions"><span></span></a>Model Loading Options</h3>
 
@@ -284,6 +284,44 @@
 settings.loadModelFromFilePath(ModelType.ImageTransformPersonLocalizer, modelFile);
 </code></pre></li>
 </ul>
+
+<hr>
+
+<h3 id="supportedtransformationsandmodels" class="anchor"><a class="heading-anchor" href="#supportedtransformationsandmodels"><span></span></a>Supported Transformations and Models</h3>
+
+<p>The following transformation actions are supported, each powered by a specific model:</p>
+
+<table class="facelift" align="" style="width:100%" border="1" padding="5px">
+    <tbody><tr bgcolor="#dce8ef">
+            <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Transformation Action</th>
+            <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Model Type</th>
+            <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Description</th>
+            <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Model Name</th>
+        </tr>
+    </tbody><tbody>
+        <tr>
+            <td style="padding: 12px; border: 1px solid #ddd;"><code>TransformationAction.LocalizeAndBlurBarcode</code></td>
+            <td style="padding: 12px; border: 1px solid #ddd;">ModelType.ImageTransformBarcodeLocalizer</td>
+            <td style="padding: 12px; border: 1px solid #ddd;">Identify the barcodes visible in the image and blur them in the output image returned to the user.</td>
+            <td style="padding: 12px; border: 1px solid #ddd;"><code><a href="../barcode-localizer/">barcode-localizer</a></code></td>
+        </tr>
+        <tr>
+            <td style="padding: 12px; border: 1px solid #ddd;"><code>TransformationAction.LocalizeAndBlurText</code></td>
+            <td style="padding: 12px; border: 1px solid #ddd;">ModelType.ImageTransformTextLocalizer</td>
+            <td style="padding: 12px; border: 1px solid #ddd;">Identify the bounding boxes of text areas in the image and blur them.</td>
+            <td style="padding: 12px; border: 1px solid #ddd;"><code><a href="../textocr/">text-ocr-recognizer</a></code></td>
+        </tr>
+        <tr>
+            <td style="padding: 12px; border: 1px solid #ddd;"><code>TransformationAction.LocalizeAndBlurPeople</code></td>
+            <td style="padding: 12px; border: 1px solid #ddd;" rowspan="2">ModelType.ImageTransformPersonLocalizer</td>
+            <td style="padding: 12px; border: 1px solid #ddd;" rowspan="2">Identify any person, cat, or dog in the image and blur them in the output image returned to the user.</td>
+            <td style="padding: 12px; border: 1px solid #ddd;" rowspan="2"><code><a href="../image-trans/">FCN-ResNet50-object-segmentation</a></code></td>
+        </tr>   
+        <tr>
+            <td style="padding: 12px; border: 1px solid #ddd;"><code>TransformationAction.LocalizeAndBlurPets</code></td>
+        </tr>         
+    </tbody>
+</table>
 
 <hr>
 
@@ -529,32 +567,26 @@ boolean isInitDone = AIVisionSDK.getInstance(getApplicationContext()).init();
 <li><strong>AIVisionSDKModelException -</strong> Thrown if a model fails to load or is incompatible.</li>
 </ul>
 
-<hr>
+<!-- 
+---
 
-<h3 id="processimagedataimageexecutorexecutornonnullimageattributesdetectordetector" class="anchor"><a class="heading-anchor" href="#processimagedataimageexecutorexecutornonnullimageattributesdetectordetector"><span></span></a>process(ImageData image, Executor executor, @NonNull ImageAttributesDetector detector)</h3>
+### process(ImageData image, Executor executor, @NonNull ImageAttributesDetector detector)
 
-<pre class="prettyprint"><code>    public CompletableFuture&lt;ImageTransformResult&gt; process(ImageData image, Executor executor, @NonNull ImageAttributesDetector detector) throws AIVisionSDKException
-</code></pre>
+        public CompletableFuture<ImageTransformResult> process(ImageData image, Executor executor, @NonNull ImageAttributesDetector detector) throws AIVisionSDKException
 
-<p><strong>Description:</strong> Processes an image for both attribute compliance and transformation. It is particularly designed for the guided PPOD (Picture Proof of Delivery) use case, where it first validates the image quality (e.g., blur, glare) and content, and then applies transformations such as redacting sensitive information. This single, atomic operations provides an efficient way to ensure image compliance.</p>
+**Description:** Processes an image for both attribute compliance and transformation. It is particularly designed for the guided PPOD (Picture Proof of Delivery) use case, where it first validates the image quality (e.g., blur, glare) and content, and then applies transformations such as redacting sensitive information. This single, atomic operations provides an efficient way to ensure image compliance.
 
-<p><strong>Parameters:</strong></p>
+**Parameters:**
 
-<ul>
-<li><strong>ImageData imageData -</strong> The image to process. Must not be null.</li>
+- **ImageData imageData -** The image to process. Must not be null.
+- **Executor executor -** The executor for asynchronous processing. Must not be null.
+- **ImageAttributesDetector detector -** A pre-configured instance for compliance checks. Must not be null.
 
-<li><strong>Executor executor -</strong> The executor for asynchronous processing. Must not be null.</li>
+**Exceptions:**
 
-<li><strong>ImageAttributesDetector detector -</strong> A pre-configured instance for compliance checks. Must not be null.</li>
-</ul>
-
-<p><strong>Exceptions:</strong></p>
-
-<ul>
-<li><strong>InvalidInputException -</strong> Thrown if <code>image</code>, <code>executor</code>, or <code>detector</code> is null.</li>
-
-<li><strong>AIVisionSDKException -</strong> Thrown if the detector instance has been disposed or if models are not initialized.</li>
-</ul>
+- **InvalidInputException -** Thrown if `image`, `executor`, or `detector` is null.
+- **AIVisionSDKException -** Thrown if the detector instance has been disposed or if models are not initialized.
+-->
 
 <hr>
 
@@ -563,7 +595,7 @@ boolean isInitDone = AIVisionSDK.getInstance(getApplicationContext()).init();
 <pre class="prettyprint"><code>    public CompletableFuture&lt;ImageTransformResult&gt; process(ImageData image, Executor executor) throws AIVisionSDKException
 </code></pre>
 
-<p><strong>Description:</strong> Applies the configured transformations to the image without performing compliance checks.</p>
+<p><strong>Description:</strong> Applies the configured transformations to the image. Results are returned using the custom executor. </p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -712,7 +744,7 @@ None</p>
 <pre class="prettyprint"><code>    public void loadModelFromFilePath(@NonNull ModelType modelType, @NonNull File modelFilePath) throws InvalidInputException
 </code></pre>
 
-<p><strong>Description:</strong> Loads a custom, user-provided model from a file path for a specific transformation type, overriding the default SDK model.</p>
+<p><strong>Description:</strong> Load a model from a file path accessible to the application. The model file must be in a supported format (<code>.tar.crypt</code>, <code>.tar</code>, or <code>.aar</code>) and must be readable. If this method is not called, the model must be defined using <code>build.gradle</code> file. </p>
 
 <p><strong>Parameters:</strong></p>
 
