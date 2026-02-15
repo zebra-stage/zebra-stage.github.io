@@ -1720,6 +1720,49 @@ protected void onActivityResult(int requestCode, int resultCode, @Nullable Inten
                                                     </div><br />
 
                                                     <p>updateConfigFile(): This method is used to update the scanner's configuration with a selected configuration file. A progress dialog is displayed, an XML command string is constructed with the scanner ID and file path, and the configuration update command is executed using the SDK. The result is logged, temporary files are cleaned up, and the progress dialog is dismissed. Based on the result, a success or failure message is displayed to the user via a toast.</p>
+
+                                                    <div style="display: block; margin: 0 auto; text-align: center;">
+                                                        <img src="../../images/scanner-sdk-android/0001-scanner-sdk-android-config-push-progress.png" style="display: block; margin: 0 auto;"><strong>Figure 14:</strong> Configuration Push Progress
+                                                    </div><br />
+
+                                                    <div style="display: block; margin: 0 auto; text-align: center;">
+                                                        <img src="../../images/scanner-sdk-android/0002-scanner-sdk-android-config-push-completed.png" style="display: block; margin: 0 auto;"><strong>Figure 15:</strong> Configuration Push Completion
+                                                    </div><br />
+
+<pre class="prettyprint">
+<code>
+public void updateConfigFile() {
+    progressDialog = new ProgressDialog(this);
+    progressDialog.setMessage("Updating Configurations...");
+    progressDialog.setCancelable(false);
+    progressDialog.show();
+
+    new Handler(Looper.getMainLooper()).post(() -> AsyncTask.execute(() -> {
+        String inXml = inXmlStartTag + scannerID + "&lt;/scannerID>&lt;cmdArgs>&lt;arg-string>" +  documentUriString + "&lt;/arg-string>&lt;/cmdArgs>&lt;/inArgs>";
+        StringBuilder outXML = new StringBuilder();
+        DCSSDKDefs.DCSSDK_RESULT configUpdateResult = sdkHandler.dcssdkExecuteCommandOpCodeInXMLForScanner(DCSSDKDefs.DCSSDK_COMMAND_OPCODE.DCSSDK_LOAD_CONFIGURATION,inXml,outXML,scannerID);
+        Log.i(TYPE_DEBUG.toString(),configUpdateResult.toString());
+        runOnUiThread(() -> {
+            SmsPackageUpdateManager.deleteDirectory(new File(this.getCacheDir().getAbsolutePath() + File.separator + SmsPackageUpdateManager.WORK_DIRECTORY));
+            if (progressDialog != null && progressDialog.isShowing())
+                progressDialog.dismiss();
+            if (configUpdateResult == DCSSDKDefs.DCSSDK_RESULT.DCSSDK_RESULT_SUCCESS) {
+                btn_update_config.setText("Config Update Successful");
+                btn_update_config.setBackgroundColor(Color.GREEN);
+                btn_update_config.setEnabled(false);
+
+                Log.i("ScannerControl", "Configuration update successful");
+                Toast.makeText(this, "Configuration file updated successfully", Toast.LENGTH_SHORT).show();
+            } 
+            else {
+                Log.e("ScannerControl", "Config update failed: " + configUpdateResult.toString());
+                Toast.makeText(this, "Configuration update failed!", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }));
+}
+</code>
+</pre>
                                                     
                                                     <h3 id="sms-android" class="anchor"><a class="heading-anchor" href="#sms-android"><span></span></a>Remote Scanner Management Solution (SMS)</h3>
 
