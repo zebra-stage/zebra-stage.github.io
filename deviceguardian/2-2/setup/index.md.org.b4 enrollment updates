@@ -1,0 +1,1097 @@
+
+> **All references to Device Guardian within this guide also apply to Device Guardian Access Management, unless explicitly stated otherwise.**
+
+## Overview
+
+Device Guardian (DG) and Device Guardian Access Management (DGAM) are cloud-based solutions that consist of:
+
+- A cloud-based server, hosted and managed by Zebra
+- Client software designed for Zebra Android devices
+
+DGAM enhances DG’s core capabilities by introducing additional features such as kiosk management and local device monitoring. 
+
+To enable communication between devices and the server, the client app must be installed and devices must be enrolled with the server. This setup is required for enabling device tracking and functionality. For installation guidance, refer to the section specific to your Enterprise Mobility Management (EMM) platform.
+
+> For a comprehensive guide on deployment and management of Device Guardian (DG) and Device Guardian Access Management (DGAM), refer to the [Administrator Guide](../getstarted/).
+
+**Note:** StageNow deployment is not currently available, but it is planned for a future release.
+
+<div class="alert alert-info alert-dismissible fade in" role="alert"><b><code>Important information for migrating from Device Tracker</code>: Refer to the <a href="../migration/">Migration Guide</a>.</div>
+
+---
+
+## Requirements
+
+### Management System Requirements
+
+- **Enterprise Mobility Management (EMM) System:** Configuration requires an EMM that supports **Managed Configurations** (also known as Managed App Configurations), such as [Zebra DNA Cloud](/zebradna), Microsoft Intune, SOTI MobiControl, Workspace ONE UEM, or 42Gears SureMDM.
+
+### Device Requirements
+
+- **Supported Devices -** Refer to the [Zebra support portal](https://www.zebra.com/us/en/support-downloads/software/mobile-computer-software/device-guardian.html?downloadId=e1fe2796-746b-448d-803d-2427107528af#Ta-item-152cbcb805-tab) for compatible hardware for both devices and kiosks (DGAM-specific).
+  <br /><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> **Important: The WS50, as a non-GMS device, does <u>not</u> support:**
+  - [Map-based Locationing](../config/#mapbasedlocationing) (due to the lack of Location Services API support)
+  - Tracking of [Bluetooth Scanner Accessories](../config/#bluetoothscanners)
+- **Operating System -** Refer to the [Zebra support portal](https://www.zebra.com/us/en/support-downloads/software/mobile-computer-software/device-guardian.html?downloadId=e1fe2796-746b-448d-803d-2427107528af#Ta-item-152cbcb805-tab) for compatible Android versions and LifeGuard updates for both devices and kiosks (DGAM-specific).
+- **Bluetooth and Location Services -** Must be enabled for device tracking. **For kiosks,** only Bluetooth is required.
+- **Wi-Fi -** Devices and kiosks must connect to a Wi-Fi network with cloud server access.
+- _**Optional:**_ **[Secondary BLE](../secondaryble)** allows a device to be located even if it loses battery power or is powered off. This feature is available on select hardware with secondary BLE capability; see [compatible hardware](https://www.zebra.com/us/en/support-downloads/software/mobile-computer-software/device-guardian.html?downloadId=e1fe2796-746b-448d-803d-2427107528af#Ta-item-152cbcb805-tab). Refer to the [Secondary BLE Configuration](../secondaryble/#configuration) guide for setup instructions.
+
+#### Permissions
+
+> **This section applies only to DGAM.**
+
+DGAM requires the following permissions to be granted for both kiosks and devices:
+- **Camera Permission -** Required to scan the registration QR code, essential for registering the device with a kiosk.
+- **Location Permission -** Enables location-based services and GPS-related functionalities.
+- **Music and Audio Permission -** Allows the app to play or manage audio, such as alarms or sound notifications.
+- **Notifications Permission -** Allows the application to send important updates or alerts to the user.
+- **Files and Media Permission -** _Specific to Android 11,_ required to read or write to device storage, adhering to Android 11’s scoped storage policies.
+
+---
+
+### Network Requirements
+
+To ensure seamless communication between the client app and cloud server, the following network configurations are required:
+
+- **Open HTTPS Port -** Port 443 is typically used for HTTPS communication. Ensure this port is open, though it may vary based on network configurations.
+- **Web Portal Access -** **_Allow the web portal URL_** (supplied by Zebra during onboarding) through the firewall or proxy for administrators and managers to access the dashboard.
+- **Email Addresses:**
+  - Emails are sent from `zdtrksupport@zebra.com` for [reporting](../dashboard/#endofdaydevicesummary) or password resets.
+  - Emails are sent from `NPDVIQFNoReply@zebra.com` for [email notifications](../config/#email).
+- **Firewall/Proxy Allowlist -** **_Ensure the following domain names are allowed_** for web portal access and communication between the device client app and the cloud server.
+
+If wildcards are supported:
+
+- `connectivitycheck.gstatic.com` <!-- <sup>0</sup> -->
+- `*.googleapis.com`
+- `*.firebaseio.com`
+- `*.cloudfunctions.net`
+- `[ProjectID].firebaseapp.com` <sup>1</sup>
+- `[Web portal URL]` (supplied by Zebra during onboarding)
+
+If wildcards are not supported, add these specific domains:
+
+- `connectivitycheck.gstatic.com` <!-- <sup>0</sup> -->
+- `www.googleapis.com`
+- `firestore.googleapis.com`
+- `firebasestorage.googleapis.com `
+- `cloudfunctions.googleapis.com`
+- `us-central1-[ProjectID].cloudfunctions.net` <sup>1</sup>
+- `[ProjectID].firebaseio.com` <sup>1</sup>
+- `[ProjectID]-default-rtdb.firebaseio.com` <sup>1</sup>
+- `*.firebaseio.com` <sup>2</sup>
+- `[ProjectID].firebaseapp.com`
+- `[Web portal URL]` (supplied by Zebra during onboarding)
+
+<sup>1</sup>`[ProjectID]` is included in the welcome email sent by Zebra services during the onboarding process.
+
+<sup>2</sup> **For the Device Guardian client to communicate with the Cloud, `*.firebaseio.com` must be accessible.** It is required to allow this URL in your Firewall or Proxy settings. **If your Firewall or Proxy policy does not support wildcard entries, follow these steps to obtain the specific URL:**
+
+1. Open the link in your browser (`[ProjectID]` is provided during onboarding): `https://[ProjectID]-default-rtdb.firebaseio.com/.settings/owner.json`
+2. Copy the URL displayed on the web page and add it to your firewall or proxy settings.
+3. `Important Note:` Repeat steps 1 and 2 periodically, as Google's server resource allocation may cause the URL to change. 
+
+---
+
+### Web Portal Requirements
+
+The web portal URL (supplied by Zebra during onboarding) is accessible via the following supported browsers:
+
+- Chrome
+- Edge
+- Safari (v14.0 and later)
+
+<i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> **First-time use:** Administrators must set their password by clicking **Forgot Your Password** on the login page and entering the registered email address. An email with a reset link will be sent.
+
+**If using single sign-on (SSO),** see [SSO](../config/#singlesignonsso) for procedures on configuring SSO.
+
+---
+
+### Licenses
+
+End-user [licenses](../license/) are required for Device Guardian and Device Guardian Access Management to operate. Ensure the appropriate licenses are procured:
+- **Device Guardian License:** Required for basic functionality.
+- **Device Guardian Access Management License:** Required for advanced features like kiosk integration.
+
+<!--
+Additionally, separate BLE licenses are required for secondary BLE operation, allowing devices to be tracked even after losing battery power. See [Licensing](../license).
+-->
+
+---
+
+## Installation & Setup
+
+Setting up Device Guardian (DG) and Device Guardian Access Management (DGAM) involves installing the required components, configuring devices and ensuring all prerequisites are met. Make sure to review the [Requirements](#requirements) section and refer to the [Installation Notes](#installationnotes) section for important information.
+
+### DG Setup
+
+To set up **Device Guardian (DG),** the following components and steps are required:
+
+- **Device Guardian Client App -** Install the app on the device and enroll it to the server. Refer to the installation instructions specific to your EMM platform within this guide.
+- **Optional: Identity Guardian for Single Sign-On (SSO) -** If enabling [SSO](../config/#singlesignonsso) for user accountability, install [Identity Guardian](/identityguardian) v2.0 or higher on devices and configure it with [SSO Authentication Configuration](/identityguardian/latest/mc/#ssoauthenticationconfiguration). For setup instructions, refer to the [Identity Guardian Setup Guide](/identityguardian/latest/setup).
+
+### DGAM Setup
+
+> **This section applies only to DGAM.**
+
+To set up **Device Guardian Access Management (DGAM),** the following components and steps are required:
+
+**For Both Kiosks and Devices:**
+- **Device Guardian Client App-** Install the app on kiosks and devices, and enroll them to the server. Refer to the installation instructions specific to your EMM platform within this guide.
+
+**For Devices only:**
+- **[Identity Guardian](/identityguardian) Client App -** Identity Guardian is **_required_** for user authentication and device accountability and is essential to operate DGAM. Configure Identity Guardian according to your user authentication strategy. For setup instructions, refer to the [Identity Guardian Setup Guide](/identityguardian/latest/setup).
+- **DataWedge Profile -** Use Zebra's DataWedge application to facilitate barcode scanning for DGAM. [Import the DataWedge profile](#importdatawedgeprofile) onto devices to enable kiosk integration.
+- **[Register Devices to Kiosk](../setup/#registerdevicetokiosk) -** Enable localized device monitoring and management directly through the kiosk by registering devices to the kiosk system.
+
+**For Kiosks Only:**
+- **Assign the [Kiosk](../config/#managekiosks) to a Site -** After enrolling the kiosk to the server, assign it to the appropriate site to enable monitoring and management.
+    
+---
+
+### Installation Notes
+
+- **<code>Important for Android 11:</code>** For Android 11 devices, _Device Guardian <u>must</u> be launched after installation_ to apply the configurations.
+- **Google Play Services update -** During an update, the Android system automatically stops Device Guardian. After the update is complete, relaunch the Device Guardian app or reboot the device to resume device tracking.
+- **Config Service Notification -** When configuring Device Guardian client for the first time, a notification appears indicating the Config Service is running. This notification disappears following a subsequent device reboot.
+- **Compatibility with Device Tracker -** The Device Guardian server is backward compatible with Device Tracker client apps. However, the Device Tracker client app cannot be upgraded to the Device Guardian client app; a new installation of the Device Guardian client is required.
+
+---
+
+### Import DataWedge Profile
+
+> **This section applies only to DGAM.**
+
+Zebra's DataWedge application facilitates barcode scanning in DGAM. A specific DataWedge profile must be imported on devices being registered to a kiosk.
+
+**Steps to Import DataWedge Profile:**
+
+1. **Download the <a href="./dwprofile_DGAM.db" download>DataWedge Profile</a>.**
+2. **Copy the File to Your Device:** Transfer the DataWedge profile to the device’s internal storage.
+3. **Import the Profile into DataWedge:** Open the DataWedge app on your device (installed by default).
+   <img alt="image" style="height:400px" src="dw-main.png" />
+   - From the top-right menu, select **Settings.**
+     <img alt="image" style="height:400px" src="dw-menu.png" />
+   - Select **Import Profile**. Browse to the file location from step 2. The profile is imported.
+   <table style="margin-left:40px">
+   <tr>
+   <td>
+       <img alt="image" style="height:400px" src="dw-menu.png" />
+   </td> 
+   <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+   <td>
+       <img alt="image" style="height:400px" src="dw-import-profile.png" />
+   </td>
+   </tr>
+   </table>
+4. **Verify Import:** Return to the main screen of DataWedge to ensure the profile named "DGAM” is listed.
+   <img alt="image" style="height:400px" src="dw-dgam-profile.png" />
+
+---
+
+### Register Device to Kiosk
+
+> **This section applies only to DGAM.**
+
+Register devices with a designated kiosk to update the kiosk dashboard data and enable device monitoring within the kiosk. This is accomplished by using the device to scan a barcode displayed on the kiosk.
+
+**Steps to register a device to the kiosk:**
+
+1. On the mobile device, open the Device Guardian app.
+2. Tap the top-right menu and select **Register to Kiosk.**
+   <img alt="image" style="height:400px" src="register-to-kiosk.png" />
+3. A screen appears allowing you to scan a barcode.
+   <img alt="image" style="height:400px" src="scan.png" />
+4. On the kiosk, tap the top-left menu.
+   <img alt="image" style="height:400px" src="kiosk-register-device-1.jpg" />
+5. Select **Register / Sync.**
+   <img alt="image" style="height:400px" src="kiosk-register-device-2.jpg" />
+6. Tap **Register Device.**
+   <img alt="image" style="height:400px" src="kiosk-register-device-3.jpg" />
+7. While on the screen from step 3, use the mobile device to scan either the QR code or barcode, completing the device registration to the specific kiosk.
+   <table>
+   <tr>
+   <td>
+   <img alt="image" style="height:300px" src="register-qrcode.png" />
+   </td>
+   <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+   <td>
+   <img alt="image" style="height:300px" src="register-barcode.png" />
+   </td>
+   </tr>
+   </table>
+
+---
+
+## Using ZDNA Cloud
+
+Follow these steps to install Device Guardian via Managed Configurations with [ZDNA Cloud](/zebradna) and apply a policy that enrolls the device with the Device Guardian cloud server.
+
+### Part I: Enroll Device
+
+Create and apply the StageNow barcode for device enrollment in ZDNA Cloud:
+
+1. Log in to ZDNA web portal. In the left menu, click **New Device Setup.**
+   <img alt="image" style="height:450px" src="zdna-device-setup-1.png" />
+2. From the top-right, click **Set Up Device.**
+   <img alt="image" style="height:450px" src="zdna-device-setup-2.png" />
+3. Configure the device for enrollment. Enter the appropriate internet settings, then click **Next.**
+   <img alt="image" style="height:450px" src="zdna-device-setup-3.png" />
+4. Optionally, select the service for device enrollment. Click **Next.**
+   <img alt="image" style="height:450px" src="zdna-device-setup-4.png" />
+5. Enter the properties and select the barcode type. Click **Next.**
+   <img alt="image" style="height:450px" src="zdna-device-setup-5.png" />
+6. Review the information and click **Next.**
+   <img alt="image" style="height:450px" src="zdna-device-setup-6.png" />
+7. The barcode is created. Click **Done.**
+   <img alt="image" style="height:450px" src="zdna-device-setup-7.png" />
+8. The new setup is listed. Click **View Barcode.**
+   <img alt="image" style="height:450px" src="zdna-device-setup-8.png" />
+9. For new enrollments, factory reset the device. Open **[StageNow](/stagenow)** and scan the barcode.
+10. After staging is complete, in ZDNA Cloud, click on **My Devices** and verify that the the enrolled device is listed.
+    <img alt="image" style="height:450px" src="zdna-device-setup-9.png" />
+11. Allocate the license for the enrolled device. Click **Licensing** from the left menu. Under **DNA CLoud License,** click **Allocate.**
+    <img alt="image" style="height:450px" src="zdna-device-setup-10.png" />
+12. Select the target device(s) to allocate the license to and click **Allocate.**
+    <img alt="image" style="height:450px" src="zdna-device-setup-11.png" />
+
+### Part II: Download Config File
+
+Download the required configuration file from the Device Guardian web portal:
+
+1. In the left menu of the Device Guardian web portal, go to **Settings > Device Enrollment.** Click on **Download Kit.**
+   <img alt="image" style="height:400px" src="download-kit.png" />
+2. Download the file and extract its contents. The Managed Configurations .CONFIG file is required for a later step.
+
+### Part III: Create and Apply Policy
+
+Create and apply a Device Guardian Managed Configurations policy, which installs Device Guardian on the device and enrolls it in the Device Guardian server:
+
+1. In the ZDNA Cloud web portal, click **My Apps.**
+   - If adding Device Guardian for the first time, click **Add App.**
+   - If a new Device Guardian app version is needed, click **Add Version.**
+     <img alt="image" style="height:450px" src="zdna-config-1.png" />
+2. Select the appropriate hosting location, provide the details, and click **Upload.**
+   <img alt="image" style="height:450px" src="zdna-config-2.png" />
+3. The application version is added. Click **Setup.**
+   <img alt="image" style="height:450px" src="zdna-config-3.png" />
+4. Click **Next.**
+   <img alt="image" style="height:450px" src="zdna-config-4.png" />
+5. Click **Yes** to configure the app.
+   <img alt="image" style="height:250px" src="zdna-config-5.png" />
+6. Select or enter the required Device Guardian Managed Configurations; for information on these settings, see [Managed Configurations](../setup/#managedconfigurations-3). Ensure the following Server Connectivity settings are configured before clicking **Next:**
+   - **Server Connectivity Settings:** [Copy and paste the content from the Managed Configurations `.CONFIG` file from step II.2.]
+     <img alt="image" style="height:500px" src="zdna-config-5a.jpg" />
+7. Enter a description for the setup and click **Next.**
+   <img alt="image" style="height:450px" src="zdna-config-6.png" />
+8. Review the settings and click **Apply Now.**
+   <img alt="image" style="height:450px" src="zdna-config-7.png" />
+9. Select the target device(s). Click **Apply.**
+   <img alt="image" style="height:450px" src="zdna-config-8.png" />
+10. The device(s) is listed under the **App Setup** tab with the status of applying the configuration. Once complete, "Success" is displayed as the status.
+    <img alt="image" style="height:450px" src="zdna-config-9.png" />
+
+### Part IV: Send Intents (Android 11 Only)
+
+**For Android 11 devices,** intents must be sent to grant the necessary permissions and start Device Guardian, allowing the configurations to be applied:
+
+1. Download the <a href="./DeviceGuardian.xml" download>DeviceGuardian.xml</a> file, which will be needed in a later step.
+2. In the ZDNA Cloud web portal, go to **Device Settings.** Click **New Setting,** then **Create New Setting (Advanced).**
+   <img alt="image" style="height:250px" src="zdna-intent-1.jpg" />
+3. Select **System Configuration.** Enable **Pass-Through Command** and paste the content from `DeviceGuardian.xml` into the text field. Click **Next.**
+   <img alt="image" style="height:400px" src="zdna-intent-2.png" />
+4. Enter a Device Settings Name and Description, if needed, then click **Next.**
+   <img alt="image" style="height:400px" src="zdna-intent-3.png" />
+5. Review the configuration settings. Click **Apply Now.**
+   <img alt="image" style="height:400px" src="zdna-intent-4.png" />
+6. Select the target device(s) to apply the configuration. Click **Apply.**
+   <img alt="image" style="height:400px" src="zdna-intent-5.png" />
+
+---
+
+## Using Microsoft Intune
+
+Follow these steps to use Microsoft Intune to install Device Guardian from the Google Play Store and apply a policy that enrolls the device with the Device Guardian server.
+
+<i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> **Screen Variations Note:** The screen UI may vary depending on the EMM version in use. Refer to your EMM user guide for additional guidance.
+
+### Part I: Enroll Device
+
+Enroll the device in Microsoft Intune using the standard EMM procedure.
+
+### Part II: Download Config File
+
+Download the required configuration file from the Device Guardian web portal:
+
+1. In the left menu of the Device Guardian web portal, go to **Settings > Device Enrollment.** Click on **Download Kit.**
+   <img alt="image" style="height:400px" src="download-kit.png" />
+2. Download the file and extract its contents. The Managed Configurations .CONFIG file is required for a later step.
+
+### Part III: Create and Apply Policy
+
+Create and apply a policy to install Device Guardian and enroll it in the Device Guardian server:
+
+1. In the Microsoft Intune web console, in **Apps** click **Android.**
+   <img alt="image" style="height:450px" src="intune-1.png" />
+2. Click **Create.**
+   <img alt="image" style="height:450px" src="intune-2.png" />
+3. From the dropdown, select **Managed Google Play app,** then click **Select.**
+   <img alt="image" style="height:450px" src="intune-3.png" />
+4. Search for the Device Guardian app and click on it.
+   <img alt="image" style="height:450px" src="intune-4.png" />
+5. Click **Select,** then click **Sync.**
+   <img alt="image" style="height:450px" src="intune-5.png" />
+6. The Device Guardian app is added to the Play Store. Click on the app in the list.
+   <img alt="image" style="height:450px" src="intune-6.png" />
+7. Click on **Properties** and **Edit** near the Assignments section.
+   <img alt="image" style="height:450px" src="intune-7.png" />
+8. Under the Required section, click **Add group.**
+   <img alt="image" style="height:450px" src="intune-8.png" />
+9. Choose the group to install the app and click **Select.**
+   <img alt="image" style="height:450px" src="intune-9.png" />
+10. Update the priority. Click **Default** under the **Update Priority** column.
+    <img alt="image" style="height:450px" src="intune-10.png" />
+11. For the Update Priority dropdown, select **High Priority.** Click **OK.**
+    <img alt="image" style="height:450px" src="intune-11.png" />
+12. The group is added with the updated priority. Click **Review + save.**
+    <img alt="image" style="height:450px" src="intune-12.jpg" />
+13. Click **Save.**
+    <img alt="image" style="height:450px" src="intune-13.png" />
+14. Create a profile to enroll the device to Device Guardian. From the left menu, click **Apps > Configuration.** Click **Create** and select **Managed devices.**
+    <img alt="image" style="height:450px" src="intune-14.png" />
+15. Enter or select the following, then click **OK.**
+    - **Name:** [Enter a name for the policy]
+    - **Platform:** Android Enterprise
+    - **Profile Type:** Fully Manged, Dedicated, and Corporate-Owned Work Profile Only
+    - **Targeted App:** Device Guardian
+      <img alt="image" style="height:450px" src="intune-15.png" />
+16. Click **Save.**
+    <img alt="image" style="height:450px" src="intune-16.png" />
+17. In the Settings screen, for Configuration settings format select **Use configuration designer.** Click **Next.**
+    <img alt="image" style="height:450px" src="intune-17.png" />
+18. Select all the configuration keys and click **OK.**
+    <img alt="image" style="height:450px" src="intune-18.png" />
+19. For Server Connectivity Settings, copy and paste the content from the Managed Configurations .CONFIG file from step II.2. Click **Next.**
+    <img alt="image" style="height:450px" src="intune-19.png" />
+20. Under Included groups, click **Add groups.**
+    <img alt="image" style="height:450px" src="intune-20.png" />
+21. Choose the group to apply the policy and click **Select.**
+    <img alt="image" style="height:450px" src="intune-21.png" />
+22. Click **Next.**
+    <img alt="image" style="height:450px" src="intune-22.png" />
+23. Review the configuration and click **Create.**
+    <img alt="image" style="height:450px" src="intune-23.png" />
+    Device Guardian is installed and the devices are enrolled to the server.
+
+### Part IV: Send Intent (Android 11 Only)
+
+**For Android 11 devices,** an intent must be sent to start Device Guardian, allowing the configurations to be applied:
+
+1.  In the Microsoft Intune web console, go to **Apps** and select **Android.**
+    <img alt="image" style="height:450px" src="intune-a11-1.png" />
+2.  Click **Create.**
+    <img alt="image" style="height:300px" src="intune-a11-2.png" />
+3.  For App type, select **Managed Google Play app** and click **Select.**
+    <img alt="image" style="height:450px" src="intune-a11-3.png" />
+4.  Search for Zebra OEMConfig app, then click on the app.
+    <img alt="image" style="height:450px" src="intune-a11-4.png" />
+5.  Click **Select,** then click **Sync.**
+    <img alt="image" style="height:450px" src="intune-a11-5.png" />
+6.  The Zebra OEMConfig app is added to the app list. Select the app.
+    <img alt="image" style="height:450px" src="intune-a11-6.png" />
+7.  Click **Properties.**
+    <img alt="image" style="height:450px" src="intune-a11-7.png" />
+8.  By Assignments, click **Edit.**
+    <img alt="image" style="height:450px" src="intune-a11-8.png" />
+9.  Under the Required section, click **Add group.**
+    <img alt="image" style="height:450px" src="intune-a11-9.png" />
+10. Choose the required device group, then click **Select.**
+    <img alt="image" style="height:450px" src="intune-a11-10.png" />
+11. The group is added. To enable automatic app installation, update the priority by setting it to high. Under Update Priority, click **Default.**
+    <img alt="image" style="height:450px" src="intune-a11-11.png" />
+12. For Update Priority, select **High Priority.** Then, click **OK.**
+    <img alt="image" style="height:450px" src="intune-a11-12.png" />
+13. Check that the device group is added to the list, then click **Review and Save.**
+    <img alt="image" style="height:450px" src="intune-a11-13.png" />
+14. Click **Save.** The OEMConfig app gets installed to the assigned device group.
+    <img alt="image" style="height:450px" src="intune-a11-14.png" />
+15. Configure the Device Guardian app to get enrolled to the server. Go to **Devices** and select **Android.**
+    <img alt="image" style="height:450px" src="intune-a11-15.png" />
+16. Under Managed Devices, click **Configuration.** Click **Create > New Policy.**
+    <img alt="image" style="height:400px" src="intune-a11-16.png" />
+17. Select the following and click **Create:** - **Platform:** Android Enterprise - **Profile Type:** OEMConfig
+    <img alt="image" style="height:450px" src="intune-a11-17.png" />
+
+18. Enter a name, click **Select an OEMConfig app** and select **Zebra OEMConfig Powered by MX.** Click **Select.** When the app is added, click **Next.**
+    <img alt="image" style="height:450px" src="intune-a11-18.png" />
+19. In Configuration settings, scroll down and select **System Configuration.**
+    <img alt="image" style="height:450px" src="intune-a11-19.png" />
+20. Copy and paste the following text into the Pass-Through Command field, then click **Next:**
+
+        <wap-provisioningdoc>
+            <characteristic version="9.2" type="Intent">
+                <parm name="Action" value="StartActivity"/>
+                <parm name="ActionName" value="android.intent.action.MAIN"/>
+                <parm name="Type" value="explicit"/>
+                <parm name="Package" value="com.zebra.mdna.dg"/>
+                <parm name="Class" value="com.zebra.mdna.dg.SplashActivity"/>
+            </characteristic>
+        </wap-provisioningdoc>
+
+    <img alt="image" style="height:450px" src="intune-a11-20.png" />
+
+21. Click **Next.**
+    <img alt="image" style="height:450px" src="intune-a11-21.png" />
+22. Under Included groups, click **Add groups** to assign the configurations to the devices.
+    <img alt="image" style="height:450px" src="intune-a11-22.png" />
+23. Choose the device group and click **Select.**
+    <img alt="image" style="height:450px" src="intune-a11-23.png" />
+24. The group is added. Click **Next.**
+    <img alt="image" style="height:450px" src="intune-a11-24.png" />
+25. Review the changes and click **Create.** This launches Device Guardian, allowing the app configurations to be applied.
+    <img alt="image" style="height:450px" src="intune-a11-25.png" />
+
+---
+
+## Using SOTI MobiControl
+
+Choose one of two methods to install Device Guardian and enroll devices to the server using SOTI MobiControl:
+
+- [Google Play Store](#googleplay)
+- [Managed Configurations](#managedconfigurations)
+
+<i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> **Screen Variations Note:** The screen UI may vary depending on the EMM version in use. Refer to your EMM user guide for additional guidance.
+
+---
+
+### Google Play
+
+Follow these steps to use SOTI MobiControl to install Device Guardian from the Google Play Store and apply a policy that enrolls the device with the Device Guardian server.
+
+#### Part I: Enroll Device
+
+Enroll the device in SOTI MobiControl using the standard EMM procedure.
+
+#### Part II: Download Config File
+
+Download the required configuration file from the Device Guardian web portal:
+
+1. In the left menu of the Device Guardian web portal, go to **Settings > Device Enrollment.** Click on **Download Kit.**
+   <img alt="image" style="height:400px" src="download-kit.png" />
+2. Download the file and extract its contents. The Managed Configurations .CONFIG file is required for a later step.
+
+#### Part III: Create and Apply Policy
+
+Create and apply a policy to install Device Guardian and enroll the device in the Device Guardian server:
+
+1. In the SOTI MobiControl web console, go to **Apps > Policies.** Click **New App Policy.**
+   <img alt="image" style="height:450px" src="soti-play-1.png" />
+2. Select **Android Enterprise.**
+   <img alt="image" style="height:350px" src="soti-play-2.png" />
+3. Enter an App Policy Name, then click the **Apps** tab.
+   <img alt="image" style="height:450px" src="soti-play-3.png" />
+4. Click **+.**
+   <img alt="image" style="height:450px" src="soti-play-4.png" />
+5. Select the following, then search for the Device Guardian app.
+   - **App Source:** Managed Google Play
+   - **Select:** Zebra Technologies
+     <img alt="image" style="height:450px" src="soti-play-5.png" />
+6. Click on the Device Guardian app.
+   <img alt="image" style="height:400px" src="soti-play-6.png" />
+7. Click on the options menu and select **Configure.**
+   <img alt="image" style="height:450px" src="soti-play-7.png" />
+8. The application details are populated. Click **Installation Options.**
+   <img alt="image" style="height:450px" src="soti-play-8.png" />
+9. In Installation Options, set the Priority to **High Priority** and enable **Launch App After Installation.** _This step is particularly important for Android 11 devices._ Then, click **Managed App Config.**
+   <img alt="image" style="height:450px" src="soti-play-8.1.png" />
+10. Toggle to **Enable Managed App Config.** Select or enter the required Device Guardian Managed Configurations; for information on these settings, see [Managed Configurations](../setup/#managedconfigurations-3). Ensure the following Server Connectivity settings are configured before clicking **Save:**
+    - **Server Connectivity Settings:** [If prompted to import the configuration from a previous version, click **Cancel.** Then copy and paste the content from the Managed Configurations `.CONFIG` file from step II.2.]
+      <img alt="image" style="height:450px" src="soti-play-9.jpg" />
+11. Select the new policy created.
+    <img alt="image" style="height:400px" src="soti-play-10.png" />
+12. Click on the Assign icon, the second icon from the top menu.
+    <img alt="image" style="height:450px" src="soti-play-11.png" />
+13. Search for the enrolled device, select the device, and click **Assign.** This applies the policy to the device.
+    <img alt="image" style="height:450px" src="soti-play-12.png" />
+
+---
+
+### Managed Configurations
+
+Follow these steps to install Device Guardian via Managed Configurations with SOTI MobiControl and apply a policy that enrolls the device with the Device Guardian server.
+
+#### Part I: Enroll Device
+
+Enroll the device to SOTI MobiControl using the standard EMM procedure. After enrollment is complete, verify that the device has been added to the system.
+
+#### Part II: Download Config File
+
+Download the required configuration file from the Device Guardian web portal:
+
+1. In the left menu of the Device Guardian web portal, go to **Settings > Device Enrollment.** Click on **Download Kit.**
+   <img alt="image" style="height:400px" src="download-kit.png" />
+2. Download the file and extract its contents. The Managed Configurations .CONFIG file is required for a later step.
+
+#### Part III: Create and Apply Policy
+
+Create and apply a Device Guardian Managed Configurations policy, which installs Device Guardian on the device and enrolls it in the Device Guardian server:
+
+1. In the SOTI MobiControl web console, click **Policies.**
+   <img alt="image" style="height:300px" src="soti-setup-1.jpg" />
+2. Click **New App Policy.**
+   <img alt="image" style="height:450px" src="soti-setup-2.png" />
+3. Select **Android** and choose **Android Enterprise.**
+   <img alt="image" style="height:350px" src="soti-setup-3.png" />
+4. Enter a policy name and click on the **Apps** tab.
+   <img alt="image" style="height:450px" src="soti-setup-4.png" />
+5. Click **+.**
+   <img alt="image" style="height:450px" src="soti-setup-5.png" />
+6. For the **App Source** dropdown, select **Enterprise.**
+   <img alt="image" style="height:450px" src="soti-setup-6.png" />
+7. By default, **Import** is selected for the Source. Click **Browse File** and select the Device Guardian .APK file.
+   <img alt="image" style="height:450px" src="soti-setup-7.png" />
+8. After the file is uploaded, click **Configure.**
+   <img alt="image" style="height:450px" src="soti-setup-8.png" />
+9. The App Details are populated. Click **Installation Options.**
+   <img alt="image" style="height:400px" src="soti-setup-9.png" />
+10. Deployment Type is set to **Mandatory** by default. Toggle to enable **Launch App After Installation** and click **Managed App Config.**
+    <img alt="image" style="height:400px" src="soti-setup-10.jpg" />
+11. Toggle on **Enable Managed App Config.**
+    <img alt="image" style="height:400px" src="soti-setup-11.png" />
+12. Tap **Cancel** when prompted to import config to create a new config.
+    <img alt="image" style="height:400px" src="soti-setup-12.jpg" />
+13. For **Server Connectivity Settings,** copy and paste the content from the Managed Configurations .CONFIG file from step II.2. Click **Save.**
+    <img alt="image" style="height:400px" src="soti-setup-13.png" />
+14. Click **Add.**
+    <img alt="image" style="height:450px" src="soti-setup-14.png" />
+15. The policy is created. Click **Save and Assign.**
+    <img alt="image" style="height:450px" src="soti-setup-15.jpg" />
+16. Search for the enrolled device and select it. Click **Assign.**
+    <img alt="image" style="height:475px" src="soti-setup-16.png" />
+17. Navigate to the **Devices** section.
+    <img alt="image" style="height:200px" src="soti-setup-17.jpg" />
+18. Search for the enrolled device and select it.
+    <img alt="image" style="height:200px" src="soti-setup-18.png" />
+19. Click the **Configurations** tab and verify that the policy is assigned, ensuring the device is installed and registered in Device Guardian.
+    <img alt="image" style="height:325px" src="soti-setup-19.png" />
+
+#### Part IV: Send Intents (Android 11 Only)
+
+**For Android 11 devices,** intents must be sent to grant the necessary permissions and start Device Guardian, allowing the configurations to be applied:
+
+1.  Download the <a href="./DeviceGuardian.xml" download>DeviceGuardian.xml</a> file, which will be needed in a later step.
+2.  Create a file named `DG_XML_SOTI.CMD` with the following content and place this file in the same folder as the .XML file:
+
+        mxconfig /sdcard/DeviceGuardian.xml
+
+3.  In the SOTI MobiControl web console, click **Packages** from the left menu.
+    <img alt="image" style="height:400px" src="soti-menu-packages.png" />
+4.  Click **Download Package Studio.**
+    <img alt="image" style="height:200px" src="soti-packages-download.jpg" />
+5.  MobiControl Package Studio `MCStudio.exe` is downloaded. Execute to launch this app.
+    <img alt="image" style="height:400px" src="soti-mcstudio-1.png" />
+6.  Create a new package file for Device Guardian .XML. Click **File > Create New Package File.**
+    <img alt="image" style="height:200px" src="soti-mcstudio-2.png" />
+7.  Enter the following and click **Next**:
+
+    - **Project Name -** [Enter a name for the project]
+    - **Project Location -** [Browse to the folder location to save the project]
+    - **Platform -** Android
+      <img alt="image" style="height:400px" src="soti-mcstudio-3.png" />
+
+8.  Click **Post-Install**, browse to `DG_XML_SOTI.CMD` created in step 2 and click **Next.**
+    <img alt="image" style="height:400px" src="soti-mcstudio-4.png" />
+9.  Click **Add.** Click **Add Files** and browse to add `DeviceGuardian.xml`.
+
+    <table style="margin-left:40px">
+    <tr>
+    <td>
+        <img alt="image" style="height:350px" src="soti-mcstudio-5.jpg"/>
+    </td> 
+    <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+    <td>
+        <img alt="image" style="height:350px" src="soti-mcstudio-6.jpg"/>
+    </td>
+    </tr>
+    </table>
+
+10. Leave the default destination as `%sdcard%/`. Click **OK.**
+    <img alt="image" style="height:200px" src="soti-mcstudio-8.png" />
+11. The file is added. Click **Next,** then click **Finish.**
+    <img alt="image" style="height:400px" src="soti-mcstudio-9.png" />
+12. A popup message appears indicating that the package is created. Click **Build Package Now.**
+    <img alt="image" style="height:150px" src="soti-mcstudio-10.jpg" />
+13. When complete, the output window displays the folder path with the package (.PCG file) is created. Record this folder path.
+    <img alt="image" style="height:400px" src="soti-mcstudio-11.jpg" />
+14. Upload the .PCG file to Soti MobiControl. In the SOTI MobiControl web console, click **Packages** and **Add Package.**
+    <img alt="image" style="height:350px" src="soti-add-package.jpg" />
+15. Click **Import.**
+    <img alt="image" style="height:250px" src="soti-import-pcg.jpg" />
+16. Select **Android.**
+    <img alt="image" style="height:400px" src="soti-import-pcg-2.jpg" />
+17. Browse to the package file (.PCG) folder path from step 13 and click **Upload.**
+    <table style="margin-left:40px">
+    <tr>
+    <td>
+        <img alt="image" style="height:400px" src="soti-import-pcg-3.jpg" />
+    </td> 
+    <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+    <td>
+        <img alt="image" style="height:400px" src="soti-import-pcg-4.jpg" />
+    </td>
+    </tr>
+    </table>
+18. The new created package is listed.
+    <img alt="image" style="height:225px" src="soti-pcg-created.png" />
+19. Create a profile containing this package to deploy to devices. From the left menu, click **Profiles.**
+    <img alt="image" style="height:400px" src="soti-menu-profiles.jpg" />
+20. Click **Add Profiles,** select **Android,** and select **Work Managed.**
+    <img alt="image" style="height:450px" src="soti-add-profile-1.jpg" />
+21. In the General tab, enter the **Profile Name** and then click the **Packages** tab.
+    <img alt="image" style="height:450px" src="soti-add-profile-2.jpg" />
+22. Click **"+"**
+    <img alt="image" style="height:450px" src="soti-add-profile-3.jpg" />
+23. Search for the package just created, select it, and click **Add to Profile.**
+    <img alt="image" style="height:450px" src="soti-add-profile-4.png" />
+24. Click **Save and Assign.**
+    <img alt="image" style="height:400px" src="soti-add-profile-5.png" />
+25. Search for the device(s) to deploy the policy and click **Assign.**
+    <img alt="image" style="height:500px" src="soti-add-profile-6.png" />
+
+---
+
+## Using Workspace ONE UEM
+
+Choose one of two methods to install Device Guardian and enroll devices to the server using Workspace ONE Unified Endpoint Management (UEM), formerly known as AirWatch:
+
+- [Google Play Store](#googleplay-1)
+- [Managed Configurations](#managedconfigurations-1)
+
+<i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> **Screen Variations Note:** The screen UI may vary depending on the EMM version in use. Refer to your EMM user guide for additional guidance.
+
+---
+
+### Google Play
+
+Follow these steps to use Workspace ONE UEM to install Device Guardian from the Google Play Store and apply a policy that enrolls the device with the Device Guardian server.
+
+#### Part I: Enroll Device
+
+Enroll the device in Workspace ONE UEM using the standard EMM procedure. After enrollment is complete, go to **Devices > List View** in the web console to verify that the device is listed.
+
+#### Part II: Download Config File
+
+Download the required configuration file from the Device Guardian web portal:
+
+1. In the left menu of the Device Guardian web portal, go to **Settings > Device Enrollment.** Click on **Download Kit.**
+   <img alt="image" style="height:400px" src="download-kit.png" />
+2. Download the file and extract its contents. The Managed Configurations .CONFIG file is required for a later step.
+
+#### Part III: Create and Apply Policy
+
+Create and apply a policy to install Device Guardian and enroll the device in the Device Guardian server:
+
+1. In the Workspace ONE UEM web console, go to **Resources > Native.** Click **Public,** then **Add Application.**
+   <img alt="image" style="height:450px" src="aw-play-1.png" />
+2. Enter the following, then click **Search App Store.**
+   - **Platform:** Android
+   - **Name:** [Enter a name for the application]
+     <img alt="image" style="height:400px" src="aw-play-2.png" />
+3. Search for Device Guardian app and click on the app.
+   <img alt="image" style="height:400px" src="aw-play-3.png" />
+4. Click **Select.**
+   <img alt="image" style="height:400px" src="aw-play-4.png" />
+5. Click on the app.
+   <img alt="image" style="height:450px" src="aw-play-5.png" />
+6. Click **Edit.**
+   <img alt="image" style="height:450px" src="aw-play-6.png" />
+7. Enter a name and click **Save & Assign.**
+   <img alt="image" style="height:500px" src="aw-play-7.png" />
+8. Click **Add Assignment.**
+   <img alt="image" style="height:500px" src="aw-play-8.png" />
+9. Enter or select the following, then click **Application Configuration**:
+   - **Name:** [Enter an assignment name]
+   - **Assignment Groups:** [Enter group to assign the app]
+   - **App Delivery Method:** Auto
+   - **Auto Update Priority:** High priority
+     <img alt="image" style="height:500px" src="aw-play-9.png" />
+10. Enable **Managed Access** and **Send Configuration.** Select or enter the required Device Guardian Managed Configurations; for information on these settings, see [Managed Configurations](../setup/#managedconfigurations-3). Ensure the following Server Connectivity settings are configured before clicking **Save:**
+    - **Server Connectivity Settings:** [Copy and paste the content from the Managed Configurations `.CONFIG` file from step II.2.]
+      <img alt="image" style="height:450px" src="aw-play-10.jpg" />
+11. Click **Publish.**
+    <img alt="image" style="height:400px" src="aw-play-11.png" />
+12. From the left menu, click **Groups & Settings > Assignment Groups.** Click on the assignment group created.
+    <img alt="image" style="height:400px" src="aw-play-12.png" />
+13. Add the configured device(s) and click **Next.**
+    <img alt="image" style="height:400px" src="aw-play-13.png" />
+14. Check for the assigned app and click **Publish.**
+
+#### Part IV: Send Intent (Android 11 Only)
+
+**For Android 11 devices,** an intent must be sent to start Device Guardian, allowing the configurations to be applied:
+
+1.  In the Workspace ONE UEM web console, go to **Orchestration > File Actions.** Click **Add Files/Actions.**
+    <img alt="image" style="height:450px" src="aw-play-a11-1.png" />
+2.  Select **Android.**
+    <img alt="image" style="height:300px" src="aw-play-a11-2.png" />
+3.  Enter a name for the file/action and click on the **Manifest** tab.
+    <img alt="image" style="height:450px" src="aw-play-a11-3.png" />
+4.  Under Installation Manifest, click **Add Action.**
+    <img alt="image" style="height:450px" src="aw-play-a11-4.png" />
+5.  Enter or select the following, then click **Save.**
+
+    - **Action(s) To Perform:** Run Intent
+    - **Command Line and Arguments to run:** [Copy and paste the text below.]
+
+            mode=explicit,broadcast=false,action=android.intent.action.MAIN,package=com.zebra.mdna.dg,class=com.zebra.mdna.dg.SplashActivity
+
+    - **TimeOut:** [Enter any timeout value.]
+      <img alt="image" style="height:400px" src="aw-play-a11-5.png" />
+
+6.  Click **Save.** The file/action is created.
+    <img alt="image" style="height:450px" src="aw-play-a11-6.png" />
+7.  Create a product using the file/action just created. Go to **Orchestration > Products** and click **Add Product.**
+    <img alt="image" style="height:500px" src="aw-play-a11-7.png" />
+8.  Select **Android.**
+    <img alt="image" style="height:300px" src="aw-play-a11-8.png" />
+9.  Enter a name, assign a Smart Group, and click on the **Manifest** tab.
+    <img alt="image" style="height:450px" src="aw-play-a11-9.png" />
+10. Click **Add.**
+    <img alt="image" style="height:450px" src="aw-play-a11-10.png" />
+11. Select the following and click **Save.**
+    - **Action(s) To Perform:** File/Action - Install
+    - **Files/Actions:** [Select the File/Action created from step 6.]
+      <img alt="image" style="height:450px" src="aw-play-a11-11.png" />
+12. Click **Activate.**
+    <img alt="image" style="height:450px" src="aw-play-a11-12.png" />
+13. The assigned devices are listed. Click **Activate.** This sends the intent, launching Device Guardian on the devices for the configurations to be applied.
+    <img alt="image" style="height:450px" src="aw-play-a11-13.png" />
+
+---
+
+### Managed Configurations
+
+Follow these steps to install Device Guardian via Managed Configurations with Workspace ONE Unified Endpoint Management (UEM) and apply a policy that enrolls the device with the Device Guardian server.
+
+#### Part I: Enroll Device
+
+Enroll the device in Workspace ONE UEM using the standard EMM procedure. After enrollment is complete, go to **Devices > List View** in the web console to verify that the device is listed.
+<img alt="image" style="height:400px" src="aw-setup-8.jpg" />
+
+#### Part II: Download Config File
+
+Download the required configuration file from the Device Guardian web portal:
+
+1. In the left menu of the Device Guardian web portal, go to **Settings > Device Enrollment.** Click on **Download Kit.**
+   <img alt="image" style="height:400px" src="download-kit.png" />
+2. Download the file and extract its contents. The Managed Configurations .CONFIG file is required for a later step.
+
+#### Part III: Create and Apply Policy
+
+Create and apply a Device Guardian Managed Configurations policy, which installs Device Guardian on the device and enrolls it in the Device Guardian server:
+
+1. In the Workspace ONE UEM web console, go to **Resources > Native.** Click **Internal,** then **Add,** and select **Application File.**
+   <img alt="image" style="height:450px" src="aw-setup-9.png" />
+2. Click **Upload.**
+   <img alt="image" style="height:400px" src="aw-setup-10.png" />
+3. Click **Choose File.** Select the Device Guardian .APK file to upload, then click **Save.**
+   <img alt="image" style="height:400px" src="aw-setup-11.png" />
+4. The **Application File** is populated with the file name. Click **Continue.**
+   <img alt="image" style="height:450px" src="aw-setup-12.png" />
+5. Enter the application name and version. Click **Save and Assign.**
+   <img alt="image" style="height:500px" src="aw-setup-13.png" />
+6. In the Assignment screen, enter the information prompted. From the left menu, click **Restrictions.**
+   <img alt="image" style="height:400px" src="aw-setup-14.png" />
+7. Enable **Managed Access.** From the left menu, click **Application Configuration.**
+   <img alt="image" style="height:450px" src="aw-setup-15.jpg" />
+8. Enable **Send Configuration.** For **Server Connectivity Settings,** copy and paste the content from the Managed Configurations .CONFIG file from step II.2. Select the target device(s). Click **Save.**
+   <img alt="image" style="height:450px" src="aw-setup-16.png" />
+9. Preview the assigned device group and click **Publish.**
+   <img alt="image" style="height:400px" src="aw-setup-17.png" />
+10. Navigate to **Groups & Settings > Assignment Groups.** Select the group to apply the policy.
+    <img alt="image" style="height:400px" src="aw-setup-18.jpg" />
+11. Select the device(s) to configure, then click **Next.**
+    <img alt="image" style="height:450px" src="aw-setup-19.png" />
+12. Verify the assigned applications and click **Publish.** The policy is applied to the device.
+    <img alt="image" style="height:400px" src="aw-setup-20.png" />
+
+#### Part IV: Send Intents (Android 11 Only)
+
+**For Android 11 devices,** follow these steps to send intents that grant the necessary permissions and start Device Guardian:
+
+1. Download the <a href="./DeviceGuardian.xml" download>DeviceGuardian.xml</a> file, which will be needed in a later step.
+2. In the Workspace ONE UEM web console, go to **Orchestration > File Actions.** Click **Add Files/Actions.**
+   <img alt="image" style="height:450px" src="aw-intent-1.png" />
+3. Select **Android.**
+   <img alt="image" style="height:300px" src="aw-intent-2.png" />
+4. Enter a name for the File/Action and click the **Files** tab.
+   <img alt="image" style="height:400px" src="aw-intent-3.png" />
+5. Click **Add Files.**
+   <img alt="image" style="height:400px" src="aw-intent-4.png" />
+6. Choose the `DeviceGuardian.xml` downloaded from step 1 and click **Save.**
+   <img alt="image" style="height:250px" src="aw-intent-5.png" />
+7. Enter `/sdcard` for the Download Path, and enter the version if needed. Click **Save.**
+   <img alt="image" style="height:450px" src="aw-intent-6.png" />
+8. The file is added. Click the **Manifest** tab.
+   <img alt="image" style="height:400px" src="aw-intent-7.png" />
+9. Under Installation Manifest, click **Add Action.**
+   <img alt="image" style="height:400px" src="aw-intent-8.png" />
+10. Select the following, then click **Save.**
+    - **Action(s) To Perform:** Apply Custom Settings
+    - **File:** DeviceGuardiana.xml
+      <img alt="image" style="height:350px" src="aw-intent-9.png" />
+11. The manifest is added. Click **Save.**
+    <img alt="image" style="height:400px" src="aw-intent-10.png" />
+12. The File/Action is created. Next, apply it to the device(s). Go to **Orchestration > Product.** Click **Add Product.**
+    <img alt="image" style="height:450px" src="aw-intent-11.png" />
+13. Select **Android.**
+    <img alt="image" style="height:350px" src="aw-intent-12.png" />
+14. Enter a name and assign it to the appropriate Smart Groups. Click the **Manifest** tab.
+    <img alt="image" style="height:400px" src="aw-intent-13.png" />
+15. Click **Add.**
+    <img alt="image" style="height:400px" src="aw-intent-14.png" />
+16. Select the following options and click **Save:**
+    - **Action(s) To Perform:** Application - Install
+    - **Application:** Device Guardian
+      <img alt="image" style="height:350px" src="aw-intent-15.png" />
+17. The application is added to the manifest. Click **Add** again to include the XML file.
+    <img alt="image" style="height:400px" src="aw-intent-16.png" />
+18. Enter the following, then click **Save:**
+    - **Action(s) To Perform:** File/Action - Install
+    - **Application:** [Nme of XML file added]
+      <img alt="image" style="height:350px" src="aw-intent-17.png" />
+19. Click **Save.**
+    <img alt="image" style="height:450px" src="aw-intent-18.png" />
+20. Click **Activate.** The policy is applied to the selected device(s).
+    <img alt="image" style="height:400px" src="aw-intent-19.png" />
+
+---
+
+## Using 42Gears SureMDM
+
+Choose one of two methods to install Device Guardian and enroll devices to the server using 42Gears SureMDM:
+
+- [Google Play Store](#googleplay-2)
+- [Managed Configurations](#managedconfigurations-2)
+
+<i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> **Screen Variations Note:** The screen UI may vary depending on the EMM version in use. Refer to your EMM user guide for additional guidance.
+
+---
+
+### Google Play
+
+Follow these steps to use 42Gears SureMDM to install Device Guardian from the Google Play Store and apply a policy that enrolls the device with the Device Guardian server.
+
+#### Part I: Enroll Device
+
+Enroll the device in 42Gears SureMDM using the standard EMM procedure.
+
+#### Part II: Download Config File
+
+Download the required configuration file from the Device Guardian web portal:
+
+1. In the left menu of the Device Guardian web portal, go to **Settings > Device Enrollment.** Click on **Download Kit.**
+   <img alt="image" style="height:400px" src="download-kit.png" />
+2. Download the file and extract its contents. The Managed Configurations .CONFIG file is required for a later step.
+
+#### Part III: Create and Apply Policy
+
+Create and apply a policy to install Device Guardian and enroll the device in the Device Guardian server:
+
+1. In the 42Gears SureMDM web console, click on **Profiles > Application Policy** and click **Add.**
+   <img alt="image" style="height:450px" src="42gears-play-1.png" />
+2. For the Application Source, select **Play For Work**.
+   <img alt="image" style="height:350px" src="42gears-play-2.png" />
+3. Search for Device Guardian and click on the app.
+   <img alt="image" style="height:400px" src="42gears-play-3.png" />
+4. Click **Select.**
+   <img alt="image" style="height:400px" src="42gears-play-4.png" />
+5. Enter the following, then click **Save:**
+   - **Configuration Name:** [Enter a name]
+   - **Server Connectivity Settings:** [Copy and paste the content from the Managed Configurations .CONFIG file from step II.2.]
+   - **Kiosk Mode:** [Toggle to enable if the device is a kiosk]
+     <img alt="image" style="height:450px" src="42gears-play-5.png" />
+6. Enter or select the following for the application policy, then click **Next.**
+   - **Install Silently:** [Toggle to enable]
+   - **Allow in Kiosk Mode:** [Toggle to enable if the device is a kiosk]
+   - **App Update Mode:** High Priority Mode
+     <img alt="image" style="height:450px" src="42gears-play-6.png" />
+7. Grant all permissions, then click **Finish.**
+   <img alt="image" style="height:450px" src="42gears-play-7.png" />
+8. Enter a profile name and click **Save.**
+   <img alt="image" style="height:450px" src="42gears-play-8.png" />
+9. From the options menu click **Assign Profile to Group.**
+   <img alt="image" style="height:450px" src="42gears-play-9.png" />
+10. Select the device group(s) to apply the profile. Click **OK.**
+    <img alt="image" style="height:450px" src="42gears-play-10.png" />
+
+### Managed Configurations
+
+Follow these steps to install Device Guardian via Managed Configurations with 42Gears SureMDM and apply a policy that enrolls the device with the Device Guardian server.
+
+#### Part I: Enroll Device
+
+Enroll the device in 42Gears SureMDM using the standard EMM procedure. After enrollment is complete, verify that the device has been added to the system.
+
+#### Part II: Download Config File
+
+Download the required configuration file from the Device Guardian web portal:
+
+1. In the left menu of the Device Guardian web portal, go to **Settings > Device Enrollment.** Click on **Download Kit.**
+   <img alt="image" style="height:400px" src="download-kit.png" />
+2. Download the file and extract its contents. The Managed Configurations .CONFIG file is required for a later step.
+
+#### Part III: Create and Apply Policy
+
+Create and apply a Device Guardian Managed Configurations policy, which installs Device Guardian on the device and enrolls it in the Device Guardian server:
+
+1. In the 42Gears SureMDM web console, go to the Android App Store and click **Add New App.**
+   <img alt="image" style="height:450px" src="42gears-setup-1.png" />
+2. Select **Upload Apk.**
+   <img alt="image" style="height:300px" src="42gears-setup-2.png" />
+3. Upload the Device Guardian .APK.
+   <img alt="image" style="height:250px" src="42gears-setup-3.png" />
+4. Enter the required information. Click **Add.**
+   <img alt="image" style="height:400px" src="42gears-setup-4.png" />
+5. Create the application policy. Click **Profiles** and **Add.**
+   <img alt="image" style="height:450px" src="42gears-setup-5.png" />
+6. Select **Primary Profile** for the Profile Type.
+   <img alt="image" style="height:250px" src="42gears-setup-6.png" />
+7. Click **Configure.**
+   <img alt="image" style="height:450px" src="42gears-setup-7.png" />
+8. Click **Add.**
+   <img alt="image" style="height:450px" src="42gears-setup-8.png" />
+9. Select **SureMDM App Store.**
+   <img alt="image" style="height:300px" src="42gears-setup-9.png" />
+10. From the dropdown, select the Device Guardian app uploaded. Click **Next.**
+    <img alt="image" style="height:400px" src="42gears-setup-10.png" />
+11. Select or enter the required Device Guardian Managed Configurations; for information on these settings, see [Managed Configurations](../setup/#managedconfigurations-3). Ensure the following Server Connectivity settings are configured before clicking **Done:**
+    - **Server Connectivity Settings:** [Copy and paste the content from the Managed Configurations `.CONFIG` file from step II.2.]
+      <img alt="image" style="height:450px" src="42gears-setup-11.jpg" />
+12. Select any desired options, then click **Add.**
+    <img alt="image" style="height:350px" src="42gears-setup-12.png" />
+13. Select the app policy created, enter a profile name and click **Save.**
+    <img alt="image" style="height:450px" src="42gears-setup-13.png" />
+14. From the top-right hamburger menu, select **Assign Profile to Group.**
+    <img alt="image" style="height:450px" src="42gears-setup-14.png" />
+15. Select the group and click **OK.** The policy is applied to the device.
+    <img alt="image" style="height:450px" src="42gears-setup-15.png" />
+
+<!--
+#### Part IV: Send Intents (Android 11 Only)
+
+**For Android 11 devices,** follow these steps to send intents that grant the necessary permissions and start Device Guardian:
+
+1. Download the <a href="./DeviceGuardian.xml" download>DeviceGuardian.xml</a> file, which will be needed in a later step.
+2. In the 42Gears SureMDM web console, click **Profiles** from the top menu, select **Application Policy,** then click **Add.**
+   <img alt="image" style="height:450px" src="42gears-intent-1.png" />
+3. Select **SureMDM App Store.**
+   <img alt="image" style="height:450px" src="42gears-intent-2.png" />
+4. Enter the following, then click **Next.**
+
+   - **App Name:** OEMConfig
+   - **App Version:** [Select the appropriate version]
+   - **Install Silently:** [Enable this option]
+     <img alt="image" style="height:350px" src="42gears-intent-3.png" />
+
+5. Configure the settings as needed. Expand **System Configuration** and paste the content from `DeviceGuardian.xml` (downloaded from step 1) into the **Pass-Through Command** field. Click **Done.**
+   <img alt="image" style="height:450px" src="42gears-intent-4.png" />
+6. Click **Add.**
+   <img alt="image" style="height:350px" src="42gears-intent-5.png" />
+7. Click **Save** to complete the profile creation.
+   <img alt="image" style="height:400px" src="42gears-intent-6.png" />
+8. Select the newly created profile, then select **Assign Profile to Group** from the options menu.
+   <img alt="image" style="height:300px" src="42gears-intent-7.png" />
+9. Select the appropriate device group(s) and click **OK** to apply the profile to the selected device(s).
+   <img alt="image" style="height:450px" src="42gears-intent-8.png" />
+-->
+
+---
+
+## Managed Configurations
+
+**Managed configurations are standardized feature developed by Google and the Android community,** enabling remote configuration of applications and devices through an Enterprise Mobility Management (EMM) system, such as [Zebra DNA Cloud](/zebradna), that supports this specification.
+
+**App features that can be managed using Managed Configurations are defined in the its _schema_**. For Device Guardian, the schema becomes available once the APK is uploaded to the EMM, either as an Enterprise app or through its app store. The schema defines the app's configurable features and provides the necessary information to present the app's management interface in the EMM console. This data-driven interface allows new features and their corresponding UI attributes to be delivered as soon as they become available. The interface may vary slightly depending on the EMM system in use.
+
+This section discusses the Managed Confgurations available for Device Guardian, as seen in your supported EMM, and serves as an extension to the [Installation](../setup) procedure for your specific EMM.
+
+**Managed Configuration Options:**
+
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+<table class="table table-striped">
+<tr>
+<th>Name</th>
+<th>Description</th>
+<th>Value(s)</th>
+</tr>
+
+<tr>
+<td>Server Connectivity Settings</td>
+<td>Enter the server configuration data.</td>
+<td>[Copy and paste the content from the Managed Configurations .CONFIG file available in the Device Enrollment <a href="../config/#deviceenrollment">Download Kit</a>]</td>
+</tr>
+
+<tr>
+<td>Kiosk Mode</td>
+<td>Enable or disable kiosk mode. Enable this option if the device is a kiosk.</td>
+<td>Enable<br />Disable</td>
+</tr>
+
+<tr>
+<td>Enable Logging</td>
+<td>Enable or disable logging feature. Log messages are directed to Android Debug Bridge (adb).</td>
+<td>Enable<br />Disable</td>
+</tr>
+
+<tr>
+<td>KioskName</td>
+<td>If the device is configured as a kiosk, assign a name for identification purposes.</td>
+<td>[Enter string]</td>
+</tr>
+
+<tr>
+<td>BT Range Tuning</td>
+<td>Adjust the Received Signal Strength Indicator (RSSI) threshold to control the Bluetooth range between a device and the kiosk. This enables devices to automatically log out when placed in a powered cradle within the kiosk's range and triggers an alarm if the device is moved out of range while the user is still logged in. Default value: 75. <br />&nbsp;&nbsp;&nbsp; • <b>Prerequisite:</b> The <b>Bluetooth Proximity</b> setting must be enabled during <a href="../config/#createsite">site creation</a>.<br />&nbsp;&nbsp;&nbsp; • <b>Adjustment Options:</b> Increasing this value extends the Bluetooth detection range from the kiosk. Decreasing the value reduces the range, limiting the detection radius. <br /><br /><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <b>Caution:</b> Various factors can affect beacon signal strength, such as environmental conditions and device placement. <i>It is <u>essential</u> to manually fine-tune this setting to align with your specific environment and meet your business requirements.</i></td>
+<td>[Integer value]</td>
+</tr>
+
+</tbody>
+</table>
+
+---
+
+## Prevent Play Store Updates
+
+By default, Device Guardian, along with other Google Play apps, is set to update automatically. However, administrators managing Android devices may prefer to prevent Device Guardian from updating automatically via the Google Play Store. To manage updates, follow one of these options:
+
+- **Disable Automatic Updates -** Submit the <a href="./Disable_AutoUpgrade_DG.xml" download>Disable_AutoUpgrade_DG.xml</a> through your EMM platform.
+- **Enable Automatic Updates -** Submit the <a href="./Enable_AutoUpgrade_DG.xml" download>Enable_AutoUpgrade_DG.xml</a> through your EMM platform.
+
+For alternative methods, refer to the blog post [Preventing Play Store Apps from Updating Automatically](https://developer.zebra.com/blog/preventing-play-store-apps-updating-automatically).
+
+---
+
+## Uninstallation
+
+To uninstall Device Guardian from the device, remove the Device Guardian client app manually or through an EMM.
+
+### Server Termination
+
+To terminate the Device Guardian cloud server, contact [Zebra services](https://www.zebra.com/us/en/services.html). This removes the cloud server instance and deletes all data stored.
+
+---
+
+## See Also
+
+- [About Device Guardian + Access Management](../about/)
+- [Quick Start](../getstarted/)
+- [Configuration](../config)
+- [Device Use](../use)
+- [Dashboard](../dashboard)
+- [APIs](../api/)
+- [Secondary BLE](../secondaryble)
+- [Licensing](../license)
+- [FAQ](../faq)
