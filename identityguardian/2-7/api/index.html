@@ -447,57 +447,119 @@
 
 <hr>
 
-<h2 id="registerfornotifications" class="anchor"><a class="heading-anchor" href="#registerfornotifications"><span></span></a>Register for Notifications</h2>
+<h2 id="getcurrentlockscreenstate" class="anchor"><a class="heading-anchor" href="#getcurrentlockscreenstate"><span></span></a>Get Current Lock Screen State</h2>
 
-<p><strong>Description:</strong> Register to receive notifications about the locked/unlocked status of Identity Guardian during user sign in/out events. This API should be registered in the <code>onCreate()</code> method and unregistered in the <code>onDestroy()</code> method.</p>
+<p>(Previously known as <em>Register for Notifications.</em>)</p>
+
+<p><strong>Description:</strong> Provides a reliable mechanism for Line of Business (LOB) applications to query the real-time status of the Identity Guardian (IG) lock screen. Applications can query on-demand and register a <code>ContentObserver</code> to receive push notifications whenever the lock screen state changes. </p>
+
+<p>The primary use case is to allow applications to adapt their behavior based on the device's security state, ensuring that sensitive functions are only accessible when the device is securely unlocked. </p>
+
+<p>This API should be registered in the <code>onCreate()</code> method and unregistered in the <code>onDestroy()</code> method. </p>
 
 <p><strong>Content URI:</strong> &nbsp;&nbsp;<span style="font-family:'Courier New'">content://com.zebra.mdna.els.provider/lockscreenstatus/state</span></p>
 
-<p><strong>Response:</strong> Returns a JSON string indicating the device's lock status:</p>
+<p><strong>Response:</strong> Returns one of the following states from the JSON response:</p>
 
-<ul>
-<li><strong>HIDDEN -</strong> The device is unlocked; a user or guest is logged in.</li>
+<table class="facelift" style="width:100%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>State</th>
+    <th>Description</th>
+    <th>Common Triggers</th>
+  </tr>
 
-<li><strong>SHOWN -</strong> The device is locked; no user is logged in.</li>
-</ul>
+  <tr>
+       <td>SHOWN</td>
+    <td>The Identity Guardian lock screen is active and visible, blocking user access to the device. </td>
+    <td>• User manually or is forced to log out.<br>• A device lock event occurs.<br>• Docking/undocking the device on the cradle connected via <a href="/zwc">Workstation Connect</a>.</td>
+  </tr>
+
+  <tr>
+       <td>HIDDEN</td>
+    <td>The Identity Guardian lock screen is not visible. </td>
+    <td>User successfully logs in.</td>
+  </tr>
+  <tr>
+       <td>ERROR</td>
+    <td>The API cannot determine a valid status because Identity Guardian is in a non-applicable mode. The JSON response includes a message explaining the cause.
+    </td>
+    <td>• The device does not have a valid Identity Guardian license.<br>• The <a href="../mc/#usagemode">Application Mode</a> in Managed Configuration is <i>not</i> one of the following:<br>&nbsp;&nbsp;&nbsp;• PERSONALLY ASSIGNED<br>&nbsp;&nbsp;&nbsp;• AUTHENTICATION<br>&nbsp;&nbsp;&nbsp;•  PROXY with "Imprivata" as the "Preferred Authentication App"</td>
+  </tr>
+
+</tbody></table>
 
 <h4 id="samplecode" class="anchor"><a class="heading-anchor" href="#samplecode"><span></span></a>Sample Code</h4>
 
-<pre class="prettyprint"><code>    Uri URI_CURRENT_LOCKSCREEN_STATE = Uri.parse("content://com.zebra.mdna.els.provider/lockscreenstatus/state");
-    cr.registerContentObserver(URI_CURRENT_LOCKSCREEN_STATE, false, contentObserverLockScreenState);
-    contentObserverLockScreenState = new ContentObserver(new Handler(getMainLooper())) {
+<p>To register for lock screen state changes (SHOWN, HIDDEN, or ERROR):</p>
 
-        @Override
-        public void onChange(boolean selfChange, Uri uri) {
-            super.onChange(selfChange, uri);
-            Log.d(TAG, "content has changed, uri = " + uri);
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    getCurrentLockScreenStateOfDevice();
-                }
-            }).start();
+<pre class="prettyprint"><code>    // The ContentObserver mechanism is standard. Register an observer for the URI. 
+    Uri URI_CURRENT_LOCKSCREEN_STATE = Uri.parse("content://com.zebra.mdna.els.provider/lockscreenstatus/state"); 
 
-        }
-    };
+    getContentResolver().registerContentObserver(MainActivity.URI_CURRENT_LOCKSCREEN_STATE, true, lockScreenStateContentObserver); 
+
+    private ContentObserver lockScreenStateContentObserver = new ContentObserver(mainHandler) { 
+
+        @Override 
+        public void onChange(boolean selfChange, @Nullable Uri uri) { 
+            super.onChange(selfChange, uri); 
+            Log.d(TAG, "lockScreenStateContentObserver onChange: "+uri+" and selfChange: "+selfChange); 
+            getCurrentLockScreenState(); 
+        } 
+    }; 
+</code></pre>
+
+<p><i class="fa fa-check-circle" style="color:rgb(82, 216, 139);"></i> <strong>Best Practice:</strong> The LOB app should register for the Identity Guardian content provider after installation. For resiliency, Zebra recommends adding a 5-second wait after registration before querying the initial state.</p>
+
+<p>To get the current lock screen state:</p>
+
+<pre class="prettyprint"><code>    private void getCurrentLockScreenState(){ 
+
+        new Thread(() -&gt; { 
+            Log.i(TAG, "getCurrentLockScreenState: starts"); 
+            try { 
+                Bundle call = getContentResolver().call("com.zebra.mdna.els.provider", "lockscreenstatus/state","", null); 
+
+                if (call != null) { 
+                    String json = call.getString("RESULT"); 
+                    JSONObject jsonObject = new JSONObject(json); 
+                    String lockScreenState = jsonObject.getString("state"); 
+                    Log.i(TAG, "getCurrentLockScreenState: lockScreenState = " + lockScreenState); 
+
+                    //sendNotification(lockScreenState, false); 
+                } 
+
+                else { 
+                    Log.e(TAG, "getCurrentLockScreenState: call returned null"); 
+                } 
+            }
+
+            catch (Exception e){ 
+                Log.e(TAG, "getCurrentLockScreenState exception: "+e.getMessage() ); 
+            } 
+
+            Log.i(TAG, "getCurrentLockScreenState: ends"); 
+        }).start(); 
+    } 
 </code></pre>
 
 <h4 id="sampleresponse" class="anchor"><a class="heading-anchor" href="#sampleresponse"><span></span></a>Sample Response</h4>
 
-<p>Device is unlocked; user or guest is logged in:</p>
+<p>Sample responses are returned in JSON format.</p>
 
-<pre class="prettyprint"><code>    {
-        "state": "HIDDEN",
-        "lastchangedtimestamp": "MM:DD:YY HH:MM:SS"
-    }
+<p>Success State (SHOWN):</p>
+
+<pre class="prettyprint"><code>    { 
+        "state":"SHOWN", 
+        "message":"IG user is not logged into the device" 
+    } 
 </code></pre>
 
-<p>Device is locked; user is logged out:</p>
+<p>Error State (ERROR):</p>
 
-<pre class="prettyprint"><code>    {
-        state: “SHOWN”,
-        lastchangedtimestamp:”MM:DD:YY HH:MM:SS”
-    }
+<pre class="prettyprint"><code>    { 
+        "state":"ERROR",  
+        "message":"IG is not configured" 
+    } 
 </code></pre>
 
 <hr>
