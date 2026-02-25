@@ -455,7 +455,27 @@
 
 <p>The primary use case is to allow applications to adapt their behavior based on the device's security state, ensuring that sensitive functions are only accessible when the device is securely unlocked. </p>
 
-<p>This API should be registered in the <code>onCreate()</code> method and unregistered in the <code>onDestroy()</code> method. </p>
+<p>This API is only applicable when the <a href="../mc/#usagemode">Application Mode</a> in Managed Configuration is set to one of the following:</p>
+
+<ul>
+<li>PERSONALLY ASSIGNED</li>
+
+<li>AUTHENTICATION</li>
+
+<li>PROXY (with "Imprivata" as the "Preferred Authentication App")</li>
+</ul>
+
+<p>If the Application Mode is not one of these, the API will return an ERROR or HIDDEN state.</p>
+
+<p><strong>Best Practices:</strong> </p>
+
+<ul>
+<li><strong>Lifecycle Management:</strong> This API should be registered in the <code>onCreate()</code> method and unregistered in the <code>onDestroy()</code> method. </li>
+
+<li><strong>Resiliency:</strong> The LOB app should register for the Identity Guardian content provider after installation. Following registration, Zebra recommends a 5-second delay before the initial state is queried.</li>
+
+<li><strong>Immediate Notifications:</strong> To receive notifications immediately, the LOB app must register to the content provider in the foreground service. </li>
+</ul>
 
 <p><strong>Content URI:</strong> &nbsp;&nbsp;<span style="font-family:'Courier New'">content://com.zebra.mdna.els.provider/lockscreenstatus/state</span></p>
 
@@ -477,13 +497,13 @@
   <tr>
        <td>HIDDEN</td>
     <td>The Identity Guardian lock screen is not visible. </td>
-    <td>User successfully logs in.</td>
+    <td>• User successfully logs in.<br>• The <a href="../mc/#usagemode">Application Mode</a> in Managed Configuration is PROXY with "Imprivata" as the "Preferred Authentication App," but the Imprivata app is not installed.</td>
   </tr>
   <tr>
        <td>ERROR</td>
     <td>The API cannot determine a valid status because Identity Guardian is in a non-applicable mode. The JSON response includes a message explaining the cause.
     </td>
-    <td>• The device does not have a valid Identity Guardian license.<br>• The <a href="../mc/#usagemode">Application Mode</a> in Managed Configuration is <i>not</i> one of the following:<br>&nbsp;&nbsp;&nbsp;• PERSONALLY ASSIGNED<br>&nbsp;&nbsp;&nbsp;• AUTHENTICATION<br>&nbsp;&nbsp;&nbsp;•  PROXY with "Imprivata" as the "Preferred Authentication App"</td>
+    <td>• The device does not have a valid Identity Guardian license.<br>• The <a href="../mc/#usagemode">Application Mode</a> in Managed Configuration is one of the following:<br>&nbsp;&nbsp;&nbsp;• ENROLLMENT<br>&nbsp;&nbsp;&nbsp;• Not set (empty, no value)<br>&nbsp;&nbsp;&nbsp;• PROXY with "Identity Guardian" as the "Preferred Authentication App"</td>
   </tr>
 
 </tbody></table>
@@ -495,50 +515,42 @@
 <pre class="prettyprint"><code>    // The ContentObserver mechanism is standard. Register an observer for the URI. 
     Uri URI_CURRENT_LOCKSCREEN_STATE = Uri.parse("content://com.zebra.mdna.els.provider/lockscreenstatus/state"); 
 
-    getContentResolver().registerContentObserver(MainActivity.URI_CURRENT_LOCKSCREEN_STATE, true, lockScreenStateContentObserver); 
+    getContentResolver().registerContentObserver(URI_CURRENT_LOCKSCREEN_STATE, true, lockScreenStateContentObserver); 
 
     private ContentObserver lockScreenStateContentObserver = new ContentObserver(mainHandler) { 
-
         @Override 
         public void onChange(boolean selfChange, @Nullable Uri uri) { 
             super.onChange(selfChange, uri); 
-            Log.d(TAG, "lockScreenStateContentObserver onChange: "+uri+" and selfChange: "+selfChange); 
             getCurrentLockScreenState(); 
         } 
     }; 
 </code></pre>
 
-<p><i class="fa fa-check-circle" style="color:rgb(82, 216, 139);"></i> <strong>Best Practice:</strong> The LOB app should register for the Identity Guardian content provider after installation. For resiliency, Zebra recommends adding a 5-second wait after registration before querying the initial state.</p>
-
 <p>To get the current lock screen state:</p>
 
-<pre class="prettyprint"><code>    private void getCurrentLockScreenState(){ 
+<p><strong>Note:</strong> Zebra recommends to call the <code>getCurrentLockScreenState()</code> in a worker thread to query the state without blocking the main thread. </p>
 
-        new Thread(() -&gt; { 
-            Log.i(TAG, "getCurrentLockScreenState: starts"); 
-            try { 
-                Bundle call = getContentResolver().call("com.zebra.mdna.els.provider", "lockscreenstatus/state","", null); 
+<pre class="prettyprint"><code>    private static String AUTHORITY = "com.zebra.mdna.els.provider"; 
+    private static String METHOD = "lockscreenstatus/state"; 
 
-                if (call != null) { 
-                    String json = call.getString("RESULT"); 
-                    JSONObject jsonObject = new JSONObject(json); 
-                    String lockScreenState = jsonObject.getString("state"); 
-                    Log.i(TAG, "getCurrentLockScreenState: lockScreenState = " + lockScreenState); 
+    private void getCurrentLockScreenState(){ 
 
-                    //sendNotification(lockScreenState, false); 
-                } 
+        try { 
+            Bundle call = getContentResolver().call(AUTHORITY, METHOD,"", null); 
 
-                else { 
-                    Log.e(TAG, "getCurrentLockScreenState: call returned null"); 
-                } 
-            }
-
-            catch (Exception e){ 
-                Log.e(TAG, "getCurrentLockScreenState exception: "+e.getMessage() ); 
+            if (call != null) { 
+                String json = call.getString("RESULT"); 
+                JSONObject jsonObject = new JSONObject(json); 
+                String lockScreenState = jsonObject.getString("state"); 
+                String message = jsonObject.getString("message"); 
             } 
-
-            Log.i(TAG, "getCurrentLockScreenState: ends"); 
-        }).start(); 
+            else { 
+                // Handle the case where the call returns null 
+            } 
+        }
+        catch (Exception e){ 
+            // Handle exceptions appropriately 
+        } 
     } 
 </code></pre>
 
