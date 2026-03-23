@@ -362,6 +362,8 @@ With the [Shelf and Product Localizer](../localizer/), products within an image 
 
 <li><strong>Product Recognition (Optional) -</strong> When enabled, recognizes products (SKUs) by extracting features and matching them against a product database or index. </li>
 
+<li><strong>Barcode Recognition (Optional) -</strong> When enabled, detects and decodes barcodes present on shelf labels.</li>
+
 <li><strong>Configurable Pipeline -</strong> Supports localization-only mode for shelves, labels and products or full recognition mode, if the following APIs are called: enableProductRecognitionWithIndex, enableProductRecognitionWithDb.</li>
 </ul>
 
@@ -369,7 +371,7 @@ With the [Shelf and Product Localizer](../localizer/), products within an image 
 
 <h3 id="developerguide" class="anchor"><a class="heading-anchor" href="#developerguide"><span></span></a>Developer Guide</h3>
 
-<p>This guide demonstrates how to detect shelves, labels, products, and optionally recognize products (SKUs) using the unified ModuleRecognizer pipeline. </p>
+<p>This guide demonstrates how to detect shelves, labels, products, and optionally recognize products (SKUs) and decode barcodes on shelf labels using the unified ModuleRecognizer pipeline. </p>
 
 <h4 id="step1initialization" class="anchor"><a class="heading-anchor" href="#step1initialization"><span></span></a>Step 1: Initialization</h4>
 
@@ -437,7 +439,14 @@ The thenAccept() method allows handling of the instantiated ModuleRecogniz
 <h4 id="step2detectandrecognizeentities" class="anchor"><a class="heading-anchor" href="#step2detectandrecognizeentities"><span></span></a>Step 2: Detect and Recognize Entities</h4>
 
 <ol>
-<li><strong>Detection and Recognition:</strong> Call <code>process(imageData, executor)</code> to detect shelves, labels, and products in the image. If product recognition is enabled, the returned products will include top-K SKU predictions. </li>
+<li><strong>Detection and Recognition:</strong> Call <code>process(imageData, executor)</code> to detect shelves, labels, and products in the image. 
+
+
+<ul>
+<li>If product recognition is enabled, the returned products will include top-K SKU predictions. </li>
+
+<li>If barcode recognition is enabled, the returned products will also include the list of barcode entities on shelf labels.</li></ul>
+</li>
 
 <li><strong>Asynchronous Processing:</strong> Use the <code>thenAccept</code> method of <code>CompletableFuture</code> to handle the result once entity detection and recognition is complete. This allows processing without blocking the main thread. </li>
 
@@ -563,7 +572,7 @@ The thenAccept() method allows handling of the instantiated ModuleRecogniz
 <pre class="prettyprint"><code>    CompletableFuture&lt;List&lt;Entity&gt;&gt; process(ImageData imageData, Executor executor) throws InvalidInputException, AIVisionSDKException
 </code></pre>
 
-<p><strong>Description:</strong> Processes an <code>ImageData</code> object, detecting shelves, labels, and products, and optionally recognizing product SKUs.</p>
+<p><strong>Description:</strong> Processes an <code>ImageData</code> object, detecting shelves, labels, and products, performing product-to-shelf and label-to-shelf association, and optionally recognizing product SKUs and barcodes on shelf labels.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -573,7 +582,7 @@ The thenAccept() method allows handling of the instantiated ModuleRecogniz
 <li><strong>Executor executor -</strong> Results are returned in this executor.</li>
 </ul>
 
-<p><strong>Return Value:</strong> A <code>CompletableFuture&lt;List&lt;Entity&gt;&gt;</code> containing ShelfEntity, LabelEntity, and ProductEntity instances (with SKU information when product recognition is enabled).</p>
+<p><strong>Return Value:</strong> A <code>CompletableFuture&lt;List&lt;Entity&gt;&gt;</code> containing ShelfEntity, LabelEntity, ProductEntity (with SKU information when product recognition is enabled) and BarcodeEntity instances (when barcode recognition is enabled).</p>
 
 <p><strong>Exceptions:</strong></p>
 
@@ -590,7 +599,7 @@ The thenAccept() method allows handling of the instantiated ModuleRecogniz
 <pre class="prettyprint"><code>    CompletableFuture&lt;List&lt;Entity&gt;&gt; process(ImageData imageData) throws AIVisionSDKException, InvalidInputException
 </code></pre>
 
-<p><strong>Description:</strong> Processes an <code>ImageData</code> object, detecting shelves, labels, and products, and optionally recognizing product SKUs.</p>
+<p><strong>Description:</strong> Processes an <code>ImageData</code> object, detecting shelves, labels, and products, performing product-to-shelf and label-to-shelf association, and optionally recognizing product SKUs and barcodes on shelf labels.</p>
 
 <p><strong>Parameters:</strong></p>
 
@@ -598,7 +607,7 @@ The thenAccept() method allows handling of the instantiated ModuleRecogniz
 <li><strong>ImageData imageData -</strong> Data representing the image to be processed.</li>
 </ul>
 
-<p><strong>Return Value:</strong> A <code>CompletableFuture&lt;List&lt;Entity&gt;&gt;</code> containing ShelfEntity, LabelEntity, and ProductEntity instances (with SKU information when product recognition is enabled).</p>
+<p><strong>Return Value:</strong> A <code>CompletableFuture&lt;List&lt;Entity&gt;&gt;</code> containing ShelfEntity, LabelEntity, ProductEntity (with SKU information when product recognition is enabled) and BarcodeEntity instances (when barcode recognition is enabled).</p>
 
 <p><strong>Exception:</strong></p>
 
@@ -615,7 +624,7 @@ The thenAccept() method allows handling of the instantiated ModuleRecogniz
 <pre class="prettyprint"><code>    void ModuleRecognizer.dispose()
 </code></pre>
 
-<p><strong>Description:</strong> Releases all internal resources used by the ModuleRecognizer object, including models and native handles for localization, feature extraction, and recognition. This method should be called manually when the recognizer is no longer needed to free resources and prevent memory leaks. </p>
+<p><strong>Description:</strong> Releases all internal resources used by the ModuleRecognizer object, including models and native handles for localization, feature extraction, recognition and barcode decoding. This method should be called manually when the recognizer is no longer needed to free resources and prevent memory leaks. </p>
 
 <hr>
 
@@ -689,7 +698,7 @@ The thenAccept() method allows handling of the instantiated ModuleRecogniz
 <p><strong>Exceptions:</strong></p>
 
 <ul>
-<li><strong>InvalidInputException -</strong> Thrown if the <code>productDB_Filepath</code> is null or empty.</li>
+<li><strong>InvalidInputException -</strong> Thrown if the <code>productDB_Filepath</code> is null, empty, or refers to an empty or invalid database file.</li>
 
 <li><strong>AIVisionSDKException -</strong> Thrown if an error occurs during processing.</li>
 </ul>
@@ -714,7 +723,7 @@ The thenAccept() method allows handling of the instantiated ModuleRecogniz
 <p><strong>Exceptions:</strong></p>
 
 <ul>
-<li><strong>InvalidInputException -</strong> Thrown if <code>modelFile</code> is invalid or if <code>productDB_Filepath</code> is null or empty.</li>
+<li><strong>InvalidInputException -</strong> Thrown if <code>modelFile</code> is invalid or if <code>productDB_Filepath</code> is null,empty, or refers to an empty or invalid database file.</li>
 
 <li><strong>AIVisionSDKException -</strong> Thrown if an error occurs during processing.</li>
 </ul>
@@ -771,6 +780,27 @@ The thenAccept() method allows handling of the instantiated ModuleRecogniz
 <li><strong>InvalidInputException -</strong> Thrown if <code>modelFile</code> is invalid or <code>indexFilePath</code> or <code>labelFilePath</code> is null or empty.</li>
 
 <li><strong>AIVisionSDKException -</strong> Thrown if an error occurs during processing.</li>
+</ul>
+
+<hr>
+
+<h4 id="enablebarcoderecognitionmapentitytypebarcodedecodersettingsentitysettingsmapthrowsinvalidinputexception" class="anchor"><a class="heading-anchor" href="#enablebarcoderecognitionmapentitytypebarcodedecodersettingsentitysettingsmapthrowsinvalidinputexception"><span></span></a>enableBarcodeRecognition(Map<entitytype, barcodedecoder.settings=""> entitySettingsMap) throws InvalidInputException</entitytype,></h4>
+
+<pre class="prettyprint"><code>    void enableBarcodeRecognition(Map&lt;EntityType, BarcodeDecoder.Settings&gt; entitySettingsMap) throws InvalidInputException
+</code></pre>
+
+<p><strong>Description:</strong> Enables product recognition using a feature extractor model (as a file), a product index file, and a label file. This configures the recognizer to match detected products against entries in the specified index and label files.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>entitySettingsMap -</strong> A map that associates an EntityType with its specific BarcodeDecoder.Settings. The key is the EntityType to which the barcode settings will apply, and the value contains the settings for the decoder.</li>
+</ul>
+
+<p><strong>Exceptions:</strong></p>
+
+<ul>
+<li><strong>InvalidInputException -</strong> Thrown if the <code>entitySettingsMap</code> is null, empty, or if any entry within the map contains a null key (EntityType) or a null value (BarcodeDecoder.Settings).</li>
 </ul>
 
 <hr>
