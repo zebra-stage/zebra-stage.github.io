@@ -234,19 +234,23 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>RxLogger's functionality can be controlled through Android intents within third-party applications. </p>
+<p>The functionality of RxLogger is managed through Android intents sent from third-party applications. The method required to interact with RxLogger depends on whether <strong>Secure Mode</strong> is on or off.</p>
 
 <hr>
 
 <h2 id="securemode" class="anchor"><a class="heading-anchor" href="#securemode"><span></span></a>Secure Mode</h2>
 
-<p>In <a href="../settings/#securemode">Secure Mode</a>, third-party apps must gain access to RxLogger APIs through one of two methods:</p>
+<p>Secure Mode is off by default. To turn it on, see instructions to <a href="../settings/#enablesecuremode">Enable Secure Mode</a>.</p>
+
+<p><strong>When <a href="../settings/#securemode">Secure Mode</a> is ON:</strong> Use one of the following secure methods to use Android intents:</p>
 
 <ul>
 <li><strong><a href="#appops">AppOps</a> (Recommended)-</strong> Use Android's AppOpsManager to control access to RxLogger, enhancing security by managing permissions for RxLogger operations.</li>
 
 <li><strong><a href="#apptoken">App Token</a> -</strong> Include a token as an extra within intents to access to the RxLogger APIs. </li>
 </ul>
+
+<p><strong>When Secure Mode is OFF:</strong> Standard Android intents are used without requiring an extra token or permission check. Refer to specific intent documentation for its required structure.</p>
 
 <h3 id="appops" class="anchor"><a class="heading-anchor" href="#appops"><span></span></a>AppOps</h3>
 
@@ -328,33 +332,33 @@ sendBroadcast(intent);
 
 <h2 id="enablerxlogger" class="anchor"><a class="heading-anchor" href="#enablerxlogger"><span></span></a>Enable RxLogger</h2>
 
-<p>This initiates data collection for all enabled modules, equivalent to tapping the Start button. Special instructions apply when RxLogger is operated in <a href="../settings/#securemode">Secure Mode</a>.</p>
+<p>This initiates data collection for all enabled modules, equivalent to tapping the <strong>Start</strong> button. Special instructions apply when RxLogger is operated in <a href="../settings/#securemode">Secure Mode</a>.</p>
 
-<p>Standard method using an intent to start RxLogger:</p>
+<p>Standard method using an intent to start RxLogger (Secure Mode Off):</p>
 
-<pre class="prettify prettyprint">    <code>com.symbol.rxlogger.intent.action.ENABLE</code>
-</pre>
+<pre class="prettyprint"><code>    intent.setAction("com.symbol.rxlogger.intent.action.ENABLE"); 
+    intent.setPackage("com.symbol.dd"); 
+    sendBroadcast(intent);
+</code></pre>
 
-<h3 id="securemethod" class="anchor"><a class="heading-anchor" href="#securemethod"><span></span></a>Secure Method</h3>
+<h3 id="securemethodsecuremodeon" class="anchor"><a class="heading-anchor" href="#securemethodsecuremodeon"><span></span></a>Secure Method (Secure Mode On)</h3>
 
 <p>To start RxLogger when in <a href="../settings/#securemode">Secure Mode</a>, use one of the following methods:</p>
 
 <ul>
 <li><p><strong><a href="#appops">AppOps</a> (Recommended) -</strong> Send an intent from a third-party app:</p>
 
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.ENABLE
+<pre class="prettyprint"><code>intent.setAction("com.zebra.rxlogger.intent.action.ENABLE_ZSX"); 
+intent.setPackage("com.symbol.dd"); 
+sendBroadcast(intent);
 </code></pre></li>
 
-<li><p><strong>App Token -</strong> Send an intent with a token from a third-party app:</p>
+<li><p><strong>App Token -</strong> Send an intent with a token from a third-party app. Include a token as an extra in the intent. Replace <code>&lt;your-app-token&gt;</code> with the obtained token, see <a href="#apptoken">App Token</a>.</p>
 
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.ENABLE -e "token" "&lt;token-id&gt;"
-</code></pre>
-
-<p>Include a token as an extra in the intent. Replace <code>&lt;token-id&gt;</code> with the obtained token, see <a href="#apptoken">App Token</a>.</p></li>
-
-<li><p><strong>Shell Command -</strong> Execute the following command:</p>
-
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.ENABLE_SHELL
+<pre class="prettyprint"><code>intent.setAction("com.symbol.rxlogger.intent.action.ENABLE"); 
+intent.setPackage("com.symbol.dd"); 
+intent.putExtra("token", "&lt;your-app-token&gt;"); 
+sendBroadcast(intent);
 </code></pre></li>
 </ul>
 
@@ -369,37 +373,62 @@ sendBroadcast(intent);
 <pre class="prettyprint"><code>    com.symbol.rxlogger.intent.action.ENABLE_STATUS
 </code></pre>
 
+<p>Extras included in the intent:</p>
+
+<table class="facelift" style="width:50%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>Extra</th>
+    <th>Values</th>
+  </tr>
+  <tr>
+    <td>result</td>
+   <td>0<br>-1</td>
+  </tr>
+  <tr>
+    <td>status</td>
+    <td>success<br>failure</td>
+  </tr>
+  <tr>
+    <td>error_code</td>
+    <td>0<br>1</td>
+  </tr>
+  <tr>
+    <td>message</td>
+    <td>Enable RxLogger Success<br>Intent failed, RxLogger already in running state</td>
+  </tr>
+</tbody></table>
+
 <hr>
 
 <h2 id="disablerxlogger" class="anchor"><a class="heading-anchor" href="#disablerxlogger"><span></span></a>Disable RxLogger</h2>
 
 <p>This stops data collection for all modules; the equivalent of tapping the Stop button. Special instructions apply when RxLogger is operated in <a href="../settings/#securemode">Secure Mode</a>.</p>
 
-<p>Standard method using an intent to stop RxLogger:</p>
+<p>Standard method using an intent to stop RxLogger (Secure Mode off):</p>
 
-<pre class="prettify prettyprint">    <code>com.symbol.rxlogger.intent.action.DISABLE</code>
-</pre>
+<pre class="prettyprint"><code>    intent.setAction("com.symbol.rxlogger.intent.action.DISABLE"); 
+    intent.setPackage("com.symbol.dd"); 
+    sendBroadcast(intent);
+</code></pre>
 
-<h3 id="securemethod-1" class="anchor"><a class="heading-anchor" href="#securemethod-1"><span></span></a>Secure Method</h3>
+<h3 id="securemethodsecuremodeon-1" class="anchor"><a class="heading-anchor" href="#securemethodsecuremodeon-1"><span></span></a>Secure Method (Secure Mode On)</h3>
 
 <p>To stop RxLogger when in <a href="../settings/#securemode">Secure Mode</a>, use one of the following methods:</p>
 
 <ul>
 <li><p><strong><a href="#appops">AppOps</a> (Recommended) -</strong> Send an intent from a third-party app:</p>
 
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.DISABLE
+<pre class="prettyprint"><code>intent.setAction("com.zebra.rxlogger.intent.action.DISABLE_ZSX"); 
+intent.setPackage("com.symbol.dd"); 
+sendBroadcast(intent);
 </code></pre></li>
 
-<li><p><strong>App Token -</strong> Send an intent with a token from a third-party app:</p>
+<li><p><strong>App Token -</strong> Send an intent with a token from a third-party app. Include a token as an extra in the intent. Replace <code>&lt;your-app-token&gt;</code> with the obtained token, see <a href="#apptoken">App Token</a>.</p>
 
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.DISABLE -e "token" "&lt;token-id&gt;"
-</code></pre>
-
-<p>Include a token as an extra in the intent. Replace <code>&lt;token-id&gt;</code> with the obtained token, see <a href="#apptoken">App Token</a>.</p></li>
-
-<li><p><strong>Shell Command -</strong> Execute the following command:</p>
-
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.DISABLE_SHELL
+<pre class="prettyprint"><code>intent.setAction("com.symbol.rxlogger.intent.action.DISABLE"); 
+intent.setPackage("com.symbol.dd"); 
+intent.putExtra("token", "&lt;your-app-token&gt;"); 
+sendBroadcast(intent);
 </code></pre></li>
 </ul>
 
@@ -414,47 +443,70 @@ sendBroadcast(intent);
 <pre class="prettyprint"><code>    com.symbol.rxlogger.intent.action.DISABLE_STATUS
 </code></pre>
 
+<p>Extras included in the intent:</p>
+
+<table class="facelift" style="width:50%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>Extra</th>
+    <th>Values</th>
+  </tr>
+  <tr>
+    <td>result</td>
+   <td>0<br>-1</td>
+  </tr>
+  <tr>
+    <td>status</td>
+    <td>success<br>failure</td>
+  </tr>
+  <tr>
+    <td>error_code</td>
+    <td>0<br>1</td>
+  </tr>
+  <tr>
+    <td>message</td>
+    <td>Disable RxLogger Success<br>Intent failed, RxLogger already in running state</td>
+  </tr>
+</tbody></table>
+
 <hr>
 
 <h2 id="backupnow" class="anchor"><a class="heading-anchor" href="#backupnow"><span></span></a>BackupNow</h2>
 
 <p>This initiates a backup of log files in the RxLogger folder, compressing them into a zip file named <code>Backup-&lt;date&gt;-&lt;HHMMSS&gt;.zip</code>, where <code>&lt;date&gt;-&lt;HHMMSS&gt;</code> is time stamp. Special instructions apply when operating RxLogger in <a href="../settings/#securemode">Secure Mode</a>.</p>
 
-<p>Standard method using an intent to stop RxLogger:</p>
+<p>Standard method (Secure Mode Off) using an intent to stop RxLogger:</p>
 
-<pre class="prettify prettyprint">    <code>com.symbol.rxlogger.intent.action.BACKUP_NOW</code>
-</pre>
+<pre class="prettyprint"><code>    intent.setAction("com.symbol.rxlogger.intent.action.BACKUP_NOW"); 
+    intent.setPackage("com.symbol.dd"); 
+    sendBroadcast(intent);
+</code></pre>
 
-<h3 id="securemethod-2" class="anchor"><a class="heading-anchor" href="#securemethod-2"><span></span></a>Secure Method</h3>
+<h3 id="securemethodsecuremodeon-2" class="anchor"><a class="heading-anchor" href="#securemethodsecuremodeon-2"><span></span></a>Secure Method (Secure Mode On)</h3>
 
 <p>To trigger a backup in <a href="../settings/#securemode">Secure Mode</a>, use one of the following methods:</p>
 
 <ul>
-<li><p><strong><a href="#appops">AppOps</a> (Recommended) -</strong> Send an intent from a third-party app:</p>
+<li><p><strong><a href="#appops">AppOps</a> (Recommended) -</strong> Send an intent from a third-party app. Replace <code>&lt;password&gt;</code> with the password set for app access, see <a href="#appops">AppOps</a>.</p>
 
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.BACKUP_NOW  -e "password" "&lt;password&gt;"
-</code></pre>
+<pre class="prettyprint"><code>intent.setAction("com.zebra.rxlogger.intent.action.BACKUP_NOW_ZSX"); 
+intent.setPackage("com.symbol.dd"); 
+intent.putExtra("password", "&lt;password&gt;"); 
+sendBroadcast(intent);
+</code></pre></li>
 
-<p>Replace <code>&lt;password&gt;</code> with the password set for app access, see <a href="#appops">AppOps</a>.</p></li>
+<li><p><strong>App Token -</strong> Send an intent with a token from a third-party app. Include a token as an extra in the intent. Replace <code>&lt;your-app-token&gt;</code> with the obtained token and <code>&lt;password&gt;</code> with the password set, see <a href="#apptoken">App Token</a>.</p>
 
-<li><p><strong>App Token -</strong> Send an intent with a token from a third-party app:</p>
-
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.BACKUP_NOW -e "token" "&lt;token-id&gt;" -e "password" "&lt;password&gt;"
-</code></pre>
-
-<p>Includ a token as an extra in the intent. Replace <code>&lt;token-id&gt;</code> with the obtained token and <code>&lt;password&gt;</code> with the password set, see <a href="#apptoken">App Token</a>.</p></li>
-
-<li><p><strong>Shell Command -</strong> Execute the command:</p>
-
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.BACKUP_NOW_SHELL  -e "password" "&lt;password&gt;"
-</code></pre>
-
-<p>Replace <code>&lt;password&gt;</code> with the password set for app access, see <a href="#appops">AppOps</a>.</p></li>
+<pre class="prettyprint"><code>intent.setAction("com.symbol.rxlogger.intent.action.BACKUP_NOW"); 
+intent.setPackage("com.symbol.dd"); 
+intent.putExtra("token", "&lt;your-app-token&gt;"); 
+intent.putExtra("password", "&lt;password&gt;"); 
+sendBroadcast(intent);
+</code></pre></li>
 </ul>
 
 <hr>
 
-<h2 id="backupnowstatus" class="anchor"><a class="heading-anchor" href="#backupnowstatus"><span></span></a>BackupNow Status</h2>
+<h3 id="backupnowstatus" class="anchor"><a class="heading-anchor" href="#backupnowstatus"><span></span></a>BackupNow Status</h3>
 
 <p>This provides the status of the backup operation. RxLogger sends an acknowledgment intent to convey the backup status, including extras such as status, message and the absolute path of the backup zip file. These extras vary based on whether <a href="../settings/#securemode">Secure Mode</a> is enabled.</p>
 
@@ -463,7 +515,7 @@ sendBroadcast(intent);
 <pre class="prettyprint"><code>    com.symbol.rxlogger.intent.action.BACKUP_NOW_STATUS
 </code></pre>
 
-<p><strong>Non-secure (Legacy) RxLogger:</strong></p>
+<p><strong>Secure Mode Off (Legacy):</strong></p>
 
 <table class="facelift" style="width:60%" border="1" padding="5px">
   <tbody><tr bgcolor="#dce8ef">
@@ -490,7 +542,7 @@ sendBroadcast(intent);
 
 <p><br></p>
 
-<p><strong>Secure RxLogger:</strong></p>
+<p><strong>Secure Mode On:</strong></p>
 
 <table class="facelift" style="width:80%" border="1" padding="5px">
   <tbody><tr bgcolor="#dce8ef">
@@ -536,27 +588,29 @@ sendBroadcast(intent);
 <p>Select the method to perform a reset to default based on whether secure mode is enabled:</p>
 
 <ul>
-<li><p><strong>Standard Method (Non-secure) -</strong> Send an intent:</p>
+<li><p><strong>Standard Method (Secure Mode Off) -</strong> Send an intent:</p>
 
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.RESET_TO_DEFAULT
+<pre class="prettyprint"><code>intent.setAction("com.symbol.rxlogger.intent.action.RESET_TO_DEFAULT"); 
+intent.setPackage("com.symbol.dd"); 
+sendBroadcast(intent);
 </code></pre></li>
 
-<li><p><strong>Secure Method -</strong> Choose one of the following:</p>
+<li><p><strong>Secure Method (Secure Mode On) -</strong> Choose one of the following:</p>
 
 <ul>
 <li><p><strong>AppOps (Recommended) -</strong> Send an intent from a third-party app:</p>
 
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.RESET_TO_DEFAULT 
+<pre class="prettyprint"><code>intent.setAction("com.zebra.rxlogger.intent.action.RESET_TO_DEFAULT_ZSX"); 
+intent.setPackage("com.symbol.dd"); 
+sendBroadcast(intent);
 </code></pre></li>
 
-<li><p><strong>App Token -</strong> Send an intent with a token from a third-party app, replacing <code>&lt;token-id&gt;</code> with the obtained token (see <a href="#apptoken">App Token</a>):</p>
+<li><p><strong>App Token -</strong> Send an intent with a token from a third-party app, replacing <code>&lt;your-app-token&gt;</code> with the obtained token (see <a href="#apptoken">App Token</a>):</p>
 
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.RESET_TO_DEFAULT  -e "token" "&lt;token-id&gt;"
-</code></pre></li>
-
-<li><p><strong>Shell Command -</strong> Execute the following command:</p>
-
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.RESET_TO_DEFAULT_SHELL
+<pre class="prettyprint"><code>intent.setAction("com.symbol.rxlogger.intent.action.RESET_TO_DEFAULT"); 
+intent.setPackage("com.symbol.dd"); 
+intent.putExtra("token", "&lt;your-app-token&gt;"); 
+sendBroadcast(intent);
 </code></pre></li></ul></li>
 </ul>
 
@@ -569,6 +623,35 @@ sendBroadcast(intent);
 <pre class="prettyprint"><code>    com.symbol.rxlogger.intent.action.RESET_TO_DEFAULT_STATUS 
 </code></pre>
 
+<p>Extras returned from the result include the following:</p>
+
+<table class="facelift" style="width:50%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>error_code</th>
+    <th>result</th>
+    <th>status</th>
+    <th>message</th>
+  </tr>
+  <tr>
+      <td>0</td>
+    <td>0</td>
+    <td>success</td>
+    <td>N/A</td>
+  </tr>
+  <tr>
+      <td>1</td>
+    <td>-1</td>
+    <td>failure</td>
+    <td>Intent failed, Reset to default currently running</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td>-1</td>
+    <td>failure</td>
+    <td>RxLogger running, cannot do reset to default</td>
+  </tr>
+</tbody></table>
+
 <hr>
 
 <h2 id="deletelogs" class="anchor"><a class="heading-anchor" href="#deletelogs"><span></span></a>Delete Logs</h2>
@@ -578,48 +661,41 @@ sendBroadcast(intent);
 <p>Select the method to delete logs based on whether secure mode is enabled:</p>
 
 <ul>
-<li><p><strong>Standard Method (Non-secure) -</strong> Send an intent:</p>
+<li><p><strong>Standard Method (Secure Mode Off) -</strong> Send an intent:</p>
 
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.DELETE_LOGS -e logType &lt;logType&gt;
-</code></pre>
+<pre class="prettyprint"><code>intent.setAction("com.symbol.rxlogger.intent.action.DELETE_LOGS "); 
+intent.setPackage("com.symbol.dd"); 
+sendBroadcast(intent);
+</code></pre></li>
 
-<p>Replace <code>&lt;logType&gt;</code> with one of the following values:</p>
+<li><p><strong>Secure Method (Secure Mode On) -</strong> To delete logs using a secure method, the intent must include a <code>&lt;logtype&gt;</code> parameter. This determines which files are deleted. If the parameter is omitted or an invalid value is used, the action defaults to deleting all files. The <code>&lt;logtype&gt;</code> parameter aaccepts one of the following values:</p>
 
 <ul>
-<li><strong>0 -</strong> (default) Delete all logs and backup files</li>
+<li><strong>0 -</strong> Deletes all files in the RxLogger folder (logs and backups), except for <code>config.json</code> and <code>RxInfo.txt</code>.</li>
 
-<li><strong>1 -</strong> Delete only log files</li>
+<li><strong>1 -</strong> Deletes only the log files, retaining all backup files.</li>
 
-<li><strong>2 -</strong> Delete only backup files
-Any other value or absence of this value defaults to deleting all files.</li></ul></li>
+<li><strong>2 -</strong> Deletes only the backup files, retaining all log files.</li></ul>
 
-<li><p><strong>Secure Method -</strong> Choose one of the following:</p>
+<p>Choose one of the following:</p>
 
 <ul>
 <li><p><strong>AppOps (Recommended) -</strong> Send an intent from a third-party app:</p>
 
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.DELETE_LOGS  -e logType &lt;logType&gt;
+<pre class="prettyprint"><code>intent.setAction("com.zebra.rxlogger.intent.action.DELETE_LOGS_ZSX"); 
+intent.setPackage("com.symbol.dd");
+intent.putExtra("logType", "&lt;logType&gt;"); 
+sendBroadcast(intent);
 </code></pre></li>
 
-<li><p><strong>App Token -</strong> Send an intent with a token from a third-party app, replacing <code>&lt;token-id&gt;</code> with the obtained token (see <a href="#apptoken">App Token</a>):</p>
+<li><p><strong>App Token -</strong> Send an intent with a token from a third-party app, replacing <code>&lt;your-app-token&gt;</code> with the obtained token (see <a href="#apptoken">App Token</a>):</p>
 
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.DELETE_LOGS   -e "token" "&lt;token-id&gt;" -e logType &lt;logType&gt;
-</code></pre></li>
-
-<li><p><strong>Shell Command -</strong> Execute the following command:</p>
-
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.DELETE_LOGS _SHELL -e logType &lt;logType&gt;
-</code></pre></li></ul>
-
-<p>Replace <code>&lt;logType&gt;</code> with one of the following values:</p>
-
-<ul>
-<li><strong>0 -</strong> (default) Delete all logs and backup files</li>
-
-<li><strong>1 -</strong> Delete only log files</li>
-
-<li><strong>2 -</strong> Delete only backup files
-Any other value or absence of this value defaults to deleting all files.</li></ul></li>
+<pre class="prettyprint"><code>intent.setAction("com.symbol.rxlogger.intent.action.DELETE_LOGS"); 
+intent.setPackage("com.symbol.dd"); 
+intent.putExtra("token", "&lt;your-app-token&gt;");
+intent.putExtra("logType", "&lt;logType&gt;"); 
+sendBroadcast(intent);
+</code></pre></li></ul></li>
 </ul>
 
 <h3 id="status-1" class="anchor"><a class="heading-anchor" href="#status-1"><span></span></a>Status</h3>
@@ -631,6 +707,35 @@ Any other value or absence of this value defaults to deleting all files.</li></u
 <pre class="prettyprint"><code>    com.symbol.rxlogger.intent.action.DELETE_LOGS_STATUS  
 </code></pre>
 
+<p>Extras returned from the result include the following:</p>
+
+<table class="facelift" style="width:50%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>error_code</th>
+    <th>result</th>
+    <th>status</th>
+    <th>message</th>
+  </tr>
+  <tr>
+      <td>0</td>
+    <td>0</td>
+    <td>success</td>
+    <td>N/A</td>
+  </tr>
+  <tr>
+      <td>1</td>
+    <td>-1</td>
+    <td>failure</td>
+    <td>Intent failed, Delete Logs currently running</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td>-1</td>
+    <td>failure</td>
+    <td>RxLogger running, Cannot delete its log</td>
+  </tr>
+</tbody></table>
+
 <hr>
 
 <h2 id="bugreport" class="anchor"><a class="heading-anchor" href="#bugreport"><span></span></a>Bug Report</h2>
@@ -640,27 +745,29 @@ Any other value or absence of this value defaults to deleting all files.</li></u
 <p>Select the method to delete logs based on whether secure mode is enabled:</p>
 
 <ul>
-<li><p><strong>Standard Method (Non-secure) -</strong> Send an intent:</p>
+<li><p><strong>Standard Method (Secure Mode Off) -</strong> Send an intent:</p>
 
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.RX_BUGREPORT
+<pre class="prettyprint"><code>intent.setAction("com.symbol.rxlogger.intent.action.RX_BUGREPORT"); 
+intent.setPackage("com.symbol.dd"); 
+sendBroadcast(intent);
 </code></pre></li>
 
-<li><p><strong>Secure Method -</strong> Choose one of the following:</p>
+<li><p><strong>Secure Method (Secure Mode On) -</strong> Choose one of the following:</p>
 
 <ul>
 <li><p><strong>AppOps (Recommended) -</strong> Send an intent from a third-party app:</p>
 
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.RX_BUGREPORT 
+<pre class="prettyprint"><code>intent.setAction("com.zebra.rxlogger.intent.action.RX_BUGREPORT_ZSX"); 
+intent.setPackage("com.symbol.dd"); 
+sendBroadcast(intent);
 </code></pre></li>
 
-<li><p><strong>App Token -</strong> Send an intent with a token from a third-party app, replacing <code>&lt;token-id&gt;</code> with the obtained token (see <a href="#apptoken">App Token</a>):</p>
+<li><p><strong>App Token -</strong> Send an intent with a token from a third-party app, replacing <code>&lt;your-app-token&gt;</code> with the obtained token (see <a href="#apptoken">App Token</a>):</p>
 
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.RX_BUGREPORT -e "token" "&lt;token-id&gt;"
-</code></pre></li>
-
-<li><p><strong>Shell Command -</strong> Execute the following command:</p>
-
-<pre class="prettyprint"><code>com.symbol.rxlogger.intent.action.RX_BUGREPORT_SHELL
+<pre class="prettyprint"><code>intent.setAction("com.symbol.rxlogger.intent.action.RX_BUGREPORT"); 
+intent.setPackage("com.symbol.dd");
+intent.putExtra("token", "&lt;your-app-token&gt;"); 
+sendBroadcast(intent);
 </code></pre></li></ul></li>
 </ul>
 
@@ -672,6 +779,41 @@ Any other value or absence of this value defaults to deleting all files.</li></u
 
 <pre class="prettyprint"><code>    com.symbol.rxlogger.intent.action.RX_BUGREPORT_STATUS  
 </code></pre>
+
+<p>Extras returned from the result include the following:</p>
+
+<table class="facelift" style="width:50%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>error_code</th>
+    <th>result</th>
+    <th>status</th>
+    <th>message</th>
+  </tr>
+  <tr>
+      <td>0</td>
+    <td>0</td>
+    <td>success</td>
+    <td>N/A</td>
+  </tr>
+  <tr>
+      <td>1</td>
+    <td>-1</td>
+    <td>failure</td>
+    <td>Intent failed, Bugreport currently running</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td>-1</td>
+    <td>failure</td>
+    <td>Copy Bugreport file from source to RxLogger folder failed</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td>-1</td>
+    <td>failure</td>
+    <td>Bugreport file not generated at source</td>
+  </tr>
+</tbody></table>
 
 <hr>
 
@@ -721,7 +863,7 @@ Any other value or absence of this value defaults to deleting all files.</li></u
             <div class="container-fluid">
                 <div class="row">
                     <div class="col-sm-10">
-                        ZEBRA and the stylized Zebra head are trademarks of Zebra Technologies Corp., registered in many jurisdictions worldwide. All other trademarks are the property of their respective owners. ©2025 Zebra Technologies Corp. and/or its affiliates.<br><a href="https://www.zebra.com/us/en/about-zebra/company-information/legal.html">Legal</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal/terms-of-use.html">Terms of Use</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal/privacy-statement.html">Privacy Policy</a> 
+                        ZEBRA and the stylized Zebra head are trademarks of Zebra Technologies Corp., registered in many jurisdictions worldwide. All other trademarks are the property of their respective owners. ©2026 Zebra Technologies Corp. and/or its affiliates.<br><a href="https://www.zebra.com/us/en/about-zebra/company-information/legal.html">Legal</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal/terms-of-use.html">Terms of Use</a> | <a href="https://www.zebra.com/us/en/about-zebra/company-information/legal/privacy-statement.html">Privacy Policy</a> 
                     </div>
                     <!--
                     <div class="col-sm-2">
