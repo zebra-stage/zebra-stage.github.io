@@ -1,0 +1,540 @@
+openapi: 3.1.0
+info:
+  title: Gen2X API Reference - REST
+  description: |-
+    # Overview
+
+    Use these REST APIs to configure and control Impinj Gen2X features on an FXR90 reader.
+
+    This guide covers:
+    - Tag Protection: Lock individual tags with a password so they are invisible to unauthorized readers.
+    - FastID: Return EPC and TID in a single inventory response.
+    - TagFocus: Keep already-read tags silent so the reader focuses on unread tags.
+    - Tag Quieting: Silence specific tags by EPC ID.
+
+    Impinj Gen2X extends Gen2 radio and logical layers. Tags must support Gen2X features.
+
+    # Authentication
+
+    You can authorize requests using either method below:
+    - Bearer token (recommended): Execute /cloud/localRestLogin to get a token, then use Authorization: Bearer <token>.
+    - Basic authentication: Use administrator credentials.
+
+    # Getting Started
+
+    1. Use GET /cloud/impinjGen2X to check the currently saved Gen2X configuration.
+    2. Use PUT /cloud/stop to stop the IoT cloud service (if it is running).
+    3. Use PUT /cloud/impinjGen2X to stage one or more feature updates.
+    4. Use GET /cloud/impinjGen2X to verify the staged Gen2X configuration before starting the radio.
+    5. Use PUT /cloud/start to start the service and apply staged configuration.
+  version: 3.0.0
+  termsOfService: https://www.zebra.com/ap/en/terms-conditions.html
+  contact:
+    name: API Support
+    url: https://www.zebra.com/ap/en/support-downloads/rfid.html
+externalDocs:
+  description: Find out more about IoT
+  url: https://zebradevs.github.io/rfid-ziotc-docs/
+servers:
+  - url: http://<device-ip>:<port>
+    description: Device REST API base URL
+paths:
+  /cloud/impinjGen2X:
+    get:
+      tags:
+        - ImpinjGen2X
+      summary: Get Impinj Gen2X configuration
+      description: Retrieves the current Impinj Gen2X feature configuration as last saved. Returns an empty object if no Gen2X configuration has been set yet. Only feature objects that were previously configured are included in the response.
+      operationId: getImpinjGen2X
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                description: >-
+                  Current Impinj Gen2X feature configuration as last saved via set_impinjGen2X.
+                  Returns an empty object if no Gen2X configuration has been set yet.
+                  Only feature objects that were previously configured are included in the response.
+                properties:
+                  fastID:
+                    type: object
+                    description: FastID configuration. Present only if fastID was previously configured.
+                    properties:
+                      enabled:
+                        type: boolean
+                        description: Whether FastID is enabled.
+                        example: true
+                      tidSelector:
+                        type: string
+                        description: TID word selector mask, if one was configured.
+                        enum:
+                          - 'TID[0]'
+                          - 'TID[1]'
+                          - 'TID[2]'
+                          - 'TID[3]'
+                        example: 'TID[0]'
+                    required:
+                      - enabled
+                  tagProtect:
+                    type: object
+                    description: TagProtect configuration. Present only if tagProtect was previously configured.
+                    properties:
+                      action:
+                        type: string
+                        description: Last configured protection action.
+                        enum:
+                          - enableTagProtection
+                          - disableTagProtection
+                          - enableTagVisibility
+                          - disableTagVisibility
+                        example: enableTagProtection
+                      password:
+                        type: string
+                        description: 8-character hexadecimal 32-bit password.
+                        minLength: 8
+                        maxLength: 8
+                        pattern: '^[0-9A-Fa-f]{8}$'
+                        example: '77777777'
+                      tagID:
+                        type: string
+                        description: >-
+                          Hexadecimal tagID (EPC) of the target tag.
+                          Only present when action is enableTagProtection or disableTagProtection.
+                        pattern: '^[0-9A-Fa-f]+$'
+                        example: 'e2801191a5030069073b426d'
+                      enableShortRange:
+                        type: boolean
+                        description: Whether short-range protection mode is enabled.
+                        example: true
+                    required:
+                      - action
+                      - password
+                  tagFocus:
+                    type: object
+                    description: TagFocus configuration. Present only if tagFocus was previously configured.
+                    properties:
+                      enabled:
+                        type: boolean
+                        description: Whether TagFocus is enabled.
+                        example: true
+                    required:
+                      - enabled
+                  tagQuieting:
+                    type: object
+                    description: TagQuieting configuration. Present only if tagQuieting was previously configured.
+                    properties:
+                      basic:
+                        type: object
+                        description: Basic TagQuieting configuration.
+                        properties:
+                          action:
+                            type: string
+                            description: Last configured quiet action.
+                            enum:
+                              - quiet
+                              - unquiet
+                            example: quiet
+                          tagIDs:
+                            type: array
+                            description: List of tag IDs (EPC strings) that are to be quieted or unquieted.
+                            items:
+                              type: string
+                              pattern: '^[0-9A-Fa-f]+$'
+                              example: 'e2801191a5030069073b426d'
+                        required:
+                          - action
+                          - tagIDs
+              examples:
+                empty:
+                  value: {}
+                fastID_configured:
+                  value:
+                    fastID:
+                      enabled: true
+                      tidSelector: 'TID[0]'
+                tagFocus_configured:
+                  value:
+                    tagFocus:
+                      enabled: true
+                tagProtect_configured:
+                  value:
+                    tagProtect:
+                      action: enableTagProtection
+                      password: '77777777'
+                      tagID: 'e2801191a5030069073b426d'
+                      enableShortRange: true
+                tagQuieting_configured:
+                  value:
+                    tagQuieting:
+                      basic:
+                        action: quiet
+                        tagIDs:
+                          - 'e2801191a5030069073b426d'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    example: 1
+                  message:
+                    type: string
+                    example: "problem getting response for get_impinjGen2X"
+      security:
+        - bearerAuth: []
+        - basicAuth: []
+    put:
+      tags:
+        - ImpinjGen2X
+      summary: Set Impinj Gen2X configuration
+      description: Configures Impinj Gen2X proprietary features (FastID, TagProtect, TagFocus, TagQuieting). At least one feature object must be provided. Use PUT /cloud/start with applyImpinjGen2X set to true to apply staged settings.
+      operationId: setImpinjGen2X
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: >-
+                Configures Impinj Gen2X proprietary features. At least one feature object
+                (fastID, tagProtect, tagFocus, or tagQuieting) must be provided.
+              minProperties: 1
+              properties:
+                fastID:
+                  type: object
+                  description: >-
+                    Impinj FastID embeds the tag TID along with the EPC in every inventory response, eliminating
+                    the need for separate TID read operations and improving throughput.
+                  properties:
+                    enabled:
+                      type: boolean
+                      description: Enable or disable the FastID feature.
+                      example: true
+                    tidSelector:
+                      type: string
+                      description: >-
+                        Optional TID word selector mask. When provided, only the specified TID
+                        word is embedded in the inventory response.
+                      enum:
+                        - 'TID[0]'
+                        - 'TID[1]'
+                        - 'TID[2]'
+                        - 'TID[3]'
+                      example: 'TID[0]'
+                  required:
+                    - enabled
+                tagProtect:
+                  description: >-
+                    Impinj TagProtect prevents unauthorized cloning and reading of tags using
+                    a password-based protection mechanism. It is a feature that renders a tag invisible
+                    to an RFID reader. The tag becomes RF silent and does not respond to Gen2 commands
+                    unless the reader first provides the correct 32-bit password.
+                    The required fields depend on the action:
+                    tagID is required for enableTagProtection/disableTagProtection and must be omitted for
+                    enableTagVisibility/disableTagVisibility.
+                  oneOf:
+                    - type: object
+                      title: Protect or Unprotect Tag
+                      description: Protect or unprotect a specific tag identified by its EPC.
+                      properties:
+                        action:
+                          type: string
+                          description: >-
+                            enableTagProtection sets a tag to protected mode;
+                            disableTagProtection removes protection from a specific tag.
+                          enum:
+                            - enableTagProtection
+                            - disableTagProtection
+                          example: enableTagProtection
+                        password:
+                          type: string
+                          description: 8-character hexadecimal 32-bit password used for tag protection.
+                          minLength: 8
+                          maxLength: 8
+                          pattern: '^[0-9A-Fa-f]{8}$'
+                          example: '77777777'
+                        tagID:
+                          type: string
+                          description: Hexadecimal tagID (EPC) of the target tag.
+                          pattern: '^[0-9A-Fa-f]+$'
+                          example: 'e2801191a5030069073b426d'
+                        enableShortRange:
+                          type: boolean
+                          description: Enables short-range protection mode for higher security.
+                          example: true
+                      required:
+                        - action
+                        - password
+                        - tagID
+                    - type: object
+                      title: Enable or Disable Protected Tag Reading
+                      description: Enable or disable the reader's ability to read protected tags.
+                      properties:
+                        action:
+                          type: string
+                          description: >-
+                            enableTagVisibility enables the reader to read protected tags;
+                            disableTagVisibility disables reading of protected tags.
+                          enum:
+                            - enableTagVisibility
+                            - disableTagVisibility
+                          example: enableTagVisibility
+                        password:
+                          type: string
+                          description: 8-character hexadecimal 32-bit password used for tag protection.
+                          minLength: 8
+                          maxLength: 8
+                          pattern: '^[0-9A-Fa-f]{8}$'
+                          example: '77777777'
+                        enableShortRange:
+                          type: boolean
+                          description: Enables short-range protection mode for higher security.
+                          example: false
+                      required:
+                        - action
+                        - password
+                tagFocus:
+                  type: object
+                  description: >-
+                    Impinj TagFocus instructs tags that have already been inventoried to remain
+                    unresponsive thus enabling the reader to focus on other tags. By reducing tag
+                    chatter, TagFocus improves read rates and accuracy in dense tag environments.
+                    TagFocus targets tags inventoried in session S1.
+                  properties:
+                    enabled:
+                      type: boolean
+                      description: Enable or disable the TagFocus feature.
+                      example: true
+                  required:
+                    - enabled
+                tagQuieting:
+                  type: object
+                  description: >-
+                    Impinj TagQuieting selectively silences individual tags to reduce tag
+                    churn and improve read accuracy.
+                  properties:
+                    basic:
+                      type: object
+                      description: >-
+                        Basic TagQuieting configuration for quieting or unquieting specific
+                        tags identified by their EPC.
+                      properties:
+                        action:
+                          type: string
+                          description: >-
+                            "quiet" silences the specified tags for the current inventory round;
+                            "unquiet" restores previously quieted tags.
+                          enum:
+                            - quiet
+                            - unquiet
+                          example: quiet
+                        tagIDs:
+                          type: array
+                          description: >-
+                            Non-empty list of hexadecimal EPC strings identifying the tags
+                            to quiet or unquiet.
+                          minItems: 1
+                          items:
+                            type: string
+                            description: Hexadecimal EPC string of a tag.
+                            pattern: '^[0-9A-Fa-f]+$'
+                            example: 'e2801191a5030069073b426d'
+                      required:
+                        - action
+                        - tagIDs
+            examples:
+              enable_fastID:
+                value:
+                  fastID:
+                    enabled: true
+              disable_fastID:
+                value:
+                  fastID:
+                    enabled: false
+              protect_tag:
+                value:
+                  tagProtect:
+                    action: enableTagProtection
+                    password: '77777777'
+                    tagID: 'e2801191a5030069073b426d'
+                    enableShortRange: true
+              unprotect_tag:
+                value:
+                  tagProtect:
+                    action: disableTagProtection
+                    password: '77777777'
+                    tagID: 'e2801191a5030069073b426d'
+              enable_protect_read:
+                value:
+                  tagProtect:
+                    action: enableTagVisibility
+                    password: '77777777'
+              disable_protect_read:
+                value:
+                  tagProtect:
+                    action: disableTagVisibility
+                    password: '77777777'
+              enable_tagFocus:
+                value:
+                  tagFocus:
+                    enabled: true
+              disable_tagFocus:
+                value:
+                  tagFocus:
+                    enabled: false
+              quiet_tags:
+                value:
+                  tagQuieting:
+                    basic:
+                      action: quiet
+                      tagIDs:
+                        - 'e2801191a5030069073b426d'
+                        - 'e2801191a5030069073b426e'
+              unquiet_tags:
+                value:
+                  tagQuieting:
+                    basic:
+                      action: unquiet
+                      tagIDs:
+                        - 'e2801191a5030069073b426d'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: string
+                example: ""
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invalid payload for set_impinjGen2X api"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    example: 1
+                  message:
+                    type: string
+                    example: "problem getting response for set_impinjGen2X"
+      security:
+        - bearerAuth: []
+        - basicAuth: []
+
+  /cloud/start:
+    put:
+      tags:
+        - Control
+      summary: Start IOT Cloud Service
+      description: Starts IOT cloud service and applies staged Gen2X configuration.
+      operationId: startIotCloudService
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                applyImpinjGen2X:
+                  type: boolean
+                  description: Set true to apply staged Impinj Gen2X configuration while starting.
+                  example: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: string
+                example: ""
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    example: 1
+                  message:
+                    type: string
+                    example: "problem getting response for start"
+      security:
+        - bearerAuth: []
+        - basicAuth: []
+
+  /cloud/stop:
+    put:
+      tags:
+        - Control
+      summary: Stop IOT Cloud Service
+      description: Stops IOT cloud service.
+      operationId: stopIotCloudService
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: string
+                example: ""
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    example: 1
+                  message:
+                    type: string
+                    example: "problem getting response for stop"
+      security:
+        - bearerAuth: []
+        - basicAuth: []
+
+
+tags:
+  - name: ImpinjGen2X
+    description: Retrieve and configure Impinj Gen2X feature settings.
+  - name: Control
+    description: Start and stop the IoT cloud service.
+
+x-tagGroups:
+  - name: Gen2X Configuration
+    tags:
+      - ImpinjGen2X
+  - name: Service Control
+    tags:
+      - Control
+
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+      description: Use administrator credentials.
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Use bearer token from /cloud/localRestLogin.
