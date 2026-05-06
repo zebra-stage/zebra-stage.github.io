@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <title>Impinj Gen2X API Reference</title>
+  <link href="https://fonts.googleapis.com/css?family=Inter:400,600,700,900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/custom-api.css?v=20260408-1" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+  <script src="https://unpkg.com/@alenaksu/json-viewer@2.1.2/dist/json-viewer.bundle.js"></script>
+</head>
+<body>
+  <nav id="sidebar">
+    <div id="sidebar-logo-bar">
+      <img src="assets/zebra-logo.jpg" alt="Zebra Logo" id="sidebar-logo" />
+    </div>
+    <div id="sidebar-header">
+      <div id="sidebar-title">Impinj Gen2X API Reference</div>
+    </div>
+    <div id="sidebar-search-wrap">
+      <input id="sidebar-search" type="search" placeholder="Search endpoints, tags..." aria-label="Search API docs" />
+    </div>
+    <div id="nav-content"></div>
+  </nav>
+  <main id="main">
+    <div id="content"></div>
+  </main>
+
+  <!-- Font-size control panel -->
+  <div id="font-scale-panel">
+    <span id="font-scale-label">Font</span>
+    <button id="font-scale-down" title="Decrease font size">&minus;</button>
+    <span id="font-scale-value">100%</span>
+    <button id="font-scale-up" title="Increase font size">+</button>
+    <button id="font-scale-reset" title="Reset to default">Reset</button>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    /* ── Simple Markdown to HTML converter ────────────── */
+    function md(text) {
+      if (!text) return '';
+      var html = text
+        /* Code blocks */
+        .replace(/```([a-zA-Z0-9_-]+)?\n([\s\S]*?)```/g, function (_, lang, code) {
+          var language = (lang || '').toLowerCase();
+          var cls = language ? ' class="language-' + language + '"' : '';
+          var toggle = '<div class="code-toggle"><button class="code-toggle-btn" aria-label="Expand/collapse code">−</button><span>Code</span></div>';
+          return '<div class="code-block-wrap">' + toggle + '<div class="code-block-content"><pre' + cls + '><code' + cls + '>' + escHtml(code.trim()) + '</code></pre></div></div>';
+        })
+        /* Blockquotes */
+        .replace(/^> (.+)$/gm, '<blockquote><p>$1</p></blockquote>')
+        /* Headers */
+        .replace(/^### (.+)$/gm, '<h3 class="md-h3">$1</h3>')
+        .replace(/^## (.+)$/gm, function(_, t) { return '<h2 class="md-h2" id="info-' + t.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'') + '">' + t + '</h2>'; })
+        /* Bold + inline code */
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        /* Links */
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+        /* Ordered lists */
+        .replace(/(?:^|\n)(\d+\. .+(?:\n\d+\. .+)*)/g, function (_, block) {
+          var items = block.trim().split('\n').map(function (l) {
+            return '<li>' + l.replace(/^\d+\.\s*/, '') + '</li>';
+          }).join('');
+          return '<ol class="md-ol">' + items + '</ol>';
+        })
+        /* Unordered lists */
+        .replace(/(?:^|\n)(- .+(?:\n- .+)*)/g, function (_, block) {
+          var items = block.trim().split('\n').map(function (l) {
+            return '<li>' + l.replace(/^- /, '') + '</li>';
+          }).join('');
+          return '<ul>' + items + '</ul>';
+          });
+
+        return html
+          .split(/\n{2,}/)
+          .map(function (block) {
+            var trimmed = block.trim();
+            if (!trimmed) return '';
+            if (/^<(pre|blockquote|h[1-6]|ul|ol|div|table)/.test(trimmed)) {
+              return trimmed;
+            }
+            return '<p>' + trimmed.replace(/\n/g, '<br>') + '</p>';
+          })
+          .join('');
+    }
+
+    function escHtml(s) {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    /* ── Schema to flat table with inline expand/collapse ── */
+    var schemaUid = 0;
+    var schemaTableUid = 0;
+    function schemaRows(schema, depth, parentUid) {
+      if (!schema || !schema.properties) return '';
+      depth = depth || 0;
+      var rows = '';
+      var props = schema.properties;
+      var required = schema.required || [];
+      Object.keys(props).forEach(function (key) {
+        var p = props[key];
+        var type = p.type || 'object';
+        var enumLine = '';
+        if (p.enum) {
+          type = 'enum';
+          enumLine = '<br><span class="schema-allowed">Allowed: ' + p.enum.map(function (v) { return escHtml(String(v)); }).join(' | ') + '</span>';
+        }
+        var pad = depth * 20;
+        var reqBadge = required.indexOf(key) !== -1 ? '<span class="schema-req">*</span>' : '';
+        var desc = p.description || '';
+        if (p.minLength !== undefined) desc += ' (min: ' + p.minLength + ')';
+        if (p.maxLength !== undefined) desc += ' (max: ' + p.maxLength + ')';
+        if (p.pattern) desc += ' <code>' + escHtml(p.pattern) + '</code>';
+        if (p.format) desc += ' <em>(' + p.format + ')</em>';
+
+        var hasChildren = p.type === 'object' && p.properties;
+        var uid = 'schema-' + (++schemaUid);
+        var toggleHtml = '';
+        var childClass = parentUid ? ' data-parent="' + parentUid + '"' : '';
+        var hiddenAttr = parentUid ? ' style="display:none;"' : '';
+
+        if (hasChildren) {
+          toggleHtml = '<span class="schema-toggle-inline" data-target="' + uid + '" title="Expand">−</span> ';
+          rows += '<tr class="schema-row"' + childClass + hiddenAttr + '>' +
+            '<td style="padding-left:' + (14 + pad) + 'px;">' + toggleHtml + '<span class="schema-field">' + escHtml(key) + '</span>' + reqBadge + '</td>' +
+            '<td>' + desc + '</td></tr>';
+          rows += schemaRows(p, depth + 1, uid);
+        } else {
+          rows += '<tr class="schema-row"' + childClass + hiddenAttr + '>' +
+            '<td style="padding-left:' + (14 + pad) + 'px;"><span class="schema-field">' + escHtml(key) + '</span>' + reqBadge + '</td>' +
+            '<td><span class="schema-type">' + escHtml(type) + '</span>' + enumLine + '</td>' +
+            '<td>' + desc + '</td></tr>';
+        }
+      });
+      return rows;
+    }
+
+    function schemaTable(schema) {
+      if (!schema || !schema.properties) return '';
+      var tableId = 'schema-table-' + (++schemaTableUid);
+      var rows = schemaRows(schema, 0, null);
+      return '<div class="schema-toolbar">' +
+        '<button type="button" class="schema-toolbar-btn" data-schema-table="' + tableId + '" data-schema-action="expand">Expand all</button>' +
+        '<button type="button" class="schema-toolbar-btn" data-schema-table="' + tableId + '" data-schema-action="collapse">Collapse all</button>' +
+        '</div>' +
+        '<table class="schema-table" data-schema-table-id="' + tableId + '"><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody>' + rows + '</tbody></table>';
+    }
+
+    /* ── Error codes table ────────────────────────────── */
+    function errorTable(codes) {
+      if (!codes || !codes.length) return '';
+      var rows = codes.map(function (e) {
+        return '<tr><td>' + e.code + '</td><td><code>' + escHtml(e.iot_status_code || '') + '</code></td><td>' + escHtml(e.description || '') + '</td><td>' + escHtml(e.cause || '') + '</td><td>' + escHtml(e.recommended_action || '') + '</td></tr>';
+      }).join('');
+      return '<div class="payload-heading">Error Codes</div>' +
+        '<table class="error-table"><thead><tr><th>Code</th><th>Status</th><th>Description</th><th>Cause</th><th>Action</th></tr></thead><tbody>' + rows + '</tbody></table>';
+    }
+
+    /* ── Copy button ──────────────────────────────────── */
+    function addCopyButtons() {
+      document.querySelectorAll('pre:not([data-copy])').forEach(function (pre) {
+        pre.setAttribute('data-copy', '1');
+        var btn = document.createElement('button');
+        btn.className = 'copy-btn';
+        btn.textContent = 'Copy';
+        btn.addEventListener('click', function () {
+          var text = pre.textContent.replace('Copy', '').replace('Copied!', '').trim();
+          navigator.clipboard.writeText(text);
+          btn.textContent = 'Copied!';
+          setTimeout(function () { btn.textContent = 'Copy'; }, 1500);
+        });
+        pre.appendChild(btn);
+      });
+    }
+
+    /* ── Replace JSON code blocks with <json-viewer> web component ── */
+    function addCollapseToggles() {
+      document.querySelectorAll('pre:not([data-json-processed])').forEach(function (pre) {
+        var code = pre.querySelector('code.language-json');
+        if (!code) return;
+        pre.setAttribute('data-json-processed', '1');
+        var rawText = code.textContent.trim();
+        try {
+          var json = JSON.parse(rawText);
+          var viewer = document.createElement('json-viewer');
+          var wrapper = document.createElement('div');
+          wrapper.className = 'json-viewer-wrap';
+
+          /* Toolbar */
+          var toolbar = document.createElement('div');
+          toolbar.className = 'jv-toolbar';
+
+          var expandBtn = document.createElement('button');
+          expandBtn.className = 'jv-toolbar-btn';
+          expandBtn.textContent = 'Expand all';
+          expandBtn.addEventListener('click', function () {
+            viewer.expandAll();
+          });
+
+          var collapseBtn = document.createElement('button');
+          collapseBtn.className = 'jv-toolbar-btn';
+          collapseBtn.textContent = 'Collapse all';
+          collapseBtn.addEventListener('click', function () {
+            viewer.collapseAll();
+          });
+
+          var copyBtn = document.createElement('button');
+          copyBtn.className = 'jv-toolbar-btn jv-copy-btn';
+          copyBtn.textContent = 'Copy';
+          copyBtn.addEventListener('click', function () {
+            navigator.clipboard.writeText(rawText);
+            copyBtn.textContent = 'Copied!';
+            setTimeout(function () { copyBtn.textContent = 'Copy'; }, 1500);
+          });
+
+          toolbar.appendChild(expandBtn);
+          toolbar.appendChild(collapseBtn);
+          toolbar.appendChild(copyBtn);
+
+          wrapper.appendChild(toolbar);
+          wrapper.appendChild(viewer);
+          pre.parentNode.replaceChild(wrapper, pre);
+
+          /* Set data after insertion into DOM */
+          viewer.data = json;
+        } catch(e) {
+          // Not valid JSON, keep original pre/code with Prism highlighting
+        }
+      });
+    }
+
+    /* ── Wire schema expand/collapse toggles ──────────── */
+    function wireSchemaToggles() {
+      document.querySelectorAll('.schema-toggle-inline').forEach(function (btn) {
+        if (btn.getAttribute('data-wired')) return;
+        btn.setAttribute('data-wired', '1');
+        /* Start expanded — show children */
+        var targetId = btn.getAttribute('data-target');
+        var children = document.querySelectorAll('[data-parent="' + targetId + '"]');
+        children.forEach(function (row) { row.style.display = ''; });
+        btn.textContent = '−';
+        btn.addEventListener('click', function () {
+          var isExpanded = btn.textContent === '−';
+          if (isExpanded) {
+            /* Collapse: hide all children recursively */
+            collapseChildren(targetId);
+            btn.textContent = '+';
+          } else {
+            /* Expand: show direct children only */
+            children.forEach(function (row) { row.style.display = ''; });
+            /* Also re-expand any nested toggles that were expanded */
+            btn.textContent = '−';
+          }
+        });
+      });
+    }
+    function collapseChildren(parentId) {
+      var children = document.querySelectorAll('[data-parent="' + parentId + '"]');
+      children.forEach(function (row) {
+        row.style.display = 'none';
+        /* If this row has a toggle, collapse its children too */
+        var nestedToggle = row.querySelector('.schema-toggle-inline');
+        if (nestedToggle) {
+          nestedToggle.textContent = '+';
+          collapseChildren(nestedToggle.getAttribute('data-target'));
+        }
+      });
+    }
+
+    function wireSchemaToolbars() {
+      document.querySelectorAll('.schema-toolbar-btn').forEach(function (btn) {
+        if (btn.getAttribute('data-wired')) return;
+        btn.setAttribute('data-wired', '1');
+        btn.addEventListener('click', function () {
+          var tableId = btn.getAttribute('data-schema-table');
+          var table = document.querySelector('[data-schema-table-id="' + tableId + '"]');
+          if (!table) return;
+          if (btn.getAttribute('data-schema-action') === 'expand') {
+            table.querySelectorAll('.schema-row').forEach(function (row) {
+              row.style.display = '';
+            });
+            table.querySelectorAll('.schema-toggle-inline').forEach(function (toggle) {
+              toggle.textContent = '\u2212';
+            });
+          } else {
+            table.querySelectorAll('.schema-row[data-parent]').forEach(function (row) {
+              row.style.display = 'none';
+            });
+            table.querySelectorAll('.schema-toggle-inline').forEach(function (toggle) {
+              toggle.textContent = '+';
+            });
+          }
+        });
+      });
+    }
+
+    /* ── Render operation ─────────────────────────────── */
+    /* ── Generate REST API code (curl) ───────────────── */
+    function restCode(method, path, jsonBody) {
+      var url = 'http://{reader-ip}/api' + path;
+      var lines = ['curl -X ' + method.toUpperCase() + " '" + url + "' \\"];
+      lines.push("  -H 'Content-Type: application/json' \\");
+      if (jsonBody) {
+        lines.push("  -d '" + jsonBody + "'");
+      }
+      return lines.join('\n');
+    }
+
+    /* ── Generate REST API schema (HTTP request/response) ── */
+    function restSchema(method, path, bodyJson, resJson) {
+      var url = '/api' + path;
+      var lines = [];
+      lines.push('POST ' + url + ' HTTP/1.1');
+      lines.push('Host: {reader-ip}');
+      lines.push('Content-Type: application/json');
+      lines.push('');
+      if (bodyJson) lines.push(bodyJson);
+      if (resJson) {
+        lines.push('');
+        lines.push('--- Response ---');
+        lines.push('HTTP/1.1 200 OK');
+        lines.push('Content-Type: application/json');
+        lines.push('');
+        lines.push(resJson);
+      }
+      return lines.join('\n');
+    }
+
+    function renderOperation(path, method, op) {
+      var summary = op.summary || path;
+      var id = slugify(summary);
+      var desc = op.description || '';
+
+      /* Extract example JSONs for REST tabs */
+      var reqExampleJson = '';
+      var resExampleJson = '';
+
+      /* Request example + schema */
+      var reqHtml = '';
+      if (op.requestBody && op.requestBody.content) {
+        var ct = op.requestBody.content['application/json'];
+        if (ct) {
+          var exObj = ct.examples;
+          if (exObj) {
+            var firstKey = Object.keys(exObj)[0];
+            if (firstKey && exObj[firstKey].value) {
+              reqExampleJson = JSON.stringify(exObj[firstKey].value, null, 2);
+            }
+          }
+          var schemaHtml = ct.schema ? schemaTable(ct.schema) : '';
+
+          reqHtml = '<div class="payload-section">';
+          reqHtml += '<div class="payload-heading">MQTT Command Payload</div>';
+          reqHtml += '<div class="tab-bar">';
+          if (reqExampleJson) reqHtml += '<button class="tab-btn active" data-tab="req-ex-' + id + '">Example</button>';
+          if (schemaHtml) reqHtml += '<button class="tab-btn" data-tab="req-sc-' + id + '">Schema</button>';
+          reqHtml += '</div>';
+          if (reqExampleJson) reqHtml += '<div class="tab-panel active" id="req-ex-' + id + '"><pre class="language-json"><code class="language-json">' + escHtml(reqExampleJson) + '</code></pre></div>';
+          if (schemaHtml) reqHtml += '<div class="tab-panel" id="req-sc-' + id + '">' + schemaHtml + '</div>';
+          reqHtml += '</div>';
+        }
+      }
+
+      /* Response example + schema */
+      var resHtml = '';
+      if (op.responses) {
+        var resKey = Object.keys(op.responses)[0];
+        var res = op.responses[resKey];
+        if (res && res.content && res.content['application/json']) {
+          var rct = res.content['application/json'];
+          var resExObj = rct.examples || {};
+          var resExKeys = Object.keys(resExObj);
+          var resSchemaHtml = rct.schema ? schemaTable(rct.schema) : '';
+          resHtml = '<div class="payload-section">';
+          resHtml += '<div class="payload-heading">MQTT Response Payload</div>';
+          if (resExKeys.length || resSchemaHtml) {
+            resHtml += '<div class="tab-bar">';
+            if (resExKeys.length) resHtml += '<button class="tab-btn active" data-tab="res-ex-' + id + '">Example</button>';
+            if (resSchemaHtml) resHtml += '<button class="tab-btn" data-tab="res-sc-' + id + '">Schema</button>';
+            resHtml += '</div>';
+            if (resExKeys.length) {
+              resHtml += '<div class="tab-panel active" id="res-ex-' + id + '">';
+              if (resExKeys.length > 1) {
+                var resExVals = {}; resExKeys.forEach(function(k){ resExVals[k] = resExObj[k].value; });
+                var encodedExamples = encodeURIComponent(JSON.stringify(resExVals));
+                resHtml += '<select class="example-select" data-panel="res-ex-' + id + '" data-examples="' + encodedExamples + '">';
+                resExKeys.forEach(function(k) { resHtml += '<option value="' + escHtml(k) + '">' + escHtml(k) + '</option>'; });
+                resHtml += '</select>';
+              }
+              resHtml += '<pre class="language-json"><code class="language-json">' + escHtml(JSON.stringify(resExObj[resExKeys[0]].value, null, 2)) + '</code></pre>';
+              resHtml += '</div>';
+            }
+            if (resSchemaHtml) resHtml += '<div class="tab-panel" id="res-sc-' + id + '">' + resSchemaHtml + '</div>';
+          }
+          resHtml += '</div>';
+        }
+      }
+
+      return '<div class="operation" id="op-' + id + '">' +
+        '<h4 class="op-title">' + escHtml(summary) + '</h4>' +
+        '<div class="op-description md-content">' + md(desc) + '</div>' +
+        reqHtml + resHtml +
+        '</div><hr class="op-divider">';
+    }
+
+    function slugify(text) {
+      return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    }
+
+    /* ── Main render ──────────────────────────────────── */
+    function render(spec) {
+      var content = document.getElementById('content');
+      var nav = document.getElementById('nav-content');
+      var searchInput = document.getElementById('sidebar-search');
+      var html = '';
+      var navHtml = '';
+
+      /* Page title + info description */
+      html += '<h1 class="page-title">' + escHtml(spec.info.title) + '</h1>';
+      if (spec.info && spec.info.description) {
+        html += '<div class="info-description md-content">' + md(spec.info.description) + '</div>';
+        /* Nav links for ## headings in info description */
+        var infoSections = [];
+        spec.info.description.replace(/^## (.+)$/gm, function(_, t) {
+          infoSections.push(t);
+        });
+        if (infoSections.length) {
+          infoSections.forEach(function(t) {
+            if (t === 'Details') return;
+            var id = 'info-' + t.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+            navHtml += '<a class="nav-tag" href="#' + id + '">' + escHtml(t) + '</a>';
+          });
+          navHtml += '<hr class="nav-divider">';
+        }
+      }
+
+      /* Build tag map: tag name -> { description, operations[] } */
+      var tagMap = {};
+      (spec.tags || []).forEach(function (t) {
+        tagMap[t.name] = { description: t.description || '', operations: [] };
+      });
+
+      /* Collect operations into tags */
+      var paths = spec.paths || {};
+      Object.keys(paths).forEach(function (path) {
+        Object.keys(paths[path]).forEach(function (method) {
+          var op = paths[path][method];
+          var opTags = op.tags || ['default'];
+          opTags.forEach(function (tagName) {
+            if (!tagMap[tagName]) tagMap[tagName] = { description: '', operations: [] };
+            tagMap[tagName].operations.push({ path: path, method: method, op: op });
+          });
+        });
+      });
+
+      /* Render by tag groups */
+      var groups = spec['x-tagGroups'] || [{ name: 'API', tags: Object.keys(tagMap) }];
+      groups.forEach(function (group) {
+        group.tags.forEach(function (tagName) {
+          var tag = tagMap[tagName];
+          if (!tag) return;
+          var tagId = slugify(tagName);
+
+          /* Nav entry for tag */
+          navHtml += '<a class="nav-tag" href="#tag-' + tagId + '">' + escHtml(tagName) + '</a>';
+          tag.operations.forEach(function (entry) {
+            var opId = slugify(entry.op.summary || entry.path);
+            navHtml += '<a class="nav-op" href="#op-' + opId + '">' + escHtml(entry.op.summary || entry.path) + '</a>';
+          });
+
+          /* Main content for tag */
+          html += '<div class="tag-section" id="tag-' + tagId + '">';
+          html += '<h3 class="tag-heading">' + escHtml(tagName) + '</h3>';
+          if (tag.description) {
+            html += '<div class="tag-description md-content">' + md(tag.description) + '</div>';
+          }
+
+          /* Operations */
+          tag.operations.forEach(function (entry) {
+            html += renderOperation(entry.path, entry.method, entry.op);
+          });
+
+          html += '</div><hr class="tag-divider">';
+        });
+      });
+
+      content.innerHTML = html;
+      nav.innerHTML = navHtml;
+
+      /* Sidebar search filter (tag + operation links) */
+      if (searchInput && !searchInput.getAttribute('data-wired')) {
+        searchInput.setAttribute('data-wired', '1');
+        searchInput.addEventListener('input', function () {
+          var q = (searchInput.value || '').toLowerCase().trim();
+          var tagLinks = Array.prototype.slice.call(nav.querySelectorAll('.nav-tag'));
+          var opLinks = Array.prototype.slice.call(nav.querySelectorAll('.nav-op'));
+
+          if (!q) {
+            tagLinks.forEach(function (tag) { tag.style.display = ''; });
+            opLinks.forEach(function (op) { op.style.display = ''; });
+            return;
+          }
+
+          var opMatchByTag = {};
+          opLinks.forEach(function (op) {
+            var text = (op.textContent || '').toLowerCase();
+            var match = text.indexOf(q) !== -1;
+            op.style.display = match ? '' : 'none';
+
+            if (match) {
+              var prev = op.previousElementSibling;
+              while (prev && !prev.classList.contains('nav-tag')) prev = prev.previousElementSibling;
+              if (prev) opMatchByTag[prev.getAttribute('href')] = true;
+            }
+          });
+
+          tagLinks.forEach(function (tag) {
+            var tagText = (tag.textContent || '').toLowerCase();
+            var tagMatch = tagText.indexOf(q) !== -1;
+            var hasMatchingOp = !!opMatchByTag[tag.getAttribute('href')];
+            tag.style.display = (tagMatch || hasMatchingOp) ? '' : 'none';
+          });
+        });
+      }
+
+      /* Wire up tabs */
+      document.querySelectorAll('.tab-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var tabId = btn.getAttribute('data-tab');
+          /* Deactivate siblings within this tab-bar only */
+          var bar = btn.parentElement;
+          bar.querySelectorAll('.tab-btn').forEach(function (b) { b.classList.remove('active'); });
+          btn.classList.add('active');
+          /* Show/hide panels within this payload-section only */
+          var section = bar.closest('.payload-section');
+          if (section) {
+            section.querySelectorAll('.tab-panel').forEach(function (p) { p.classList.remove('active'); });
+          }
+          var target = document.getElementById(tabId);
+          if (target) target.classList.add('active');
+        });
+      });
+
+      addCollapseToggles();
+      addCopyButtons();
+
+      wireSchemaToggles();
+      wireSchemaToolbars();
+      if (window.Prism) Prism.highlightAllUnder(document.getElementById('content'));
+
+      /* Wire example dropdowns */
+      document.querySelectorAll('.example-select').forEach(function(sel) {
+        sel.addEventListener('change', function() {
+          var panelId = sel.getAttribute('data-panel');
+          var panel = document.getElementById(panelId);
+          if (!panel) return;
+          var pre = panel.querySelector('pre code');
+          if (!pre) return;
+          var examplesJson = sel.getAttribute('data-examples');
+          if (!examplesJson) return;
+          try {
+            var examples = JSON.parse(decodeURIComponent(examplesJson));
+            var val = examples[sel.value];
+            if (val !== undefined) {
+              pre.textContent = JSON.stringify(val, null, 2);
+              if (window.Prism) Prism.highlightElement(pre);
+            }
+          } catch(e) {}
+        });
+      });
+
+      /* Highlight active nav on scroll */
+      var allTags = document.querySelectorAll('.nav-tag');
+      var sections = document.querySelectorAll('.tag-section');
+      window.addEventListener('scroll', function () {
+        var scrollY = window.scrollY + 80;
+        var current = '';
+        sections.forEach(function (sec) {
+          if (sec.offsetTop <= scrollY) current = sec.id;
+        });
+        allTags.forEach(function (a) {
+          a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+        });
+      });
+    }
+
+    /* ── Load spec ────────────────────────────────────── */
+    fetch('openapi_md.json?v=' + Date.now())
+      .then(function (r) {
+        if (!r.ok) throw new Error('Failed to load openapi_md.json: ' + r.status);
+        return r.json();
+      })
+      .then(render)
+      .catch(function (err) {
+        document.getElementById('content').innerHTML = '<p class="error-msg">Error loading spec: ' + escHtml(err.message) + '</p>';
+      });
+
+    /* ── Font scale ───────────────────────────────────── */
+    var BASE_FONT_PX = 15;
+    var STEP = 0.05, MIN = 0.5, MAX = 2.0, KEY = 'mqtt-font-scale';
+    var saved = parseFloat(localStorage.getItem(KEY));
+    var scale = (saved >= MIN && saved <= MAX) ? saved : 1;
+
+    var display = document.getElementById('font-scale-value');
+    function applyScale() {
+      scale = Math.round(scale * 100) / 100;
+      document.documentElement.style.fontSize = (BASE_FONT_PX * scale) + 'px';
+      display.textContent = Math.round(scale * 100) + '%';
+      localStorage.setItem(KEY, scale);
+    }
+    applyScale();
+
+    document.getElementById('font-scale-up').addEventListener('click', function () { if (scale < MAX) { scale += STEP; applyScale(); } });
+    document.getElementById('font-scale-down').addEventListener('click', function () { if (scale > MIN) { scale -= STEP; applyScale(); } });
+    document.getElementById('font-scale-reset').addEventListener('click', function () { scale = 1; applyScale(); });
+  })();
+  </script>
+</body>
+</html>
