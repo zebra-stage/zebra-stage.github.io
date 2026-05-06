@@ -3,7 +3,7 @@
     "info": {
         "title": "Gen2X API Reference",
         "version": "1.0.0",
-        "description": "﻿Use this guide to enable, configure, and manage Impinj Gen2X features on Zebra fixed RFID readers using MQTT. These features are currently supported on the FXR90, with additional fixed reader support coming soon.\n\n## Overview\n\nThis tutorial provides a walk-through of the steps to use Impinj Gen2X tag features via the MQTT API on Zebra fixed RFID readers, including:\n\n- **Protected Mode** — Lock individual tags with a password so they are invisible to unauthorized readers. *(tag-scoped — applies to a specific tag by EPC)*\n- **FastID** — Return the EPC and TID in a single inventory response. *(reader-scoped — applies to all inventory operations)*\n- **TagFocus** — Silence already-read tags so the reader focuses on new ones. *(reader-scoped — applies to all inventory operations)*\n- **Tag Quieting** — Silence specific tags by EPC ID. *(tag-scoped — applies to specific tags by EPC)*\n\n\nImpinj Gen2X extends the Gen2 radio and logical layers. Your tags must support Gen2X to use these features. To check whether your tags are compatible, see the [Impinj Gen2X tag specifications](http://www.impinj.com/Gen2X).\n\n## Before you begin\n\nSet up your MQTT connection, broker, and topic before using this API. For setup instructions, see the [Zebra IoTC MQTT Setup Guide](https://zebradevs.github.io/rfid-ziotc-docs/other_cloud_support/MQTT/index.html).\n\n## Get started\n\nFollow these steps to configure and apply Gen2X features on the reader:\n\n1. **Check current state (optional)** — Send `get_impinjGen2X` to see which Gen2X features are currently active on the reader.\n2. **Stop the radio (if running)** — Send the `stop` command if the radio is currently active. The radio must be stopped before you can apply configuration changes.\n3. **Configure features** — Use the `set_impinjGen2X` command to stage the Gen2X features you want to enable (e.g., Protected Mode, FastID, TagFocus).\n4. **Review staged configuration** — Send `get_impinjGen2X` to verify the staged Gen2X configuration before starting the radio.\n5. **Start with Gen2X** — Send the `start` command with `applyImpinjGen2X` set to `true`. This applies the staged Gen2X configuration and starts the radio.\n\n> **Feature persistence:** Reader-scoped settings (FastID, TagFocus) and tag-scoped settings (Protected Mode, Tag Quieting) are staged via `set_impinjGen2X` and applied when the radio starts with `applyImpinjGen2X: true`. Staged configurations persist across stop/start cycles as long as the MQTT session remains connected. A reader reboot or MQTT disconnect clears all staged configurations, and you must re-send `set_impinjGen2X` to restore them."
+        "description": "﻿Use this guide to enable, configure, and manage Impinj Gen2X features on Zebra fixed RFID readers using both MQTT and REST APIs. These features are currently supported on the **FXR90** with Firmware 4.0.8 and above, with additional fixed reader support coming soon.\n\n## Overview\n\nThis reference explains how to use Gen2X operations across MQTT and REST for:\n\n- **Protected Mode**: Lock individual tags with a password so they are invisible to unauthorized readers. \n- **FastID**: Return the EPC and TID in a single inventory response. \n- **TagFocus**: Reduce repeated reports from already-read tags so the reader prioritizes new tags. \n- **Tag Quieting**: Quiet specific tags by EPC ID through reader-level configuration. \n\nImpinj Gen2X extends Gen2 radio and logical layers. Tags must support Gen2X to use these features. For tag compatibility, refer to [Impinj Gen2X specifications](http://www.impinj.com/Gen2X).\n\n## Protocols\n\nThis documentation covers both interfaces for the same Gen2X feature set:\n\n- MQTT: Command-based operations for cloud-connected workflows.\n- REST: HTTPS endpoints for direct API integration.\n\nUse either interface based on your deployment and integration architecture.\n\n## Before You Begin\n- Set up your MQTT connection, broker, and topic before using this API. For setup instructions, see the [Zebra IoTC MQTT Setup Guide](https://zebradevs.github.io/rfid-ziotc-docs/other_cloud_support/MQTT/index.html).\n- For REST API integration and setup instructions, see the following guide: [Zebra IoTC HTTP POST Integration Guide](https://zebradevs.github.io/rfid-ziotc-docs/other_cloud_support/HTTP_POST/index.html)\n\n## Getting Started with REST API\n\n### Authentication\n\n1. Send `PUT /cloud/localRestLogin`.\n2. Extract the access token from the login response.\n3. Add the token to all protected requests.\n\n### Configuration Workflow\n\nUse this sequence to safely stage and apply Gen2X updates:\n\n1. Send `GET /cloud/impinjGen2X` to check current Gen2X configuration.\n2. Send `PUT /cloud/stop` to stop the IoT cloud service if it is running.\n3. Send `PUT /cloud/impinjGen2X` to stage one or more feature updates.\n4. Send `GET /cloud/impinjGen2X` to verify staged configuration.\n5. Send `PUT /cloud/start` with `applyImpinjGen2X: true` to start the service and apply staged configuration.\n\n## Getting Started with MQTT\n\nUse this sequence for the same workflow through MQTT commands:\n\n1. Send `get_impinjGen2X` to check current Gen2X configuration.\n2. Send `stop` to stop the IoT cloud service if it is running.\n3. Send `set_impinjGen2X` to stage one or more feature updates.\n4. Send `get_impinjGen2X` to verify staged configuration.\n5. Send `start` with `applyImpinjGen2X: true` to start the service and apply staged configuration.\n\n## Feature Scope and Behavior\n\nGen2X supports four features:\n- **Protected Mode** (tag-scoped)\n- **TagFocus** (reader-scoped)\n- **FastID** (reader-scoped)\n- **Tag Quieting** (reader-scoped)\n\n### Feature Scope\n\n- **Tag-Scoped** - Protected Mode applies to specific tags identified by EPC. It operates independently of reader-scoped features, so you can protect or unprotect individual tags while any reader-scoped feature remains active.\n\n- **Reader-Scoped** - FastID, TagFocus, and Tag Quieting apply at the reader level. These features are mutually exclusive, so only one reader-scoped feature can be active at a time. Enabling a different reader-scoped feature replaces the currently active one for subsequent inventory operations.\n\n### Feature Persistence\n\nThe reader retains the last configured Gen2X feature and automatically restores it upon start with `applyImpinjGen2X: true`. This behavior is maintained across the following scenarios:\n\n- Stopping and restarting the reader\n- Disconnecting and reconnecting MQTT\n- Rebooting the device"
     },
     "tags": [
         {
@@ -60,14 +60,14 @@
                 "tags": [
                     "Protected Mode"
                 ],
-                "summary": "Enable Impinj Protected Mode",
-                "description": "﻿**Description:**\nEnable Impinj Protected Mode — Locks an RFID tag using a 32-bit access password, rendering it invisible to readers.\n\n**Usage:**\nSend this command with the target tag's EPC ID and a 32-bit access password. Once enabled, the tag enters Protected Mode and ceases to respond to standard inventory commands. The tag remains RF silent and inaccessible until a reader provides the correct password.\n\n**Persistence:** The tag itself remains in Protected Mode permanently until explicitly unprotected via Disable Impinj Protected Mode. The protection state is stored on the tag, not the reader.\n\n**Parameters:**\n- `action` (string): Set to `enableTagProtection` to enable Protected Mode for the tag\n- `tagID` (string): The unique EPC identifier of the tag to protect\n- `password` (string): A 32-bit (8-character hexadecimal) password used for Protected Mode access",
+                "summary": "Enable Protected Mode",
+                "description": "**Description:**\nEnable Protected Mode — Locks an RFID tag using a 32-bit access password, rendering it invisible to readers.\n\n**Usage:**\nSend this command with the target tag's EPC ID and a 32-bit access password. Once enabled, the tag enters Protected Mode and ceases to respond to standard inventory commands. Use the **disable tag protection** command to remove password protection and restore normal tag operation. This is useful for securing sensitive tags or preventing unauthorized reading in high-traffic environments.\n\n**Parameters (MQTT & REST):**\n\n- **action** (string): Enables Protected Mode on the tag Must be `enableTagProtection`.\n- **password** (string): 8-character hexadecimal 32-bit password\n- **tagID** (string): Tag EPC ID\n\n<div class=\"endpoint-block\"><div class=\"ep-heading ep-mqtt\">MQTT Endpoint Details</div><table class=\"endpoint-table\"><tbody><tr><td>Command</td><td><code>set_impinjGen2X</code></td></tr></tbody></table></div>\n\n<div class=\"endpoint-block\"><div class=\"ep-heading ep-rest\">REST Endpoint Details</div><table class=\"endpoint-table\"><tbody><tr><td>Method</td><td><span class=\"ep-method ep-method-put\">PUT</span></td></tr><tr><td>Path</td><td><code>/cloud/impinjGen2X</code></td></tr><tr><td>Request URL</td><td><code>https://&lt;device-ip&gt;/cloud/impinjGen2X</code></td></tr><tr><td>Content-Type</td><td><code>application/json</code></td></tr></tbody></table></div>",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "x-summary": "Enable Impinj Protected Mode",
+                                "x-summary": "Enable Protected Mode",
                                 "type": "object",
                                 "required": [
                                     "command",
@@ -117,6 +117,7 @@
                                                     },
                                                     "tagID": {
                                                         "type": "string",
+                                                        "pattern": "^[0-9A-Fa-f]+$",
                                                         "description": "Tag EPC ID"
                                                     }
                                                 },
@@ -213,14 +214,14 @@
                 "tags": [
                     "Protected Mode"
                 ],
-                "summary": "Disable Impinj Protected Mode",
-                "description": "﻿**Description:**\nDisable Impinj Protected Mode — Removes the 32-bit access password protection from an RFID tag, restoring normal operation.\n\n**Usage:**\nSend this command with the target tag's EPC ID and the 32-bit access password that was used to enable Protected Mode. Once disabled, the tag returns to normal operation and responds to all standard inventory commands without authentication.\n\n**Parameters:**\n- `action` (string): Set to `disableTagProtection` to disable Protected Mode for the tag\n- `tagID` (string): The unique EPC identifier of the tag to remove protection from\n- `password` (string): A 32-bit (8-character hexadecimal) access password that matches the protection password",
+                "summary": "Disable Protected Mode",
+                "description": "**Description:**\nDisable Protected Mode — Removes the 32-bit access password protection from an RFID tag, restoring normal operation.\n\n**Usage:**\nSend this command with the target tag's EPC ID and the 32-bit access password that was used to enable Protected Mode. Once disabled, the tag returns to normal operation and responds to all standard inventory commands without authentication.\n\n**Parameters (MQTT & REST):**\n\n- **action** (string): Disables Protected Mode on the tag Must be `disableTagProtection`.\n- **password** (string): 8-character hexadecimal 32-bit password\n- **tagID** (string): Tag EPC ID\n\n<div class=\"endpoint-block\"><div class=\"ep-heading ep-mqtt\">MQTT Endpoint Details</div><table class=\"endpoint-table\"><tbody><tr><td>Command</td><td><code>set_impinjGen2X</code></td></tr></tbody></table></div>\n\n<div class=\"endpoint-block\"><div class=\"ep-heading ep-rest\">REST Endpoint Details</div><table class=\"endpoint-table\"><tbody><tr><td>Method</td><td><span class=\"ep-method ep-method-put\">PUT</span></td></tr><tr><td>Path</td><td><code>/cloud/impinjGen2X</code></td></tr><tr><td>Request URL</td><td><code>https://&lt;device-ip&gt;/cloud/impinjGen2X</code></td></tr><tr><td>Content-Type</td><td><code>application/json</code></td></tr></tbody></table></div>",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "x-summary": "Disable Impinj Protected Mode",
+                                "x-summary": "Disable Protected Mode",
                                 "type": "object",
                                 "required": [
                                     "command",
@@ -270,6 +271,7 @@
                                                     },
                                                     "tagID": {
                                                         "type": "string",
+                                                        "pattern": "^[0-9A-Fa-f]+$",
                                                         "description": "Tag EPC ID"
                                                     }
                                                 },
@@ -367,7 +369,7 @@
                     "Protected Mode"
                 ],
                 "summary": "Enable Inventory of Protected Tags",
-                "description": "﻿**Description:**\nEnable Inventory of Protected Tags — Grants the reader authorization to inventory protected tags using the correct 32-bit access password.\n\n**Usage:**\nSend this command with the 32-bit access password. The reader will use this password to authenticate and unmask all protected tags that match during inventory rounds. This allows the reader to interact with protected tags without permanently removing their Protected Mode.\n\n**Persistence:** The authorization remains active across stop/start cycles as long as the MQTT session stays connected. A reader reboot or MQTT disconnect clears the authorization, and you must re-send this command to restore visibility.\n\n**Parameters:**\n- `action` (string): Set to `enableTagVisibility` to allow inventory of protected tags\n- `password` (string): A 32-bit (8-character hexadecimal) access password for authentication",
+                "description": "**Description:**\nEnable Inventory of Protected Tags — Grants the reader authorization to inventory protected tags using the correct 32-bit access password.\n\n**Usage:**\nSend this command with the 32-bit access password. The reader will use this password to authenticate and unmask all protected tags that match during inventory rounds. This allows the reader to interact with protected tags without permanently removing their Protected Mode.\n\n**Parameters (MQTT & REST):**\n\n- **action** (string): Enables the reader to read protected tags Must be `enableTagVisibility`.\n- **password** (string): 8-character hexadecimal 32-bit password\n\n<div class=\"endpoint-block\"><div class=\"ep-heading ep-mqtt\">MQTT Endpoint Details</div><table class=\"endpoint-table\"><tbody><tr><td>Command</td><td><code>set_impinjGen2X</code></td></tr></tbody></table></div>\n\n<div class=\"endpoint-block\"><div class=\"ep-heading ep-rest\">REST Endpoint Details</div><table class=\"endpoint-table\"><tbody><tr><td>Method</td><td><span class=\"ep-method ep-method-put\">PUT</span></td></tr><tr><td>Path</td><td><code>/cloud/impinjGen2X</code></td></tr><tr><td>Request URL</td><td><code>https://&lt;device-ip&gt;/cloud/impinjGen2X</code></td></tr><tr><td>Content-Type</td><td><code>application/json</code></td></tr></tbody></table></div>",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -539,7 +541,7 @@
                     "Protected Mode"
                 ],
                 "summary": "Clear Protected Mode Configuration",
-                "description": "﻿**Description:**\nClear Protected Mode Configuration — Revokes the reader's authorization to inventory protected tags, restoring them to invisible status.\n\n**Usage:**\nSend this command with the 32-bit access password to revoke the reader's visibility permissions. After sending this command, the reader will no longer surface protected tags in inventory results. This does not remove Protected Mode from the tags; it only prevents the reader from seeing them.\n\n**Parameters:**\n- `action` (string): Set to `disableTagVisibility` to stop inventory of protected tags\n- `password` (string): A 32-bit (8-character hexadecimal) access password for authentication",
+                "description": "**Description:**\nClear Protected Mode Configuration — Revokes the reader's authorization to inventory protected tags, restoring them to invisible status.\n\n**Usage:**\nSend this command with the 32-bit access password to revoke the reader's visibility permissions. After sending this command, the reader will no longer surface protected tags in inventory results. This does not remove Protected Mode from the tags; it only prevents the reader from seeing them.\n\n**Parameters (MQTT & REST):**\n\n- **action** (string): Disables reading of protected tags Must be `disableTagVisibility`.\n- **password** (string): 8-character hexadecimal 32-bit password\n\n<div class=\"endpoint-block\"><div class=\"ep-heading ep-mqtt\">MQTT Endpoint Details</div><table class=\"endpoint-table\"><tbody><tr><td>Command</td><td><code>set_impinjGen2X</code></td></tr></tbody></table></div>\n\n<div class=\"endpoint-block\"><div class=\"ep-heading ep-rest\">REST Endpoint Details</div><table class=\"endpoint-table\"><tbody><tr><td>Method</td><td><span class=\"ep-method ep-method-put\">PUT</span></td></tr><tr><td>Path</td><td><code>/cloud/impinjGen2X</code></td></tr><tr><td>Request URL</td><td><code>https://&lt;device-ip&gt;/cloud/impinjGen2X</code></td></tr><tr><td>Content-Type</td><td><code>application/json</code></td></tr></tbody></table></div>",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -711,7 +713,7 @@
                     "Protected Mode"
                 ],
                 "summary": "Enable Protected Mode with Short Range",
-                "description": "﻿**Description:**\nEnable Impinj Protected Mode with Short Range — Protects an RFID tag with a 32-bit access password and restricts its response range to short distance only.\n\n**Usage:**\nSend this command with the target tag's EPC ID, a 32-bit access password, and set `enableShortRange` to `true`. The tag enters Protected Mode and only responds to readers in close physical proximity. This is ideal for point-of-sale operations or scenarios requiring location-specific tag reads.\n\n**Persistence:** The tag itself remains in Protected Mode with short-range restriction permanently until explicitly unprotected.\n\n**Parameters:**\n- `action` (string): Set to `enableTagProtection` to enable Protected Mode with short-range behavior\n- `tagID` (string): The unique EPC identifier of the tag to protect\n- `password` (string): A 32-bit (8-character hexadecimal) password for accessing the tag\n- `enableShortRange` (boolean): Set to `true` to limit tag response range to close proximity",
+                "description": "**Description:**\nEnable Protected Mode with Short Range — Protects an RFID tag with a 32-bit access password and restricts its response range to short distance only.\n\n**Usage:**\nSend this command with the target tag's EPC ID, a 32-bit access password, and set `enableShortRange` to `true`. The tag enters Protected Mode and only responds to readers in close physical proximity. This is ideal for point-of-sale operations or scenarios requiring location-specific tag reads.\n\n**Parameters (MQTT & REST):**\n\n- **action** (string): Enables Protected Mode on the tag Must be `enableTagProtection`.\n- **password** (string): 8-character hexadecimal 32-bit password\n- **tagID** (string): Hexadecimal tagID (EPC) of the target tag\n- **enableShortRange** (boolean): true to enable short-range protection mode for higher security\n\n<div class=\"endpoint-block\"><div class=\"ep-heading ep-mqtt\">MQTT Endpoint Details</div><table class=\"endpoint-table\"><tbody><tr><td>Command</td><td><code>set_impinjGen2X</code></td></tr></tbody></table></div>\n\n<div class=\"endpoint-block\"><div class=\"ep-heading ep-rest\">REST Endpoint Details</div><table class=\"endpoint-table\"><tbody><tr><td>Method</td><td><span class=\"ep-method ep-method-put\">PUT</span></td></tr><tr><td>Path</td><td><code>/cloud/impinjGen2X</code></td></tr><tr><td>Request URL</td><td><code>https://&lt;device-ip&gt;/cloud/impinjGen2X</code></td></tr><tr><td>Content-Type</td><td><code>application/json</code></td></tr></tbody></table></div>",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -903,7 +905,7 @@
                     "FastID"
                 ],
                 "summary": "Enable FastID",
-                "description": "﻿**Description:**\nEnables FastID feature so tags return both EPC (Electronic Product Code) and TID (Tag Identifier) in a single inventory response.\n\n**Usage:**\nSend this command to activate FastID on the reader. Once enabled, each tag inventory response includes both the EPC and TID simultaneously, eliminating the need for separate TID read operations. This significantly improves inventory throughput and reduces the number of RF transmissions required.\n\n**Persistence:** FastID remains active across stop/start cycles as long as the MQTT session stays connected. A reader reboot or MQTT disconnect clears the setting, and you must re-send this command to re-enable it.\n\n**Parameters:**\n- `enabled` (boolean): Set to `true` to enable FastID feature",
+                "description": "**Description:**\nEnables FastID feature so tags return both EPC (Electronic Product Code) and TID (Tag Identifier) in a single inventory response.\n\n**Usage:**\nSend this command to activate FastID on the reader. Once enabled, each tag inventory response includes both the EPC and TID simultaneously, eliminating the need for separate TID read operations. This significantly improves inventory throughput and reduces the number of RF transmissions required.\n\n**Parameters (MQTT & REST):**\n\n- **enabled** (boolean): Enable FastID feature Must be `True`.\n\n<div class=\"endpoint-block\"><div class=\"ep-heading ep-mqtt\">MQTT Endpoint Details</div><table class=\"endpoint-table\"><tbody><tr><td>Command</td><td><code>set_impinjGen2X</code></td></tr></tbody></table></div>\n\n<div class=\"endpoint-block\"><div class=\"ep-heading ep-rest\">REST Endpoint Details</div><table class=\"endpoint-table\"><tbody><tr><td>Method</td><td><span class=\"ep-method ep-method-put\">PUT</span></td></tr><tr><td>Path</td><td><code>/cloud/impinjGen2X</code></td></tr><tr><td>Request URL</td><td><code>https://&lt;device-ip&gt;/cloud/impinjGen2X</code></td></tr><tr><td>Content-Type</td><td><code>application/json</code></td></tr></tbody></table></div>",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -943,10 +945,10 @@
                                                 "properties": {
                                                     "enabled": {
                                                         "type": "boolean",
-                                                        "description": "Enable FastID feature",
                                                         "enum": [
                                                             true
-                                                        ]
+                                                        ],
+                                                        "description": "Enable FastID feature"
                                                     }
                                                 },
                                                 "description": "FastID feature configuration"
@@ -1059,7 +1061,7 @@
                     "FastID"
                 ],
                 "summary": "Disable FastID",
-                "description": "﻿**Description:**\nDisables the FastID feature, returning tags to standard inventory mode where they return only the EPC (Electronic Product Code).\n\n**Usage:**\nSend this command to deactivate FastID on the reader. Once disabled, tags will only return their EPC in inventory responses. If you need the TID (Tag Identifier), you must perform a separate dedicated TID read operation. This is useful for reducing response payload size or simplifying data processing when TID data is not required.\n\n**Parameters:**\n- `enabled` (boolean): Set to `false` to disable FastID feature",
+                "description": "**Description:**\nDisables the FastID feature, returning tags to standard inventory mode where they return only the EPC (Electronic Product Code).\n\n**Usage:**\nSend this command to deactivate FastID on the reader. Once disabled, tags will only return their EPC in inventory responses. If you need the TID (Tag Identifier), you must perform a separate dedicated TID read operation. This is useful for reducing response payload size or simplifying data processing when TID data is not required.\n\n**Parameters (MQTT & REST):**\n\n- **enabled** (boolean): Disable FastID feature Must be `False`.\n\n<div class=\"endpoint-block\"><div class=\"ep-heading ep-mqtt\">MQTT Endpoint Details</div><table class=\"endpoint-table\"><tbody><tr><td>Command</td><td><code>set_impinjGen2X</code></td></tr></tbody></table></div>\n\n<div class=\"endpoint-block\"><div class=\"ep-heading ep-rest\">REST Endpoint Details</div><table class=\"endpoint-table\"><tbody><tr><td>Method</td><td><span class=\"ep-method ep-method-put\">PUT</span></td></tr><tr><td>Path</td><td><code>/cloud/impinjGen2X</code></td></tr><tr><td>Request URL</td><td><code>https://&lt;device-ip&gt;/cloud/impinjGen2X</code></td></tr><tr><td>Content-Type</td><td><code>application/json</code></td></tr></tbody></table></div>",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1099,10 +1101,10 @@
                                                 "properties": {
                                                     "enabled": {
                                                         "type": "boolean",
-                                                        "description": "Disable FastID feature",
                                                         "enum": [
                                                             false
-                                                        ]
+                                                        ],
+                                                        "description": "Disable FastID feature"
                                                     }
                                                 },
                                                 "description": "FastID feature configuration"
@@ -1215,7 +1217,7 @@
                     "TagFocus"
                 ],
                 "summary": "Enable TagFocus",
-                "description": "﻿**Description:**\nEnables TagFocus feature so tags that have already been inventoried remain silent in subsequent inventory rounds, allowing the reader to focus exclusively on new or unread tags.\n\n**Usage:**\nSend this command to activate TagFocus on the reader. Once enabled, any tag that has been successfully read in the current session (S1) will stop responding to subsequent inventory rounds. This dramatically improves read rates in dense tag environments by eliminating duplicate reads and concentrating RF energy on newly encountered tags.\n\n**Persistence:** TagFocus remains active across stop/start cycles as long as the MQTT session stays connected. A reader reboot or MQTT disconnect clears the setting, and you must re-send this command to re-enable it.\n\n**Parameters:**\n- `enabled` (boolean): Set to `true` to enable TagFocus feature",
+                "description": "**Description:**\nEnables TagFocus feature so tags that have already been inventoried remain silent in subsequent inventory rounds, allowing the reader to focus exclusively on new or unread tags.\n\n**Usage:**\nSend this command to activate TagFocus on the reader. Once enabled, any tag that has been successfully read in the current session (S1) will stop responding to subsequent inventory rounds. This dramatically improves read rates in dense tag environments by eliminating duplicate reads and concentrating RF energy on newly encountered tags.\n\n**Parameters (MQTT & REST):**\n\n- **enabled** (boolean): Enable TagFocus feature Must be `True`.\n\n<div class=\"endpoint-block\"><div class=\"ep-heading ep-mqtt\">MQTT Endpoint Details</div><table class=\"endpoint-table\"><tbody><tr><td>Command</td><td><code>set_impinjGen2X</code></td></tr></tbody></table></div>\n\n<div class=\"endpoint-block\"><div class=\"ep-heading ep-rest\">REST Endpoint Details</div><table class=\"endpoint-table\"><tbody><tr><td>Method</td><td><span class=\"ep-method ep-method-put\">PUT</span></td></tr><tr><td>Path</td><td><code>/cloud/impinjGen2X</code></td></tr><tr><td>Request URL</td><td><code>https://&lt;device-ip&gt;/cloud/impinjGen2X</code></td></tr><tr><td>Content-Type</td><td><code>application/json</code></td></tr></tbody></table></div>",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1371,7 +1373,7 @@
                     "TagFocus"
                 ],
                 "summary": "Disable TagFocus",
-                "description": "﻿**Description:**\nDisables the TagFocus feature, returning tags to normal operational mode where all tags respond to every inventory round regardless of prior reads.\n\n**Usage:**\nSend this command to deactivate TagFocus on the reader. Once disabled, all tags will respond to every inventory round, even if they were previously read in the current session. This is useful when you need to track tag movement, verify tag presence continuously, or when inventory redundancy is more important than throughput optimization.\n\n**Parameters:**\n- `enabled` (boolean): Set to `false` to disable TagFocus feature",
+                "description": "**Description:**\nDisables the TagFocus feature, returning tags to normal operational mode where all tags respond to every inventory round regardless of prior reads.\n\n**Usage:**\nSend this command to deactivate TagFocus on the reader. Once disabled, all tags will respond to every inventory round, even if they were previously read in the current session. This is useful when you need to track tag movement, verify tag presence continuously, or when inventory redundancy is more important than throughput optimization.\n\n**Parameters (MQTT & REST):**\n\n- **enabled** (boolean): Disable TagFocus feature Must be `False`.\n\n<div class=\"endpoint-block\"><div class=\"ep-heading ep-mqtt\">MQTT Endpoint Details</div><table class=\"endpoint-table\"><tbody><tr><td>Command</td><td><code>set_impinjGen2X</code></td></tr></tbody></table></div>\n\n<div class=\"endpoint-block\"><div class=\"ep-heading ep-rest\">REST Endpoint Details</div><table class=\"endpoint-table\"><tbody><tr><td>Method</td><td><span class=\"ep-method ep-method-put\">PUT</span></td></tr><tr><td>Path</td><td><code>/cloud/impinjGen2X</code></td></tr><tr><td>Request URL</td><td><code>https://&lt;device-ip&gt;/cloud/impinjGen2X</code></td></tr><tr><td>Content-Type</td><td><code>application/json</code></td></tr></tbody></table></div>",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1527,7 +1529,7 @@
                     "Tag Quieting"
                 ],
                 "summary": "Quiet Tags",
-                "description": "﻿**Description:**\nSelectively silences one or more specific tags by their EPC ID, preventing them from responding to inventory rounds without affecting other tags.\n\n**Usage:**\nSend this command with an array of one or more EPC IDs to quiet. Quieted tags will not participate in inventory responses and will not transmit RF signals to the reader. This is useful for isolating problematic tags, managing high-density inventory operations, or testing specific tag subsets. You can quiet up to 31 tag EPCs in a single command.\n\n**Persistence:** Quieted tags remain silent across stop/start cycles as long as the MQTT session stays connected. A reader reboot or MQTT disconnect clears the quiet state, and you must re-send this command to re-quiet them. Use the Unquiet Tags command to explicitly restore individual tags.\n\n**Parameters:**\n- `action` (string): Set to `quiet` to silence tags\n- `tagIDs` (array): List of one or more EPC IDs as strings to silence\n  - Minimum 1 tag required\n  - Format: EPC ID strings matching tag identifier format",
+                "description": "**Description:**\nSelectively silences one or more specific tags by their EPC ID, preventing them from responding to inventory rounds without affecting other tags.\n\n**Usage:**\nSend this command with an array of one or more EPC IDs to quiet. Quieted tags will not participate in inventory responses and will not transmit RF signals to the reader. This is useful for isolating problematic tags, managing high-density inventory operations, or testing specific tag subsets. You can quiet up to 31 tag EPCs in a single command.\n\n**Parameters (MQTT & REST):**\n\n- **action** (string): Silence the specified tags Must be `quiet`.\n- **tagIDs** (array): List of tag EPCs (hex strings) to quiet\n\n<div class=\"endpoint-block\"><div class=\"ep-heading ep-mqtt\">MQTT Endpoint Details</div><table class=\"endpoint-table\"><tbody><tr><td>Command</td><td><code>set_impinjGen2X</code></td></tr></tbody></table></div>\n\n<div class=\"endpoint-block\"><div class=\"ep-heading ep-rest\">REST Endpoint Details</div><table class=\"endpoint-table\"><tbody><tr><td>Method</td><td><span class=\"ep-method ep-method-put\">PUT</span></td></tr><tr><td>Path</td><td><code>/cloud/impinjGen2X</code></td></tr><tr><td>Request URL</td><td><code>https://&lt;device-ip&gt;/cloud/impinjGen2X</code></td></tr><tr><td>Content-Type</td><td><code>application/json</code></td></tr></tbody></table></div>",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1710,7 +1712,7 @@
                     "Tag Quieting"
                 ],
                 "summary": "Unquiet Tags",
-                "description": "﻿**Description:**\nRestores previously silenced tags, allowing them to resume normal participation in inventory rounds.\n\n**Usage:**\nSend this command with the EPC IDs of the tags you wish to restore. These must be the same EPC IDs you provided to the Quiet Tags command. Once sent, the specified tags will resume responding to inventory operations and will transmit RF signals normally. You can restore individual tags or multiple tags in a single command. Tags not explicitly restored remain in quiet state.\n\n**Parameters:**\n- `action` (string): Set to `unquiet` to restore silenced tags\n- `tagIDs` (array): List of one or more EPC IDs as strings to restore\n  - Minimum 1 tag required\n  - Must match EPC IDs from the original Quiet Tags command request",
+                "description": "**Description:**\nRestores previously silenced tags, allowing them to resume normal participation in inventory rounds.\n\n**Usage:**\nSend this command with the EPC IDs of the tags you wish to restore. These must be the same EPC IDs you provided to the Quiet Tags command. Once sent, the specified tags will resume responding to inventory operations and will transmit RF signals normally. You can restore individual tags or multiple tags in a single command. Tags not explicitly restored remain in quiet state.\n\n**Parameters (MQTT & REST):**\n\n- **action** (string): Restore the specified tags Must be `unquiet`.\n- **tagIDs** (array): List of tag EPCs (hex strings) to unquiet\n\n<div class=\"endpoint-block\"><div class=\"ep-heading ep-mqtt\">MQTT Endpoint Details</div><table class=\"endpoint-table\"><tbody><tr><td>Command</td><td><code>set_impinjGen2X</code></td></tr></tbody></table></div>\n\n<div class=\"endpoint-block\"><div class=\"ep-heading ep-rest\">REST Endpoint Details</div><table class=\"endpoint-table\"><tbody><tr><td>Method</td><td><span class=\"ep-method ep-method-put\">PUT</span></td></tr><tr><td>Path</td><td><code>/cloud/impinjGen2X</code></td></tr><tr><td>Request URL</td><td><code>https://&lt;device-ip&gt;/cloud/impinjGen2X</code></td></tr><tr><td>Content-Type</td><td><code>application/json</code></td></tr></tbody></table></div>",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1893,7 +1895,7 @@
                     "Gen2X Configuration Retrieval"
                 ],
                 "summary": "Get Gen2X Config",
-                "description": "﻿**Description:**\nRetrieves and displays the current Gen2X configuration stored on the reader, including all enabled features and their settings.\n\n**Usage:**\nSend this command with an empty payload to query the reader's current Gen2X configuration state. The response will contain all previously configured settings such as TagProtect states, FastID status, TagFocus status, Tag Quieting lists, and other Gen2X features. Use this command to verify your configuration before starting the reader or to audit the current settings. If no Gen2X configuration has been set, the response returns an empty configuration object.\n\n**Parameters:**\n- None (empty payload required)",
+                "description": "**Description:**\nRetrieves and displays the current Gen2X configuration stored on the reader, including all enabled features and their settings.\n\n**Usage:**\nSend this command with an empty payload to query the reader's current Gen2X configuration state. The response will contain only the latest configured feature (for example, just TagFocus if that was the last action). Use this command to verify the most recent configuration change before starting the reader or to audit the current setting. If no Gen2X configuration has been set, the response returns an empty configuration object.\n\n**Parameters (MQTT & REST):**\n\n_No parameters required._\n\n<div class=\"endpoint-block\"><div class=\"ep-heading ep-mqtt\">MQTT Endpoint Details</div><table class=\"endpoint-table\"><tbody><tr><td>Command</td><td><code>get_impinjGen2X</code></td></tr></tbody></table></div>\n\n<div class=\"endpoint-block\"><div class=\"ep-heading ep-rest\">REST Endpoint Details</div><table class=\"endpoint-table\"><tbody><tr><td>Method</td><td><span class=\"ep-method ep-method-get\">GET</span></td></tr><tr><td>Path</td><td><code>/cloud/impinjGen2X</code></td></tr><tr><td>Request URL</td><td><code>https://&lt;device-ip&gt;/cloud/impinjGen2X</code></td></tr><tr><td>Content-Type</td><td><code>application/json</code></td></tr></tbody></table></div>",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1971,7 +1973,8 @@
                                                     "type": "object",
                                                     "properties": {
                                                         "enabled": {
-                                                            "type": "boolean"
+                                                            "type": "boolean",
+                                                            "description": "Whether FastID is enabled"
                                                         }
                                                     },
                                                     "description": "FastID configuration (present only if previously configured)"
@@ -1986,16 +1989,20 @@
                                                                 "disableTagProtection",
                                                                 "enableTagVisibility",
                                                                 "disableTagVisibility"
-                                                            ]
+                                                            ],
+                                                            "description": "Current protection action applied to the tag"
                                                         },
                                                         "password": {
-                                                            "type": "string"
+                                                            "type": "string",
+                                                            "description": "8-character hexadecimal 32-bit password used for tag protection"
                                                         },
                                                         "tagID": {
-                                                            "type": "string"
+                                                            "type": "string",
+                                                            "description": "Hexadecimal EPC of the protected tag"
                                                         },
                                                         "enableShortRange": {
-                                                            "type": "boolean"
+                                                            "type": "boolean",
+                                                            "description": "Whether short-range protection mode is enabled"
                                                         }
                                                     },
                                                     "description": "Protected Mode configuration (present only if previously configured)"
@@ -2004,7 +2011,8 @@
                                                     "type": "object",
                                                     "properties": {
                                                         "enabled": {
-                                                            "type": "boolean"
+                                                            "type": "boolean",
+                                                            "description": "Whether TagFocus is enabled"
                                                         }
                                                     },
                                                     "description": "TagFocus configuration (present only if previously configured)"
@@ -2014,16 +2022,19 @@
                                                     "properties": {
                                                         "basic": {
                                                             "type": "object",
+                                                            "description": "Basic tag quieting settings",
                                                             "properties": {
                                                                 "action": {
                                                                     "type": "string",
                                                                     "enum": [
                                                                         "quiet",
                                                                         "unquiet"
-                                                                    ]
+                                                                    ],
+                                                                    "description": "Action applied to the specified tags"
                                                                 },
                                                                 "tagIDs": {
                                                                     "type": "array",
+                                                                    "description": "List of hexadecimal EPC strings of affected tags",
                                                                     "items": {
                                                                         "type": "string"
                                                                     }
@@ -2096,7 +2107,7 @@
                     "Control Commands"
                 ],
                 "summary": "Start",
-                "description": "﻿**Description:**\nStarts the reader radio with all staged Gen2X configuration settings applied and active.\n\n**Usage:**\nSend this command after configuring your desired Gen2X settings (such as TagProtect, FastID, TagFocus, and Tag Quieting). Set the `applyImpinjGen2X` parameter to `true` to ensure all configuration changes take effect immediately when the radio starts. The radio will operate with all configured features active. You must stop the radio before making configuration changes using this start command.\n\n**Parameters:**\n- `applyImpinjGen2X` (boolean): Set to `true` to apply all staged Gen2X configurations",
+                "description": "**Description:**\nStarts the reader radio with all staged Gen2X configuration settings applied and active.\n\n**Usage:**\nSend this command after configuring your desired Gen2X settings (such as TagProtect, FastID, TagFocus, and Tag Quieting). Set the `applyImpinjGen2X` parameter to `true` to ensure all configuration changes take effect immediately when the radio starts. The radio will operate with all configured features active. You must stop the radio before making configuration changes using this start command.\n\n**Parameters (MQTT & REST):**\n\n- **applyImpinjGen2X** (boolean): true to apply Gen2X config when starting the radio Must be `True`.\n\n<div class=\"endpoint-block\"><div class=\"ep-heading ep-mqtt\">MQTT Endpoint Details</div><table class=\"endpoint-table\"><tbody><tr><td>Command</td><td><code>start</code></td></tr></tbody></table></div>\n\n<div class=\"endpoint-block\"><div class=\"ep-heading ep-rest\">REST Endpoint Details</div><table class=\"endpoint-table\"><tbody><tr><td>Method</td><td><span class=\"ep-method ep-method-put\">PUT</span></td></tr><tr><td>Path</td><td><code>/cloud/start</code></td></tr><tr><td>Request URL</td><td><code>https://&lt;device-ip&gt;/cloud/start</code></td></tr><tr><td>Content-Type</td><td><code>application/json</code></td></tr></tbody></table></div>",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -2217,7 +2228,7 @@
                     "Control Commands"
                 ],
                 "summary": "Stop",
-                "description": "**Description:**\nStops the reader radio immediately, halting all inventory operations and RF transmissions.\n\n**Usage:**\nSend this command with an empty payload to stop the reader radio. You must stop the radio before applying any Gen2X configuration changes such as enabling/disabling Protected Mode, FastID, TagFocus, or Tag Quieting. Always wait for the success response before attempting to configure settings or restart the radio. Stopping the reader is mandatory for synchronized configuration management.\n\n**Parameters:**\n- None (empty payload required)",
+                "description": "**Description:**\nStops the reader radio immediately, halting all inventory operations and RF transmissions.\n\n**Usage:**\nSend this command with an empty payload to stop the reader radio. You must stop the radio before applying any Gen2X configuration changes such as enabling/disabling Protected Mode, FastID, TagFocus, or Tag Quieting. Always wait for the success response before attempting to configure settings or restart the radio. Stopping the reader is mandatory for synchronized configuration management.\n\n**Parameters (MQTT & REST):**\n\n_No parameters required._\n\n<div class=\"endpoint-block\"><div class=\"ep-heading ep-mqtt\">MQTT Endpoint Details</div><table class=\"endpoint-table\"><tbody><tr><td>Command</td><td><code>stop</code></td></tr></tbody></table></div>\n\n<div class=\"endpoint-block\"><div class=\"ep-heading ep-rest\">REST Endpoint Details</div><table class=\"endpoint-table\"><tbody><tr><td>Method</td><td><span class=\"ep-method ep-method-put\">PUT</span></td></tr><tr><td>Path</td><td><code>/cloud/stop</code></td></tr><tr><td>Request URL</td><td><code>https://&lt;device-ip&gt;/cloud/stop</code></td></tr><tr><td>Content-Type</td><td><code>application/json</code></td></tr></tbody></table></div>",
                 "requestBody": {
                     "required": true,
                     "content": {

@@ -66,7 +66,7 @@
             },
             "tagID": {
               "type": "string",
-              "pattern": "^[0-9A-Fa-f]+$"
+              "pattern": "^([0-9A-Fa-f]{24})+$"
             },
             "enableShortRange": {
               "type": "boolean"
@@ -145,7 +145,7 @@
               "minItems": 1,
               "items": {
                 "type": "string",
-                "pattern": "^[0-9A-Fa-f]+$"
+                "pattern": "^([0-9A-Fa-f]{24})+$"
               }
             }
           },
