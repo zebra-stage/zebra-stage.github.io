@@ -381,77 +381,81 @@
 <pre class="prettyprint"><code>AIVisionSDK.getInstance(getApplicationContext()).init();
 </code></pre></li>
 
-<li><p><strong>Initialize Detectors -</strong> Create <code>ImageAttributesDetector</code> and <code>ImageTransformDetector</code> objects with the desired configurations. Both detectors can be initialized in parallel as they are independent of each other.
-<strong>Important:</strong> Both detectors initialize asynchronously and can be started in parallel. Ensure they are fully initialized before proceeding to the next steps. - <strong>Initialize <a href="../imageattributes/">ImageAttributesDetector</a> -</strong> Configure specific image attribute metrics to track during real-time camera preview. In this example, enable detection for people visibility and package visibility. Implement proper error handling using the <code>exceptionally()</code> callback on <code>CompletableFuture</code> to handle initialization failures gracefully.</p>
+<li><p><strong>Initialize Detectors -</strong> Create <code>ImageAttributesDetector</code> and <code>ImageTransformDetector</code> objects with the desired configurations. Both detectors can be initialized in parallel as they are independent of each other.<br>
+<strong>Important:</strong> Both detectors initialize asynchronously and can be started in parallel. Ensure they are fully initialized before proceeding to the next steps. </p>
 
-<pre class="prettyprint"><code>        // Initialize ImageAttributesDetector with specific image attribute metrics
-        ImageAttributesDetector.Settings imageAttributeSettings = new ImageAttributesDetector.Settings();
+<ul>
+<li><p><strong>Initialize <a href="../imageattributes/">ImageAttributesDetector</a> -</strong> Configure specific image attribute metrics to track during real-time camera preview. In this example, enable detection for people visibility and package visibility. Implement proper error handling using the <code>exceptionally()</code> callback on <code>CompletableFuture</code> to handle initialization failures gracefully.</p>
 
-<pre><code>    // Configure image attribute metrics
-    imageAttributeSettings.configureImageAttributeMetrics(List.of(
-        new ImageAttributeMetricValue.Builder(ImageAttributeMetric.ImageTagPeopleVisible)
-            .setEnable(true)
-            .build(),
-        new ImageAttributeMetricValue.Builder(ImageAttributeMetric.ImageTagPackageVisible)
-            .setEnable(true)
-            .build()
-    ));
+<pre class="prettyprint"><code>    // Initialize ImageAttributesDetector with specific image attribute metrics
+    ImageAttributesDetector.Settings imageAttributeSettings = new ImageAttributesDetector.Settings();
 
-    // Initialize ImageAttributesDetector object
-    ImageAttributesDetector imageAttributesDetector = null;
+<pre><code>// Configure image attribute metrics
+imageAttributeSettings.configureImageAttributeMetrics(List.of(
+    new ImageAttributeMetricValue.Builder(ImageAttributeMetric.ImageTagPeopleVisible)
+        .setEnable(true)
+        .build(),
+    new ImageAttributeMetricValue.Builder(ImageAttributeMetric.ImageTagPackageVisible)
+        .setEnable(true)
+        .build()
+));
 
-    // Get ImageAttributesDetector
-    CompletableFuture&amp;lt;ImageAttributesDetector&amp;gt; future =
-        ImageAttributesDetector.getImageAttributesDetector(imageAttributeSettings, imageAttribExecutor);
+// Initialize ImageAttributesDetector object
+ImageAttributesDetector imageAttributesDetector = null;
 
-    // Use the future to implement the thenAccept() callback of CompletableFuture
-    future.thenAccept(detector -&amp;gt; {
-        // Use the ImageAttributesDetector object returned here for detecting image attributes
-        imageAttributesDetector = detector;
-        Log.d(TAG, "ImageAttributesDetector initialized successfully");
-    }).exceptionally(ex -&amp;gt; {
-        Log.e(TAG, "ImageAttributesDetector initialization failed", ex);
-        return null;
-    });
+// Get ImageAttributesDetector
+CompletableFuture&amp;lt;ImageAttributesDetector&amp;gt; future =
+    ImageAttributesDetector.getImageAttributesDetector(imageAttributeSettings, imageAttribExecutor);
+
+// Use the future to implement the thenAccept() callback of CompletableFuture
+future.thenAccept(detector -&amp;gt; {
+    // Use the ImageAttributesDetector object returned here for detecting image attributes
+    imageAttributesDetector = detector;
+    Log.d(TAG, "ImageAttributesDetector initialized successfully");
+}).exceptionally(ex -&amp;gt; {
+    Log.e(TAG, "ImageAttributesDetector initialization failed", ex);
+    return null;
+});
 </code></pre>
 
-- **Initialize [ImageTransformDetector](../imagetransform) -** Configure the `ImageTransformDetector` with all available transformation actions. This detector will be used later to blur sensitive information in captured images.
-
-<pre><code>    // Initialize ImageTransformDetector with all available transformation actions
-    ImageTransformDetector.Settings transformSettings = new ImageTransformDetector.Settings();
-
-    // Configure all transformation actions
-    List&amp;lt;TransformationAction&amp;gt; actions = List.of(
-        TransformationAction.LocalizeAndBlurPeople,
-        TransformationAction.LocalizeAndBlurText,
-        TransformationAction.LocalizeAndBlurBarcode
-    );
-
-    TransformActionDescriptor descriptor = new TransformActionDescriptor.Builder()
-        .setActions(actions)
-        .build();
-
-    transformSettings.configureTransformationActions(descriptor);
-
-    // Initialize ImageTransformDetector object
-    ImageTransformDetector imageTransformDetector = null;
-
-    // Get ImageTransformDetector
-    CompletableFuture&amp;lt;ImageTransformDetector&amp;gt; transformFuture =
-        ImageTransformDetector.getImageTransformDetector(transformSettings, imageTransformExecutor);
-
-    // Use the transformFuture to implement the thenAccept() callback of CompletableFuture
-    transformFuture.thenAccept(transformDetector -&amp;gt; {
-        // Use the ImageTransformDetector object returned here for transforming images
-        imageTransformDetector = transformDetector;
-        Log.i(TAG, "ImageTransformDetector initialized successfully");
-    }).exceptionally(ex -&amp;gt; {
-        Log.e(TAG, "ImageTransformDetector initialization failed", ex);
-        return null;
-    });
 </code></pre>
 
-</code></pre></li>
+<ul>
+<li><p><strong>Initialize <a href="../imagetransform">ImageTransformDetector</a> -</strong> Configure the <code>ImageTransformDetector</code> with all available transformation actions. This detector will be used later to blur sensitive information in captured images.</p>
+
+<pre class="prettyprint"><code>// Initialize ImageTransformDetector with all available transformation actions
+ImageTransformDetector.Settings transformSettings = new ImageTransformDetector.Settings();
+
+// Configure all transformation actions
+List&lt;TransformationAction&gt; actions = List.of(
+    TransformationAction.LocalizeAndBlurPeople,
+    TransformationAction.LocalizeAndBlurText,
+    TransformationAction.LocalizeAndBlurBarcode
+);
+
+TransformActionDescriptor descriptor = new TransformActionDescriptor.Builder()
+    .setActions(actions)
+    .build();
+
+transformSettings.configureTransformationActions(descriptor);
+
+// Initialize ImageTransformDetector object
+ImageTransformDetector imageTransformDetector = null;
+
+// Get ImageTransformDetector
+CompletableFuture&lt;ImageTransformDetector&gt; transformFuture =
+    ImageTransformDetector.getImageTransformDetector(transformSettings, imageTransformExecutor);
+
+// Use the transformFuture to implement the thenAccept() callback of CompletableFuture
+transformFuture.thenAccept(transformDetector -&gt; {
+    // Use the ImageTransformDetector object returned here for transforming images
+    imageTransformDetector = transformDetector;
+    Log.i(TAG, "ImageTransformDetector initialized successfully");
+}).exceptionally(ex -&gt; {
+    Log.e(TAG, "ImageTransformDetector initialization failed", ex);
+    return null;
+});
+</code></pre></li></ul></li></ul></li>
 
 <li><p><strong>Create EntityTrackerAnalyzer:</strong> Create an <code>EntityTrackerAnalyzer</code> with the <code>ImageAttributesDetector</code>. This analyzer processes camera frames in real-time and provides callbacks with attribute compliance results. The callback checks if all attribute results are compliant, at which point the user can proceed with image capture. This real-time compliance check allows guidance to users to position the camera correctly before capturing the image, ensuring optimal image quality and required content visibility.</p>
 
@@ -659,17 +663,17 @@ catch (e: Exception) {
 
 <li><p><strong>Initialize Text OCR -</strong> Configure the TextOCR settings and obtain an instance:</p>
 
-<pre class="prettyprint">try {
-    val textOCRSettings = TextOCR.Settings("text-ocr-recognizer") 
+<p>try {
+    val textOCRSettings = TextOCR.Settings("text-ocr-recognizer") </p>
 
-<pre><code>// (Optional) Configure settings as needed, e.g. runtime processor order, dims, etc. 
+<pre class="prettyprint"><code>// (Optional) Configure settings as needed, e.g. runtime processor order, dims, etc. 
 TextOCR.getTextOCR(textOCRSettings, ocrExecutor) 
     .thenAccept { ocrInstance -&gt; 
         textOCR = ocrInstance 
         ocrAnalyzer = TextOCRAnalyzer(callback, ocrInstance) 
         } 
 
-<pre><code>.exceptionally { ex -&amp;gt; 
+<pre><code>.exceptionally { ex -&amp;gt;
     Log.e(TAG, "TextOCR initialization failed: ${ex.message}", ex) 
     null 
 } 
@@ -677,24 +681,23 @@ TextOCR.getTextOCR(textOCRSettings, ocrExecutor)
 
 </code></pre>
 
-} 
+<p>} 
 catch (e: Exception) { 
     Log.e(TAG, "TextOCR initialization exception: ${e.message}", e) 
-} 
-</pre></li>
+} </p></li>
 
 <li><p><strong>Initialize Product Recognition -</strong> Configure the product recognition settings and obtain an instance:</p>
 
-<pre class="prettyprint">try { 
+<pre class="prettyprint"><code>try { 
     val moduleRecognizerSettings = ModuleRecognizer.Settings("product-and-shelf-recognizer") 
 
 <pre><code>ModuleRecognizer.getModuleRecognizer(moduleRecognizerSettings, productExecutor) 
-    .thenAccept { recognizerInstance -&gt; 
+    .thenAccept { recognizerInstance -&amp;gt;
         moduleRecognizer = recognizerInstance 
         productRecognitionAnalyzer = ProductRecognitionAnalyzer(callback, recognizerInstance) 
     } 
 
-<pre><code>.exceptionally { ex -&amp;gt; 
+<pre><code>.exceptionally { ex -&amp;amp;gt;
     Log.e(TAG, "Product Recognition initialization failed: ${ex.message}", ex) 
     null 
 } 
@@ -705,7 +708,7 @@ catch (e: Exception) {
 } catch (e: Exception) { 
     Log.e(TAG, "Product Recognition initialization exception: ${e.message}", e) 
 } 
-</pre></li></ul></li>
+</code></pre></li></ul></li>
 
 <li><p><strong>Create <code>EntityTrackerAnalyzer</code> -</strong> This is used for processing image frames.</p>
 
@@ -766,10 +769,9 @@ entityTrackerAnalyzer = EntityTrackerAnalyzer(listOf(moduleRecognizer), ImageAna
 }
 </code></pre></li>
 
-<li><p><strong>Set <code>EntityTrackerAnalyzer</code> as the <code>ImageAnalysis.Analyzer</code>:</strong></p></li>
-</ol>
+<li><p><strong>Set <code>EntityTrackerAnalyzer</code> as the <code>ImageAnalysis.Analyzer</code>:</strong></p>
 
-<pre class="prettyprint">// EntityTrackerAnalyzer Usecase 
+<pre class="prettyprint"><code>// EntityTrackerAnalyzer Usecase 
 val resolutionSelector = ResolutionSelector.Builder() 
     .setAspectRatioStrategy( 
         AspectRatioStrategy( 
@@ -796,13 +798,11 @@ imageAnalysis?.setAnalyzer(
     cameraExecutor, 
     entityTrackerAnalyzer as ImageAnalysis.Analyzer 
 ) 
-</pre>
+</code></pre></li>
 
-<ol>
-<li><strong>Configure the Camera Lifecycle -</strong> Integrate CameraX with the activity’s lifecycle.</li>
-</ol>
+<li><p><strong>Configure the Camera Lifecycle -</strong> Integrate CameraX with the activity’s lifecycle.</p>
 
-<pre class="prettyprint">val cameraProviderFuture = ProcessCameraProvider.getInstance(application) 
+<pre class="prettyprint"><code>val cameraProviderFuture = ProcessCameraProvider.getInstance(application) 
 cameraProviderFuture.addListener({ 
     try { 
         cameraProvider = cameraProviderFuture.get() 
@@ -833,9 +833,8 @@ provider.bindToLifecycle(
     preview, 
     imageAnalysis 
 ) 
-</pre>
+</code></pre></li>
 
-<ol>
 <li><p><strong>Resource Cleanup After Usage -</strong> Properly dispose of resources after use to prevent memory leaks and ensure that all resources are released after use:</p>
 
 <p>Barcode Decoder:</p>
