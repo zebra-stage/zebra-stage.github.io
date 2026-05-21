@@ -238,94 +238,75 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>Wireless Developer Service APIs allow custom apps running on Zebra Android devices to display content over the air on a monitor connected to a wireless recieving device such as the Zebra ZEC500. </p>
+<p>Wireless Developer Service APIs allow custom apps running on Zebra Android devices to display content over the air on a monitor connected to a wireless receiving device such as the Zebra ZEC500. </p>
 
 <p>initiate a connection with a wireless receiver such as the Zebra ZEC500 and share screen and input resources. When developing with the APIs, Zebra recommends observing the best practices and known behaviors described below to help ensure proper connection and operation. </p>
 
 <h4 id="bestpractices" class="anchor"><a class="heading-anchor" href="#bestpractices"><span></span></a>Best Practices</h4>
 
+<ol>
+<li><strong>Before calling</strong> <code>CONNECT_WIRELESS_DISPLAY</code>:<br>
+&nbsp;&nbsp;&nbsp; a. Call <code>START_WIRELESS_DISPLAY_SCAN</code> to identify a receiving device (e.g. ZEC500) with which to connect.<br>
+&nbsp;&nbsp;&nbsp; b. Check the display properties of the intended receiver to confirm that <code>CanConnect</code> and <code>IsAvailable</code> properties are both true.<br></li>
+
+<li><strong>After establishing a connection, call</strong> <code>STOP_WIRELESS_DISPLAY_SCAN</code> to minimize the resource usage on the device. </li>
+
+<li><strong>Before exiting the app</strong>:<br> 
+&nbsp;&nbsp;&nbsp; a. Call <code>DISCONNECT_WIRELESS _DISPLAY</code> first. Then call <code>DEINIT_DEV_SERVICE</code> to clear the service. This enables subsequent <code>INIT_DEV_SERVICE</code> calls to succeed. </li>
+</ol>
+
+<h4 id="knownbehavior" class="anchor"><a class="heading-anchor" href="#knownbehavior"><span></span></a>Known Behavior</h4>
+
 <ul>
-<li><strong>Before calling the <code>Connect</code> API</strong>:
+<li>Connections that remain idle for more than 60 minutes can become unresponsive or behave erratically and should be reset.</li>
 
-
-<ul>
-<li>Call <code>START_WIRELESS_DISPLAY_SCAN</code> to determine the receiving device (e.g. ZEC500) to connect with. </li>
-
-<li>Check the display properties of the intended receiver to confirm that <code>CanConnect</code> and <code>IsAvailable</code> properties are both true. </li></ul>
-</li>
+<li><strong>When a connection is active</strong>, calling <code>CONNECT_WIRELESS_DISPLAY</code> disconnects the session.  </li>
 </ul>
 
-<p>and you can call “Stop Scan” after establishing the connection, to minimize the resource usage. </p>
+<!-- unclear:
+If ZWDS runs in non-secure mode it will not validate any token send by test app and not showing any error messages related to secure tokens.  -->
 
-<p>While exit from the app, make sure to call the “DEINIT_DEV_SERVICE” API to clear the ZWDS. Otherwise, it will not be possible to other app to call “INIT_DEV_SERVICE” successfully. </p>
+<!-- 
+### INTENT APIs
 
-<p>Known Behavior </p>
+* `INIT_DEV_SERVICE`
+* `DEINIT_DEV_SERVICE`
+* `START_WIRELESS_DISPLAY_SCAN`
+* `STOP_WIRELESS_DISPLAY_SCAN`
+* `CONNECT_WIRELESS_DISPLAY`
+* `DISCONNECT_WIRELESS_DISPLAY`
+* `REGISTER_PROXIMITY_CONNECTION`
+* `UNREGISTER_PROXIMITY_CONNECTION`
+* `SET_PROXIMITY_CONNECTION`
+* `GET_STATUS`
+* `SWITCH_DESKTOP_MODE`
+* `GET_AVAILABLE_DISPLAYS`
+* `ENABLE_WIRELESS_DISPLAY`
+* `WIRELESS_DISPLAY_CALLBACK`
 
-<p>If it is kept device in idle longer time (more than 1 hr) ZWDS Api calls are not working as expected. It is needed disable and reenable the wi-fi for overcome the issue. </p>
+### CALLBACKS 
 
-<p>Calling of “DEINIT_DEV_SERVICE” API is not disconnecting existing connection session. If it is needed to disconnect the session, please call disconnect API before calling the “DEINIT_DEV_SERVICE” API. </p>
+* `BT_PROXIMITY_STATE_CHANGE`
+* `CONNECTION_STATE_CHANGE`
+* `DISPLAY_DETAILS_CHANGE`
 
-<p>If ZWDS runs in non-secure mode it will not validate any token send by test app and not showing any error messages related to secure tokens. </p>
+ -->
 
-<p>Once connection is established with ZEC500 device, if it is again call the API Connect. It will disconnect the existing connection. </p>
-
-<p>All APIs begin with <code>com.zebra.wirelessdeveloperservice.action</code> </p>
-
-<h3 id="intentapis" class="anchor"><a class="heading-anchor" href="#intentapis"><span></span></a>INTENT APIs</h3>
-
-<ul>
-<li>Initialize the service: <code>INIT_DEV_SERVICE</code></li>
-
-<li>Deinitialize the service: <code>DEINIT_DEV_SERVICE</code></li>
-
-<li><code>START_WIRELESS_DISPLAY_SCAN</code></li>
-
-<li><code>STOP_WIRELESS_DISPLAY_SCAN</code></li>
-
-<li><code>CONNECT_WIRELESS_DISPLAY</code></li>
-
-<li><code>DISCONNECT_WIRELESS _DISPLAY</code></li>
-
-<li><code>REGISTER_PROXIMITY_CONNECTION</code></li>
-
-<li><code>UNREGISTER_PROXIMITY_CONNECTION</code></li>
-
-<li><code>SET_PROXIMITY_CONNECTION</code></li>
-
-<li><code>GET_STATUS</code></li>
-
-<li><code>SWITCH_DESKTOP_MODE</code></li>
-
-<li><code>GET_AVAILABLE_DISPLAYS</code></li>
-
-<li><code>ENABLE_WIRELESS_DISPLAY</code></li>
-
-<li><code>WIRELESS_DISPLAY_CALLBACK</code></li>
-</ul>
-
-<h3 id="callbacks" class="anchor"><a class="heading-anchor" href="#callbacks"><span></span></a>CALLBACKS</h3>
-
-<ul>
-<li><code>BT_PROXIMITY_STATE_CHANGE</code></li>
-
-<li><code>CONNECTION_STATE_CHANGE</code></li>
-
-<li><code>DISPLAY_DETAILS_CHANGE</code></li>
-</ul>
+<hr>
 
 <h2 id="apis" class="anchor"><a class="heading-anchor" href="#apis"><span></span></a>APIs</h2>
 
 <h3 id="init_dev_service" class="anchor"><a class="heading-anchor" href="#init_dev_service"><span></span></a>INIT_DEV_SERVICE</h3>
 
-<p>Initializes the developer service for wireless communications with a ZEC500-type receiver. <strong>This API must be called before any other API calls are made</strong>. </p>
+<p>Starts the developer service for wireless communications with a ZEC500-type receiver. <strong>This API must be called before any other API calls are made</strong>. </p>
 
-<h4 id="requestintentaction" class="anchor"><a class="heading-anchor" href="#requestintentaction"><span></span></a>Request: Intent Action</h4>
+<h4 id="request" class="anchor"><a class="heading-anchor" href="#request"><span></span></a>Request</h4>
 
 <ul>
-<li><code>com.zebra.wirelessdeveloperservice.action.INIT_DEV_SERVICE</code></li>
-</ul>
+<li>Intent Action: <code>com.zebra.wirelessdeveloperservice.action.INIT_DEV_SERVICE</code></li>
 
-<p><strong>Supports the following key(s)</strong>: </p>
+<li>Supports the key(s) shown below </li>
+</ul>
 
 <table class="facelift" align="center" style="width:80%" border="1" padding="5px">
 <tbody><tr bgcolor="#dce8ef">
@@ -373,7 +354,7 @@
 <tr>
 <td><code>RESULT_MESSAGE</code></td>
 <td>String</td>
-<td>Success: Success<br>Failure: Error Message</td>
+<td>Success: "Success"<br>Failure: "[Error message]"</td>
 </tr>
 
 </tbody></table>
@@ -381,330 +362,869 @@
 
 <hr>
 
-<p>De initialize the Developer Service:
-Intent DEINIT_DEV_SERVICE stops the Maverick Developer Service, use need to call this 
-API after completion of his work.
-Request:
-Intent Action
-com.zebra.wirelessdeveloperservice.action.DEINIT_DEV_SERVICE
-Add the following key to the Intent 
-Key Type Description
-CALLBACK_RESPONSE PendingIntent PendingIntent object that receives the 
-response</p>
+<h3 id="deinit_dev_service" class="anchor"><a class="heading-anchor" href="#deinit_dev_service"><span></span></a>DEINIT_DEV_SERVICE</h3>
 
-<p>Response:
-The response is sent back to the app
-Key Type Description
-RESULT_CODE Integer 1: Success
-0: Failure
-RESULT_MESSAGE String Success:
- Success
-Failure:
- Error Message</p>
+<p>Stops the developer service for wireless communications with a ZEC500-type receiver. <strong>This API must be called after any communications session <u>before exiting the app</u></strong>. </p>
 
-<p>Start Wireless Display Scan
-Intent START_WIRELESS_DISPLAY_SCAN will enable the scanning for Maverick devices.
-This Api must be called before the call of CONNECT_WIRLESS_DISPLAY.
-Request
-Intent Action
-com.zebra.wirelessdeveloperservice.action.START_WIRELESS_DISPLAY_SCAN
-Add the following key to the Intent 
-Key Type Description
-CALLBACK_RESPONSE PendingIntent PendingIntent object that receives the 
-response</p>
+<h4 id="request-1" class="anchor"><a class="heading-anchor" href="#request-1"><span></span></a>Request</h4>
 
-<p>Response:
-The response is sent back to the app
-Key Type Description
-RESULT_CODE Integer 1: Success
-0: Failure
-RESULT_MESSAGE String Success:
- Success
-Failure:
- Error Message</p>
+<ul>
+<li>Intent Action: <code>com.zebra.wirelessdeveloperservice.action.DEINIT_DEV_SERVICE</code></li>
 
-<p>Stop Wireless Display Scan
-Intent STOP_WIRELESS_DISPLAY_SCAN will stop the scanning for Maverick devices.
-Recommended to call after successful connection of the wireless display using Maverick 
-device.
-Request
-Intent Action
-com.zebra.wirelessdeveloperservice.action.STOP_WIRELESS_DISPLAY_SCAN
-Add the following key to the Intent 
-Key Type Description
-CALLBACK_RESPONSE PendingIntent PendingIntent object that receives the 
-response
-Response:
-The response is sent back to the app
-Key Type Description
-RESULT_CODE Integer 1: Success
-0: Failure
-RESULT_MESSAGE String Success:
- Success
-Failure:
- Error Message</p>
+<li>Supports the key(s) shown below </li>
+</ul>
 
-<p>Connect to Maverick Display
-Intent CONNECT_WIRELESS_DISPLAY will initiate the connection with Maverick box
-display the secondary screen, users need to pass MacAddress of the device as parameter 
-for this api.
-Request
-Intent Action
-com.zebra.wirelessdeveloperservice.action.CONNECT_WIRLESS_DISPLAY
-Add the following key to the Intent 
-Key Type Description
-CALLBACK_RESPONSE PendingIntent PendingIntent object that receives the 
-response
-DEVICE_ID String MacAddress or Device name of the Maverick 
-device
-Response:
-The response is sent back to the app
-Key Type Description
-RESULT_CODE Integer 1: Success
-0: Failure
-RESULT_MESSAGE String Success:
- Success
-Failure:
- Error Message </p>
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+</tr></tbody></table><table class="table table-striped">
+<tbody><tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
 
-<p>Disconnect from Maverick Display
-Intent DISCONNECT_WIRELESS_DISPLAY will disconnect hot device from Maverick box
-display.
-Request
-Intent Action
-com.zebra.wirelessdeveloperservice.action.DISCONNECT_WIRLESS_DISPLAY
-Add the following key to the Intent </p>
+<tr>
+<td><code>CALLBACK_RESPONSE</code></td>
+<td>PendingIntent</td>
+<td>Object that receives the response</td>
+</tr>
 
-<p>Key Type Description
-CALLBACK_RESPONSE PendingIntent PendingIntent object that receives the 
-response
-Response:
-The response is sent back to the app
-Key Type Description
-RESULT_CODE Integer 1: Success
-0: Failure
-RESULT_MESSAGE String Success:
- Success
-Failure:
- Error Message  </p>
+</tbody></table>
 
-<p>RED HED: </p>
 
-<p>Register for Bluetooth Proximity 
-Intent REGISTER_PROXIMITY_CONNECTION will initialize the BT service and register for BT 
-client to get callbacks once set the proximity connect on/off. This API must call before 
-calling the set proximity connection.
-Request
-Intent Action
-com.zebra.wirelessdeveloperservice.action.REGISTER_PROXIMITY_CONNECTION
-Add the following key to the Intent 
-Add the following key to the Intent 
-Key Type Description
-CALLBACK_RESPONSE PendingIntent PendingIntent object that receives the 
-response
-Response:
-The response is sent back to the app
-Zebra Wireless Developer Service Design v 1.0.0 
-Key Type Description
-RESULT_CODE Integer 1: Success
-0: Failure
-RESULT_MESSAGE String Success:
- Success + Client ID
-Failure:
- Erro Message + Error 
-Code</p>
+<h4 id="response-1" class="anchor"><a class="heading-anchor" href="#response-1"><span></span></a>Response</h4>
 
-<p>RED HED:</p>
+<p><strong>Sends the following response(s) to the app</strong>: </p>
 
-<p>Unregister for Bluetooth Proximity 
-Intent UNREGISTER_PROXIMITY_CONNECTION will unregister for BT client and 
-uninitialized from the BT service. This API must call if it is no longer needed proximity 
-broadcast callbacks.
-Request
-Intent Action
-com.zebra.wirelessdeveloperservice.action.UNREGISTER_PROXIMITY_CONNECTION
-Add the following key to the Intent 
-Add the following key to the Intent 
-Key Type Description
-CALLBACK_RESPONSE PendingIntent PendingIntent object that receives the 
-response
-Response:
-The response is sent back to the app
-Key Type Description
-Zebra Wireless Developer Service Design v 1.0.0 
-RESULT_CODE Integer 1: Success
-0: Failure
-RESULT_MESSAGE String Success:
- Success
-Failure:
- Erro Message</p>
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+</tr></tbody></table><table class="table table-striped">
+<tbody><tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
 
-<p>Set Proximity connection/disconnection broadcast on/off
-Intent SET_PROXIMITY_CONNECT will on/off the proximity connection threshold crossing 
-broadcast with Maverick device. Once it is on ZWDS broadcast the Intent to app once Host 
-device cross the connect/disconnect threshold.
-Request
-Intent Action
-com.zebra.wirelessdeveloperservice.action.SET_PROXIMITY_CONNECTION
-Add the following key to the Intent 
-Key Type Description
-CALLBACK_RESPONSE PendingIntent PendingIntent object that receives the 
-response
-PROXIMITY_CONNECT String ON – On the proximity connection
-broadcast
-OFF – Off the proximity connection
-broadcast
-PROXIMITY_DISCONNECT String ON- On the proximity disconnection
-broadcast
-OFF – Off the proximity disconnection
-broadcast
-CONNECT_THRESHOLD Integer Distance in feet 
-(Max value is 30 feet)
-DISCONNECT_THRESHOLD Integer Distance in feet 
-(Max value is 30 feet)
-Zebra Wireless Developer Service Design v 1.0.0 
-Response:
-The response is sent back to the app
-Key Type Description
-RESULT_CODE Integer 1: Success
-0: Failure
-RESULT_MESSAGE String Success:
- Success
-Failure:
- Error Message</p>
+<tr>
+<td><code>RESULT_CODE</code></td>
+<td>Integer</td>
+<td>1: Success<br>0: Failure</td>
+</tr>
 
-<p>Get Status 
-Intent GET_STATUS is to get the current state of the Maverick Developer Service.
-Request
-Intent Action
-com.zebra.wirelessdeveloperservice.action.GET_STATUS
-Add the following key to the Intent 
-Key Type Description
-CALLBACK_RESPONSE PendingIntent PendingIntent object that receives the 
-response
-Response:
-The response is sent back to the app
-Key Type Description
-RESULT_CODE Integer 1: Success
-0: Failure
-RESULT_MESSAGE String Success:
- Success
-Failure:
- Error Message
-Zebra Wireless Developer Service Design v 1.0.0 
-STATUS String Description of the device state
-Device in connected state</p>
+<tr>
+<td><code>RESULT_MESSAGE</code></td>
+<td>String</td>
+<td>Success: "Success"<br>Failure: "[Error message]"</td>
+</tr>
 
-<pre class="prettyprint"><code>
-{"device_status":{"device_address":"ZEC500"," 
-connection_status":1}}
-Device in disconnected state
-{"device_status":{"device_address":"ZEC500"," 
-connection_status":0}}
-Device in unknown state
-{"device_status":{"device_address":" "," 
-connection_status":-1}}
-</code></pre>
+</tbody></table>
 
-<p>Switch Desktop Mode
-Intent SWITCH_DESKTOP_MODE will switch between desktop mode and mirror mode.
-Request
-Intent Action
-com.zebra.wirelessdeveloperservice.action.SWITCH_DESKTOP_MODE
-Add the following key to the Intent 
-Key Type Description
-CALLBACK_RESPONSE PendingIntent PendingIntent object that receives the 
-response
-DESKTOP_MODE String ON – Switch on the desktop mode
-OFF – Sitch off the desktop mode, and switch 
-to mirror mode.
-Response:
-The response is sent back to the app
-Key Type Description
-RESULT_CODE Integer 1: Success
-0: Failure
-RESULT_MESSAGE String Success:
- Success
-Failure:
- Error Message </p>
 
-<p>Get Available Displays 
-Intent GET_AVAILABLE_DISPLAYS is to get the available Maverick device list.
-Request
-Intent Action
-com.zebra.wirelessdeveloperservice.action.GET_AVAILABLE_DISPLAYS
-Add the following key to the Intent 
-Key Type Description
-CALLBACK_RESPONSE PendingIntent PendingIntent object that receives the 
-response
-Response:
-The response is sent back to the app
-Key Type Description
-RESULT_CODE Integer 1: Success
-0: Failure
-RESULT_MESSAGE String Success:
- Success
-Failure:
- Error Message
-AVAILABLE_DISPLAYS String Available Display List provides as Jeson Array String 
-with following data:
-DeviceAddress
-DeviceName
-isAvailable
-CannConnect
-IsRememberd
-Ex:</p>
+<hr>
 
-<pre class="prettyprint"><code>
-[{"canConnect":false,"deviceAddress":"4b:e0:20:5e:0f:88","devic
-eName":"ZEC500","isAvailable":false,"isRemembered":true}]
-</code></pre>
+<h3 id="start_wireless_display_scan" class="anchor"><a class="heading-anchor" href="#start_wireless_display_scan"><span></span></a>START_WIRELESS_DISPLAY_SCAN</h3>
 
-<p>Enable Wireless Display
-Intent ENABLE_WIRELESS_DISPLAY will enable the display for connection.
-Request
-Intent Action
-com.zebra.wirelessdeveloperservice.action.ENABLE_WIRELESS_DISPLAY
-Add the following key to the Intent 
-Key Type Description
-CALLBACK_RESPONSE PendingIntent PendingIntent object that receives the 
-response
-ENABLE_DISPLAY String “ON”– Enable the Wireless Display
-“OFF” – Disable the Wireless Display
-Response:
-The response is sent back to the app
-Key Type Description
-RESULT_CODE Integer 1: Success
-0: Failure
-RESULT_MESSAGE String Success:
- Success
-Failure:
- Error Message </p>
+<p>Starts scanning for available ZEC500-type receivers with which to connect. <strong>This API must be called before calling</strong> <code>CONNECT_WIRLESS_DISPLAY</code>. </p>
 
-<p>Register/Unregister for Wireless Display Change Broadcast
-Intent WIRELESS_DISPLAY_CALLBACK will on/off the broadcast sent to third app if
-Maverick Wireless Display properties got changed.
-Request
-Intent Action
-com.zebra.wirelessdeveloperservice.action.WIRELESS_DISPLAY_CALLBACK
-Add the following key to the Intent 
-Key Type Description
-Zebra Wireless Developer Service Design v 1.0.0 
-CALLBACK_RESPONSE PendingIntent PendingIntent object that receives the 
-response
-REGISTER_CALLBACK String “ON”– Register for Wireless Display change 
-callback broadcast
-“OFF” – Unregister for Wireless Display 
-change callback broadcast 
-Response:
-The response is sent back to the app
-Key Type Description
-RESULT_CODE Integer 1: Success
-0: Failure
-RESULT_MESSAGE String Success:
- Success
-Failure:
- Error Message</p>
+<h4 id="request-2" class="anchor"><a class="heading-anchor" href="#request-2"><span></span></a>Request</h4>
+
+<ul>
+<li>Intent Action: <code>com.zebra.wirelessdeveloperservice.action.START_WIRELESS_DISPLAY_SCAN</code></li>
+
+<li>Supports the key(s) shown below </li>
+</ul>
+
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+</tr></tbody></table><table class="table table-striped">
+<tbody><tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+
+<tr>
+<td><code>CALLBACK_RESPONSE</code></td>
+<td>PendingIntent</td>
+<td>Object that receives the response</td>
+</tr>
+
+</tbody></table>
+
+
+<h4 id="response-2" class="anchor"><a class="heading-anchor" href="#response-2"><span></span></a>Response</h4>
+
+<p><strong>Sends the following response(s) to the app</strong>: </p>
+
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+</tr></tbody></table><table class="table table-striped">
+<tbody><tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+
+<tr>
+<td><code>RESULT_CODE</code></td>
+<td>Integer</td>
+<td>1: Success<br>0: Failure</td>
+</tr>
+
+<tr>
+<td><code>RESULT_MESSAGE</code></td>
+<td>String</td>
+<td>Success: "Success"<br>Failure: "[Error message]"</td>
+</tr>
+
+</tbody></table>
+
+
+<hr>
+
+<h3 id="stop_wireless_display_scan" class="anchor"><a class="heading-anchor" href="#stop_wireless_display_scan"><span></span></a>STOP_WIRELESS_DISPLAY_SCAN</h3>
+
+<p>Stops scanning for available ZEC500-type receivers with which to connect. <strong>Zebra recommends calling this API after any successful connection</strong> to preserve device resources. </p>
+
+<h4 id="request-3" class="anchor"><a class="heading-anchor" href="#request-3"><span></span></a>Request</h4>
+
+<ul>
+<li>Intent Action: <code>com.zebra.wirelessdeveloperservice.action.STOP_WIRELESS_DISPLAY_SCAN</code></li>
+
+<li>Supports the key(s) shown below </li>
+</ul>
+
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+</tr></tbody></table><table class="table table-striped">
+<tbody><tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+
+<tr>
+<td><code>CALLBACK_RESPONSE</code></td>
+<td>PendingIntent</td>
+<td>Object that receives the response</td>
+</tr>
+
+</tbody></table>
+
+
+<h4 id="response-3" class="anchor"><a class="heading-anchor" href="#response-3"><span></span></a>Response</h4>
+
+<p><strong>Sends the following response(s) to the app</strong>: </p>
+
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+</tr></tbody></table><table class="table table-striped">
+<tbody><tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+
+<tr>
+<td><code>RESULT_CODE</code></td>
+<td>Integer</td>
+<td>1: Success<br>0: Failure</td>
+</tr>
+
+<tr>
+<td><code>RESULT_MESSAGE</code></td>
+<td>String</td>
+<td>Success: "Success"<br>Failure: "[Error message]"</td>
+</tr>
+
+</tbody></table>
+
+
+<hr>
+
+<h3 id="connect_wireless_display" class="anchor"><a class="heading-anchor" href="#connect_wireless_display"><span></span></a>CONNECT_WIRELESS_DISPLAY</h3>
+
+<p>Connects with an available ZEC500-type receiver after passing its MAC address or device name. <strong>Calling this API during an active connection disconnects the session</strong>. </p>
+
+<h4 id="request-4" class="anchor"><a class="heading-anchor" href="#request-4"><span></span></a>Request</h4>
+
+<ul>
+<li>Intent Action: <code>com.zebra.wirelessdeveloperservice.action.CONNECT_WIRELESS_DISPLAY</code></li>
+
+<li>Supports the key(s) shown below </li>
+</ul>
+
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+</tr></tbody></table><table class="table table-striped">
+<tbody><tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+
+<tr>
+<td><code>CALLBACK_RESPONSE</code></td>
+<td>PendingIntent</td>
+<td>Object that receives the response</td>
+</tr>
+
+<tr>
+<td><code>DEVICE_ID</code></td>
+<td>String</td>
+<td>MAC address or Device Name of receiving device</td>
+</tr>
+
+</tbody></table>
+
+
+<h4 id="response-4" class="anchor"><a class="heading-anchor" href="#response-4"><span></span></a>Response</h4>
+
+<p><strong>Sends the following response(s) to the app</strong>: </p>
+
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+</tr></tbody></table><table class="table table-striped">
+<tbody><tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+
+<tr>
+<td><code>RESULT_CODE</code></td>
+<td>Integer</td>
+<td>1: Success<br>0: Failure</td>
+</tr>
+
+<tr>
+<td><code>RESULT_MESSAGE</code></td>
+<td>String</td>
+<td>Success: "Success"<br>Failure: "[Error message]"</td>
+</tr>
+
+</tbody></table>
+
+
+<hr>
+
+<h3 id="disconnect_wireless_display" class="anchor"><a class="heading-anchor" href="#disconnect_wireless_display"><span></span></a>DISCONNECT_WIRELESS_DISPLAY</h3>
+
+<p>Disconnects from the ZEC500-type receiver, ending the session. <strong>Zebra recommends calling <code>DEINIT_DEV_SERVICE</code> <u>before exiting the app</u> to stop the developer service</strong> and enable subsequent connections. </p>
+
+<h4 id="request-5" class="anchor"><a class="heading-anchor" href="#request-5"><span></span></a>Request</h4>
+
+<ul>
+<li>Intent Action: <code>com.zebra.wirelessdeveloperservice.action.DISCONNECT_WIRELESS_DISPLAY</code></li>
+
+<li>Supports the key(s) shown below </li>
+</ul>
+
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+</tr></tbody></table><table class="table table-striped">
+<tbody><tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+
+<tr>
+<td><code>CALLBACK_RESPONSE</code></td>
+<td>PendingIntent</td>
+<td>Object that receives the response</td>
+</tr>
+
+</tbody></table>
+
+
+<h4 id="response-5" class="anchor"><a class="heading-anchor" href="#response-5"><span></span></a>Response</h4>
+
+<p><strong>Sends the following response(s) to the app</strong>: </p>
+
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+</tr></tbody></table><table class="table table-striped">
+<tbody><tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+
+<tr>
+<td><code>RESULT_CODE</code></td>
+<td>Integer</td>
+<td>1: Success<br>0: Failure</td>
+</tr>
+
+<tr>
+<td><code>RESULT_MESSAGE</code></td>
+<td>String</td>
+<td>Success: "Success"<br>Failure: "[Error message]"</td>
+</tr>
+
+</tbody></table>
+
+
+<hr>
+
+<h3 id="register_proximity_connection" class="anchor"><a class="heading-anchor" href="#register_proximity_connection"><span></span></a>REGISTER_PROXIMITY_CONNECTION</h3>
+
+<p>Initializes the Bluetooth service and registers the Bluetooth client to get proximity callbacks. <strong>Must be called <em>before</em></strong> <code>SET_PROXIMITY_CONNECT</code>.</p>
+
+<h4 id="request-6" class="anchor"><a class="heading-anchor" href="#request-6"><span></span></a>Request</h4>
+
+<ul>
+<li>Intent Action: <code>com.zebra.wirelessdeveloperservice.action.REGISTER_PROXIMITY_CONNECTION</code></li>
+
+<li>Supports the key(s) shown below </li>
+</ul>
+
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+</tr></tbody></table><table class="table table-striped">
+<tbody><tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+
+<tr>
+<td><code>CALLBACK_RESPONSE</code></td>
+<td>PendingIntent</td>
+<td>Object that receives the response</td>
+</tr>
+
+</tbody></table>
+
+
+<h4 id="response-6" class="anchor"><a class="heading-anchor" href="#response-6"><span></span></a>Response</h4>
+
+<p><strong>Sends the following response(s) to the app</strong>: </p>
+
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+</tr></tbody></table><table class="table table-striped">
+<tbody><tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+
+<tr>
+<td><code>RESULT_CODE</code></td>
+<td>Integer</td>
+<td>1: Success<br>0: Failure</td>
+</tr>
+
+<tr>
+<td><code>RESULT_MESSAGE</code></td>
+<td>String</td>
+<td>Success: "Success" + "[Client ID]"<br>Failure: "[Error message]" + "[Error Code]"</td>
+</tr>
+
+</tbody></table>
+
+
+<hr>
+
+<h3 id="unregister_proximity_connection" class="anchor"><a class="heading-anchor" href="#unregister_proximity_connection"><span></span></a>UNREGISTER_PROXIMITY_CONNECTION</h3>
+
+<p>Unregisters the Bluetooth client and stops the Bluetooth service. Call when proximity 
+broadcast callbacks are no longer needed. </p>
+
+<h4 id="request-7" class="anchor"><a class="heading-anchor" href="#request-7"><span></span></a>Request</h4>
+
+<ul>
+<li>Intent Action: <code>com.zebra.wirelessdeveloperservice.action.UNREGISTER_PROXIMITY_CONNECTION</code></li>
+
+<li>Supports the key(s) shown below </li>
+</ul>
+
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+</tr></tbody></table><table class="table table-striped">
+<tbody><tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+
+<tr>
+<td><code>CALLBACK_RESPONSE</code></td>
+<td>PendingIntent</td>
+<td>Object that receives the response</td>
+</tr>
+
+</tbody></table>
+
+
+<h4 id="response-7" class="anchor"><a class="heading-anchor" href="#response-7"><span></span></a>Response</h4>
+
+<p><strong>Sends the following response(s) to the app</strong>: </p>
+
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+</tr></tbody></table><table class="table table-striped">
+<tbody><tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+
+<tr>
+<td><code>RESULT_CODE</code></td>
+<td>Integer</td>
+<td>1: Success<br>0: Failure</td>
+</tr>
+
+<tr>
+<td><code>RESULT_MESSAGE</code></td>
+<td>String</td>
+<td>Success: "Success"<br>Failure: "[Error message]"</td>
+</tr>
+
+</tbody></table>
+
+
+<hr>
+
+<h3 id="set_proximity_connection" class="anchor"><a class="heading-anchor" href="#set_proximity_connection"><span></span></a>SET_PROXIMITY_CONNECTION</h3>
+
+<p>Turns on/off the proximity dis/connection broadcast threshold. Once a receiving device crosses the proximity threshold, an intent is sent to connect the device to (or disconnect it from) that receiver.</p>
+
+<h4 id="request-8" class="anchor"><a class="heading-anchor" href="#request-8"><span></span></a>Request</h4>
+
+<ul>
+<li>Intent Action: <code>com.zebra.wirelessdeveloperservice.action.SET_PROXIMITY_CONNECTION</code></li>
+
+<li>Supports the key(s) shown below </li>
+</ul>
+
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+</tr></tbody></table><table class="table table-striped">
+<tbody><tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+
+<tr>
+<td><code>CALLBACK_RESPONSE</code></td>
+<td>PendingIntent</td>
+<td>Object that receives the response</td>
+</tr>
+
+<tr>
+<td><code>PROXIMITY_CONNECT</code></td>
+<td>String</td>
+<td><b>ON</b> – Proximity connection broadcast<br>
+<b>OFF</b> – Proximity connection broadcast</td>
+</tr>
+
+<tr>
+<td><code>PROXIMITY_DISCONNECT</code></td>
+<td>String</td>
+<td><b>ON</b> – Proximity disconnection broadcast<br>
+<b>OFF</b> – Proximity disconnection broadcast</td>
+</tr>
+
+<tr>
+<td><code>CONNECT_THRESHOLD</code></td>
+<td>Integer</td>
+<td>Distance in feet<br>(max=30)</td>
+</tr>
+
+<tr>
+<td><code>DISCONNECT_THRESHOLD</code></td>
+<td>Integer</td>
+<td>Distance in feet<br>(max=30)</td>
+</tr>
+
+</tbody></table>
+
+
+<h4 id="response-8" class="anchor"><a class="heading-anchor" href="#response-8"><span></span></a>Response</h4>
+
+<p><strong>Sends the following response(s) to the app</strong>: </p>
+
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+</tr></tbody></table><table class="table table-striped">
+<tbody><tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+
+<tr>
+<td><code>RESULT_CODE</code></td>
+<td>Integer</td>
+<td>1: Success<br>0: Failure</td>
+</tr>
+
+<tr>
+<td><code>RESULT_MESSAGE</code></td>
+<td>String</td>
+<td>Success: "Success"<br>Failure: "[Error message]"</td>
+</tr>
+
+</tbody></table>
+
+
+<hr>
+
+<h3 id="get_status" class="anchor"><a class="heading-anchor" href="#get_status"><span></span></a>GET_STATUS</h3>
+
+<p>Obtains the current status of the developer service on a connected, disconnected or state-unknown ZEC500 device.</p>
+
+<h4 id="request-9" class="anchor"><a class="heading-anchor" href="#request-9"><span></span></a>Request</h4>
+
+<ul>
+<li>Intent Action: <code>com.zebra.wirelessdeveloperservice.action.GET_STATUS</code></li>
+
+<li>Supports the key(s) shown below </li>
+</ul>
+
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+</tr></tbody></table><table class="table table-striped">
+<tbody><tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+
+<tr>
+<td><code>CALLBACK_RESPONSE</code></td>
+<td>PendingIntent</td>
+<td>Object that receives the response</td>
+</tr>
+
+</tbody></table>
+
+
+<h4 id="response-9" class="anchor"><a class="heading-anchor" href="#response-9"><span></span></a>Response</h4>
+
+<p><strong>Sends the following response(s) to the app</strong>: </p>
+
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+</tr></tbody></table><table class="table table-striped">
+<tbody><tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+
+<tr>
+<td><code>RESULT_CODE</code></td>
+<td>Integer</td>
+<td>1: Success<br>0: Failure</td>
+</tr>
+
+<tr>
+<td><code>RESULT_MESSAGE</code></td>
+<td>String</td>
+<td>Success: "Success"<br>Failure: "[Error message]"</td>
+</tr>
+
+<tr>
+<td><code>STATUS</code></td>
+<td>String</td>
+<td><b>Device in connected state</b>:<br>
+    <code>{"device_status":{"device_address":"ZEC500"," 
+    connection_status":1}}</code><br>
+    <b>Device in disconnected state</b>:<br>
+    <code>{"device_status":{"device_address":"ZEC500"," 
+    connection_status":0}}</code><br>
+    <b>Device in unknown state</b>:<br>
+    <code>{"device_status":{"device_address":" "," 
+    connection_status":-1}}</code></td>
+</tr>
+
+</tbody></table>
+
+
+<hr>
+
+<h3 id="switch_desktop_mode" class="anchor"><a class="heading-anchor" href="#switch_desktop_mode"><span></span></a>SWITCH_DESKTOP_MODE</h3>
+
+<p>Toggles Desktop Mode on the device, effectively switching between Desktop Mode and Mirror Mode (which is "on" whenever Desktop Mode is "off"). Mirror Mode duplicates the contents of the device screen on the external monitor. Desktop Mode displays content independent of the device.  </p>
+
+<h4 id="request-10" class="anchor"><a class="heading-anchor" href="#request-10"><span></span></a>Request</h4>
+
+<ul>
+<li>Intent Action: <code>com.zebra.wirelessdeveloperservice.action.SWITCH_DESKTOP_MODE</code></li>
+
+<li>Supports the key(s) shown below </li>
+</ul>
+
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+</tr></tbody></table><table class="table table-striped">
+<tbody><tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+
+<tr>
+<td><code>CALLBACK_RESPONSE</code></td>
+<td>PendingIntent</td>
+<td>Object that receives the response</td>
+</tr>
+
+<tr>
+<td><code>DESKTOP_MODE </code></td>
+<td>String</td>
+<td><b>ON</b> – Switch to Desktop Mode<br>
+<b>OFF</b> – Switch to Mirror Mode</td>
+</tr>
+
+</tbody></table>
+
+
+<h4 id="response-10" class="anchor"><a class="heading-anchor" href="#response-10"><span></span></a>Response</h4>
+
+<p><strong>Sends the following response(s) to the app</strong>: </p>
+
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+</tr></tbody></table><table class="table table-striped">
+<tbody><tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+
+<tr>
+<td><code>RESULT_CODE</code></td>
+<td>Integer</td>
+<td>1: Success<br>0: Failure</td>
+</tr>
+
+<tr>
+<td><code>RESULT_MESSAGE</code></td>
+<td>String</td>
+<td>Success: "Success"<br>Failure: "[Error message]"</td>
+</tr>
+
+</tbody></table>
+
+
+<hr>
+
+<h3 id="get_available_displays" class="anchor"><a class="heading-anchor" href="#get_available_displays"><span></span></a>GET_AVAILABLE_DISPLAYS</h3>
+
+<p>Fetches a list of available receivers in the vicinity with which to connect. </p>
+
+<h4 id="request-11" class="anchor"><a class="heading-anchor" href="#request-11"><span></span></a>Request</h4>
+
+<ul>
+<li>Intent Action: <code>com.zebra.wirelessdeveloperservice.action.GET_AVAILABLE_DISPLAYS</code></li>
+
+<li>Supports the key(s) shown below </li>
+</ul>
+
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+</tr></tbody></table><table class="table table-striped">
+<tbody><tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+
+<tr>
+<td><code>CALLBACK_RESPONSE</code></td>
+<td>PendingIntent</td>
+<td>Object that receives the response</td>
+</tr>
+
+</tbody></table>
+
+
+<h4 id="response-11" class="anchor"><a class="heading-anchor" href="#response-11"><span></span></a>Response</h4>
+
+<p><strong>Sends the following response(s) to the app</strong>: </p>
+
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+</tr></tbody></table><table class="table table-striped">
+<tbody><tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+
+<tr>
+<td><code>RESULT_CODE</code></td>
+<td>Integer</td>
+<td>1: Success<br>0: Failure</td>
+</tr>
+
+<tr>
+<td><code>RESULT_MESSAGE</code></td>
+<td>String</td>
+<td>Success: "Success"<br>Failure: "[Error message]"</td>
+</tr>
+
+<tr>
+<td><code>AVAILABLE_DISPLAYS</code></td>
+<td>String</td>
+<td>List of available receivers as a .json array with the following fields:<br>
+CanConnect<br>
+DeviceAddress<br>
+DeviceName<br>
+isAvailable<br>
+IsRemembered<br>
+<b>Example</b>:<br>
+<code>[{"canConnect":false,"deviceAddress":"4b:e0:20:5e:0f:88","deviceName":"ZEC500","isAvailable":false,"isRemembered":true}]</code>
+</td>
+</tr>
+
+</tbody></table>
+
+
+<hr>
+
+<h3 id="enable_wireless_display" class="anchor"><a class="heading-anchor" href="#enable_wireless_display"><span></span></a>ENABLE_WIRELESS_DISPLAY</h3>
+
+<p>Enables a wireless receiver to accept a remote display connection.</p>
+
+<h4 id="request-12" class="anchor"><a class="heading-anchor" href="#request-12"><span></span></a>Request</h4>
+
+<ul>
+<li>Intent Action: <code>com.zebra.wirelessdeveloperservice.action.ENABLE_WIRELESS_DISPLAY</code></li>
+
+<li>Supports the key(s) shown below </li>
+</ul>
+
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+</tr></tbody></table><table class="table table-striped">
+<tbody><tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+
+<tr>
+<td><code>CALLBACK_RESPONSE</code></td>
+<td>PendingIntent</td>
+<td>Object that receives the response</td>
+</tr>
+
+<tr>
+<td><code>DESKTOP_MODE </code></td>
+<td>String</td>
+<td><b>ON</b> – Enables the wireless display<br>
+<b>OFF</b> – Disables the wireless display</td>
+</tr>
+
+</tbody></table>
+
+
+<h4 id="response-12" class="anchor"><a class="heading-anchor" href="#response-12"><span></span></a>Response</h4>
+
+<p><strong>Sends the following response(s) to the app</strong>: </p>
+
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+</tr></tbody></table><table class="table table-striped">
+<tbody><tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+
+<tr>
+<td><code>RESULT_CODE</code></td>
+<td>Integer</td>
+<td>1: Success<br>0: Failure</td>
+</tr>
+
+<tr>
+<td><code>RESULT_MESSAGE</code></td>
+<td>String</td>
+<td>Success: "Success"<br>Failure: "[Error message]"</td>
+</tr>
+
+</tbody></table>
+
+
+<hr>
+
+<h3 id="wireless_display_callback" class="anchor"><a class="heading-anchor" href="#wireless_display_callback"><span></span></a>WIRELESS_DISPLAY_CALLBACK</h3>
+
+<p>Register or unregister to receive notifications via broadcast of changes to the properties of the connected receiver. </p>
+
+<h4 id="request-13" class="anchor"><a class="heading-anchor" href="#request-13"><span></span></a>Request</h4>
+
+<ul>
+<li>Intent Action: <code>com.zebra.wirelessdeveloperservice.action.WIRELESS_DISPLAY_CALLBACK</code></li>
+
+<li>Supports the key(s) shown below </li>
+</ul>
+
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+</tr></tbody></table><table class="table table-striped">
+<tbody><tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+
+<tr>
+<td><code>CALLBACK_RESPONSE</code></td>
+<td>PendingIntent</td>
+<td>Object that receives the response</td>
+</tr>
+
+<tr>
+<td><code>REGISTER_CALLBACK</code></td>
+<td>String</td>
+<td><b>ON</b> – Register for wireless display change 
+callback broadcast<br>
+<b>OFF</b> – Unregister for wireless display change 
+callback broadcast</td>
+</tr>
+
+</tbody></table>
+
+
+<h4 id="response-13" class="anchor"><a class="heading-anchor" href="#response-13"><span></span></a>Response</h4>
+
+<p><strong>Sends the following response(s) to the app</strong>: </p>
+
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+</tr></tbody></table><table class="table table-striped">
+<tbody><tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+
+<tr>
+<td><code>RESULT_CODE</code></td>
+<td>Integer</td>
+<td>1: Success<br>0: Failure</td>
+</tr>
+
+<tr>
+<td><code>RESULT_MESSAGE</code></td>
+<td>String</td>
+<td>Success: "Success"<br>Failure: "[Error message]"</td>
+</tr>
+
+</tbody></table>
+
+
+<hr>
 
 <p>State Change Broadcasters
 ZWDS sends three types of broadcasts to customer app to update the current status. To 
