@@ -284,12 +284,15 @@
 
 <li><strong>Programmable Voice Triggers</strong>: Wake Word, Duress Word</li>
 
+<li><strong>Audio and Haptic Feedback</strong>: Play tones and trigger vibration on the device (new in <code>SDK v1.0.6</code>)</li>
+
 <li><strong>Connection Events</strong>: Access Control List (ACL) dis/connect </li>
 
 <li><strong>SCO Audio</strong>: Start/stop mic capture </li>
-
-<li><strong>SDK version query</strong>: <code>(getVersion())</code> </li>
 </ul>
+
+<!-- 5/26/26 removed TUT-124334 
+* **SDK version query**: `(getVersion())`  -->
 
 <blockquote>
   <p><i class="fa fa-hand-o-right" style="color:#27AE60;"></i> <strong>There's also a <a href="../ws101_ios_badge">WS101 Programmer's Guide for iOS</a></strong></p>
@@ -599,10 +602,16 @@
 <h3 id="scoconnectionlistenerinterface" class="anchor"><a class="heading-anchor" href="#scoconnectionlistenerinterface"><span></span></a>SCO Connection Listener Interface:</h3>
 
 <pre class="prettyprint"><code>    
-    interface ScoConnectionListener {
-        fun onScoStarted()
-        fun onScoFailed(error: ScoError)
-    }
+interface ScoConnectionListener {
+   fun onScoStarted() // Note: Audio path may not be ready yet.
+   fun onScoFailed(error: ScoError)
+
+   // NEW: Called when SCO audio path is connected and ready for use.
+   fun onScoAudioConnected()
+
+   // NEW: Called when SCO audio path is disconnected.
+   fun onScoAudioDisconnected()
+}
     enum class ScoError {
         BLUETOOTH_DISABLED,
         DISCONNECTED,
@@ -628,7 +637,8 @@ class MyApp : Application() {
                 ZebraAudioConnectSDK.Module.BUTTONS,
                 ZebraAudioConnectSDK.Module.VOICE,
                 ZebraAudioConnectSDK.Module.CONNECTION,
-                ZebraAudioConnectSDK.Module.SCO
+                ZebraAudioConnectSDK.Module.SCO,
+                ZebraAudioConnectSDK.Module.COMMANDS
      )
    )
 }
@@ -696,6 +706,27 @@ class MyApp : Application() {
 <h2 id="publicapi" class="anchor"><a class="heading-anchor" href="#publicapi"><span></span></a>Public API</h2>
 
 <pre class="prettyprint"><code>    
+    // New Listener for Command success/failure callbacks
+
+    interface CommandListener {
+       fun onToneSuccess()
+       fun onToneFailure()
+       fun onVibrationSuccess(duration: Long)
+       fun onVibrationFailure(duration: Long)
+    }
+    // Set the listener
+    ZebraAudioConnectSDK.setCommandListener(object : CommandListener {
+       // Override methods for success and failure
+    })
+
+    // New Command API Methods
+    // Play a tone on the WS101 device
+    ZebraAudioConnectSDK.playTone()
+
+    // Trigger vibration on the WS101 device (Vibration Duration: 100ms to 3000ms)
+    ZebraAudioConnectSDK.triggerVibration(timeInMillis: Long = 500L)
+
+    :::java
     // Version
     val sdkVersion = ZebraAudioConnectSDK.getVersion()        
 
@@ -779,22 +810,129 @@ class MyApp : Application() {
 <h2 id="bestpracticesanderrorhandling" class="anchor"><a class="heading-anchor" href="#bestpracticesanderrorhandling"><span></span></a>Best Practices and Error Handling</h2>
 
 <ul>
-<li><strong>SCO timing</strong>: Establishing an SCO link is asynchronous and varies by hardware. After invoking <code>startScoConnection()</code>, a brief delay (typically 50–200 ms) before starting <code>MediaRecorder</code> ensures that the audio pipeline is ready, and avoids clipping. Test with target device to determine the optimal delay. <strong>On Android 12 (and later)</strong>, it's OK to proceed after receiving the "SCO Ready" event.</li>
+<li><b><font size="3" color="red">CRITICAL:</font></b> For reliable audio operations, use <code>onScoAudioConnected()</code> instead of <code>onScoStarted()</code>. The <code>onScoStarted()</code> callback indicates that the connection is initiated, but the audio path might not be ready. The new <code>onScoAudioConnected()</code> callback guarantees the audio path is fully established and ready to be used. All audio operations (e.g., <code>startAudioRecording()</code>, <code>playTone()</code>) should be called from within <code>onScoAudioConnected()</code>.</li>
 
 <li><strong>Permission denial</strong>: Disable relevant UI <code>(btnRecord.isEnabled = false)</code> and
 show guidance to the user.</li>
 
-<li><strong>ScoError cases</strong>: <code>Handle ScoError.BLUETOOTH_DISABLED</code>, prompt user to enable
+<li><strong>ScoError cases</strong>: <code>Handle ScoError.BLUETOOTH_DISABLED</code>, prompts user to enable
 Bluetooth. Retry or abort gracefully.</li>
 
 <li><strong>Multi-app</strong>: Initiate only one SCO session at a time. Use Android Audio Focus or custom
 locking if multiple apps integrate the SDK.</li>
+
+<li><strong>System Alert Window permission</strong>: Request this permission during runtime; allows
+activities to be started from the background, for example, if an activity must be started from the
+<code>onReceive()</code> method after a reboot.</li>
 </ul>
 
-<!-- replaced below with above, per eng.
-* **SCO timing**: SCO link is asynchronous. Introduce a ~1 second delay before
-starting `MediaRecorder` after `startScoConnection()`.
- -->
+<pre class="prettyprint">            
+            // create a request code
+            const val REQUEST_CODE_SYSTEM_ALERT_WINDOW = 1001
+
+            // Check if SYSTEM_ALERT_WINDOW permission is granted
+            fun hasSystemAlertWindowPermission(): Boolean {
+                return Settings.canDrawOverlays(context)
+            }
+
+            /**
+            * Request for SYSTEM_ALERT_WINDOW permission, and handle the activity result
+            * in onActivityResult method.
+            */
+
+            fun requestSystemAlertWindowPermission(activity: Activity) {
+                if (!hasSystemAlertWindowPermission()) {
+                    val intent = Intent(
+                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:${context.packageName}")
+            )
+            activity.startActivityForResult(intent, REQUEST_CODE_SYSTEM_ALERT_WINDOW)
+        }
+    }
+
+</pre>
+
+<hr>
+
+<h2 id="usageexamplewithforgroundservice" class="anchor"><a class="heading-anchor" href="#usageexamplewithforgroundservice"><span></span></a>Usage Example (with forground service)</h2>
+
+<ul>
+<li>Make sure to have declared all the Foreground service-related permissions in the manifest and
+also requested at runtime in the MainActivity.</li>
+
+<li>Provided that this service is running in the background, when the WAKE WORD is triggered in
+the listener <code>ZebraAudioConnectSDK.setVoiceTriggerListener</code>, then start the SCO connection
+<code>startScoConnection()</code>.</li>
+
+<li>Once the SCO is established, call the APIs to play tone or vibrate (or both) as an indication to
+start recording further (use some cache file to store the recording if needed inside the service,
+so that it can be played once the app is opened).</li>
+</ul>
+
+<pre class="prettyprint">
+
+        
+        class WakeWordService : Service() {
+            override fun onCreate() {
+                super.onCreate()
+                createNotificationChannel()
+                initSDK()
+        }
+        private fun initSDK() {
+            // Connection events is called before initializing the SDK so that we 
+            // can capture the initial connection state
+
+                ZebraAudioConnectSDK.setConnectionListener(...)
+        ZebraAudioConnectSDK.initialize(
+            applicationContext,
+            setOf(
+                ZebraAudioConnectSDK.Module.BUTTONS,
+                ZebraAudioConnectSDK.Module.VOICE,
+                ZebraAudioConnectSDK.Module.CONNECTION,
+                ZebraAudioConnectSDK.Module.SCO,
+                ZebraAudioConnectSDK.Module.COMMANDS
+            )
+        )
+            // Button events
+            ZebraAudioConnectSDK.setButtonEventListener { btn, st -&gt; log("Btn $btn →
+        $st") }
+
+            // Voice triggers
+        ZebraAudioConnectSDK.setVoiceTriggerListener { tr -&gt;
+            log("Voice $tr")
+            startScoConnection()
+        }
+            // To play tone and trigger vibration
+            ZebraAudioConnectSDK.setCommandListener(...)
+
+            // SCO events
+            ZebraAudioConnectSDK.setScoListener(object : ScoConnectionListener {
+                override fun onScoStarted() {
+                    log("SCO Connection Initiated")
+                    // Don't start recording here - audio path not ready yet!
+            }
+
+                override fun onScoAudioConnected() {
+                    log("SCO Audio Path Ready")
+                    // ✅ NOW it's safe to:
+                    // 1. Play tone/vibrate to indicate recording will start
+                    playTone()
+                    triggerVibration(1000L) // 1 second
+
+                    // 2. Start audio recording (audio path is fully established)
+                    startAudioRecording()
+        }
+                override fun onScoAudioDisconnected() {
+                    log("SCO Audio Disconnected")
+            stopAudioRecording()
+        }
+                override fun onScoFailed(error: ScoError) {
+                    log("SCO Connection Failed: $error")
+                }
+            })
+        }
+    }
+</pre>
 
 <hr>
 
@@ -883,59 +1021,60 @@ Previously paired (and remembered) devices don't always reconnect when a host de
 
 <h3 id="canicheckwhetheraws101isconnectedbeforeinitializingthesdk" class="anchor"><a class="heading-anchor" href="#canicheckwhetheraws101isconnectedbeforeinitializingthesdk"><span></span></a>Can I check whether a WS101 is connected before initializing the SDK?</h3>
 
-<p>Yes. The sample Java code below shows how to detect existing WS101 connections using Android Bluetooth APIs:</p>
+<p><strong>There's no need; SDK 1.0.6 provides automatic device detection</strong>. The Zebra Audio Connect SDK automatically detects already-connected WS101 devices upon initialization. The <code>onDeviceConnected()</code> callback is triggered for any devices that were connected before the SDK was initialized, eliminating the need for manual Bluetooth device scanning.</p>
 
-<pre class="prettyprint"><code>    
-    /**
-     * Checks if any supported Zebra WS101 devices are currently connected
-     * Supports device name matching ("ws101"), MAC prefix ("94:FB:29"),
-     * or Zebra manufacturer ID filtering
-     */
-    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
-    private fun checkConnectedDevices(context: Context): Boolean {
-        return try {
-        val bluetoothAdapter = (context.getSystemService(BLUETOOTH_SERVICE) as? BluetoothManager)?.
-    adapter
-        if (bluetoothAdapter?.isEnabled != true) return false
-        bluetoothAdapter.bondedDevices?.any { device -&gt;
-        val supported = isDeviceSupported(device.name, device.address)
-        val connected = isDeviceConnected(device)
-        supported &amp;&amp; connected
-    } ?: false
-    } catch (e: Exception) {
-        Log.e(TAG, "Error checking connected devices", e)
-        false
+<!--
+Yes. The sample Java code below shows how to detect existing WS101 connections using Android Bluetooth APIs:
+
+         :::java
+        /**
+         * Checks if any supported Zebra WS101 devices are currently connected
+         * Supports device name matching ("ws101"), MAC prefix ("94:FB:29"),
+         * or Zebra manufacturer ID filtering
+         */
+        @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+        private fun checkConnectedDevices(context: Context): Boolean {
+            return try {
+            val bluetoothAdapter = (context.getSystemService(BLUETOOTH_SERVICE) as? BluetoothManager)?.
+        adapter
+            if (bluetoothAdapter?.isEnabled != true) return false
+            bluetoothAdapter.bondedDevices?.any { device ->
+            val supported = isDeviceSupported(device.name, device.address)
+            val connected = isDeviceConnected(device)
+            supported && connected
+        } ?: false
+        } catch (e: Exception) {
+            Log.e(TAG, "Error checking connected devices", e)
+            false
+            }
         }
-    }
-    private fun isDeviceSupported(deviceName: String?, macAddress: String?): Boolean {
-        val nameMatches = deviceName?.lowercase()?.contains("ws101") == true
-        val macMatches = macAddress?.uppercase()?.startsWith("94:FB:29") == true //MAC address prefix 94:
-    FB:29 is registered to Zebra Technologies Inc.
-        return nameMatches || macMatches
-    }
+        private fun isDeviceSupported(deviceName: String?, macAddress: String?): Boolean {
+            val nameMatches = deviceName?.lowercase()?.contains("ws101") == true
+            val macMatches = macAddress?.uppercase()?.startsWith("94:FB:29") == true //MAC address prefix 94:
+        FB:29 is registered to Zebra Technologies Inc.
+            return nameMatches || macMatches
+        }
 
-    /**
-     * Checks if a Bluetooth device is currently connected to the Headset/Hands-free profile
-     */
-    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
-    private fun isDeviceConnected(device: BluetoothDevice): Boolean {
-     return try {
-     val bluetoothAdapter = (getSystemService(BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
-     ?: return false
-     // Check Headset (HFP) connection state - required for WS101 button/voice events
-     val headsetState = bluetoothAdapter.getProfileConnectionState(android.bluetooth.
-    BluetoothProfile.HEADSET)
-     headsetState == android.bluetooth.BluetoothProfile.STATE_CONNECTED
-     } catch (e: Exception) {
-     Log.w(TAG, "Unable to check headset profile connection for ${device.name}: ${e.message}")
-     false
-     }
-    }
-</code></pre>
+        /**
+         * Checks if a Bluetooth device is currently connected to the Headset/Hands-free profile
+         */
+        @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+        private fun isDeviceConnected(device: BluetoothDevice): Boolean {
+         return try {
+         val bluetoothAdapter = (getSystemService(BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
+         ?: return false
+         // Check Headset (HFP) connection state - required for WS101 button/voice events
+         val headsetState = bluetoothAdapter.getProfileConnectionState(android.bluetooth.
+        BluetoothProfile.HEADSET)
+         headsetState == android.bluetooth.BluetoothProfile.STATE_CONNECTED
+         } catch (e: Exception) {
+         Log.w(TAG, "Unable to check headset profile connection for ${device.name}: ${e.message}")
+         false
+         }
+        }
 
-<blockquote>
-  <p><i class="fa fa-exclamation-circle" style="color:#FF0000;"></i> The program code above is provided <strong><u>for demonstration purposes only</u></strong>, and is <strong><em>NOT</em></strong> intended for use in production environments. </p>
-</blockquote>
+> <i class="fa fa-exclamation-circle" style="color:#FF0000;"></i> The program code above is provided **<u>for demonstration purposes only</u>**, and is ***NOT*** intended for use in production environments. 
+ -->
 
 <hr>
 
