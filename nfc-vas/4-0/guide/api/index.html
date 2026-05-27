@@ -228,26 +228,28 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p><strong>Zebra VAS SDK</strong> is an Android library built on top of the existing Android NFC APIs and the third party VAS protocol, such as Apple VAS or Google Smart Tap. It offers streamlined configuration and management of the necessary procedures involved in accessing and processing data from an NFC pass.</p>
+<p>The <strong>Zebra VAS SDK</strong> is an Android library built on native Android NFC APIs and third-party Value-Added Services (VAS) protocols, including Apple VAS, Google Smart Tap, and Samsung Wallet. It simplifies configuring and managing the workflows required to access and process data from NFC passes, such as loyalty cards, coupons, and tickets.</p>
 
 <p>The main SDK components are:</p>
 
 <ol>
-<li><strong>ZebraNfcVas -</strong> The main class that manages all interaction with NFC passes, configures the NFC reader, and reads the pass data, whether or not from the mobile wallet.</li>
+<li><strong>ZebraNfcVas -</strong> The main class that manages all interaction with NFC passes. It configures the NFC reader and reads the data from passes, regardless of whether they originate from a mobile wallet.</li>
 
-<li><strong>VasConfig -</strong> A base class object used to provide an interface for storing and accessing merchant parameters required to access an NFC pass. Two types of configuration objects are automatically generated when creating a VasConfig object:
+<li><strong>VasConfig -</strong> A base class that provides an interface for storing and accessing merchant parameters required to access an NFC pass. Three types of configuration objects are automatically generated when creating a VasConfig object:
 
 
 <ul>
-<li><strong><a href="#applevasconfig">AppleVasConfig</a> -</strong> A VASConfig object that contains information specific to Apple VAS, used for accessing and processing passes from Apple Wallet.</li>
+<li><strong><a href="#applevasconfig">AppleVasConfig</a> -</strong> A VASConfig object that handles configuration parameters specific to Apple VAS, used for accessing and processing passes stored in Apple Wallet.</li>
 
-<li><strong><a href="#smarttapvasconfig">SmartTapVasConfig</a> -</strong> A VASConfig object that contains information specific to Google Smart Tap, used for accessing and processing passes from Google Wallet.</li></ul>
+<li><strong><a href="#smarttapvasconfig">SmartTapVasConfig</a> -</strong> A VASConfig object that handles configuration parameters specific to Google Smart Tap, used for accessing and processing passes stored in Google Wallet.</li>
+
+<li><strong><a href="#samsungvasconfig">SamsungVasConfig</a> -</strong> A VASConfig object that handles configuration parameters specific to Samsung Wallet, used for accessing and processing passes stored in Samsung Wallet.</li></ul>
 </li>
 
-<li><strong>Pass object -</strong> Encapsulates the information about the NFC pass that is read, including the payload data and supplementary metadata. The Pass object enables developers to validate the pass type and ensure that it is not a replay attack (i.e. the date and time is within 10 seconds of the actual date and time), adhering to Apple requirements.</li>
+<li><strong>Pass object -</strong> Encapsulates the extracted NFC pass information, including the payload data and supplementary metadata. To comply with security standards (including Apple requirements), this object enables developers to validate the pass type and perform replay-attack prevention by verifying thaat the transmission timestamp is within 10 seconds of the current time.</li>
 </ol>
 
-<p>This section offers guidance on developing an application to read NFC passes using the Zebra VAS SDK. A single application can be built to access and read Apple Wallet, Google Wallet, or other NFC passes.</p>
+<p>This section offers guidance on developing an application to read NFC passes using the Zebra VAS SDK. A single application can be built to seamlessly interact with Apple Wallet, Google Wallet, Samsung Wallet, and other NFC passes.</p>
 
 <hr>
 
@@ -355,7 +357,7 @@ For apps developed with prior version VAS SDK v1.0, there are some APIs that hav
 
 <h2 id="developerguide" class="anchor"><a class="heading-anchor" href="#developerguide"><span></span></a>Developer Guide</h2>
 
-<p>Zebra VAS SDK is capable of reading Apple Wallet passes (Apple VAS) and Google Wallet (Google Smart Tap) passes. This section provides guidance for developers to build apps based on the type of pass being read. Refer to the sample <a href="../demo/">demo app</a> and corresponding source code.</p>
+<p>Zebra VAS SDK is capable of reading Apple Wallet (Apple VAS), Google Wallet (Google Smart Tap), and Samsung Wallet passes. This section provides guidance for developers to build apps based on the type of pass being read. Refer to the sample <a href="../demo/">demo app</a> and corresponding source code.</p>
 
 <h3 id="applevas" class="anchor"><a class="heading-anchor" href="#applevas"><span></span></a>Apple VAS</h3>
 
@@ -756,6 +758,132 @@ public void onPause() {
     super.onPause();
     Log.i(TAG, "onPause called &amp; Reader Mode Deactivated .....");
     vasSDK.disableReadPassMode();
+}
+</code></pre></li>
+</ol>
+
+<h3 id="samsungwallet" class="anchor"><a class="heading-anchor" href="#samsungwallet"><span></span></a>Samsung Wallet</h3>
+
+<p>This section provides guidance on how to develop an application capable of reading an NFC pass from Samsung Wallet using the Zebra VAS SDK.</p>
+
+<p>Step-by-step guide:</p>
+
+<ol>
+<li><p><strong>Initialize the ZebraNfcVas SDK:</strong> In the Activity's <code>onCreate()</code> method, create an instance of ZebraNfcVas and initialize it. Either implement the <code>IZebraServiceConnection</code> interface in the Activity or pass an anonymous implementation to the constructor.</p>
+
+<pre class="prettyprint"><code>public class SamsungVasActivity extends AppCompatActivity implements IZebraServiceConnection {
+    private static final String TAG = "SamsungVasActivity";
+    private ZebraNfcVas vasSDK;
+
+<pre><code>@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+
+    // Initialize the Zebra VAS SDK
+    vasSDK = new ZebraNfcVas(this);
+    vasSDK.init();
+}
+// ... other activity lifecycle methods
+</code></pre>
+
+}
+</code></pre></li>
+
+<li><p><strong>Configure the Samsung Wallet Transaction:</strong> Once the SDK service is connected, the <code>onServiceConnection()</code> callback is invoked. In this method, create and configure the SamsungVasConfig object.</p>
+
+<pre class="prettyprint"><code>@Override
+public void onServiceConnection() {
+    Log.d(TAG, "VAS Service Connected.");
+    // a. Create a SamsungVasConfig object
+    SamsungVasConfig samsungConfig = new SamsungVasConfig();
+
+<pre><code>// b. Set the Private Key (replace with your actual key)
+// IMPORTANT: For production, use a secure key management system.
+String samsung_PrivateKeyStr = "-----BEGIN EC PRIVATE KEY-----\n...";
+samsungConfig.setPrivateKey(samsung_PrivateKeyStr);
+
+// c. Generate and set a random nonce (Recommended)
+byte[] randomNonce = new byte[16];
+new SecureRandom().nextBytes(randomNonce);
+samsungConfig.setRandomNonce(randomNonce);
+
+// d. Set the Service Type (e.g., TICKET, LOYALTY, etc.)
+samsungConfig.setServiceTypes(SamsungVasConfig.ServiceType.TICKET);
+
+// e. Create the ZebraNfcVasConfig object
+vasSDK.createZebraNfcVasConfig();
+
+// f. Set the SamsungVasConfig into the ZebraNFCVAS object
+vasSDK.setVasConfig(samsungConfig);
+
+// g. Connect to the NFC reader
+int result = vasSDK.connectToReader();
+if (result == ZebraNfcVas.ERROR_SUCCESS) {
+    Log.d(TAG, "Connected to reader successfully.");
+
+    // h. Enable read pass mode to start listening for taps
+    vasSDK.enableReadPassMode();
+} 
+else {
+    Log.e(TAG, "Failed to connect to reader. Error code: " + result);
+}
+</code></pre>
+
+}
+</code></pre></li>
+
+<li><p><strong>Handle the Detected Pass:</strong> When an NFC pass from Samsung Wallet is tapped, the <code>onPassDetected()</code> callback is invoked. This method receives a <code>Pass</code> object containing the data read from the wallet.</p>
+
+<pre class="prettyprint"><code>@Override
+public void onPassDetected(Pass pass) {
+    Log.v(TAG, "&gt;&gt;&gt; SAMSUNG WALLET PASS DETECTED &lt;&lt;&lt;");
+
+<pre><code>// Process the data read from the pass based on your business needs
+if (pass.isDecrypted()) {
+    String payload = new String(pass.getPayloadMessage());
+    Log.d(TAG, "Decrypted Payload: " + payload);
+    String rawPayload = new
+    String(pass.getPayloadNDEFMessage());
+    Log.d(TAG, "Raw NDEF Payload: " + rawPayload);
+} 
+else {
+    Log.w(TAG, "Payload is encrypted. Please check your
+    private key configuration.");
+}
+// Other details can also be retrieved from the pass object
+Log.d(TAG, "Pass Type: " + pass.getPassType());
+</code></pre>
+
+}
+</code></pre></li>
+
+<li><p><strong>Manage SDK Lifecycle – Disable Read Mode:</strong> To conserve battery and release NFC resources, disable read mode when the app goes into the background, and disconnect from the reader when the activity is destroyed.</p>
+
+<pre class="prettyprint"><code>@Override
+protected void onPause() {
+    super.onPause();
+    if (vasSDK != null) {
+        Log.i(TAG, "onPause called. Disabling read pass mode.");
+        vasSDK.disableReadPassMode();
+    }
+}
+
+@Override
+protected void onDestroy() {
+    super.onDestroy();
+    if (vasSDK != null) {
+        vasSDK.disconnectFromReader();
+    }
+}
+</code></pre></li>
+
+<li><p><strong>Handle Service Disconnection:</strong> Implement the <code>onServiceDisconnection</code> method to handle cases where the connection to the VAS service is lost unexpectedly.</p>
+
+<pre class="prettyprint"><code>@Override
+public void onServiceDisconnection() {
+    Log.e(TAG, "VAS Service Disconnected.");
+    // Handle disconnection, e.g., by attempting to re-initialize or notifying the user.
 }
 </code></pre></li>
 </ol>
@@ -1534,6 +1662,131 @@ Array of one or more ServiceTypes. This must not be null and or empty.</p>
 <p><strong>Parameters:</strong> none</p>
 
 <p><strong>Return values:</strong> NdefRecord merchantCategoryRecord</p>
+
+<hr>
+
+<h2 id="samsungvasconfig" class="anchor"><a class="heading-anchor" href="#samsungvasconfig"><span></span></a>SamsungVasConfig</h2>
+
+<p>SamsungVasConfig is the configuration class for Samsung Wallet passes. It is inherited from the VASConfig class and contains all parameters required for a transaction.</p>
+
+<p><strong>Constructor:</strong></p>
+
+<pre class="prettyprint"><code>    public SamsungVasConfig()
+</code></pre>
+
+<p>Creates and initializes a new SamsungVasConfig object.</p>
+
+<h3 id="setprivatekey" class="anchor"><a class="heading-anchor" href="#setprivatekey"><span></span></a>setPrivateKey</h3>
+
+<pre class="prettyprint"><code>    public void setPrivateKey(String key)
+</code></pre>
+
+<p>Sets the EC private key in PEM format required to sign the transaction data, allowing Samsung Wallet to verify the request's authenticity.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>key:</strong> A String containing the PEM-formatted EC private key.</li>
+</ul>
+
+<p><strong>Throws:</strong></p>
+
+<ul>
+<li><strong>InvalidParameterException:</strong> Thrown if the key string is null, empty, or improperly formatted.</li>
+</ul>
+
+<h3 id="setrandomnonce" class="anchor"><a class="heading-anchor" href="#setrandomnonce"><span></span></a>setRandomNonce</h3>
+
+<pre class="prettyprint"><code>    public void setRandomNonce(byte[] nonce)
+</code></pre>
+
+<p>Sets a random nonce (number used once) for the transaction to prevent replay attacks. In cryptographic operations, a nonce is used to prevent replay attacks by ensuring that each transaction is unique. While optional, using a nonce is a highly recommended security practice.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>nonce:</strong> A byte[] array of 16 bytes containing the random nonce.</li>
+</ul>
+
+<p><strong>Throws:</strong></p>
+
+<ul>
+<li><strong>InvalidParameterException:</strong> Thrown if the nonce is not 16 bytes in length.</li>
+</ul>
+
+<h3 id="setservicetypes-1" class="anchor"><a class="heading-anchor" href="#setservicetypes-1"><span></span></a>setServiceTypes</h3>
+
+<pre class="prettyprint"><code>    public void setServiceTypes(ServiceType type)
+</code></pre>
+
+<p>Specifies the type of service being requested from Samsung Wallet.</p>
+
+<p><strong>Parameters:</strong></p>
+
+<ul>
+<li><strong>type:</strong> A ServiceType enum value.</li>
+</ul>
+
+<h3 id="servicetypeenum" class="anchor"><a class="heading-anchor" href="#servicetypeenum"><span></span></a>ServiceType Enum</h3>
+
+<p>Enumeration of the different kinds of services supported by Samsung Wallet through the VAS protocol.</p>
+
+<ul>
+<li><strong>LOYALTY:</strong> For loyalty program services.</li>
+
+<li><strong>TICKET:</strong> For event ticket validation services.</li>
+</ul>
+
+<h3 id="passclass" class="anchor"><a class="heading-anchor" href="#passclass"><span></span></a>Pass Class</h3>
+
+<p>The Pass class provides access to all data read from the NFC pass via getter methods.</p>
+
+<p><strong>Methods:</strong></p>
+
+<pre class="prettyprint"><code>    public String getStatusWord()
+</code></pre>
+
+<p>Returns the StatusWord of the detected NFC pass.</p>
+
+<pre class="prettyprint"><code>    public Result getResultCode()
+</code></pre>
+
+<p>Returns the ResultCode of the detected NFC pass.</p>
+
+<pre class="prettyprint"><code>    public byte[] getMerchantId()
+</code></pre>
+
+<p>Returns the MerchantID (Pass Type Identifier converted to SHA256) of the pass.</p>
+
+<pre class="prettyprint"><code>    public String getPassTypeId()
+</code></pre>
+
+<p>Returns the PassTypeID of the pass.</p>
+
+<pre class="prettyprint"><code>    public Type getPassType()
+</code></pre>
+
+<p>Returns the PassType of the pass.</p>
+
+<pre class="prettyprint"><code>    public byte[] getPayloadMessage()
+</code></pre>
+
+<p>Returns the decrypted payload message.</p>
+
+<pre class="prettyprint"><code>    public byte[] getPayloadNDEFMessage()
+</code></pre>
+
+<p>Returns the raw, full NDEF payload message.</p>
+
+<pre class="prettyprint"><code>    public Date getPayloadDate()
+</code></pre>
+
+<p>Returns the payload date of the pass.</p>
+
+<pre class="prettyprint"><code>    public boolean isDecrypted()
+</code></pre>
+
+<p>Returns <code>true</code> if the payload message has been successfully decrypted, <code>false</code> otherwise.</p>
 
 <hr>
 
