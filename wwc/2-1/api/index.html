@@ -238,7 +238,10 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>The Zebra Wireless Developer Service (ZWDS) allows custom Android apps to share content over the air to a monitor connected to a wireless receiving device such as the <a href="https://www.zebra.com/us/en/products/spec-sheets/interactive-kiosks/zec500.html">Zebra ZEC500</a>. The APIs provided with the service include the ability to scan for available receivers, connect and disconnect, set a proximity threshold for connections and switch display modes. </p>
+<p>The Zebra Wireless Developer Service (ZWDS) allows custom Android apps to share content over the air to a monitor connected to a wireless receiving device such as the <a href="https://www.zebra.com/us/en/products/spec-sheets/interactive-kiosks/zec500.html">Zebra ZEC500</a>. The APIs provided with the service include the ability to scan for available receivers, connect and disconnect, set a proximity threshold for making and breaking connections and to switch between Mirror and Desktop display modes. </p>
+
+<!-- By default, ZWDS uses secure tokens for all intent API transactions. **Before first using the APIs, a token must be generated through Zebra Access Manager** and passed as a parameter with API calls. Though not recommended by Zebra, this security measure also can be disabled. See the <i class="fa fa-arrow-circle-down" style="color:#27AE60;"></i> [Secure Mode section](#securemode) below for details.  
+-->
 
 <h4 id="bestpractices" class="anchor"><a class="heading-anchor" href="#bestpractices"><span></span></a>Best Practices</h4>
 
@@ -1168,7 +1171,7 @@ isRemembered<br>
 
 <h3 id="displaycallback" class="anchor"><a class="heading-anchor" href="#displaycallback"><span></span></a>Display Callback</h3>
 
-<p>Register or unregister to receive notifications via broadcast of changes to the properties of the connected receiver. </p>
+<p>Register or unregister to receive notifications via broadcast of changes to the properties of connected or unconnected receivers in range of the device. </p>
 
 <h4 id="request-13" class="anchor"><a class="heading-anchor" href="#request-13"><span></span></a>Request</h4>
 
@@ -1378,7 +1381,85 @@ isRemembered<br>
 </tbody></table>
 
 
-<hr><p></p>
+<hr>
+
+<!-- 
+## Secure Mode
+
+#### `content to come`
+ -->
+
+<!-- 
+Token generation and verification
+Zebra Wireless Developer Service provided set of Intent APIs for third party apps to connect
+with Mavrick devices. Those ZWDS intent API runs in secure mode in default. Admin needs
+to disable the secure mode of ZWDS if required only.
+Zebra Wireless Developer Service (ZWDS) in default secure mode, the customer app which
+communicate with ZWDS should generate token from Access Manger and pass that token
+as a parameter with ZWDS Intent APIs. In ZWDS side it validates the token and only APIs
+with valid tokens process further and otherwise send error message to customer app.
+For generate token and validate token , it is needed to use the delegation mention in below
+to whitelist the customer app, As DataWedge is doing Control Access to DataWedge Intent
+APIs - Zebra Technologies TechDocs
+Delegation scope for whitelist the customer app to generate and validate token for ZWDS
+secure API access
+“delegation-zebra-zwds-api-intent-secure”
+Whitelist the customer app to generate token
+For whitelist the app admin needs to use existing Access Manager Actions mentioned
+below:
+Action Functionality
+Allow Caller Allow customer app to request token
+Disallow Caller Disallow customer app to generate token
+Generate the Token by customer app
+Customer app should generate the token using existing Access Manager using Action in
+below and send that with ZWDS Intent APIs.
+Action Functionality
+AquireToken Acquires a token for send
+Extra parameter for Intent APIs to pass the Token
+When ZWDS switches to the secure mode, the user app should pass generated token as
+parameter with its INTENT API. In that case APIs should pass the token with the parameter
+name as mentioned in the below table.
+Key TYPE Description
+TOKEN String Secure token generated
+from user app side
+If token is valid only ZWDS process the API otherwise send the error message.
+ -->
+
+<h3 id="samplecode" class="anchor"><a class="heading-anchor" href="#samplecode"><span></span></a>Sample Code</h3>
+
+<p>The code below is an example for generating a secure token for use with ZDWS intent APIs. </p>
+
+<p><i class="fa fa-exclamation-circle" style="color:#FF0000;"></i> <strong>Code not for use in production environments</strong>. </p>
+
+<pre class="prettyprint"><code>
+public class GetIntentSecureToken {
+ static final Uri AUTHORITY_URI = Uri.parse("content://com.zebra.devicemanager.zdmcontentprovider");
+ static Uri ACQUIRE_TOKEN_URI = Uri.withAppendedPath(AUTHORITY_URI, "AcquireToken");
+ public static final String COLUMN_QUERY_RESULT = "query_result";
+ private static final String TAG = "GetIntentSecureToken";
+ @SuppressLint("Range")
+ public static String acquireToken(String delegation_scope, Context mContext) {
+   String token = "";
+   try {
+     Cursor cursor = mContext.getContentResolver().query(ACQUIRE_TOKEN_URI, (String[])null,
+      "delegation_scope=?", new String[]{delegation_scope}, (String)null);
+    if (cursor != null &amp;&amp; cursor.getCount() &gt; 0) {
+       cursor.moveToFirst();
+        token = cursor.getString(cursor.getColumnIndex(COLUMN_QUERY_RESULT));
+        Log.e(TAG, token);
+        cursor.close();
+      }
+    } catch (Exception var3) {
+      if (var3 instanceof SecurityException) {
+        Log.e(TAG, "Invalid Token/Caller");
+      } else {
+        Log.e(TAG, "Unknown Caller to acquire token");
+      }
+    }
+  return token;
+ }
+}
+</code></pre><p></p>
                                         
 
 
