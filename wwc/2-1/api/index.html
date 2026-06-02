@@ -240,19 +240,22 @@
 
 <p>The Zebra Wireless Developer Service (ZWDS) allows custom Android apps to share content over the air to a monitor connected to a wireless receiving device such as the <a href="https://www.zebra.com/us/en/products/spec-sheets/interactive-kiosks/zec500.html">Zebra ZEC500</a>. The APIs provided with the service include the ability to scan for available receivers, connect and disconnect, set a proximity threshold for making and breaking connections and to switch between Mirror and Desktop display modes. </p>
 
-<!-- By default, ZWDS uses secure tokens for all intent API transactions. **Before first using the APIs, a token must be generated through Zebra Access Manager** and passed as a parameter with API calls. Though not recommended by Zebra, this security measure also can be disabled. See the <i class="fa fa-arrow-circle-down" style="color:#27AE60;"></i> [Secure Mode section](#securemode) below for details.  
--->
+<p>By default, ZWDS uses secure tokens for all intent API transactions. <strong>Before first using the APIs, a token must be generated through Zebra Access Manager</strong> and passed as a parameter with API calls. Though not recommended by Zebra, this security measure also can be disabled. <strong>See the <i class="fa fa-arrow-circle-down" style="color:#27AE60;"></i> <a href="#securemode">Secure Mode section</a> below for details</strong>.  </p>
 
 <h4 id="bestpractices" class="anchor"><a class="heading-anchor" href="#bestpractices"><span></span></a>Best Practices</h4>
 
+<p>Zebra engineers recommend the following practices for apps using the wireless-service APIs to achieve optimal performance and avoid unpredictable behavior. </p>
+
 <ul>
+<li><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>First use of ZWDS requires generating a secure token</strong>. <i class="fa fa-arrow-circle-down" style="color:#27AE60;"></i> <strong>Go to the <a href="#securemode">Secure Mode section</a></strong> to learn more. </li>
+
 <li><strong>Before calling</strong> <code>CONNECT_WIRELESS_DISPLAY</code>:<br>
 
 
 <ul>
-<li>a. Call <code>START_WIRELESS_DISPLAY_SCAN</code> to identify a receiving device (e.g. ZEC500) with which to connect.<br></li>
+<li>a. First call <code>START_WIRELESS_DISPLAY_SCAN</code> to identify a receiving device (e.g. ZEC500) with which to connect.<br></li>
 
-<li>b. Check the display properties of the intended receiver to confirm that <code>CanConnect</code> and <code>IsAvailable</code> properties are both true.<br></li></ul>
+<li>b. Then check the display properties of the intended receiver to confirm that <code>CanConnect</code> and <code>IsAvailable</code> properties are both true.<br></li></ul>
 </li>
 
 <li><strong>After establishing a connection, call</strong> <code>STOP_WIRELESS_DISPLAY_SCAN</code> to minimize the resource usage on the device. </li>
@@ -263,16 +266,12 @@
 <ul>
 <li>a. Call <code>DISCONNECT_WIRELESS _DISPLAY</code> first. </li>
 
-<li>b. Call <code>DEINIT_DEV_SERVICE</code> to clear the service. This enables subsequent <code>INIT_DEV_SERVICE</code> calls to succeed. </li></ul>
+<li>b. Then call <code>DEINIT_DEV_SERVICE</code> to clear the service. This enables subsequent <code>INIT_DEV_SERVICE</code> calls to succeed. </li></ul>
 </li>
-</ul>
-
-<h4 id="knownbehavior" class="anchor"><a class="heading-anchor" href="#knownbehavior"><span></span></a>Known Behavior</h4>
-
-<ul>
-<li>Connections that remain idle for more than 60 minutes can become unresponsive or behave erratically and should be reset.</li>
 
 <li><strong>When a connection is active</strong>, calling <code>CONNECT_WIRELESS_DISPLAY</code> disconnects the session.  </li>
+
+<li><strong>If a connection remain idle for more than 60 minutes</strong>, reset the connection to avoid unresponsiveness or erratic behavior.</li>
 </ul>
 
 <!-- unclear:
@@ -1383,47 +1382,85 @@ isRemembered<br>
 
 <hr>
 
-<!-- 
-## Secure Mode
+<h2 id="securemode" class="anchor"><a class="heading-anchor" href="#securemode"><span></span></a>Secure Mode</h2>
 
-#### `content to come`
- -->
+<h3 id="granttokenpermission" class="anchor"><a class="heading-anchor" href="#granttokenpermission"><span></span></a>Grant Token Permission</h3>
 
-<!-- 
-Token generation and verification
-Zebra Wireless Developer Service provided set of Intent APIs for third party apps to connect
-with Mavrick devices. Those ZWDS intent API runs in secure mode in default. Admin needs
-to disable the secure mode of ZWDS if required only.
-Zebra Wireless Developer Service (ZWDS) in default secure mode, the customer app which
-communicate with ZWDS should generate token from Access Manger and pass that token
-as a parameter with ZWDS Intent APIs. In ZWDS side it validates the token and only APIs
-with valid tokens process further and otherwise send error message to customer app.
-For generate token and validate token , it is needed to use the delegation mention in below
-to whitelist the customer app, As DataWedge is doing Control Access to DataWedge Intent
-APIs - Zebra Technologies TechDocs
-Delegation scope for whitelist the customer app to generate and validate token for ZWDS
-secure API access
-“delegation-zebra-zwds-api-intent-secure”
-Whitelist the customer app to generate token
-For whitelist the app admin needs to use existing Access Manager Actions mentioned
-below:
-Action Functionality
-Allow Caller Allow customer app to request token
-Disallow Caller Disallow customer app to generate token
-Generate the Token by customer app
-Customer app should generate the token using existing Access Manager using Action in
-below and send that with ZWDS Intent APIs.
-Action Functionality
-AquireToken Acquires a token for send
-Extra parameter for Intent APIs to pass the Token
-When ZWDS switches to the secure mode, the user app should pass generated token as
-parameter with its INTENT API. In that case APIs should pass the token with the parameter
-name as mentioned in the below table.
-Key TYPE Description
-TOKEN String Secure token generated
-from user app side
-If token is valid only ZWDS process the API otherwise send the error message.
- -->
+<p>Before using the Zebra Wireless Developer Service in its default secure mode, a token must be generated and passed as a parameter using an intent. A token is generated by "whitelisting" the app using the ZWDS delegation scope shown below and options of Zebra Access Manager and its <a href="/mx/accessmgr/#service-access-action">Service Access Action</a> parameter (values shown below). ZWDS processes only API calls containing the validated token. Calls not containing the token generate an error to the app.</p>
+
+<ul>
+<li><strong>ZWDS delegation scope</strong>: <code>delegation-zebra-zwds-api-secure-access-config</code></li>
+</ul>
+
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+</tr></tbody></table><table class="table table-striped">
+<tbody><tr>
+<th>Action</th>
+<th>Function</th>
+</tr>
+
+<tr>
+<td>AllowCaller</td>
+<td>Allows an app to request a token</td>
+</tr>
+
+<tr>
+<td>DisallowCaller</td>
+<td>Prohibits an app from generating a token</td>
+</tr>
+
+</tbody></table>
+
+
+<hr>
+
+<h3 id="generatetoken" class="anchor"><a class="heading-anchor" href="#generatetoken"><span></span></a>Generate Token</h3>
+
+<p>Customer app should generate the token using existing Access Manager using Action in
+below and send that with ZWDS Intent APIs.</p>
+
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+</tr></tbody></table><table class="table table-striped">
+<tbody><tr>
+<th>Action</th>
+<th>Function</th>
+</tr>
+
+<tr>
+<td>AquireToken</td>
+<td>Acquires a token for sending</td>
+</tr>
+
+</tbody></table>
+
+
+<hr>
+
+<h3 id="sendtoken" class="anchor"><a class="heading-anchor" href="#sendtoken"><span></span></a>Send Token</h3>
+
+<p>Send the token using the intent EXTRA parameter. </p>
+
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+</tr></tbody></table><table class="table table-striped">
+<tbody><tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+
+<tr>
+<td><code>TOKEN</code></td>
+<td>String</td>
+<td>Secure token generated by the user for the app</td>
+</tr>
+
+</tbody></table>
+
+
+<hr>
 
 <h3 id="samplecode" class="anchor"><a class="heading-anchor" href="#samplecode"><span></span></a>Sample Code</h3>
 
@@ -1459,7 +1496,41 @@ public class GetIntentSecureToken {
   return token;
  }
 }
-</code></pre><p></p>
+</code></pre>
+
+<hr>
+
+<h3 id="securemodeenabledisable" class="anchor"><a class="heading-anchor" href="#securemodeenabledisable"><span></span></a>Secure Mode Enable/Disable</h3>
+
+<p>The values below are options of Zebra Access Manager and its <a href="/mx/accessmgr/#service-access-action">Service Access Action</a> parameter. Use this to control and check status of ZWDS secure mode with the delegation scope: <code>delegation-zebra-zwds-api-secure-access-config</code>. </p>
+
+<table class="facelift" align="center" style="width:80%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+</tr></tbody></table><table class="table table-striped">
+<tbody><tr>
+<th>Action</th>
+<th>Function</th>
+</tr>
+
+<tr>
+<td>AllowBinding</td>
+<td>Disable secure mode</td>
+</tr>
+
+<tr>
+<td><b>DisallowBinding</b></td>
+<td><b>Enable secure mode</b><br>(default setting)</td>
+</tr>
+
+<tr>
+<td>VerifyBinding</td>
+<td>Check the status of secure mode</td>
+</tr>
+
+</tbody></table>
+
+
+<hr><p></p>
                                         
 
 
