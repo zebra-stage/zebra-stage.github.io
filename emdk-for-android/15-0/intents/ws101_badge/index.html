@@ -352,7 +352,7 @@
 <tr>
 <td>3</td>
 <td><b>Power</b></td>
-<td>Performs multiple functions:<br><b>Power</b>: Press and hold to turn device on or off. Device enters pairing mode each time it's turned on.<br><b>Pairing</b>: Hold to re-enter pairing mode after device has been powered up.<br><b>Incoming call</b>: Press once to answer; press twice to reject. <b>On a call</b>: Press twice to hang up.</td>
+<td>Performs multiple functions:<br><b>Power</b>: Press and hold to turn device on or off. Device enters pairing mode each time it's turned on.<br><b>Pairing</b>: Hold to re-enter pairing mode after device has been powered up.<br><b>Incoming telephony call</b>: Press once to answer; press twice to reject. <b>On a call</b>: Press twice to hang up.</td>
 </tr>
 
 <tr>
@@ -390,13 +390,13 @@
 <tr>
 <td>1</td>
 <td><b>Volume up/down</b></td>
-<td>Adjusts volume of the device speaker or call volume for headset.</td>
+<td>Adjusts volume of the Bluetooth audio stream when Bluetooth audio is active.<br><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i>Volume level can change only when an audio stream is active.</td>
 </tr>
 
 <tr>
 <td>2</td>
 <td><b>P2 programmable button</b></td>
-<td>Sends an event to a registered app. By default, mutes/unmutes the mic during calls.</td>
+<td>Sends an event to a registered app. By default, mutes/unmutes the mic during telephony calls.</td>
 </tr>
 
 <tr>
@@ -810,10 +810,9 @@ class MyApp : Application() {
 <h2 id="bestpracticesanderrorhandling" class="anchor"><a class="heading-anchor" href="#bestpracticesanderrorhandling"><span></span></a>Best Practices and Error Handling</h2>
 
 <ul>
-<li><b><font size="3" color="red">CRITICAL:</font></b> For reliable audio operations, use <code>onScoAudioConnected()</code> instead of <code>onScoStarted()</code>. The <code>onScoStarted()</code> callback indicates that the connection is initiated, but the audio path might not be ready. The new <code>onScoAudioConnected()</code> callback guarantees the audio path is fully established and ready to be used. All audio operations (e.g., <code>startAudioRecording()</code>, <code>playTone()</code>) should be called from within <code>onScoAudioConnected()</code>.</li>
+<li><b><font size="3" color="red">IMPORTANT:</font></b> For reliable Bluetooth audio operations, always use the <code>onScoAudioConnected()</code> callback to verify that the audio path is fully established before routing stream data. Avoid using the legacy <code>onScoStarted()</code> callback, as it could trigger before the channel is ready to transmit audio.</li>
 
-<li><strong>Permission denial</strong>: Disable relevant UI <code>(btnRecord.isEnabled = false)</code> and
-show guidance to the user.</li>
+<li><strong>Permission denial and UI state management</strong>: Disable or transition the Record UI once a session begins to prevent concurrent streams. If recording starts successfully, disable the "Record" action or toggle the button to a "Stop" state.</li>
 
 <li><strong>ScoError cases</strong>: <code>Handle ScoError.BLUETOOTH_DISABLED</code>, prompts user to enable
 Bluetooth. Retry or abort gracefully.</li>
@@ -825,6 +824,13 @@ locking if multiple apps integrate the SDK.</li>
 activities to be started from the background, for example, if an activity must be started from the
 <code>onReceive()</code> method after a reboot.</li>
 </ul>
+
+<!-- 6/4/26 - TUT-124334 while awaiting eng approval:  
+"IMPORTANT" and "permission denial" descriptions taken mostly verbatim from zGemini after pasting eng input (eng sugg removing "If permissions are denied, keep the Record button disabled (`btnRecord.isEnabled = false`) and show user guidance.")
+
+ORIG. REMOVED: 
+* <b><font size="3" color="red">CRITICAL:</font></b> For reliable audio operations, use `onScoAudioConnected()` instead of `onScoStarted()`. The `onScoStarted()` callback indicates that the connection is initiated, but the audio path might not be ready. The new `onScoAudioConnected()` callback guarantees the audio path is fully established and ready to be used. All audio operations (e.g., `startAudioRecording()`, `playTone()`) should be called from within `onScoAudioConnected()`.
+-->
 
 <pre class="prettyprint">            
             // create a request code
@@ -955,7 +961,7 @@ so that it can be played once the app is opened).</li>
 <h4 id="causesformicfailure" class="anchor"><a class="heading-anchor" href="#causesformicfailure"><span></span></a>Causes for mic failure:</h4>
 
 <ul>
-<li><strong>Wrong connection type</strong>: SCO requires the Bluetooth "Hands-free" or "Headset" profile to be active. <strong>The WS101 must be connected for "Phone calls" and "Media audio"</strong> in the Android System settings panel.</li>
+<li><strong>Wrong connection type</strong>: SCO requires the Bluetooth "Hands-free" or "Headset" profile to be active. <strong>The WS101 must be connected for "Phone calls" and "Media audio"</strong> in the Android System settings panel of the connected WS101 device.</li>
 
 <li><strong>Another app using the microphone</strong>: Only one app can use Bluetooth SCO audio at a time. <strong>Quit other app(s) that use the mic</strong> (e.g. phone dialer, voice recorder) before running yours.</li>
 
