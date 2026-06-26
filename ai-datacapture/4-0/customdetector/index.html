@@ -278,8 +278,24 @@
 
 <p>Initialize the third-party model (TFLite):</p>
 
-<pre class="prettyprint"><code>    // TFLite — load model file from assets and create Interpreter 
-    Interpreter model = new Interpreter(loadModelFile(context)); 
+<pre class="prettyprint"><code>    // TFLite — wrap Interpreter in your own class and implement process(InputImage) 
+    public class TFLiteModel implements AutoCloseable {
+
+        private final Interpreter interpreter;
+
+        public TFLiteModel(Context context) throws IOException {
+            interpreter = new Interpreter(FileUtil.loadMappedFile(context, "models/mobilenet_ssd.tflite"));
+        }
+
+        public Task&lt;List&lt;DetectionEntity&gt;&gt; process(InputImage image) {
+            // run inference on image.getBitmapInternal(), wrap results as DetectionEntity list 
+            List&lt;DetectionEntity&gt; results = runInference(image.getBitmapInternal());
+            return Tasks.forResult(results);
+        }
+
+        @Override public void close() { interpreter.close(); }
+    }
+    TFLiteModel model = new TFLiteModel(context);
 </code></pre>
 
 <p>Initialize the SDK (ML Kit):</p>
@@ -291,12 +307,19 @@
 
 <p>Create the <code>CustomerDetector</code> with the initialized model object by passing the model and an inference lambda to <code>CustomDetector.create()</code>. The SDK processes each <code>ImageData</code> frame on a background thread and returns a list of detected entities. </p>
 
-<pre class="prettyprint"><code>    CustomDetector&lt; DetectionEntity &gt; detector = CustomDetector.create( 
-        model,     // TFLite: Interpreter  |  ML Kit: TextRecognizer 
-        MODEL_ID, 
-        (m, imageData) -&gt; { 
-            return Tasks.await( 
-                m.process(InputImage.fromBitmap(imageData.getBitmap(), 0))); 
+<pre class="prettyprint"><code>    CustomDetector&lt;DetectionEntity&gt; detector = CustomDetector.create(
+           model,       // TFLite: Interpreter | ML Kit: TextRecognizer
+           MODEL_ID,    // Unique string to identify this detector (e.g. "TFLite" or "MLKit")
+
+           // Lambda invoked per camera frame.
+           // 'm' is the model instance; 'imageData' is the current frame.
+           // - TFLite: Call the m.process() method implemented in Step 1.
+           // - ML Kit: Call the built-in TextRecognizer m.process() method.
+           // Tasks.await() blocks the lambda thread until the Task execution completes.
+           // NOTE: This lambda must run on a background thread; calling Tasks.await() on the UI thread can cause a crash.
+           (m, imageData) -&gt; {
+               return Tasks.await(
+                       m.process(InputImage.fromBitmap(imageData.getBitmap(), 0)));
     });
 </code></pre>
 
@@ -337,10 +360,10 @@
 
 <p>Call <code>close()</code> on the custom detector when the activity or fragment is destroyed. </p>
 
-<pre class="prettyprint"><code>    override fun onDestroy() { 
-        super.onDestroy(); 
-        customDetector?.close();   // closes tfliteModel if it implements AutoCloseable 
-    } 
+<pre class="prettyprint"><code>    override fun onDestroy() {
+        super.onDestroy();
+        detector?.close();   // closes tfliteModel if it implements AutoCloseable
+    }
 </code></pre>
 
 <hr>
