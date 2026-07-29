@@ -329,7 +329,7 @@ _Click images to enlarge._
 
 <p><strong>The WS301's 750 mAh Li-Ion PowerPrecision+ battery</strong> is rated to provide a full 10 hours of continuous operation. However, battery performance varies greatly depending on usage patterns and device settings, especially those of the display panel. <strong>To maximize operation of WS301 devices while on battery power, Zebra recommends the power-management best practices listed below</strong>. </p>
 
-<h5 id="toprolongbatterylife" class="anchor"><a class="heading-anchor" href="#toprolongbatterylife"><span></span></a>To Prolong Battery Life:</h5>
+<h4 id="toprolongbatterylife" class="anchor"><a class="heading-anchor" href="#toprolongbatterylife"><span></span></a>To Prolong Battery Life:</h4>
 
 <ul>
 <li><strong>Enable Dark Mode by default</strong>:
@@ -374,11 +374,65 @@ _Click images to enlarge._
 
 <p><strong>*</strong> <i><font size="1" color="DimGrey">Microsoft Intune is used as an example. Adapt as needed for the EMM system in use.</font></i> </p>
 
+<h4 id="morepowersavingtips" class="anchor"><a class="heading-anchor" href="#morepowersavingtips"><span></span></a>More Power-saving Tips</h4>
+
+<ul>
+<li><strong>Further Optimize Background and Back-end Communication</strong>. High-frequency network calls, alarms and polling activities can impact battery life. Consider the following approaches in addition to those listed in the section above:
+
+
+<ul>
+<li>Eliminate hard-coded short-interval polling (e.g. 30s heartbeats).</li>
+
+<li>Transition background synchronization, health checks and status reporting to use Android's WorkManager or batched alarms with significantly larger windows (e.g., 15 to 60 minutes).</li>
+
+<li>Implement smart, dynamic intervals that scale back when the device is detected as stationary or idle.</li></ul>
+</li>
+
+<li><strong>Mitigate High-performance CPU Whitelisting and Frequency Ramping</strong>:
+
+
+<ul>
+<li>Review all service configurations to ensure background tasks do not request or inherit high-performance CPU whitelists.</li>
+
+<li>Constrain tasks running in the background to run on efficient, lower-frequency CPU cores. </li>
+
+<li>Restrict high-performance/high-frequency modes to active, user-facing real-time actions.</li></ul>
+</li>
+
+<li><strong>Eliminate Persistent Partial Wake Locks</strong>: 
+
+
+<ul>
+<li>Persistent wake locks completely block the Android OS from entering Deep Doze mode. Transition to modern push architectures.</li>
+
+<li>Avoid holding permanent, indefinite partial wake locks. All wake locks must have explicit, tight timeouts.</li>
+
+<li>Transition communication architectures from a persistent "always-listening" background wake lock to a lightweight, event-driven push notification framework (such as FCM or custom lightweight push sockets) that can wake the device on demand.</li></ul>
+</li>
+
+<li><strong>Mitigate Database Crashes and Exponential Back-offs</strong>. When a service crashes, the operating system executes a CPU-heavy process to tear down resources, write stack traces to storage and spin up a new process instance. If service restarts are immediate and aggressive, it creates an intense power spike.
+
+
+<ul>
+<li>Audit database connection life cycles to ensure SQL connections are opened cleanly, cached and closed without leaking.</li>
+
+<li>For any service or network call that fails or crashes, enforce a strict exponential back-off algorithm with jitter for retries (rather than allowing immediate restart or reconnection loops).</li>
+
+<li>In a poor network environment, the Wi-Fi radio and the impacted apps work harder. To reduce power draw and optimize battery life, review and modify behavior of background services when a target server is unreachable or when the configuration (such as the server JSON configuration files) is incomplete. Ensure the application degrades network activity gracefully when a connection is offline or failing, rather than entering a continuous high-speed packet-retry loop.</li></ul>
+</li>
+</ul>
+
 <hr>
 
 <h2 id="datacapture" class="anchor"><a class="heading-anchor" href="#datacapture"><span></span></a>Data Capture</h2>
 
-<p>Some Zebra models (including the WS301) include no scanner, and use the camera to acquire data from barcodes as well as to capture images and video. Consequently, <strong><a href="/datawedge/15-1/guide/gettingstarted/#datawedgefunctionality">DataWedge Profile0</a> is disabled on the WS301 by default</strong>, and must be enabled manually (or programmatically) to take advantage of this Zebra-recommended (and simplest) means of data acquisition. There are several ways of enabling Profile0 functionality; three are shown below.</p>
+<p>Like several Zebra models, <strong>the WS301 DOES NOT include a dedicated scanner</strong>, and instead <strong>uses the <em>camera</em> to acquire data from barcodes</strong> (as well as to capture images and video). Consequently, <strong>the WS301 by default comes with <a href="/datawedge/15-1/guide/gettingstarted/#datawedgefunctionality">DataWedge Profile0</a> disabled</strong>, and therefore provides no barcode scanning capability "out-of-the-box"; the responsibility of managing the scanner falls to the developer's app(s).   </p>
+
+<p>In general, Zebra recommends DataWedge as the simplest means of operating device scanners; it's built into all Zebra devices and with just a few mouse clicks can be configured to populate fields of a developer's existing app(s) with data acquired from scanned barcodes without modifying the app. Use of DataWedge is further simplified by enabling Profile0, which automatically activates DataWedge for any app on the device that's not explicitly associated with another DataWedge Profile. DataWedge also allows for processing of the acquired data. <i class="fa fa-hand-o-right" style="color:#27AE60;"></i> <strong>Learn more <a href="/datawedge">about DataWedge</a></strong>.</p>
+
+<blockquote>
+  <p><i class="fa fa-check-circle" style="color:#27AE60;"></i> <strong>To enable Profile0 on a device, select one of the methods shown below</strong>.</p>
+</blockquote>
 
 <!-- On many Zebra devices that have both a scanner and a camera, which allows organizations to easily scan barcode data into the text field(s) of any app on the device without the need to re-code their app(s). 
 
@@ -430,7 +484,7 @@ adb push datawedge-enabledProfile0.db /sdcard/Android/data/com.symbol.datawedge/
 
 <hr>
 
-<h4 id="2enableprofile0withotherdatawedgeintents" class="anchor"><a class="heading-anchor" href="#2enableprofile0withotherdatawedgeintents"><span></span></a>2. Enable Profile0 with other DataWedge intents:</h4>
+<h4 id="2enableprofile0withdatawedgeintents" class="anchor"><a class="heading-anchor" href="#2enableprofile0withdatawedgeintents"><span></span></a>2. Enable Profile0 with DataWedge intents:</h4>
 
 <pre class="prettyprint"><code>
 Intent intent = new Intent("com.symbol.datawedge.api.ACTION");
@@ -446,7 +500,7 @@ sendBroadcast(intent);
 
 <hr>
 
-<h4 id="3enableprofile0withreset_default_profile" class="anchor"><a class="heading-anchor" href="#3enableprofile0withreset_default_profile"><span></span></a>3. Enable Profile0 with <code>RESET_DEFAULT_PROFILE</code>:</h4>
+<h4 id="3enableprofile0withreset_default_profileintent" class="anchor"><a class="heading-anchor" href="#3enableprofile0withreset_default_profileintent"><span></span></a>3. Enable Profile0 with <code>RESET_DEFAULT_PROFILE</code> intent:</h4>
 
 <p><strong>Profile0 can be enabled programmatically</strong> using the DataWedge <code>RESET_DEFAULT_PROFILE</code> preconfigured intent. </p>
 
@@ -504,8 +558,6 @@ Options to enable Profile0:
 
 <i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> **DWDemo app is not available on the WS301**.
  -->
-
-<hr>
 
 <h3 id="appdevicecompatibility" class="anchor"><a class="heading-anchor" href="#appdevicecompatibility"><span></span></a>App/Device Compatibility</h3>
 
