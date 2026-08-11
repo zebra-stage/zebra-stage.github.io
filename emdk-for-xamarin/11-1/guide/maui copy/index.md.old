@@ -1,0 +1,249 @@
+
+THIS IS THE RAW (mostly) UNEDITED .DOCX FILE CONVERTED BY GEMINI to .MD FORMAT. 
+
+Use this to make improvements to the AI. 
+
+
+## Overview
+
+This guide covers the steps required to update a **.NET MAUI** project that uses the **Zebra EMDK for Xamarin** SDK from **.NET 6** (or later) to **.NET 10**.
+
+Starting with .NET 8, the MAUI SDK introduced changes that affect all existing MAUI projects:
+
+1.  **`<UseMaui>true</UseMaui>` no longer automatically includes MAUI NuGet packages.** An explicit `PackageReference` for `Microsoft.Maui.Controls` is now required.
+2.  **`Application.MainPage` is deprecated.** Application startup must use the `CreateWindow()` override instead.
+
+In addition, because `Symbol.XamarinEMDK` is scoped to the Android target framework via a build condition in the `.csproj`, that condition must be updated alongside the framework moniker.
+
+All three issues appear as build warnings (`MA002`, `CS0618`) or silently break package restore if not addressed.
+
+---
+
+## Prerequisites
+
+| Requirement | Details |
+|---|---|
+| **Visual Studio** | 2022 v17.12 or later with the **.NET MAUI** workload installed |
+| **.NET SDK** | 10.0 or later |
+| **.NET MAUI workload** | Run `dotnet workload install maui` if not already installed |
+| **Symbol.XamarinEMDK** | Available on NuGet — verify the version is compatible with your EMDK service on-device |
+| **Zebra Android device** | Running Android 5.0 (API 21) or later with EMDK service installed |
+
+**Verify your .NET version:**
+```bash
+dotnet --version
+```
+
+**Install the MAUI workload if missing:**
+```bash
+dotnet workload install maui
+```
+
+---
+
+## Files to Update
+
+| File | Change |
+|---|---|
+| `YourProject.csproj` | Update target framework monikers; add explicit MAUI package reference; update EMDK package condition |
+| `App.xaml.cs` | Replace deprecated `MainPage` assignment with `CreateWindow()` override |
+
+---
+
+## Step 1 — Update Target Frameworks
+
+Open your `.csproj` file and replace all `net6.0` (or `net7.0`, `net8.0`, `net9.0`) prefixes with `net10.0` across every target framework moniker.
+
+**Before:**
+```xml
+<TargetFrameworks>net6.0-android;net6.0-ios;net6.0-maccatalyst</TargetFrameworks>
+<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net6.0-windows10.0.19041.0</TargetFrameworks>
+<!-- <TargetFrameworks>$(TargetFrameworks);net6.0-tizen</TargetFrameworks> -->
+```
+
+**After:**
+```xml
+<TargetFrameworks>net10.0-android;net10.0-ios;net10.0-maccatalyst</TargetFrameworks>
+<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net10.0-windows10.0.19041.0</TargetFrameworks>
+<!-- <TargetFrameworks>$(TargetFrameworks);net10.0-tizen</TargetFrameworks> -->
+```
+
+Update any other platform monikers (such as Tizen) in the same way.
+
+---
+
+## Step 2 — Add the Explicit Microsoft.Maui.Controls Package Reference
+
+Starting with .NET 8, `<UseMaui>true</UseMaui>` no longer pulls in MAUI NuGet packages automatically. Without this reference the build produces warning **MA002** and MAUI types may not resolve.
+
+Add the following `<ItemGroup>` to your `.csproj`, before the resource definitions:
+
+```xml
+<ItemGroup>
+    <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
+</ItemGroup>
+```
+
+`$(MauiVersion)` is an MSBuild property automatically set by the MAUI SDK to match your installed workload version. It keeps the reference in sync whenever the workload is updated.
+
+To pin to a specific version instead, replace `$(MauiVersion)` with the version number reported in the `MA002` warning when you first build (for example, `10.0.20`).
+
+---
+
+## Step 3 — Update the Symbol.XamarinEMDK Package Condition
+
+`Symbol.XamarinEMDK` is scoped to Android using a `Condition` on its `<ItemGroup>`. This condition must be updated to match the new target framework moniker, otherwise the package will not be restored for the Android build.
+
+**Before:**
+```xml
+<ItemGroup Condition="'$(TargetFramework)' == 'net6.0-android'">
+    <PackageReference Include="Symbol.XamarinEMDK">
+        <Version>8.0.0.2</Version>
+    </PackageReference>
+</ItemGroup>
+```
+
+**After:**
+```xml
+<ItemGroup Condition="'$(TargetFramework)' == 'net10.0-android'">
+    <PackageReference Include="Symbol.XamarinEMDK">
+        <Version>8.0.0.2</Version>
+    </PackageReference>
+</ItemGroup>
+```
+
+The condition value is case-sensitive and must exactly match the moniker used in `<TargetFrameworks>`. The `Symbol.XamarinEMDK` version number itself does not need to change.
+
+---
+
+## Step 4 — Replace MainPage with CreateWindow in App.xaml.cs
+
+`Application.MainPage` is marked obsolete in .NET 8+ (warning **CS0618**). The correct replacement is to override `CreateWindow()`, which the MAUI framework calls when it needs to create the application window.
+
+Open `App.xaml.cs`.
+
+**Before:**
+```csharp
+public partial class App : Application
+{
+    public App()
+    {
+        InitializeComponent();
+
+        MainPage = new AppShell();
+    }
+}
+```
+
+**After:**
+```csharp
+public partial class App : Application
+{
+    public App()
+    {
+        InitializeComponent();
+    }
+
+    protected override Window CreateWindow(IActivationState activationState)
+    {
+        return new Window(new AppShell());
+    }
+}
+```
+
+**Why this change is needed:**
+In .NET 8+, MAUI introduced multi-window support. Setting `MainPage` directly bypasses the windowing lifecycle and does not work correctly on all platforms. The `CreateWindow()` override is the supported entry point for constructing the initial page.
+
+---
+
+## Step 5 — (Optional) Update the .csproj.user File
+
+The `.csproj.user` file is developer-local and stores IDE settings such as the last-selected debug target. It is typically excluded from source control, but if present it may reference the old framework moniker and cause the wrong target to appear pre-selected in Visual Studio.
+
+Locate the `<ActiveDebugFramework>` element and update it:
+
+**Before:**
+```xml
+<ActiveDebugFramework>net6.0-android</ActiveDebugFramework>
+```
+
+**After:**
+```xml
+<ActiveDebugFramework>net10.0-android</ActiveDebugFramework>
+```
+
+This has no effect on the build output — it only affects the Visual Studio debug toolbar default.
+
+---
+
+## Build Verification
+
+After completing all steps, verify the build is clean.
+
+**Using the .NET CLI:**
+```bash
+dotnet build YourProject.csproj -f net10.0-android
+```
+
+**Expected output:**
+> Build succeeded.
+>     0 Warning(s)
+>     0 Error(s)
+
+**Using Visual Studio:**
+1.  Open your `.sln` file in Visual Studio 2022.
+2.  Select **Build > Rebuild Solution**.
+3.  Confirm the Output window shows **0 errors** and **0 warnings**.
+
+---
+
+## Troubleshooting
+
+### MA002 — MAUI NuGet packages not included
+**Message:** > Starting with .NET 8, setting `<UseMaui>true</UseMaui>` does not automatically include NuGet package references in your project. Update your project by including: `<PackageReference Include="Microsoft.Maui.Controls" ... />`
+**Fix:** Add the explicit `Microsoft.Maui.Controls` package reference described in Step 2.
+
+### CS0618 — Application.MainPage is obsolete
+**Message:** > ‘Application.MainPage.set’ is obsolete: ‘This property is deprecated. Initialize your application by overriding Application.CreateWindow rather than setting MainPage.’
+**Fix:** Replace the `MainPage` assignment with the `CreateWindow()` override described in Step 4.
+
+### CS8632 — Nullable annotation outside nullable context
+**Message:** > The annotation for nullable reference types should only be used in code within a ‘#nullable’ annotations context.
+**Cause:** This warning occurs if the `IActivationState?` parameter (with the `?` nullable annotation) is used in a project that does not have `<Nullable>enable</Nullable>` enabled.
+**Fix:** Remove the `?` from the parameter type in `CreateWindow()`:
+```csharp
+// Correct — no nullable annotation
+protected override Window CreateWindow(IActivationState activationState)
+```
+Do not resolve this by adding `<Nullable>enable</Nullable>` to the project — doing so enables strict nullable analysis across all files and will produce a large number of new warnings in existing EMDK sample code that was not written with nullability in mind.
+
+### Symbol.XamarinEMDK not restored after condition update
+If the EMDK package fails to restore, verify the `Condition` value in the `.csproj` exactly matches the target framework moniker in `<TargetFrameworks>`:
+```xml
+<ItemGroup Condition="'$(TargetFramework)' == 'net10.0-android'">
+```
+The condition is case-sensitive. A mismatch — such as `Net10.0-Android` or a leftover `net6.0-android` — will silently skip package restore for the Android target.
+
+---
+
+## Summary of Changes
+
+| File | What to Change | Reason |
+|---|---|---|
+| `.csproj` — `<TargetFrameworks>` | Replace `net6.0-*` (or earlier) with `net10.0-*` | Target the .NET 10 runtime |
+| `.csproj` — new `<ItemGroup>` | Add `Microsoft.Maui.Controls` package reference | No longer auto-included since .NET 8 (`MA002`) |
+| `.csproj` — `Symbol.XamarinEMDK` condition | Update `net6.0-android` to `net10.0-android` | Condition must match the updated target framework moniker |
+| `App.xaml.cs` | Replace `MainPage = new AppShell()` with `CreateWindow()` override | `MainPage` is obsolete since .NET 8 (`CS0618`) |
+| `.csproj.user` *(optional)* | Update `<ActiveDebugFramework>` moniker | IDE debug toolbar alignment only |
+
+---
+
+### Updated "Sample Projects" Markdown
+
+Here is the markdown formatted specifically for updating the `https://techdocs.zebra.com/emdk-for-xamarin/11-1/guide/maui/#sampleprojects` page:
+
+```markdown
+**Sample Projects**
+
+**[EMDK Xamarin Samples](https://github.com/ZebraDevs/EMDK-Xamarin-Samples)** | See all Zebra sample EMDK-X projects, including **"MAUI Barcode Sample1"**, **"MAUI Profile Clock Sample1"**, and **"MAUIProfileWifiSample1"**.
+```
