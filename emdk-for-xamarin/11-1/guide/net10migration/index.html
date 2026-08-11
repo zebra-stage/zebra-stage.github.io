@@ -11,8 +11,8 @@
     <meta name="author" content="Zebra Technologies">
     <meta name="google-site-verification" content="i4B78BrWnNy8ShJwe5feRW3jO3HE6gfYlYqYbxfl8yY">
     <meta name="msvalidate.01" content="6B651B00161BCE79B8950AC09D5C4C75">
-    <meta title="MAUI Programmer's Guide">
-    <title>MAUI Programmer's Guide - TechDocs</title>
+    <meta title="Migrating MAUI Projects to .NET 10">
+    <title>Migrating MAUI Projects to .NET 10 - TechDocs</title>
     <!-- core CSS -->
     <link href="/css/bootstrap.min.css" rel="stylesheet">
 <!--     
@@ -154,7 +154,7 @@
                     <nav id="toc" data-toggle="toc" data-spy="affix" style="height: 75%; max-width: 225px; overflow-y: auto; ">
                         
                         <ul class="nav">
-                            <li><strong>MAUI Programmer's Guide</strong></li>
+                            <li><strong>Migrating MAUI Projects to .NET 10</strong></li>
                         </ul>
                     </nav>
                     <div class="modal fade" id="modal-smartdocs" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true" data-backdrop="true">
@@ -240,7 +240,7 @@
                         <div class="col-sm-12">
                             <section id="cta" class="wow fadeIn">
                                 <div class="">
-                                    <h1 id="maui-programmers-guide" class="anchor"><a class="heading-anchor" href="#maui-programmers-guide"><span></span></a>MAUI Programmer's Guide</h1>
+                                    <h1 id="migrating-maui-projects-to-net-10" class="anchor"><a class="heading-anchor" href="#migrating-maui-projects-to-net-10"><span></span></a>Migrating MAUI Projects to .NET 10</h1>
                                     <p>
                                             EMDK For MAUI/Xamarin
                                             11.1
@@ -258,93 +258,328 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>The EMDK for Xamarin (EMDK-X) now supports the Microsoft .NET Multi-platform App UI, better known as MAUI. Developers can now use the cross-platform framework for apps that target Zebra devices and use EMDK APIs.  </p>
+<p>This guide covers the steps required to update a <strong>Microsoft .NET MAUI</strong> project that uses the <strong>Zebra EMDK for Xamarin</strong> SDK from <strong>.NET 6</strong> (or later) to <strong>.NET 10</strong>.</p>
 
-<blockquote>
-  <p><i class="fa fa-check-circle" style="color:#27AE60;"></i> Also see <a href="https://developer.zebra.com/blog/developing-net-maui-zebra-androidtm-devices">Developing with .NET MAUI on Zebra Android Devices</a> from Zebra engineering. </p>
-</blockquote>
+<p>Starting with .NET 8, the MAUI SDK introduced changes that affect all existing MAUI projects:</p>
+
+<ol>
+<li><code>&lt;UseMaui&gt;true&lt;/UseMaui&gt;</code> no longer automatically includes MAUI NuGet packages.<br>An explicit <code>PackageReference</code> for <code>Microsoft.Maui.Controls</code> is now required.</li>
+
+<li><code>Application.MainPage</code> is deprecated. Application startup must use the <code>CreateWindow()</code> override instead.</li>
+
+<li><code>Symbol.XamarinEMDK</code> is scoped to the Android target framework via a build condition in the <code>.csproj</code>, and therefore that condition must be updated alongside the framework moniker.</li>
+</ol>
+
+<p>If not addressed, all three issues appear as build warnings (<code>MA002</code>, <code>CS0618</code>) or silently break package restore.</p>
 
 <hr>
 
-<h3 id="requirements" class="anchor"><a class="heading-anchor" href="#requirements"><span></span></a>Requirements</h3>
+<h2 id="requirements" class="anchor"><a class="heading-anchor" href="#requirements"><span></span></a>Requirements</h2>
 
 <ul>
-<li><strong>EMDK for Xamarin 8.0</strong> (or later) <a href="../nuget">Set it up</a>. </li>
+<li><strong>Visual Studio 2022 v17.12</strong> (or later)</li>
 
-<li><strong>Visual Studio 2022</strong> (or later) <a href="https://visualstudio.microsoft.com/vs/">Get it</a>. <i class="fa fa-external-link" style="color:#3498DB;"></i></li>
+<li><strong>.NET SDK 10.0</strong> (or later) </li>
 
-<li><strong>.NET 6.0</strong> (or later) <a href="https://dotnet.microsoft.com/en-us/download/dotnet/6.0">Get it</a>. <i class="fa fa-external-link" style="color:#3498DB;"></i></li>
+<li><strong>.NET MAUI workload -</strong> If not already installed, <i class="fa fa-arrow-circle-down" style="color:#27AE60;"></i> see below. </li>
+
+<li><strong>Symbol.XamarinEMDK -</strong> Available on NuGet; verify the version is compatible with your EMDK on-device service. </li>
+
+<li><strong>Zebra Android device running Android 5.0</strong> (API 21 or later) with EMDK service installed. </li>
+</ul>
+
+<h4 id="verifycurrentnetversionusingthenetcli" class="anchor"><a class="heading-anchor" href="#verifycurrentnetversionusingthenetcli"><span></span></a>Verify current .NET version using the .NET CLI:</h4>
+
+<pre class="prettyprint"><code>
+dotnet --version
+</code></pre>
+
+<h4 id="installthemauiworkloadifmissing" class="anchor"><a class="heading-anchor" href="#installthemauiworkloadifmissing"><span></span></a>Install the MAUI workload if missing:</h4>
+
+<pre class="prettyprint"><code>
+dotnet workload install maui
+</code></pre>
+
+<hr>
+
+<h3 id="summaryofchanges" class="anchor"><a class="heading-anchor" href="#summaryofchanges"><span></span></a>Summary of Changes</h3>
+
+<p>Below is a list of the files that must change for a successful mitgration. Details and steps for making the changes follow.  </p>
+
+<h4 id="filestoupdate" class="anchor"><a class="heading-anchor" href="#filestoupdate"><span></span></a>Files to Update</h4>
+
+<ul>
+<li><code>.csproj</code> <code>&lt;TargetFrameworks&gt;</code>:
+
+
+<ul>
+<li>Replace <code>net6.0-*</code> (or earlier) with <code>net10.0-*</code> to target the .NET 10 runtime.</li></ul>
+</li>
+
+<li><code>.csproj</code> new <code>&lt;ItemGroup&gt;</code>: 
+
+
+<ul>
+<li>Add <code>Microsoft.Maui.Controls</code> package reference, which stopped being auto-included in .NET 8+ (error <code>MA002</code>)</li></ul>
+</li>
+
+<li><code>.csproj</code> <code>Symbol.XamarinEMDK</code> condition:
+
+
+<ul>
+<li>Update <code>net6.0-android</code> to <code>net10.0-android</code> so the condition matches the updated target framework moniker.</li></ul>
+</li>
+
+<li><code>App.xaml.cs</code>: 
+
+
+<ul>
+<li>Replace <code>MainPage = new AppShell()</code> with <code>CreateWindow()</code> override; <code>MainPage</code> became obsolete in .NET 8+ (error <code>CS0618</code>)</li></ul>
+</li>
+
+<li><code>.csproj.user</code> <em>(optional)</em>: 
+
+
+<ul>
+<li>Update <code>&lt;ActiveDebugFramework&gt;</code> moniker for IDE debug toolbar alignment.</li></ul>
+</li>
+
+<li><code>YourProject.csproj</code>: 
+
+
+<ul>
+<li>Update target framework monikers; add explicit MAUI package reference; update EMDK package condition.</li></ul>
+</li>
+
+<li><code>App.xaml.cs</code>: 
+
+
+<ul>
+<li>Replace deprecated <code>MainPage</code> assignment with <code>CreateWindow()</code> override. </li></ul>
+</li>
 </ul>
 
 <hr>
 
-<h2 id="createanapp" class="anchor"><a class="heading-anchor" href="#createanapp"><span></span></a>Create an App</h2>
+<h2 id="iupdatetargetframeworks" class="anchor"><a class="heading-anchor" href="#iupdatetargetframeworks"><span></span></a>I. Update Target Frameworks</h2>
 
-<h5 id="tocreateanappwithemdkxmaui" class="anchor"><a class="heading-anchor" href="#tocreateanappwithemdkxmaui"><span></span></a>To create an app with EMDK-X MAUI:</h5>
+<ol>
+<li>Open your <code>.csproj</code> file and replace all <code>net6.0</code>, <code>net7.0</code>, <code>net8.0</code> or <code>net9.0</code> prefixes with <code>net10.0</code> across every target framework moniker. </li>
 
-<p><strong>1. Create a new project</strong>. Open Visual Studio and create a new .NET MAUI app:<br>
-<img alt="image" style="height:550px" src="picture1.jpg">
-<em>Click image to enlarge; ESC to exit</em>.
-<br></p>
+<li>Update any other platform monikers in the same way. Tizen is shown as an example in the commented statements below.</li>
+</ol>
 
-<p><strong>2. Install the XamarinEMDK NuGet Package</strong>.<br>
-&nbsp;&nbsp;&nbsp; a. In Visual Studio, go to <strong>Tools &gt; NuGet Package Manager</strong>.<br>
-&nbsp;&nbsp;&nbsp; b. <strong>Select "Manage NuGet Packages for Solution"</strong> from the submenu:<br>
-<img alt="image" style="height:550px" src="picture2.jpg">
-<em>Click image to enlarge; ESC to exit</em>.
-<br>
-&nbsp;&nbsp;&nbsp; c. In the Browse section, <strong>search for "EMDK" and install the most recent version</strong> of the EMDK library:<br>
-<img alt="image" style="height:550px" src="picture3.jpg">
-<em>Click image to enlarge; ESC to exit</em>.
-<br></p>
+<h4 id="example" class="anchor"><a class="heading-anchor" href="#example"><span></span></a>Example</h4>
 
-<p><strong>3. Verify the Xamarin EMDK library</strong>.<br>
-&nbsp;&nbsp;&nbsp; a. Open the <code>.csproj</code> file.<br>
-&nbsp;&nbsp;&nbsp; b. Verify that <code>Symbol.XamarinEMDK</code> is added as a package reference (highlighted section, toward the bottom of the left-hand window in the image below):<br>
-<img alt="image" style="height:550px" src="picture4.jpg">
-<em>Click image to enlarge; ESC to exit</em>.
-<br></p>
+<h5 id="before" class="anchor"><a class="heading-anchor" href="#before"><span></span></a>Before:</h5>
 
-<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> To use the <code>Symbol.XamarinEMDK</code> library, navigate to the <code>MainActivity.cs</code> file in the Android platform section and import the library. <strong>A line should appear as "using Symbol.XamarinEMDK;"</strong> as in line 4 of the screen shown below: 
-<img alt="image" style="height:550px" src="picture5.jpg">
-<em>Click image to enlarge; ESC to exit</em>.
-<br></p>
+<pre class="prettyprint"><code>
+&lt;TargetFrameworks&gt;net6.0-android;net6.0-ios;net6.0-maccatalyst&lt;/TargetFrameworks&gt;
+&lt;TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))"&gt;$(TargetFrameworks);net6.0-windows10.0.19041.0&lt;/TargetFrameworks&gt;
+&lt;!-- &lt;TargetFrameworks&gt;$(TargetFrameworks);net6.0-tizen&lt;/TargetFrameworks&gt; --&gt;
+</code></pre>
 
-<p><strong>4. Install Profile Manager Plug-in</strong>.<br>
-&nbsp;&nbsp;&nbsp; a. In the Extensions menu, <strong>select Manage Extensions</strong>.<br>
-&nbsp;&nbsp;&nbsp; b. <strong>Search for "EMDK" and download EMDK for Xamarin</strong> from the results list (see image below).<br>
-&nbsp;&nbsp;&nbsp; c. After downloading, <strong>quit and re-open Visual Studio</strong>. A dialog titled "Modifying the project" should appear.<br>
-<img alt="image" style="height:550px" src="picture6.jpg">
-<em>Click image to enlarge; ESC to exit</em>.
-<br></p>
+<h5 id="after" class="anchor"><a class="heading-anchor" href="#after"><span></span></a>After:</h5>
 
-<p><strong>5. Access the Profile Manager Wizard</strong>.</p>
-
-<p>&nbsp;&nbsp;&nbsp; a. Go to <strong>Extensions &gt; EMDK &gt; Profile Manager</strong>.<br>
-&nbsp;&nbsp;&nbsp; b. <strong>Use Profile Manager</strong> as needed. <a href="../guide/profile-manager/">Learn how and why</a>.<br> 
-<i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> If "EMDK" does not appear in the Extensions menu, repeat Step 4.<br>
-<img alt="image" style="height:550px" src="picture7.jpg">
-<em>Click image to enlarge; ESC to exit</em>.
-<br>
-<img alt="image" style="height:550px" src="picture8.jpg">
-<em>Click image to enlarge; ESC to exit</em>.
-<br></p>
-
-<blockquote>
-  <p><i class="fa fa-check-circle" style="color:#27AE60;"></i> <strong>Continue developing project as desired</strong>.</p>
-</blockquote>
+<pre class="prettyprint"><code>
+&lt;TargetFrameworks&gt;net10.0-android;net10.0-ios;net10.0-maccatalyst&lt;/TargetFrameworks&gt;
+&lt;TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))"&gt;$(TargetFrameworks);net10.0-windows10.0.19041.0&lt;/TargetFrameworks&gt;
+&lt;!-- &lt;TargetFrameworks&gt;$(TargetFrameworks);net10.0-tizen&lt;/TargetFrameworks&gt; --&gt;
+</code></pre>
 
 <hr>
 
-<h2 id="alsosee" class="anchor"><a class="heading-anchor" href="#alsosee"><span></span></a>Also See</h2>
+<h2 id="iiaddexplicitmicrosoftmauicontrolspackagereference" class="anchor"><a class="heading-anchor" href="#iiaddexplicitmicrosoftmauicontrolspackagereference"><span></span></a>II. Add Explicit Microsoft.Maui.Controls Package Reference</h2>
+
+<p>Starting with .NET 8, <code>&lt;UseMaui&gt;true&lt;/UseMaui&gt;</code> no longer pulls in MAUI NuGet packages automatically. Without this reference, the build produces warning <strong>MA002</strong>, potentially causing MAUI types not to resolve.</p>
+
+<p>Add the following <code>&lt;ItemGroup&gt;</code> to your <code>.csproj</code> before the resource definitions:</p>
+
+<pre class="prettyprint"><code>
+&lt;ItemGroup&gt;
+    &lt;PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" /&gt;
+&lt;/ItemGroup&gt;
+</code></pre>
+
+<p><code>$(MauiVersion)</code> is an MSBuild property automatically set by the MAUI SDK to match your installed workload version. It keeps the reference in sync whenever the workload is updated.</p>
+
+<p>To pin to a specific version instead, replace <code>$(MauiVersion)</code> with the version number reported in the <code>MA002</code> warning when you first build (for example, <code>10.0.20</code>).</p>
+
+<hr>
+
+<h2 id="iiiupdatesymbolxamarinemdkpackagecondition" class="anchor"><a class="heading-anchor" href="#iiiupdatesymbolxamarinemdkpackagecondition"><span></span></a>III. Update Symbol.XamarinEMDK Package Condition</h2>
+
+<p><code>Symbol.XamarinEMDK</code> is scoped to Android using a <code>Condition</code> on its <code>&lt;ItemGroup&gt;</code>. This condition must be updated to match the new target framework moniker, otherwise the package will not be restored for the Android build. </p>
+
+<h4 id="example-1" class="anchor"><a class="heading-anchor" href="#example-1"><span></span></a>Example</h4>
+
+<h5 id="before-1" class="anchor"><a class="heading-anchor" href="#before-1"><span></span></a>Before:</h5>
+
+<pre class="prettyprint"><code>
+&lt;ItemGroup Condition="'$(TargetFramework)' == 'net6.0-android'"&gt;
+    &lt;PackageReference Include="Symbol.XamarinEMDK"&gt;
+        &lt;Version&gt;8.0.0.2&lt;/Version&gt;
+    &lt;/PackageReference&gt;
+&lt;/ItemGroup&gt;
+</code></pre>
+
+<h5 id="after-1" class="anchor"><a class="heading-anchor" href="#after-1"><span></span></a>After:</h5>
+
+<pre class="prettyprint"><code>
+&lt;ItemGroup Condition="'$(TargetFramework)' == 'net10.0-android'"&gt;
+    &lt;PackageReference Include="Symbol.XamarinEMDK"&gt;
+        &lt;Version&gt;8.0.0.2&lt;/Version&gt;
+    &lt;/PackageReference&gt;
+&lt;/ItemGroup&gt;
+</code></pre>
+
+<p>The condition value is case sensitive and <strong>must exactly match</strong> the moniker used in <code>&lt;TargetFrameworks&gt;</code>. The <code>Symbol.XamarinEMDK</code> version number itself requires no change.</p>
+
+<hr>
+
+<h2 id="ivreplacemainpagewithcreatewindowinappxamlcs" class="anchor"><a class="heading-anchor" href="#ivreplacemainpagewithcreatewindowinappxamlcs"><span></span></a>IV. Replace MainPage with CreateWindow in App.xaml.cs</h2>
+
+<p><code>Application.MainPage</code> is marked obsolete in .NET 8+ (via warning <strong>CS0618</strong>). The correct replacement is to override <code>CreateWindow()</code>, which the MAUI framework calls when it needs to create the application window.</p>
+
+<p>Open <code>App.xaml.cs</code> and modify as shown below:</p>
+
+<h4 id="example-2" class="anchor"><a class="heading-anchor" href="#example-2"><span></span></a>Example</h4>
+
+<h5 id="before-2" class="anchor"><a class="heading-anchor" href="#before-2"><span></span></a>Before:</h5>
+
+<pre class="prettyprint"><code>
+public partial class App : Application
+{
+    public App()
+    {
+        InitializeComponent();
+        MainPage = new AppShell();
+    }
+}
+</code></pre>
+
+<h5 id="after-2" class="anchor"><a class="heading-anchor" href="#after-2"><span></span></a>After:</h5>
+
+<pre class="prettyprint"><code>
+public partial class App : Application
+{
+    public App()
+    {
+        InitializeComponent();
+    }
+    protected override Window CreateWindow(IActivationState activationState)
+    {
+        return new Window(new AppShell());
+    }
+}
+</code></pre>
+
+<p>This change is needed because in .NET 8+, MAUI introduced multi-window support, but setting <code>MainPage</code> directly bypasses the windowing lifecycle and does not work correctly on all platforms. The <code>CreateWindow()</code> override is the supported entry point for constructing the initial page.</p>
+
+<hr>
+
+<h2 id="vupdatecsprojuserfileoptional" class="anchor"><a class="heading-anchor" href="#vupdatecsprojuserfileoptional"><span></span></a>V. Update .csproj.user File (optional)</h2>
+
+<p>The <code>.csproj.user</code> file is developer-local option that stores IDE settings such as the last-selected debug target. It is typically excluded from source control, but if present, it might reference the old framework moniker and cause the wrong target to appear pre-selected in Visual Studio.</p>
+
+<p>If you've opted to use this feature, ensure correct operation by locating the <code>&lt;ActiveDebugFramework&gt;</code> element and updating it as shown below:</p>
+
+<h4 id="example-3" class="anchor"><a class="heading-anchor" href="#example-3"><span></span></a>Example</h4>
+
+<h5 id="before-3" class="anchor"><a class="heading-anchor" href="#before-3"><span></span></a>Before:</h5>
+
+<pre class="prettyprint"><code>
+&lt;ActiveDebugFramework&gt;net6.0-android&lt;/ActiveDebugFramework&gt;
+</code></pre>
+
+<h5 id="after-3" class="anchor"><a class="heading-anchor" href="#after-3"><span></span></a>After:</h5>
+
+<pre class="prettyprint"><code>
+&lt;ActiveDebugFramework&gt;net10.0-android&lt;/ActiveDebugFramework&gt;
+</code></pre>
+
+<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>NOTE</strong>: This has no effect on the build output; it affects only the Visual Studio debug toolbar default.</p>
+
+<hr>
+
+<h2 id="buildverification" class="anchor"><a class="heading-anchor" href="#buildverification"><span></span></a>Build Verification</h2>
+
+<p>After completing all of the steps above, verify that the project is building properly using one of the methods below.</p>
+
+<h4 id="verifyusingnetcli" class="anchor"><a class="heading-anchor" href="#verifyusingnetcli"><span></span></a>Verify Using .NET CLI:</h4>
+
+<pre class="prettyprint"><code>
+dotnet build YourProject.csproj -f net10.0-android
+</code></pre>
+
+<h4 id="expectedoutput" class="anchor"><a class="heading-anchor" href="#expectedoutput"><span></span></a>Expected output:</h4>
+
+<pre class="prettyprint"><code>
+&gt; Build succeeded.
+&gt;     0 Warning(s)
+&gt;     0 Error(s)
+</code></pre>
+
+<h4 id="verifyusingvisualstudio" class="anchor"><a class="heading-anchor" href="#verifyusingvisualstudio"><span></span></a>Verify Using Visual Studio:</h4>
+
+<ol>
+<li>Open your <code>.sln</code> file in Visual Studio 2022.</li>
+
+<li>Select <strong>Build &gt; Rebuild Solution</strong>.</li>
+
+<li>Confirm the Output window shows <strong>0 errors</strong> and <strong>0 warnings</strong>.</li>
+</ol>
+
+<hr>
+
+<h2 id="troubleshooting" class="anchor"><a class="heading-anchor" href="#troubleshooting"><span></span></a>Troubleshooting</h2>
+
+<h3 id="ma002mauinugetpackagesnotincluded" class="anchor"><a class="heading-anchor" href="#ma002mauinugetpackagesnotincluded"><span></span></a>MA002 — MAUI NuGet packages not included</h3>
+
+<p>Starting with .NET 8, setting <code>&lt;UseMaui&gt;true&lt;/UseMaui&gt;</code> does not automatically include NuGet package references in your project. </p>
+
+<p>The fix is to update your project by including: <code>&lt;PackageReference Include="Microsoft.Maui.Controls" ... /&gt;</code>. See how to add the explicit <code>Microsoft.Maui.Controls</code> package reference described in <i class="fa fa-arrow-circle-up" style="color:#27AE60;"></i> <a href="#iiaddexplicitmicrosoftmauicontrolspackagereference">Step II</a>.</p>
+
+<hr>
+
+<h3 id="cs0618applicationmainpageisobsolete" class="anchor"><a class="heading-anchor" href="#cs0618applicationmainpageisobsolete"><span></span></a>CS0618 — Application.MainPage is obsolete</h3>
 
 <ul>
-<li><strong><a href="https://github.com/ZebraDevs/EMDK-Xamarin-Samples">EMDK Xamarin/MAUI Sample Projects</a></strong> | Includes MAUI projects for Barcode, Clock and Wi-Fi. </li>
+<li><strong>Message:</strong> "‘Application.MainPage.set’ is obsolete: This property is deprecated. Initialize your application by overriding Application.CreateWindow rather than setting MainPage."</li>
 
-<li><strong><a href="/emdk-for-xamarin/latest/guide/profile-manager/">Using Profile Manager</a></strong> | A tool for using Zebra MX to configure devices from within an app. </li>
-
-<li><strong><a href="https://dotnet.microsoft.com/en-us/apps/maui">Microsoft .NET MAUI site</a></strong> | Microsoft site for its cross-platform desktop and mobile-app framework. <i class="fa fa-external-link" style="color:#3498DB;"></i></li>
+<li><strong>Fix:</strong> Replace the <code>MainPage</code> assignment with the <code>CreateWindow()</code> override described in <i class="fa fa-arrow-circle-up" style="color:#27AE60;"></i> <a href="#ivreplacemainpagewithcreatewindowinappxamlcs">Step IV</a>.</li>
 </ul>
+
+<hr>
+
+<h3 id="cs8632nullableannotationoutsidenullablecontext" class="anchor"><a class="heading-anchor" href="#cs8632nullableannotationoutsidenullablecontext"><span></span></a>CS8632 — Nullable annotation outside nullable context</h3>
+
+<ul>
+<li><p><strong>Message:</strong> "The annotation for nullable reference types should only be used in code within a ‘#nullable’ annotations context."</p></li>
+
+<li><p><strong>Cause:</strong> Occurs if the <code>IActivationState?</code> parameter (with the <code>?</code> nullable annotation) is used in a project that does not have <code>&lt;Nullable&gt;enable&lt;/Nullable&gt;</code> enabled.</p></li>
+
+<li><p><strong>Fix:</strong> Remove "<code>?</code>" from the parameter type in <code>CreateWindow():</code></p>
+
+<pre class="prettyprint"><code>
+// Correct — no nullable annotation
+protected override Window CreateWindow(IActivationState activationState)
+</code></pre></li>
+</ul>
+
+<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>NOTE: Do not attempt to resolve by adding</strong> "<code>&lt;Nullable&gt;enable&lt;/Nullable&gt;</code>" <strong>to the project</strong>. Doing so enables strict nullable analysis across all files and could produce a large number of new warnings in existing the EMDK sample code, which was not written with nullability in mind. </p>
+
+<hr>
+
+<h3 id="symbolxamarinemdknotrestored" class="anchor"><a class="heading-anchor" href="#symbolxamarinemdknotrestored"><span></span></a>Symbol.XamarinEMDK not restored</h3>
+
+<p>If the <code>Symbol.XamarinEMDK</code> package fails to restore after a condition update, verify that the <code>Condition</code> value in the <code>.csproj</code> exactly matches the target framework moniker in <code>&lt;TargetFrameworks&gt;</code> as shown below:</p>
+
+<pre class="prettyprint"><code>
+&lt;ItemGroup Condition="'$(TargetFramework)' == 'net10.0-android'"&gt;
+</code></pre>
+
+<p>Note that the condition is case sensitive. A mismatch such as <code>Net10.0-Android</code> or a leftover <code>net6.0-android</code> silently skips package restore for the target.</p>
 
 <hr><p></p>
                                         
