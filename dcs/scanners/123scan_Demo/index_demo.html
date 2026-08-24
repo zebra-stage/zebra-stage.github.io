@@ -226,6 +226,19 @@
                 z-index: auto;
             }
         }
+
+        /* ------------------------------------------------------------------
+           CONTENT TYPOGRAPHY
+           ------------------------------------------------------------------ */
+        /* uikit.min.css carries a global "em { color: #f0506e }", which turns
+           every <em> - used here for file names, paths and inline values - a
+           pinkish red. Reset it to the inherited body colour; the italics are
+           kept, and <strong> is unaffected because uikit does not recolour it.
+           Scoped to #page-content and therefore 0,1,1, so it outranks the
+           0,0,1 base rule whatever the stylesheet order, and cannot reach the
+           header, nav or footer. <code> inside .prettyprint is deliberately
+           left alone - those colours are prettify's syntax highlighting. */
+        #page-content em { color: inherit; }
     </style>
 </head>
     <body id="home" class="homepage" data-spy="scroll" data-offset="100" data-target="#toc">
@@ -4064,7 +4077,29 @@
             // gone past it. Document order is irrelevant - this just keeps the
             // greatest rect.top that is still above the line - so the nav does
             // not have to be ordered to match the content.
+            // Last heading in document order. rect.top is viewport-relative but
+            // measured in one pass, so the greatest value is furthest down the page.
+            function lastSpyItem() {
+                var best = spyItems[0], bestTop = -Infinity;
+                for (var i = 0; i < spyItems.length; i++) {
+                    var top = spyItems[i].el.getBoundingClientRect().top;
+                    if (top > bestTop) { bestTop = top; best = spyItems[i]; }
+                }
+                return best;
+            }
+
             function currentSpyItem() {
+                // The page can run out of scroll before the final section's heading
+                // ever reaches the spy line, so that heading would never qualify
+                // below and the nearest match would be a heading from the section
+                // ABOVE it - clicking the last nav section scrolled correctly and
+                // then immediately collapsed itself again. Once scrolling has
+                // bottomed out, the last heading in the document IS the current one.
+                if ($(window).scrollTop() + $(window).height()
+                        >= $(document).height() - 2) {   // 2px: fractional DPR/zoom
+                    return lastSpyItem();
+                }
+
                 // +5 so a heading parked exactly at the scroll target by
                 // scrollToSection() counts as current rather than just missing.
                 var limit = navOffset() + 5, best = null, bestTop = 0;
