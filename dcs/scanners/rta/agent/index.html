@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="The RTA Agent manages and persists Real Time Alert (RTA) configurations on connected Zebra scanners.">
+        <meta name="author" content="Zebra Technologies">
+        <meta name="google-site-verification" content="i4B78BrWnNy8ShJwe5feRW3jO3HE6gfYlYqYbxfl8yY">
+        <meta name="msvalidate.01" content="6B651B00161BCE79B8950AC09D5C4C75">
+        <meta title="RTA Agent">
+        <title>RTA Agent - Zebra Technologies</title>
+        <!-- core CSS -->
+        <link rel="stylesheet" href="/home/css/uikit.min.css" />
+        <link rel="stylesheet" href="/home/css/style.css" />
+        <link rel="stylesheet" href="/home/css/bootstrap.min.css" />  
+        <link rel="stylesheet" href="/home/css/main.css" >
+        <!-- <link href="/css/bootstrap.min.css" rel="stylesheet"> -->
+        <link href="/css/font-awesome.min.css" rel="stylesheet">
+        <link href="/css/animate.min.css" rel="stylesheet">
+        <link href="/css/owl.carousel.css" rel="stylesheet">
+        <link href="/css/owl.transitions.css" rel="stylesheet">
+        <link href="/css/prettyPhoto.css" rel="stylesheet">
+        <!-- <link href="/css/main.css" rel="stylesheet"> -->
+        <link href="/css/responsive.css" rel="stylesheet">
+        <link href="/css/prettify.css" rel="stylesheet">
+        <link href="/css/bootstrap-treenav.min.css" rel="stylesheet">
+        <link href="../dcs_styles.css" rel="stylesheet">
+        <!--[if lt IE 9]>
+        <script src="js/html5shiv.js"></script>
+        <script src="js/respond.min.js"></script>
+        <![endif]--> 
+        <script src="//load.sumome.com/" data-sumo-site-id="699cb66cf4dc59352efb45705526d15cbe314e1cd43f7761b94d96f3cf7338e8" async="async"></script>
+        <link rel="shortcut icon" href="/favicon.ico">
+        <script src="/js/jquery.js"></script>
+    <style>
+        /* Left nav tree - fixed so it stays visible while scrolling */
+        /* top must match where the content starts: body padding-top (110px) +
+           the content container's margin-top (20px) = 130px, so the left nav and
+           the first content row are top-aligned. */
+        #sidebar { position: fixed; top: 130px; bottom: 0; overflow-y: auto; z-index: 99; }
+        #left-nav { padding-bottom: 20px; }
+        .nav-section-header {
+            display: block;
+            padding: 9px 12px;
+            font-weight: 700;
+            font-size: 0.95em;
+            color: #333;
+            background: #f0f0f0;
+            border-left: 3px solid #005580;
+            border-radius: 2px;
+            margin-bottom: 2px;
+            text-decoration: none;
+            cursor: pointer;
+            /* These headers are toggles, not prose - they preventDefault and
+               never navigate. Stop click-drag from leaving the browser's
+               (light blue) text selection sitting on the label, which looks
+               like a stray highlight competing with the scroll-spy's. */
+            -webkit-user-select: none;
+               -moz-user-select: none;
+                -ms-user-select: none;
+                    user-select: none;
+        }
+        .nav-section-header:hover { color: #005580; text-decoration: none; background: #e4e4e4; }
+
+        /* Clear the lingering focus state from the last-clicked nav link.
+           These are all <a> elements, so bootstrap.min.css applies
+           "a:focus { outline: 5px auto -webkit-focus-ring-color }" - the light
+           blue ring that stayed on a section header after clicking it - plus
+           "a:hover, a:focus { color:#23527c; text-decoration:underline }",
+           which at 0,1,1 outranks the plain .nav-section-header rule at 0,1,0
+           and so recolours the text too. Left alone it reads as a second,
+           competing "you are here" marker fighting the scroll-spy highlight.
+
+           These selectors are 0,2,0 so they win, and they restore the resting
+           appearance rather than just removing the outline. The :hover variants
+           are 0,3,0 because :hover is declared ABOVE this block and would
+           otherwise lose to :focus while the pointer is still on the link. */
+        .nav-section-header:focus {
+            outline: none;
+            color: #333;                 /* the resting colour, as set above */
+            text-decoration: none;
+        }
+        .nav-section-header:focus:hover { color: #005580; }
+        .nav-subsection li a:focus { outline: none; text-decoration: none; }
+
+        /* Keyboard users keep a visible focus ring. Browsers without
+           :focus-visible simply drop these two rules, which is the same
+           behaviour as before this block existed. */
+        .nav-section-header:focus-visible,
+        .nav-subsection li a:focus-visible {
+            outline: 2px solid #005580;
+            outline-offset: -2px;
+        }
+        .nav-section-header .nav-chevron { float: right; transition: transform 0.25s; }
+        .nav-section-header.collapsed .nav-chevron { transform: rotate(-90deg); }
+        .nav-subsection { list-style: none; padding: 0 0 4px 0; margin: 0 0 6px 0; border-left: 3px solid #ddd; }
+        .nav-subsection li a {
+            display: block;
+            padding: 5px 10px 5px 14px;
+            font-size: 0.88em;
+            color: #555;
+            text-decoration: none;
+        }
+        .nav-subsection li a:hover { color: #005580; background: #f7f7f7; }
+        /* "You are here" for the sub-item the scroll-spy has selected. The rule
+           already existed but nothing ever set the class; the inset shadow gives
+           it the same left accent as .nav-section-header without a border
+           nudging the text sideways as the highlight moves. */
+        .nav-subsection li a.active {
+            color: #005580;
+            font-weight: 600;
+            background: #eef5f9;
+            box-shadow: inset 3px 0 0 #005580;
+        }
+        /* Collapse animation speed — change 0.35s to make it faster or slower */
+        .collapsing { transition-duration: 0.6s; }
+        /* Section dividers in content */
+        .section-divider { border: none; border-top: 3px solid #e8e8e8; margin: 36px 0 28px; }
+        /* NOTE: do NOT set "html { scroll-behavior: smooth }" here. The left-nav
+           scrolling is animated with jQuery .animate({scrollTop}); CSS smooth scroll
+           would fight it frame-by-frame and stop short of the target (misalignment). */
+        /* Keep the top header fixed while scrolling. main.css forces
+           "#main-menu { position: relative }" at >=768px, which cancels Bootstrap's
+           .navbar-fixed-top, so we restore fixed positioning here. The body padding
+           reserves space so page content is not hidden behind the fixed header
+           (tune 110px if the header height changes). */
+        @media (min-width: 768px) {
+            #main-menu { position: fixed; top: 0; left: 0; right: 0; }
+            body.homepage { padding-top: 110px; }
+        }
+
+        /* ------------------------------------------------------------------
+           MOBILE / XS (< 768px)
+           ------------------------------------------------------------------ */
+        /* Bootstrap's .navbar-fixed-top is fixed at every width, but the body
+           padding-top above is only applied from 768px up, so at xs the first
+           heading ends up hidden behind the header. Reserve the space here. */
+        @media (max-width: 767px) {
+            /* 85px, not the 110px used at >=768px: the header's height is the
+               brand's 22px + 21px padding around a logo.png that is only 42px
+               tall (max-height:66px caps it, it does not scale it up). The
+               110px left a 25px gap below the header that content showed
+               through. These are fallbacks only - layoutMobileBars() measures
+               the header at runtime and overrides them, since the real height
+               depends on an image asset and on CSS in shared files. */
+            body.homepage { padding-top: 85px; }
+
+            /* The "Contents" bar stays pinned directly under the fixed header so
+               the tree is reachable at any scroll position, same as the desktop
+               sidebar. Only the bar itself is fixed; the tree it opens is an
+               overlay panel below it (see #left-nav-collapse) rather than part
+               of the page flow, so it never pushes the content around.
+               Heights: 85px header + 50px bar
+               (8px padding + 34px button + 8px padding) = content clears 135px. */
+            #sidebar {
+                position: fixed;
+                top: 85px;
+                left: 0;
+                right: 0;
+                bottom: auto;
+                overflow: visible;
+                padding: 8px 15px !important;
+                margin-bottom: 0;
+                background: #fff;
+                border-bottom: 1px solid #ddd;
+            }
+            /* Opened tree scrolls inside itself, keeping the button reachable.
+               The 220px allows for the header, the bar and the fixed footer. */
+            #left-nav-collapse {
+                margin-top: 8px;
+                max-height: calc(100vh - 220px);
+                overflow-y: auto;
+                background: #fff;
+            }
+            /* Reserve the height of the pinned bar. The container already starts
+               20px below the header, so 38px puts the first heading clear of it. */
+            #page-content { padding-top: 38px; }
+
+            /* Align the plain-text items ("TechDocs", the page title) with the
+               15px text indent Bootstrap gives .navbar-nav > li > a, otherwise
+               they sit hard against the edge of the dropped-down menu. */
+            #main-menu .navbar-nav { margin-top: 0; margin-bottom: 0; }
+            #main-menu .navbar-nav > .navbar-text {
+                margin: 8px 0;
+                padding: 0 15px;
+                float: none;
+            }
+            #main-menu .navbar-nav > li > a { padding-left: 15px; }
+        }
+
+        /* "Contents" button is xs-only; from sm up the tree must stay open, so
+           neutralise Bootstrap's .collapse{display:none} at those widths.
+           No margin-bottom here: the pinned bar's height is part of the offset
+           arithmetic above, and the gap to the open tree comes from
+           #left-nav-collapse's margin-top instead. */
+        #left-nav-toggle { width: 100%; text-align: left; }
+        @media (min-width: 768px) {
+            #left-nav-collapse.collapse {
+                display: block !important;
+                height: auto !important;
+                visibility: visible;
+            }
+        }
+
+        /* ------------------------------------------------------------------
+           FOOTER / "BACK TO TOP"
+           ------------------------------------------------------------------ */
+        /* The button is injected by /js/main.js and styled in home/css/main.css
+           as "position:fixed; bottom:20px; z-index:99". That 99 loses to the
+           1030 that .navbar-fixed-bottom puts on the footer, so the button is
+           painted behind the footer at every width - it merely looked like an
+           overlap on desktop because the footer is only one line there. Both
+           files are outside this folder, so correct it page-locally: raise the
+           button above the footer, and let layoutBackToTop() set the offset. */
+        #back-to-top-btn { z-index: 1031; }
+
+        @media (max-width: 767px) {
+            /* At the footer's 8px font the legal text wraps to roughly five
+               lines on a phone. Pinning that costs ~56px permanently, on top of
+               the ~135px already taken by the header and the Contents bar, so
+               at xs the footer returns to the normal document flow and appears
+               only when the reader reaches the end. The full text is retained -
+               nothing is hidden, it just is not pinned. */
+            #footer.navbar-fixed-bottom {
+                position: static;
+                z-index: auto;
+            }
+        }
+
+        /* ------------------------------------------------------------------
+           CONTENT TYPOGRAPHY
+           ------------------------------------------------------------------ */
+        /* uikit.min.css carries a global "em { color: #f0506e }", which turns
+           every <em> - used here for file names, paths and inline values - a
+           pinkish red. Reset it to the inherited body colour; the italics are
+           kept, and <strong> is unaffected because uikit does not recolour it.
+           Scoped to #page-content and therefore 0,1,1, so it outranks the
+           0,0,1 base rule whatever the stylesheet order, and cannot reach the
+           header, nav or footer. <code> inside .prettyprint is deliberately
+           left alone - those colours are prettify's syntax highlighting. */
+        #page-content em { color: inherit; }
+    </style>
+</head>
+    <body id="home" class="homepage" data-spy="scroll" data-offset="100" data-target="#toc">
+        <header id="header">
+            <nav id="main-menu" class="navbar navbar-default navbar-fixed-top" role="banner">
+                <div class="container-fluid">
+                    <div class="navbar-header">
+                        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                            <span class="sr-only">Toggle navigation</span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </button>
+                        <a class="navbar-brand" href="/">
+                            <img src="/images/logo.png" alt="logo" style="max-height:66px;float: inherit; padding-right: 3px;">
+                        </a> 
+                    </div>
+                    <div class="collapse navbar-collapse navbar-left">
+                        <!-- NOTE: every child of .navbar-nav must be an <li> - a bare
+                             <p class="navbar-text"> is invalid inside a <ul> and breaks
+                             the stacked layout of the collapsed (mobile) menu. Do not
+                             add "pull-left" to these items either: it floats at every
+                             width, so on a phone the item would sit alongside the next
+                             one instead of stacking. From 768px up .navbar-nav > li
+                             floats anyway, so nothing is needed for desktop. -->
+                        <ul class="nav navbar-nav">
+                            <li class="navbar-text"><strong>TechDocs</strong></li>
+                            <li>
+                                <a href="/dcs/scanners">Barcode Scanner Tools</a>
+                            </li>
+                            <li class="navbar-text">RTA Agent</li>
+                        </ul>
+                    </div>
+                    <!-- Section links live in the left nav tree, so there is no
+                         right-hand nav here. Do not leave an empty
+                         .navbar-collapse wrapper in its place: it still renders
+                         its border and padding inside the collapsed menu. -->
+                </div><!--/.container-->
+            </nav><!--/nav-->
+        </header><!--/header-->
+        <div class="container-fluid" style="margin-top:20px;">
+            <div class="row">
+                <!-- LEFT NAV SIDEBAR -->
+                <div class="col-sm-3" id="sidebar" style="padding-right:0;">
+                    <!-- xs-only toggle for the tree. From 768px up the button is
+                         hidden and #left-nav-collapse is forced open by CSS. -->
+                    <button type="button" id="left-nav-toggle" class="btn btn-default visible-xs-block"
+                            data-toggle="collapse" data-target="#left-nav-collapse" aria-expanded="false">
+                        <i class="fa fa-bars"></i> Contents
+                    </button>
+                    <div id="left-nav-collapse" class="collapse">
+                    <nav id="left-nav">
+
+                        <!-- Section 1: Introduction -->
+                        <a class="nav-section-header" href="#nav-introduction" data-section="#introduction" aria-expanded="true">
+                            About RTA Agent <i class="fa fa-chevron-down nav-chevron"></i>
+                        </a>
+                        <ul id="nav-introduction" class="nav-subsection collapse in">
+                            <li><a href="#what-is-the-rta-agent">Overview</a></li>
+                            <li><a href="#key-features">Key Features</a></li>
+                            <li><a href="#prerequisites">Prerequisites</a></li>
+                            <li><a href="#receiving-rta-data">How to Receive Real Time Alerts Data</a></li>
+                        </ul>
+
+                        <!-- Section 2: Getting Started -->
+                        <a class="nav-section-header collapsed" href="#nav-getting-started" data-section="#getting-started" aria-expanded="false">
+                            Getting Started <i class="fa fa-chevron-down nav-chevron"></i>
+                        </a>
+                        <ul id="nav-getting-started" class="nav-subsection collapse">
+                            <li><a href="#installation">Installation</a></li>
+                            <li><a href="#running-the-agent">Running the RTA Agent</a></li>
+                        </ul>
+
+                        <!-- Section 3: How It Works -->
+                        <a class="nav-section-header collapsed" href="#nav-how-it-works" data-section="#how-it-works" aria-expanded="false">
+                            How It Works <i class="fa fa-chevron-down nav-chevron"></i>
+                        </a>
+                        <ul id="nav-how-it-works" class="nav-subsection collapse">
+                            <li><a href="#core-behavior">Core Behavior</a></li>
+                            <li><a href="#handling-scanner-connections">Handling Scanner Connections</a></li>
+                            <li><a href="#updating-configurations">Updating Configurations</a></li>
+                            <li><a href="#logging">Logging</a></li>
+                        </ul>
+
+                        <!-- Section 4: Configuration -->
+                        <a class="nav-section-header collapsed" href="#nav-configuration" data-section="#configuration" aria-expanded="false">
+                            Configuration <i class="fa fa-chevron-down nav-chevron"></i>
+                        </a>
+                        <ul id="nav-configuration" class="nav-subsection collapse">
+                            <li><a href="#rta-config-xml">The RTA-Config.xml File</a></li>
+                            <li><a href="#configuration-priority-logic">Configuration Priority Logic</a></li>
+                            <li><a href="#using-wildcards">Using Wildcards</a></li>
+                        </ul>
+
+                        <!-- Section 5: Command-Line Arguments -->
+                        <a class="nav-section-header collapsed" href="#nav-command-line-arguments" data-section="#command-line-arguments" aria-expanded="false">
+                            Command-Line Arguments <i class="fa fa-chevron-down nav-chevron"></i>
+                        </a>
+                        <ul id="nav-command-line-arguments" class="nav-subsection collapse">
+                            <li><a href="#available-arguments">Available Arguments</a></li>
+                        </ul>
+
+                        <!-- Section 6: Stopping the RTA Agent -->
+                        <a class="nav-section-header collapsed" href="#nav-stopping-the-agent" data-section="#stopping-the-agent" aria-expanded="false">
+                            Stopping the RTA Agent <i class="fa fa-chevron-down nav-chevron"></i>
+                        </a>
+                        <ul id="nav-stopping-the-agent" class="nav-subsection collapse">
+                            <li><a href="#stopping-background-mode">Background Mode (Default)</a></li>
+                            <li><a href="#stopping-console-mode">Console Mode</a></li>
+                        </ul>
+
+                        <!-- Section 7: Troubleshooting -->
+                        <a class="nav-section-header collapsed" href="#nav-troubleshooting" data-section="#troubleshooting" aria-expanded="false">
+                            Troubleshooting <i class="fa fa-chevron-down nav-chevron"></i>
+                        </a>
+                        <ul id="nav-troubleshooting" class="nav-subsection collapse">
+                            <li><a href="#common-issues">Common Issues</a></li>
+                        </ul>
+
+                    </nav>
+                    </div><!-- /left-nav-collapse -->
+                </div><!-- /sidebar -->
+
+                <!-- RIGHT CONTENT -->
+                <div class="col-sm-9 col-sm-offset-3" id="page-content">
+
+                    <!-- ============================================================
+                         1. INTRODUCTION
+                         ============================================================ -->
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <section id="cta" class="wow fadeIn">
+                                <div class="">
+                                    <h1 id="introduction" class="anchor">
+                                        <a class="heading-anchor" href="#introduction"><span></span></a>About RTA Agent
+                                    </h1>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                    <div id="mainContent" class="row">
+                        <div class="col-sm-12">
+                            <div class="blog-post blog-large wow fadeInLeft" data-wow-duration="300ms" data-wow-delay="0ms">
+                                <div class="service-box wow fadeInRight">
+                                    <div class="">
+
+                                        <h2 id="what-is-the-rta-agent" class="anchor"><a class="heading-anchor" href="#what-is-the-rta-agent"><span></span></a>Overview</h2>
+
+                                        <p>The <strong>RTA Agent</strong> is a lightweight, cross-platform, stand-alone console application designed to manage and persist RTA (Real-Time-Alert) configurations on connected Zebra scanners.</p>
+
+                                        <p>The application allows you to assign distinct configurations to individual scanners, which are applied automatically as soon as the designated scanner is plugged in.</p>
+
+                                        <h2 id="key-features" class="anchor"><a class="heading-anchor" href="#key-features"><span></span></a>Key Features</h2>
+
+                                        <ul>
+                                            <li><strong>Persistent Configuration</strong>: Automatically re-applies RTA settings after a scanner power cycle.</li>
+                                            <li><strong>Plug-and-Play</strong>: Detects newly connected scanners and applies configurations on the fly.</li>
+                                            <li><strong>Device-Specific Settings</strong>: Assign unique configurations based on a scanner's model or serial number.</li>
+                                            <li><strong>Flexible Deployment</strong>: Runs as a background process or as a visible console application for easy debugging.</li>
+                                            <li><strong>Cross-Platform Support</strong>: Compatible with various operating systems.</li>
+                                        </ul>
+
+                                        <h2 id="prerequisites" class="anchor"><a class="heading-anchor" href="#prerequisites"><span></span></a>Prerequisites</h2>
+
+                                        <ul>
+                                            <li>A supported Zebra scanner connected over USB and configured in a host-controllable mode (USB-SNAPI, USB-IBMHH, USBIBM-TT). Scanners in pure USB-HID-Keyboard mode cannot be managed and will be ignored by the agent.</li>
+                                            <li>The Zebra <strong>CoreScanner</strong> driver must be installed and running on the host:
+                                                <ul>
+                                                    <li><strong>Windows:</strong> <a href="https://www.zebra.com/us/en/support-downloads/software/scanner-software/scanner-sdk-for-windows.html">CoreScanner service</a>.</li>
+                                                    <li><strong>Linux:</strong> <a href="https://www.zebra.com/us/en/support-downloads/software/scanner-software/scanner-sdk-for-linux.html">CoreScanner daemon</a>.</li>
+                                                </ul>
+                                            </li>
+                                            <li>Network access is <strong>not</strong> required.</li>
+                                        </ul>
+
+                                        <h2 id="receiving-rta-data" class="anchor"><a class="heading-anchor" href="#receiving-rta-data"><span></span></a>How to Receive Real Time Alerts Data</h2>
+
+                                        <p>For more information on how to receive RTA Alerts, please refer to <a href="/dcs/scanners/rta/dev-guide/">Real Time Alerts (RTA) Programmer's Guide</a>.</p>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ============================================================
+                         2. GETTING STARTED
+                         ============================================================ -->
+                    <hr class="section-divider">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <section id="cta" class="wow fadeIn">
+                                <div class="">
+                                    <h1 id="getting-started" class="anchor">
+                                        <a class="heading-anchor" href="#getting-started"><span></span></a>Getting Started
+                                    </h1>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="blog-post blog-large wow fadeInLeft" data-wow-duration="300ms" data-wow-delay="0ms">
+                                <div class="service-box wow fadeInRight">
+                                    <div class="">
+
+                                        <h2 id="installation" class="anchor"><a class="heading-anchor" href="#installation"><span></span></a>Installation</h2>
+
+                                        <h3 id="install-windows" class="anchor"><a class="heading-anchor" href="#install-windows"><span></span></a>Install on Windows</h3>
+
+                                        <p>The RTA Agent is distributed as a <em>.zip</em> archive containing two essential files:</p>
+
+                                        <ul>
+                                            <li><em>RTAAgent.exe</em>: Executable application.</li>
+                                            <li><em>RTAAgent-Config.xml</em>: The configuration file where all RTA settings are defined.</li>
+                                        </ul>
+
+                                        <p>To install the agent, copy these two files from the zip archive into a dedicated folder on your system (e.g. : <em>C:\Program Files\RTAAgent</em>).</p>
+
+                                        <p><strong>Note:</strong> The folder must be writable by the user running the agent if log output is enabled.</p>
+
+                                        <h3 id="install-linux" class="anchor"><a class="heading-anchor" href="#install-linux"><span></span></a>Install on Linux</h3>
+
+                                        <p>The RTA Agent is distributed as a <em>.zip</em> archive containing two essential files:</p>
+
+                                        <ul>
+                                            <li><em>RTAAgent</em>: Executable application.</li>
+                                            <li><em>RTAAgent-Config.xml</em>: The configuration file where all RTA settings are defined.</li>
+                                        </ul>
+
+                                        <p>No installation is required. Copy these two files from the zip archive into a dedicated folder on your system (e.g., <em>/usr/share/zebra-scanner/rta-agent/</em>).</p>
+
+                                        <h2 id="running-the-agent" class="anchor"><a class="heading-anchor" href="#running-the-agent"><span></span></a>Running the RTA Agent</h2>
+
+                                        <h3 id="running-windows" class="anchor"><a class="heading-anchor" href="#running-windows"><span></span></a>Running the RTA Agent on Windows</h3>
+
+                                        <p>The RTA Agent is executed via the command line.</p>
+
+                                        <ol>
+                                            <li>Open a command prompt or terminal.</li>
+                                            <li>Navigate to the directory where you saved <em>RTAAgent.exe</em>.</li>
+                                            <li>Run the executable: <em>RTAAgent.exe</em></li>
+                                        </ol>
+
+                                        <p>By default, the agent will start as a background process without a visible window. To view live logs, see the <a href="#command-line-arguments">Command-Line Arguments</a> section below.</p>
+
+                                        <p>Additionally, users can automatically start this tool by adding this to the <strong>Startup</strong> folder/Task Manager in Windows.</p>
+
+                                        <h3 id="running-linux" class="anchor"><a class="heading-anchor" href="#running-linux"><span></span></a>Running the RTA Agent on Linux</h3>
+
+                                        <p>The RTA Agent is executed via the command line.</p>
+
+                                        <ol>
+                                            <li>Open the terminal.</li>
+                                            <li>Navigate to the directory where you saved <em>RTAAgent</em>.</li>
+                                            <li>Run the executable: <em>./RTAAgent</em></li>
+                                        </ol>
+
+                                        <p>By default, the agent will start as a background process without a visible window. To view live logs, see the <a href="#command-line-arguments">Command-Line Arguments</a> section below.</p>
+
+                                        <p>Additionally, to start the agent automatically, add an entry to one of the following:</p>
+
+                                        <ul>
+                                            <li>A <em>cron</em> <em>@reboot</em> job, e.g.:
+<pre class="prettyprint">
+<code>
+@reboot /usr/share/zebra-scanner/rta-agent/RTAAgent
+</code>
+</pre>
+                                            </li>
+                                            <li><em>/etc/rc.local</em> (where supported by the distribution).</li>
+                                            <li>A <em>systemd</em> unit file (recommended on modern distributions).</li>
+                                        </ul>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ============================================================
+                         3. HOW IT WORKS
+                         ============================================================ -->
+                    <hr class="section-divider">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <section id="cta" class="wow fadeIn">
+                                <div class="">
+                                    <h1 id="how-it-works" class="anchor">
+                                        <a class="heading-anchor" href="#how-it-works"><span></span></a>How It Works
+                                    </h1>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="blog-post blog-large wow fadeInLeft" data-wow-duration="300ms" data-wow-delay="0ms">
+                                <div class="service-box wow fadeInRight">
+                                    <div class="">
+
+                                        <h2 id="core-behavior" class="anchor"><a class="heading-anchor" href="#core-behavior"><span></span></a>Core Behavior</h2>
+
+                                        <p>On startup the RTA Agent:</p>
+
+                                        <ol>
+                                            <li>Loads and validates <em>RTAAgent-Config.xml</em> from the same directory as the executable.</li>
+                                            <li>Enumerates all scanners currently reported by the CoreScanner process.</li>
+                                            <li>For each scanner, selects the highest-priority matching <em>&lt;device-rtaconfig&gt;</em> block (see <a href="#configuration-priority-logic">Configuration Priority Logic</a>).</li>
+                                            <li>Applies the corresponding RTA event settings to that scanner.</li>
+                                            <li>Continues running and watches for scanner connect/disconnect events.</li>
+                                        </ol>
+
+                                        <h2 id="handling-scanner-connections" class="anchor"><a class="heading-anchor" href="#handling-scanner-connections"><span></span></a>Handling Scanner Connections</h2>
+
+                                        <p>When a scanner is connected (a Plug-and-Play event), the RTA Agent:</p>
+
+                                        <ol>
+                                            <li>Reads the new scanner's serial number and model number.</li>
+                                            <li>Walks the <em>&lt;device-rta-configurations&gt;</em> list and selects the <strong>first</strong> entry that matches according to the priority rules in <a href="#configuration-priority-logic">Configuration Priority Logic</a>.</li>
+                                            <li>Applies the matched <em>&lt;rta-configuration&gt;</em> block.</li>
+                                            <li>Logs success or failure for the device.</li>
+                                        </ol>
+
+                                        <p>A scanner that does not match any rule is left untouched.</p>
+
+                                        <h2 id="updating-configurations" class="anchor"><a class="heading-anchor" href="#updating-configurations"><span></span></a>Updating Configurations</h2>
+
+                                        <p>To modify RTA settings, edit <em>RTAAgent-Config.xml</em> and <strong>restart</strong> the RTA Agent. The agent does not currently watch the file for changes at runtime.</p>
+
+                                        <h2 id="logging" class="anchor"><a class="heading-anchor" href="#logging"><span></span></a>Logging</h2>
+
+                                        <ul>
+                                            <li>In <strong>console mode</strong> (<em>-s</em> / <em>-show</em>) the same messages are also written to stdout in real time.</li>
+                                        </ul>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ============================================================
+                         4. CONFIGURATION
+                         ============================================================ -->
+                    <hr class="section-divider">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <section id="cta" class="wow fadeIn">
+                                <div class="">
+                                    <h1 id="configuration" class="anchor">
+                                        <a class="heading-anchor" href="#configuration"><span></span></a>Configuration
+                                    </h1>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="blog-post blog-large wow fadeInLeft" data-wow-duration="300ms" data-wow-delay="0ms">
+                                <div class="service-box wow fadeInRight">
+                                    <div class="">
+
+                                        <h2 id="rta-config-xml" class="anchor"><a class="heading-anchor" href="#rta-config-xml"><span></span></a>The RTA-Config.xml File</h2>
+
+                                        <p>All settings for the RTA Agent are controlled through an XML file named <em>RTA-Config.xml</em>. This file allows you to define default, model-specific, and serial number-specific configurations.</p>
+
+                                        <p><strong>Sample RTA-Config.xml:</strong></p>
+
+<pre class="prettyprint">
+<code>
+&lt;?xml version="1.0" encoding="UTF-8"?>
+&lt;!-- RTA Agent Configuration File -->
+
+&lt;rta-agent-config version="1.0">
+
+    &lt;!-- Device-specific RTA configurations -->
+    &lt;device-rta-configurations>
+
+        &lt;!-- Default configuration (no serial, no model) -->
+        &lt;device-rtaconfig name="all_scanners">
+            &lt;device-info serial-number="" model-number="" />
+            &lt;rta-configuration>
+                &lt;!-- Default RTA configuration for any device -->
+                &lt;rtaevent_list>
+                    &lt;rtaevent>
+                        &lt;id>38004&lt;/id>
+                        &lt;stat>7&lt;/stat>
+                        &lt;onlimit>Not set&lt;/onlimit>
+                        &lt;offlimit>Not applicable&lt;/offlimit>
+                    &lt;/rtaevent>
+                    &lt;rtaevent>
+                        &lt;id>38001&lt;/id>
+                        &lt;stat>7&lt;/stat>
+                        &lt;onlimit>Not set&lt;/onlimit>
+                        &lt;offlimit>Not applicable&lt;/offlimit>
+                    &lt;/rtaevent>
+                &lt;/rtaevent_list>
+            &lt;/rta-configuration>
+        &lt;/device-rtaconfig>
+
+        &lt;!-- Model-specific configuration (model only, no serial) -->
+        &lt;device-rtaconfig name="model_specific">
+            &lt;device-info serial-number="" model-number="DS*" />
+            &lt;rta-configuration>
+                &lt;!-- Model-specific RTA configuration -->
+                &lt;rtaevent_list>
+                    &lt;rtaevent>
+                        &lt;id>38004&lt;/id>
+                        &lt;stat>7&lt;/stat>
+                        &lt;onlimit>Not set&lt;/onlimit>
+                        &lt;offlimit>Not applicable&lt;/offlimit>
+                    &lt;/rtaevent>
+                &lt;/rtaevent_list>
+            &lt;/rta-configuration>
+        &lt;/device-rtaconfig>
+
+        &lt;!-- Serial-specific configuration (with serial number) -->
+        &lt;device-rtaconfig name="serial_specific">
+            &lt;device-info serial-number="19145523080701" model-number="DS2208*" />
+            &lt;rta-configuration>
+                &lt;!-- Device-specific RTA configuration -->
+                &lt;rtaevent_list>
+                    &lt;rtaevent>
+                        &lt;id>38004&lt;/id>
+                        &lt;stat>7&lt;/stat>
+                        &lt;onlimit>Not set&lt;/onlimit>
+                        &lt;offlimit>Not applicable&lt;/offlimit>
+                    &lt;/rtaevent>
+                    &lt;rtaevent>
+                        &lt;id>38001&lt;/id>
+                        &lt;stat>7&lt;/stat>
+                        &lt;onlimit>Not set&lt;/onlimit>
+                        &lt;offlimit>Not applicable&lt;/offlimit>
+                    &lt;/rtaevent>
+                &lt;/rtaevent_list>
+            &lt;/rta-configuration>
+        &lt;/device-rtaconfig>
+
+    &lt;/device-rta-configurations>
+
+&lt;/rta-agent-config>
+</code>
+</pre>
+
+                                        <h3 id="xml-tag-description" class="anchor"><a class="heading-anchor" href="#xml-tag-description"><span></span></a>XML Tag Description</h3>
+
+                                        <p>The configuration file combines two layers:</p>
+
+                                        <p><strong>Outer wrapper tags</strong> (defined by the RTA Agent itself &ndash; documented here):</p>
+
+                                        <p><strong>Table 1:</strong> Outer Wrapper Tags</p>
+                                        <table class="hovertable">
+                                            <tr>
+                                                <th>Tag</th>
+                                                <th>Attributes</th>
+                                                <th>Description</th>
+                                            </tr>
+                                            <tr>
+                                                <td>&lt;rta-agent-config&gt;</td>
+                                                <td>version</td>
+                                                <td>Root element. <em>version</em> is the config schema version; currently <em>1.0</em>.</td>
+                                            </tr>
+                                            <tr>
+                                                <td>&lt;device-rta-configurations&gt;</td>
+                                                <td>&nbsp;</td>
+                                                <td>Container for one or more <em>&lt;device-rtaconfig&gt;</em> entries.</td>
+                                            </tr>
+                                            <tr>
+                                                <td>&lt;device-rtaconfig&gt;</td>
+                                                <td>name</td>
+                                                <td>A single rule. <em>name</em> is a free-form, human-readable label used only in logs.</td>
+                                            </tr>
+                                            <tr>
+                                                <td>&lt;device-info&gt;</td>
+                                                <td>serial-number, model-number</td>
+                                                <td>Match criteria for this rule. Empty string <em>""</em> or <em>*</em> means "any". <em>model-number</em> supports a trailing wildcard (see <a href="#using-wildcards">Using Wildcards</a>).</td>
+                                            </tr>
+                                            <tr>
+                                                <td>&lt;rta-configuration&gt;</td>
+                                                <td>&nbsp;</td>
+                                                <td>Container for the RTA settings to apply when the rule matches.</td>
+                                            </tr>
+                                        </table>
+                                        <br />
+
+                                        <p><strong>RTA event tags</strong> &ndash; Description (mirror Zebra's RTA / RSM model &ndash; see 4.4 for canonical references):</p>
+
+                                        <p><strong>Table 2:</strong> RTA Event Tags</p>
+                                        <table class="hovertable">
+                                            <tr>
+                                                <th>Tag</th>
+                                                <th>Description</th>
+                                            </tr>
+                                            <tr>
+                                                <td>&lt;rtaevent_list&gt;</td>
+                                                <td>List of RTA events to configure on the scanner.</td>
+                                            </tr>
+                                            <tr>
+                                                <td>&lt;rtaevent&gt;</td>
+                                                <td>A single RTA event configuration.</td>
+                                            </tr>
+                                            <tr>
+                                                <td>&lt;id&gt;</td>
+                                                <td>RTA event/attribute number (e.g. <em>38001</em>, <em>38004</em>).</td>
+                                            </tr>
+                                            <tr>
+                                                <td>&lt;stat&gt;</td>
+                                                <td>Statistic / trigger type for the event (e.g. <em>7</em> = "value above max").</td>
+                                            </tr>
+                                            <tr>
+                                                <td>&lt;onlimit&gt;</td>
+                                                <td>Threshold at which the alert is raised. Use <strong>Not set</strong> to leave the limit unchanged on the scanner.</td>
+                                            </tr>
+                                            <tr>
+                                                <td>&lt;offlimit&gt;</td>
+                                                <td>Threshold at which the alert is cleared. Use <strong>Not applicable</strong> for events that have no off-limit.</td>
+                                            </tr>
+                                        </table>
+                                        <br />
+
+                                        <!-- PLACEHOLDER - do not remove.
+                                             Carried over verbatim from the source document, where it is
+                                             highlighted in yellow. Replace the highlighted span with the
+                                             real link when the target is confirmed. -->
+                                        <p><span style="background-color: #ffff00;">place holder TBD - Hyper link of Supported Real Time Alerts table or Full Descriptions of Real Time Alerts section</span></p>
+
+                                        <h2 id="configuration-priority-logic" class="anchor"><a class="heading-anchor" href="#configuration-priority-logic"><span></span></a>Configuration Priority Logic</h2>
+
+                                        <p>The agent applies configurations based on a three-tier priority system. Rules with higher priority will override rules with lower priority.</p>
+
+                                        <p><strong>Table 3:</strong> Configuration Priority Logic</p>
+                                        <table class="hovertable">
+                                            <tr>
+                                                <th>Priority</th>
+                                                <th>Rule</th>
+                                                <th>Description</th>
+                                            </tr>
+                                            <tr>
+                                                <td>1 (Highest)</td>
+                                                <td>Serial Number Match</td>
+                                                <td>If a scanner's serial number matches the <em>serial-number</em> attribute in a <em>&lt;device-info&gt;</em> tag, this configuration is applied. It overrides all other rules.</td>
+                                            </tr>
+                                            <tr>
+                                                <td>2 (Medium)</td>
+                                                <td>Model Number Match</td>
+                                                <td>If no serial number is defined, the agent checks for a matching <em>model-number</em>. This rule overrides the default configuration. (including wildcards).</td>
+                                            </tr>
+                                            <tr>
+                                                <td>3 (Lowest)</td>
+                                                <td>Default Configuration</td>
+                                                <td>This configuration is applied if both the <em>serial-number</em> and <em>model-number</em> attributes are empty ("") or set to <em>*</em>. Acts as the base setting for all otherwise-unmatched scanners.</td>
+                                            </tr>
+                                        </table>
+                                        <br />
+
+                                        <h2 id="using-wildcards" class="anchor"><a class="heading-anchor" href="#using-wildcards"><span></span></a>Using Wildcards</h2>
+
+                                        <p>The <em>model-number</em> attribute supports the use of a wildcard character (*) to match a pattern. The wildcard can only be used at the end of the value.</p>
+
+                                        <ul>
+                                            <li><strong>Exact Match:</strong> <em>model-number="DS8178-SR0F007ZZWW"</em> will only apply to scanners with that exact model number.</li>
+                                            <li><strong>Wildcard Match:</strong> <em>model-number="DS8*"</em> will apply to all scanners whose model number begins with "DS8" (e.g., "DS8178", "DS8108").</li>
+                                        </ul>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ============================================================
+                         5. COMMAND-LINE ARGUMENTS
+                         ============================================================ -->
+                    <hr class="section-divider">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <section id="cta" class="wow fadeIn">
+                                <div class="">
+                                    <h1 id="command-line-arguments" class="anchor">
+                                        <a class="heading-anchor" href="#command-line-arguments"><span></span></a>Command-Line Arguments
+                                    </h1>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="blog-post blog-large wow fadeInLeft" data-wow-duration="300ms" data-wow-delay="0ms">
+                                <div class="service-box wow fadeInRight">
+                                    <div class="">
+
+                                        <h2 id="available-arguments" class="anchor"><a class="heading-anchor" href="#available-arguments"><span></span></a>Available Arguments</h2>
+
+                                        <p>You can modify the agent's execution behavior with the following arguments:</p>
+
+                                        <p><strong>Table 4:</strong> Command-Line Arguments</p>
+                                        <table class="hovertable">
+                                            <tr>
+                                                <th>Argument</th>
+                                                <th>Alias</th>
+                                                <th>Description</th>
+                                            </tr>
+                                            <tr>
+                                                <td>-s</td>
+                                                <td>-show</td>
+                                                <td>Prevents the console window from hiding. The agent runs as a foreground process and displays live log output, which is useful for debugging.</td>
+                                            </tr>
+                                        </table>
+                                        <br />
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ============================================================
+                         6. STOPPING THE RTA AGENT
+                         ============================================================ -->
+                    <hr class="section-divider">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <section id="cta" class="wow fadeIn">
+                                <div class="">
+                                    <h1 id="stopping-the-agent" class="anchor">
+                                        <a class="heading-anchor" href="#stopping-the-agent"><span></span></a>Stopping the RTA Agent
+                                    </h1>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="blog-post blog-large wow fadeInLeft" data-wow-duration="300ms" data-wow-delay="0ms">
+                                <div class="service-box wow fadeInRight">
+                                    <div class="">
+
+                                        <p>The method of stopping the agent depends on how it was launched.</p>
+
+                                        <h2 id="stopping-background-mode" class="anchor"><a class="heading-anchor" href="#stopping-background-mode"><span></span></a>Background Mode (Default)</h2>
+
+                                        <p><strong>Windows:</strong></p>
+
+                                        <ol>
+                                            <li>Open Task Manager.</li>
+                                            <li>Go to the <strong>Processes</strong> or <strong>Details</strong> tab.</li>
+                                            <li>Locate <em>RTAAgent.exe</em>.</li>
+                                            <li>Right-click and select <strong>End Task</strong>.</li>
+                                        </ol>
+
+                                        <p><strong>Linux:</strong></p>
+
+<pre class="prettyprint">
+<code>
+kill &lt;pid>
+</code>
+</pre>
+
+                                        <h2 id="stopping-console-mode" class="anchor"><a class="heading-anchor" href="#stopping-console-mode"><span></span></a>Console Mode (launched with <em>-s</em>)</h2>
+
+                                        <ol>
+                                            <li>Click on the console window where the agent is running.</li>
+                                            <li>Press <strong>Ctrl + C</strong> to terminate the process.</li>
+                                        </ol>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ============================================================
+                         7. TROUBLESHOOTING
+                         ============================================================ -->
+                    <hr class="section-divider">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <section id="cta" class="wow fadeIn">
+                                <div class="">
+                                    <h1 id="troubleshooting" class="anchor">
+                                        <a class="heading-anchor" href="#troubleshooting"><span></span></a>Troubleshooting
+                                    </h1>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="blog-post blog-large wow fadeInLeft" data-wow-duration="300ms" data-wow-delay="0ms">
+                                <div class="service-box wow fadeInRight">
+                                    <div class="">
+
+                                        <h2 id="common-issues" class="anchor"><a class="heading-anchor" href="#common-issues"><span></span></a>Common Issues</h2>
+
+                                        <p><strong>Table 5:</strong> Troubleshooting</p>
+                                        <table class="hovertable">
+                                            <tr>
+                                                <th>Symptom</th>
+                                                <th>Likely cause</th>
+                                                <th>Action</th>
+                                            </tr>
+                                            <tr>
+                                                <td>Agent exits immediately</td>
+                                                <td><em>RTAAgent-Config.xml</em> missing or malformed</td>
+                                                <td>Run with <em>-s</em> and review the parse error printed onto the console.</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Scanner detected but RTA settings not applied</td>
+                                                <td>Scanner is in USB-HID-Keyboard mode</td>
+                                                <td>Switch the scanner to Manageable Host Mode Ex : SNAPI or IBMHH/TT (see the Product Reference Guide).</td>
+                                            </tr>
+                                            <tr>
+                                                <td>No scanners detected</td>
+                                                <td>CoreScanner service/daemon not running</td>
+                                                <td>Start the CoreScanner runtime, then restart the RTA Agent.</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Settings revert after unplug/replug</td>
+                                                <td>Agent not running, or no rule matches the scanner</td>
+                                                <td>Confirm the agent is running and that a <em>&lt;device-rtaconfig&gt;</em> rule matches the scanner's serial/model.</td>
+                                            </tr>
+                                        </table>
+                                        <br />
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div><!-- /page-content col-sm-9 -->
+            </div><!-- /row -->
+        </div><!-- /container-fluid -->
+
+        <div class="modal fade" id="basicModal" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true" data-backdrop="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">X</button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="modalImg"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <footer id="footer" class="navbar-fixed-bottom">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-sm-10">
+                        ZEBRA and the stylized Zebra head are trademarks of Zebra Technologies Corp., registered in many jurisdictions worldwide. All other trademarks are the property of their respective owners. Some content or images may have been created with the assistance of AI. &copy;2026 Zebra Technologies Corp. and/or its affiliates.
+                    </div>
+                    <!--<div class="col-sm-2">
+                        <ul class="social-icons">
+                            <li><a href="http://www.facebook.com/pages/Zebra-Technologies/107703715989073"><i class="fa fa-facebook"></i></a></li>
+                            <li><a href="https://twitter.com/ZebraDevs"><i class="fa fa-twitter"></i></a></li>
+                            <li><a href="http://www.youtube.com/zebratechnologies/"><i class="fa fa-youtube"></i></a></li>
+                            <li><a href="https://www.linkedin.com/groups?home=&amp;gid=3220074&amp;trk=anet_ug_hm&amp;goback=%2Egmr_3220074"><i class="fa fa-linkedin"></i></a></li>
+                            <li><a href="https://github.com/zebra-technologies"><i class="fa fa-github"></i></a></li>
+                        </ul>
+                    </div>-->
+                </div>
+            </div>
+        </footer><!--/#footer-->
+        <script src="/js/bootstrap.min.js"></script>
+        <script src="/js/owl.carousel.min.js"></script>
+        <script src="/js/mousescroll.js"></script>
+        <script src="/js/smoothscroll.js"></script>
+        <script src="/js/jquery.prettyPhoto.js"></script>
+        <script src="/js/jquery.isotope.min.js"></script>
+        <script src="/js/jquery.inview.min.js"></script>
+        <script src="/js/wow.min.js"></script>
+        <script src="/js/bootstrap-treenav.min.js"></script>
+        <script src="/js/prettify.js"></script>
+        <script src="/js/zepto.js"></script>
+        <script src="/js/jquery.waterfall.js"></script>   
+        <script src="/js/main.js"></script>
+        <script type="text/javascript">
+            (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+                (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+                e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+            })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+            _st('install','zRzEsAUhWTTkrdEN2YfA','2.0.0');
+        </script>
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+                (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+                m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+            ga('create', 'UA-72584442-1', 'auto');
+            ga('send', 'pageview');
+        </script> 
+        <script>
+            ChatraID = 'QDvZ76min4DhLW5vJ';
+            (function(d, w, c) {
+                var n = d.getElementsByTagName('script')[0],
+                    s = d.createElement('script');
+                w[c] = w[c] || function() {
+                    (w[c].q = w[c].q || []).push(arguments);
+                };
+                s.async = true;
+                s.src = (d.location.protocol === 'https:' ? 'https:': 'http:')
+                    + '//call.chatra.io/chatra.js';
+                n.parentNode.insertBefore(s, n);
+            })(document, window, 'Chatra');
+        </script>         
+        <script>
+            // Self-contained accordion for the left nav.
+            // The section headers no longer use Bootstrap's data-toggle="collapse"
+            // (calling .collapse() from a collapse event recurses in this build), so
+            // we drive open/close entirely with jQuery slide animations here. This
+            // guarantees a smooth open/close and never touches the page scroll.
+            var ANIM = 400;       // open/close speed in ms — increase to slow it down further
+            var NAV_TOP = 130;    // px from top where a target section should land,
+                                  // matching the top of #left-nav (fixed header 110px
+                                  // + content margin 20px) so nav and section top-align
+
+            // At xs the tree lives in a collapsible panel above the content, so
+            // pick a destination -> close the panel -> scroll. The scroll target
+            // is measured only AFTER the panel has collapsed, because collapsing
+            // it shortens the page and moves every section up.
+            // Pin the "Contents" bar flush to the bottom of the header at xs.
+            // The header's height is set by logo.png's intrinsic size and by
+            // CSS in shared files this page cannot edit, so it is measured
+            // rather than hard-coded - a stale constant is exactly what left a
+            // gap under the header for content to scroll through.
+            //
+            // .navbar-header, not #main-menu: at xs the collapsible top menu
+            // lives inside #main-menu, so opening the hamburger would inflate
+            // that measurement and shove the whole page down. .navbar-header
+            // holds only the brand and the toggle, so its height is stable.
+            function layoutMobileBars() {
+                var $sidebar = $('#sidebar'), $content = $('#page-content');
+
+                // Above xs, drop the inline styles and let the CSS rules apply.
+                if (!$('#left-nav-toggle').is(':visible')) {
+                    $('body').css('padding-top', '');
+                    $sidebar.css('top', '');
+                    $content.css('padding-top', '');
+                    return;
+                }
+
+                var headerH = $('#main-menu .navbar-header').outerHeight();
+                $('body').css('padding-top', headerH);
+                $sidebar.css('top', headerH);
+
+                // Closed height of the bar: the button plus the bar's own
+                // padding. Read from the DOM so retuning the padding in CSS
+                // does not silently break this arithmetic.
+                var pad = parseFloat($sidebar.css('padding-top'))
+                        + parseFloat($sidebar.css('padding-bottom'));
+                var barH = $('#left-nav-toggle').outerHeight(true) + pad;
+
+                // The content container already starts 20px below the header
+                // (its inline margin-top), so only reserve the remainder of the
+                // bar, plus an 8px gap.
+                $content.css('padding-top', Math.max(0, barH + 8 - 20));
+            }
+
+            layoutMobileBars();
+            // Re-measure on load as well: logo.png carries no width/height
+            // attributes, so before it decodes the brand reports a short height
+            // and the first measurement would come out too small.
+            $(window).on('load resize orientationchange', layoutMobileBars);
+
+            // Keep "Back to Top" clear of the footer.
+            //   >=768px: the footer is fixed, so park the button just above it.
+            //   <768px:  the footer is static (see CSS), so the button floats
+            //            near the bottom of the viewport and lifts only once
+            //            the footer has actually scrolled into view.
+            var BTN_GAP = 10;
+            var TO_TOP  = 500;    // "Back to Top" scroll duration in ms. A little
+                                  // longer than the nav's ANIM because it usually
+                                  // covers the whole page.
+            function layoutBackToTop() {
+                var $btn = $('#back-to-top-btn');
+                if (!$btn.length) { return; }   // injected by /js/main.js
+                var $footer = $('#footer');
+
+                if (!$('#left-nav-toggle').is(':visible')) {
+                    $btn.css('bottom', $footer.outerHeight() + BTN_GAP);
+                    return;
+                }
+
+                // How much of the static footer is on screen right now. This is
+                // negative while the footer is still below the fold, in which
+                // case the button keeps main.css's 20px resting offset.
+                var onScreen = $(window).height()
+                             - $footer[0].getBoundingClientRect().top;
+                $btn.css('bottom', Math.max(20, onScreen + BTN_GAP));
+            }
+
+            // Animate "Back to Top" instead of letting it snap to the top.
+            //
+            // main.js binds its own click handler that assigns
+            // "document.documentElement.scrollTop = 0" - instant by definition.
+            // Detaching it with .off() does not work reliably: main.js injects
+            // the button from inside its own ready callback, so depending on
+            // callback order the selector here can still be empty, in which
+            // case .off().on() silently does nothing and main.js's handler
+            // survives - it then fires first and has already snapped to the top
+            // before any animation could start.
+            //
+            // So intercept on the way DOWN instead. A capture-phase listener on
+            // the document runs before any listener bound on the button itself,
+            // and stopPropagation() keeps the event from ever reaching them -
+            // regardless of when the button appeared or what bound the handler.
+            // This is registered at top level, not in a ready callback, so it is
+            // in place before main.js can inject the button at all.
+            //
+            // (CSS "scroll-behavior: smooth" would be the simple answer but is
+            // ruled out - see the note in the <style> block: it fights the left
+            // nav's own .animate({scrollTop}) calls and lands short.)
+            document.addEventListener('click', function(e) {
+                // Manual walk rather than .closest(), to match the browser
+                // vintage the rest of this page targets.
+                var el = e.target;
+                while (el && el.id !== 'back-to-top-btn') { el = el.parentElement; }
+                if (!el) { return; }
+
+                e.stopPropagation();
+                e.preventDefault();
+                $('html, body').stop(true).animate({ scrollTop: 0 }, TO_TOP);
+                // Parity with main.js: the MX Feature Matrix pages scroll an
+                // inner div. A no-op on this page, where it does not exist.
+                $('.fixed-column-right').stop(true)
+                    .animate({ scrollTop: 0 }, TO_TOP);
+            }, true);   // true = capture phase; the whole point of this
+
+            $(function() {
+                layoutBackToTop();
+                updateSpy();
+                $(window).on('load resize orientationchange', function() {
+                    layoutBackToTop();
+                    updateSpy();
+                });
+
+                // One throttled scroll listener drives both the button offset
+                // and the nav highlight, so there is a single measure pass per
+                // frame rather than two competing ones.
+                //
+                // NB: bind with jQuery, never "window.onscroll = ...". main.js
+                // assigns window.onscroll directly to show/hide this button, so
+                // assigning it here would silently clobber that handler.
+                var pending = false;
+                $(window).on('scroll', function() {
+                    if (pending) { return; }
+                    pending = true;
+                    var run = function() {
+                        pending = false;
+                        layoutBackToTop();
+                        updateSpy();
+                    };
+                    if (window.requestAnimationFrame) {
+                        window.requestAnimationFrame(run);
+                    } else {
+                        setTimeout(run, 16);
+                    }
+                });
+            });
+
+            // Distance from the top of the viewport at which a target section
+            // should land. On desktop that is just below the fixed header
+            // (NAV_TOP). At xs the pinned "Contents" bar sits below the header
+            // too, so measure its actual bottom edge instead of hard-coding a
+            // second constant that would drift if the bar's padding changes.
+            function navOffset() {
+                var bar = document.getElementById('sidebar');
+                if (bar && $('#left-nav-toggle').is(':visible')) {
+                    return bar.getBoundingClientRect().bottom + 6;
+                }
+                return NAV_TOP;
+            }
+
+            function scrollToSection(selector, duration) {
+                var $panel = $('#left-nav-collapse');
+                var go = function() {
+                    // Hold the scroll-spy off for the duration of the animation.
+                    // Mid-flight the section under the top of the viewport is
+                    // still the one we are leaving, so an active spy would
+                    // immediately collapse the panel this click just opened.
+                    spyOff = true;
+                    // Measured here, not before the collapse, so the bar is back
+                    // to its closed height when navOffset() reads it.
+                    $('html, body').stop(true).animate(
+                        { scrollTop: $(selector).offset().top - navOffset() },
+                        duration,
+                        function() { spyOff = false; updateSpy(); });
+                };
+                // The toggle button is only visible at xs, so it doubles as the
+                // "are we on a phone?" test without hard-coding a breakpoint.
+                if ($('#left-nav-toggle').is(':visible') && $panel.hasClass('in')) {
+                    $panel.one('hidden.bs.collapse', go).collapse('hide');
+                } else {
+                    go();
+                }
+            }
+
+            // Swap the open accordion panel. Shared by the header clicks and by
+            // the scroll-spy below, so a section opened by scrolling animates
+            // exactly like one opened by clicking.
+            //
+            // IMPORTANT: animate first, then toggle the 'in' class. Bootstrap's
+            // ".collapse.in { display:block }" rule makes a panel visible/hidden
+            // instantly, so if the class is changed before the slide, jQuery sees the
+            // element as already shown/hidden and skips the animation (a snap open).
+            var switching = false;   // an accordion swap is mid-animation
+            function openSection($header, $panel) {
+                // The 'in' class is only added when the slide FINISHES, so
+                // without this guard the spy would re-trigger slideDown on
+                // every scroll event for the whole 400ms of the animation.
+                if (!$panel || !$panel.length || $panel.hasClass('in') || switching) {
+                    return;
+                }
+                switching = true;
+
+                // Close any other open section (animated)...
+                $('#left-nav .nav-subsection.in').each(function() {
+                    var $open = $(this);
+                    $open.stop(true, false).slideUp(ANIM, function() {
+                        $open.removeClass('in');
+                    });
+                });
+                $('#left-nav .nav-section-header')
+                    .addClass('collapsed').attr('aria-expanded', 'false');
+
+                // ...and open the requested one (animated).
+                $header.removeClass('collapsed').attr('aria-expanded', 'true');
+                $panel.stop(true, false).slideDown(ANIM, function() {
+                    $panel.addClass('in');
+                    switching = false;
+                    // Re-check once the swap is done. A fast scroll can cross a
+                    // second boundary while this animation is running, and those
+                    // scroll events were ignored by the guard above - without
+                    // this the nav would be left showing the section the reader
+                    // has already passed through. Terminates: each pass opens
+                    // whatever matches the (now static) scroll position, and the
+                    // next pass then returns early on the hasClass('in') check.
+                    updateSpy();
+                });
+            }
+
+            $('#left-nav .nav-section-header').on('click', function(e) {
+                e.preventDefault();
+                var $header = $(this);
+                var $panel  = $($header.attr('href')); // e.g. #nav-adf
+                if (!$panel.length) { return; }
+
+                openSection($header, $panel);
+
+                // In addition to opening the sub-menu, navigate to the matching
+                // content section, aligning its top with the top of the left nav.
+                var section = $header.attr('data-section');
+                if (section && $(section).length) {
+                    scrollToSection(section, ANIM);
+                }
+            });
+
+            // Smooth scroll to anchor ONLY for the sub-item links, never the section
+            // headers. The headers are also <a href="#..."> elements, so restrict the
+            // selector to links inside .nav-subsection; otherwise clicking a main item
+            // (About / ADF / Appendix) would scroll the page instead of just toggling.
+            $('#left-nav .nav-subsection a[href^="#"]').on('click', function(e) {
+                var target = $(this).attr('href');
+                if ($(target).length) {
+                    e.preventDefault();
+                    scrollToSection(target, 350);
+                }
+            });
+
+            // ---- Scroll-spy for the left nav -----------------------------------
+            // Highlights the sub-item whose heading is currently at the top of
+            // the reading area, and swaps the open accordion panel when the
+            // reader crosses from one top-level section into the next.
+            //
+            // Not Bootstrap's scrollspy: the body carries data-spy="scroll"
+            // data-target="#toc", but there is no #toc on this page, so that
+            // plugin matches nothing and does nothing. It also cannot drive the
+            // accordion, which is the part actually being asked for here.
+
+            // Built once: every sub-item link paired with the heading it points
+            // at, plus the panel and header that own it.
+            var spyItems = [];
+            $('#left-nav .nav-subsection').each(function() {
+                var $panel  = $(this);
+                var $header = $('#left-nav .nav-section-header[href="#'
+                                + $panel.attr('id') + '"]');
+                $panel.find('a[href^="#"]').each(function() {
+                    var $link = $(this);
+                    var el    = document.getElementById($link.attr('href').slice(1));
+                    if (el && $header.length) {
+                        spyItems.push({ $link: $link, $panel: $panel,
+                                        $header: $header, el: el });
+                    }
+                });
+            });
+
+            // Also register each section's own top anchor (the header's
+            // data-section, e.g. #adf-section-top), mapped to that section's
+            // FIRST sub-item.
+            //
+            // Without these the section tops are invisible to the spy, and
+            // clicking a section header misfires: the click parks #adf-section-top
+            // on the spy line, but #adf-overview sits a little below it and so
+            // does not qualify yet, leaving the nearest match as #version-history
+            // - the last item of the section above. The header would open ADF
+            // while the highlight sat on About's last item.
+            $('#left-nav .nav-section-header').each(function() {
+                var $header = $(this);
+                var $panel  = $($header.attr('href'));
+                var sel     = $header.attr('data-section');
+                var el      = sel ? document.getElementById(sel.slice(1)) : null;
+                var $first  = $panel.find('a[href^="#"]').first();
+                if (el && $panel.length && $first.length) {
+                    spyItems.push({ $link: $first, $panel: $panel,
+                                    $header: $header, el: el });
+                }
+            });
+
+            var spyOff = false;      // set while a programmatic scroll is running
+            var $spyActive = null;   // currently highlighted link
+
+            // The heading nearest the top of the reading area without having
+            // gone past it. Document order is irrelevant - this just keeps the
+            // greatest rect.top that is still above the line - so the nav does
+            // not have to be ordered to match the content.
+            // Last heading in document order. rect.top is viewport-relative but
+            // measured in one pass, so the greatest value is furthest down the page.
+            function lastSpyItem() {
+                var best = spyItems[0], bestTop = -Infinity;
+                for (var i = 0; i < spyItems.length; i++) {
+                    var top = spyItems[i].el.getBoundingClientRect().top;
+                    if (top > bestTop) { bestTop = top; best = spyItems[i]; }
+                }
+                return best;
+            }
+
+            function currentSpyItem() {
+                // The page can run out of scroll before the final section's heading
+                // ever reaches the spy line, so that heading would never qualify
+                // below and the nearest match would be a heading from the section
+                // ABOVE it - clicking the last nav section scrolled correctly and
+                // then immediately collapsed itself again. Once scrolling has
+                // bottomed out, the last heading in the document IS the current one.
+                if ($(window).scrollTop() + $(window).height()
+                        >= $(document).height() - 2) {   // 2px: fractional DPR/zoom
+                    return lastSpyItem();
+                }
+
+                // +5 so a heading parked exactly at the scroll target by
+                // scrollToSection() counts as current rather than just missing.
+                var limit = navOffset() + 5, best = null, bestTop = 0;
+                for (var i = 0; i < spyItems.length; i++) {
+                    var top = spyItems[i].el.getBoundingClientRect().top;
+                    if (top <= limit && (!best || top > bestTop)) {
+                        best = spyItems[i];
+                        bestTop = top;
+                    }
+                }
+                // Above the first heading, treat the first as current.
+                return best || spyItems[0];
+            }
+
+            function updateSpy() {
+                if (spyOff || !spyItems.length) { return; }
+                // At xs the tree is a drop-down menu the reader opens on
+                // demand; rearranging it underneath them while they scroll
+                // would be disorienting, and it is not visible anyway.
+                if ($('#left-nav-toggle').is(':visible')) { return; }
+
+                var item = currentSpyItem();
+                if (!item) { return; }
+
+                if (!$spyActive || $spyActive[0] !== item.$link[0]) {
+                    $('#left-nav .nav-subsection a.active').removeClass('active');
+                    item.$link.addClass('active');   // styled in the <style> block
+                    $spyActive = item.$link;
+                }
+
+                // Crossed into a different top-level section: expand it and let
+                // openSection() collapse whichever one was open.
+                openSection(item.$header, item.$panel);
+            }
+        </script>
+    </body>
+</html>
