@@ -278,8 +278,8 @@
   </tr>
 
   <tr>
-       <td><a href="#registerfornotifications">Register for Notifications</a></td>
-    <td>Enables applications to receive notifications of user changes.</td>
+       <td><a href="#getlockscreenstatus">Get Lock Screen Status</a> (previously Register for Notifications)</td>
+    <td>Enables applications to check the status of the Identity Guardian lock screen.</td>
     <td>Applicable when Identity Guardian is used for user authentication at either the device or application level.</td>
   </tr>
 
@@ -464,7 +464,7 @@
 
 <li>AUTHENTICATION</li>
 
-<li>PROXY (with "Imprivata" as the "Preferred Authentication App")</li>
+<li>PROXY (with "Imprivata" or "Workspace ONE" as the "Preferred Authentication App")</li>
 </ul>
 
 <p>If the Application Mode is not one of these, the API will return an ERROR or HIDDEN state.</p>
@@ -495,15 +495,15 @@
     <td rowspan="2" valign="top"><b>Description:</b> The lock screen is active, blocking user access.<br><b>Triggers:</b><br>&nbsp;&nbsp;&nbsp;• User logs out<br>&nbsp;&nbsp;&nbsp;• Device lock event<br>&nbsp;&nbsp;&nbsp;• Docking/undocking device</td>
   </tr>
   <tr>
-    <td>No Imprivata user is currently logged in, so the lock screen is active.</td>
+    <td>No Imprivata  or Workspace ONE user is currently logged in, so the lock screen is active.</td>
   </tr>
   <tr>
     <td rowspan="3" valign="top">HIDDEN</td>
     <td>An Identity Guardian user is currently logged in, so the Identity Guardian lock screen is not active.</td>
-    <td rowspan="3" valign="top"><b>Description:</b> The lock screen is not visible. <br><b>Triggers:</b><br>&nbsp;&nbsp;&nbsp;• Successful login<br>&nbsp;&nbsp;&nbsp;• Imprivata app not installed in a proxy setup</td>
+    <td rowspan="3" valign="top"><b>Description:</b> The lock screen is not visible. <br><b>Triggers:</b><br>&nbsp;&nbsp;&nbsp;• Successful login<br>&nbsp;&nbsp;&nbsp;• Imprivata or Workspace ONE app not installed in a proxy setup</td>
   </tr>
   <tr>
-    <td>An Imprivata user is currently logged in, so the lock screen is not active.</td>
+    <td>An Imprivata or Workspace ONE user is currently logged in, so the lock screen is not active.</td>
   </tr>
   <tr>
     <td>The Preferred Authentication App is set to Imprivata, but the Imprivata Mobile Device Access (MDA) app is not installed.</td>
@@ -619,7 +619,15 @@
 
 <p><strong>Description:</strong> This API uses a content URI to retrieve data from the current user session. It accesses the cursor’s extras and extracts the result string from the extras bundle. If the result string is populated, it must be parsed into a JSON object, which is the expected output format.</p>
 
-<p>When <strong><a href="../usage/#proxymode">Proxy Mode</a> is configured with Imprivata,</strong> registered apps can automatically receive user details during Imprivata login or logout events to maintain accountability. Identity Guardian acts as a bridge, delivering these user details to the registered app based on two specific Imprivata events: username and NFC card tap logins/logouts. For immediate notification, Zebra recommends registering the observer within a foreground service.</p>
+<p>When <strong><a href="../usage/#proxymode">Proxy Mode</a> is configured with either Imprivata or Workspace ONE,</strong> registered apps can automatically receive user session details during login or logout events to ensure device accountability and streamline administrative tracking. Pairing Identity Guardian with Imprivata or Workspace ONE secures shared environments, where Identity Guardian serves as a bridge, broadcast-sharing authentication event details from the third-party client directly to the registered Line of Business (LOB) apps.</p>
+
+<ul>
+<li><strong>For Imprivata:</strong> This bridge delivers details triggered by two specific events: username/password logins/logouts and NFC card tap logins/logouts. For immediate notification, Zebra recommends registering the observer within a foreground service.</li>
+
+<li><strong>For Workspace ONE:</strong> Identity Guardian automatically broadcasts state changes, allowing registered LOB apps acting as content observers to receive immediate callbacks with secure, logged-in or logged-out user data.</li>
+</ul>
+
+<p>To ensure immediate notification for either integration, Zebra recommends registering the observer within a foreground service.</p>
 
 <blockquote>
   <p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <b>Note:</b> Zebra recommends using this API instead of the <a href="#getcurrentusersessionlegacy">Get Current User Session (Legacy)</a> API.</p>
@@ -676,7 +684,7 @@
        <td>displayName</td>
     <td>String</td>
     <td>Proxy</td>
-    <td>Specifies the user display name shared by Imprivata </td>
+    <td>Specifies the user display name shared by Imprivata or Workspace ONE</td>
     <td>For example: John Doe</td>
   </tr>
 
@@ -684,7 +692,7 @@
        <td>domain</td>
     <td>String</td>
     <td>Proxy</td>
-    <td>Specifies the domain shared by Imprivata </td>
+    <td>Specifies the domain shared by Imprivata  or Workspace ONE</td>
     <td>For example: sample.com</td>
   </tr>
 
@@ -692,7 +700,7 @@
     <td>userName</td>
     <td>String</td>
     <td>Proxy</td>
-    <td>User name shared by Imprivata</td>
+    <td>User name shared by Imprivata  or Workspace ONE</td>
     <td>For example: JohnD</td>
   </tr>
 
@@ -958,10 +966,10 @@
 
 <p><strong>Error Handling:</strong></p>
 
-<p>Expected data may not be returned in the following scenarios:</p>
+<p>Expected data may not be returned to the LOB app in the following scenarios:</p>
 
 <ul>
-<li><strong>Empty Cursor:</strong> Returned if the requesting application has not been added to the allowlist (authorized with MX Access Manager); refer to the <a href="#requirements">Requirements</a> section.</li>
+<li><strong>Empty Cursor:</strong> Returned if the LOB application is not authorized with MX Access Manager; refer to the <a href="#requirements">Requirements</a> section.</li>
 
 <li><strong>No RESULT Object:</strong> Returned if an internal error occurs in Identity Guardian during data manipulation.</li>
 </ul>
@@ -983,18 +991,22 @@
 <ul>
 <li><strong>Workaround:</strong> To detect when the device is unlocked by Imprivata under any condition (including Guest mode), applications should instead monitor the <a href="#getlockscreenstatus">Get Lock Screen Status API</a>.</li></ul>
 </li>
+
+<li><strong>Workspace ONE User Login Delay:</strong> A 10- to 25-second delay may occur during user login while waiting to receive the callback from Workspace ONE.</li>
 </ul>
 
 <p><br></p>
 
 <h4 id="samplecode-1" class="anchor"><a class="heading-anchor" href="#samplecode-1"><span></span></a>Sample Code</h4>
 
-<p>There are two types of samples available:</p>
+<p>There are three types of samples available:</p>
 
 <ul>
 <li><a href="#retrieve-user-session">Retrieve Current User Session (Non-Proxy Mode)</a></li>
 
 <li><a href="#retrieve-user-session-proxy">Retrieve Current User Session for Proxy Mode with Imprivata</a></li>
+
+<li><a href="#retrieve-user-session-proxy-w">Retrieve Current User Session for Proxy Mode with Workspace ONE</a></li>
 </ul>
 
 <h4 id="retrieve-user-session" class="anchor"><a class="heading-anchor" href="#retrieve-user-session"><span></span></a>Retrieve Current User Session (Non-Proxy Mode)</h4>
@@ -1439,6 +1451,178 @@ In the login and logout responses below, the <code>displayName</code>, <code>dom
         "userName": "ZCon1",
         "userRole": ""
     },
+        "userLoggedInState": "0"
+    }
+</code></pre>
+
+<h4 id="retrieve-user-session-proxy-w" class="anchor"><a class="heading-anchor" href="#retrieve-user-session-proxy-w"><span></span></a>Retrieve Current User Session (Proxy Mode with Workspace ONE)</h4>
+
+<p>This sample demonstrates how to retrieve current user session data from the content provider and parse it into a JSON object. This applies when <strong>Proxy Mode</strong> is in use with Workpace ONE using the following <a href="../mc/">Managed Configurations</a>:</p>
+
+<ul>
+<li><strong>Application Mode:</strong> Proxy</li>
+
+<li><strong>Preferred Authentication App:</strong> Workspace ONE</li>
+</ul>
+
+<p>First, register the content observer to content resolver:</p>
+
+<pre class="prettyprint"><code>    // Content provider API for current user session V2
+    public static final Uri URI_USER_CURRENT_SESSION_V2 = Uri.parse("content://com.zebra.mdna.els.provider/v2/currentsession");
+
+    // Register the content observer to content resolver
+    getContentResolver().registerContentObserver(URI_USER_CURRENT_SESSION_V2, false, contentObserverV2);
+
+    // Content observer to listen whenever Identity Guardian notifies on user events
+    private final ContentObserver contentObserverV2 = new ContentObserver(mainHandler) {
+        @Override
+        public void onChange (boolean selfChange, @Nullable Uri uri) {
+            super.onChange(selfChange, uri);
+            //Always run provider queries in background thread to avoid ANR
+            new Thread(() -&gt; { 
+                 fetchCurrentUserSessionDataV2();
+            }).start();
+        }
+    };
+</code></pre>
+
+<p>Next, retrieve the current user session data:</p>
+
+<pre class="prettyprint"><code>    public void fetchCurrentUserSessionDataV2() {
+        ContentResolver cr = getContentResolver();
+        Cursor cursor = cr.query(URI_USER_CURRENT_SESSION_V2, null, null, null, null);
+        try {
+            if (cursor != null) {
+                Bundle extras = cursor.getExtras();
+                if (extras != null) {
+                    String result = extras.getString("RESULT", "");
+                    if (!result.isEmpty()) {
+                        try {
+                            JSONObject resultObject = new JSONObject(result);
+                            Log.i(TAG, "Json Result : " + resultObject.toString(1)); //Actual result available here
+                        } catch (Exception e) {
+                            Log.e(TAG, "Exception in parsing  " + e.getMessage());
+                        }
+                    } else {
+                        Log.i(TAG, "No RESULT found in extras");
+                    }
+                }
+            } else {
+                Log.i(TAG, "Cursor is null");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Exception in getDataForCurrentUser  " + e.getMessage());
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+    }
+</code></pre>
+
+<p><strong>Example Responses:</strong>
+In the login and logout responses below, the <code>displayName</code>, <code>domain</code>, and <code>userName</code> properties are only populated when the following Managed Configurations are set:</p>
+
+<ul>
+<li>In <a href="../mc/#usagemode">Usage Mode</a>, Application Mode is set to "Proxy."</li>
+
+<li>In <a href="../mc/#authenticationconfiguration">Authentication Configuration</a>, Preferred Authentication App is set to "Workpace ONE."</li>
+</ul>
+
+<p>In all other configurations, these values return null.</p>
+
+<p><strong>Sample Response: User Login</strong></p>
+
+<pre class="prettyprint"><code>    {
+        "authenticationFactors": {
+            "adminByPassFactors": [],
+            "alternateFactors": [],
+            "factors": [],
+            "legacyFactors": [],
+            "schemaVersion": "2.0"
+        },
+        "enrollmentInformation": {
+            "enrollmentCreatedOn": "",
+            "enrollmentCreatedOnDeviceModel": "",
+            "enrollmentCreatedOnDeviceSerialNo": "",
+            "enrollmentExpiryDate": "",
+            "enrollmentId": "",
+            "enrollmentType": "",
+            "securityTypes": "",
+            "storageType": ""
+        },
+        "errorCode": 0,
+        "eventType": "Login",
+        "isSSOInformationAvailable": 0,
+        "logOutInformation": {
+            "logoutReason": ""
+        },
+        "loginInformation": {
+            "userLoginTime": "1786433951721"
+        },
+        "schemaVersion": "2.0",
+        "ssoInformation": {
+            "ssoAccessToken": "",
+            "ssoDataReceivedFromIDP[AC1.1]": "",
+            "ssoIDToken": "",
+            "ssoProvider": ""
+        },
+        "status": "SUCCESS",
+        "userInformation": {
+            "displayName": "IG",
+            "domain": "",
+            "userId": "IG",
+            "userName": "IG",
+            "userRole": "Manager"
+        },
+        "userLoggedInState": "1"
+    }
+</code></pre>
+
+<p><strong>Sample Response: User Logout</strong></p>
+
+<pre class="prettyprint"><code>    {
+        "authenticationFactors": {
+            "adminByPassFactors": [ ],
+            "alternateFactors": [ ],
+            "factors": [ ],
+            "legacyFactors": [ ],
+            "schemaVersion": "2.0"
+        },
+        "enrollmentInformation": {
+            "enrollmentCreatedOn": "",
+            "enrollmentCreatedOnDeviceModel": "",
+            "enrollmentCreatedOnDeviceSerialNo": "",
+            "enrollmentExpiryDate": "",
+            "enrollmentId": "",
+            "enrollmentType": "",
+            "securityTypes": "",
+            "storageType": ""
+        },
+        "errorCode": 0,
+        "eventType": "Login",
+        "isSSOInformationAvailable": 0,
+        "logOutInformation": {
+            "logoutReason": ""
+        },
+        "loginInformation": {
+            "userLoginTime": "1786433951721"
+        },
+        "schemaVersion": "2.0",
+        "ssoInformation": {
+            "ssoAccessToken": "",
+            "ssoDataReceivedFromIDP": "",
+            "ssoIDToken": "",
+            "ssoProvider": ""
+        },
+        "status": "SUCCESS",
+        "userInformation": {
+            "displayName": "IG",
+            "domain": "",
+            "userId": "IG",
+            "userName": "IG",
+            "userRole": "Manager"
+        },
         "userLoggedInState": "0"
     }
 </code></pre>
@@ -1950,6 +2134,8 @@ The Response is received by the caller application in the form of a bundle:
 <li><a href="#retrieve-user-session-old">Retrieve Current User Session (Non-Proxy Mode)</a></li>
 
 <li><a href="#retrieve-user-session-proxy-old">Retrieve Current User Session for Proxy Mode with Imprivata</a></li>
+
+<li><a href="#retrieve-user-session-proxy-old-w">Retrieve Current User Session for Proxy Mode with Workspace ONE</a></li>
 </ul>
 
 <h4 id="retrieve-user-session-old" class="anchor"><a class="heading-anchor" href="#retrieve-user-session-old"><span></span></a>Retrieve Current User Session (Non-Proxy Mode)</h4>
@@ -2104,96 +2290,134 @@ The Response is received by the caller application in the form of a bundle:
     }
 </code></pre>
 
-<!--
-#### Sample Results
+<h4 id="retrieve-user-session-proxy-old-w" class="anchor"><a class="heading-anchor" href="#retrieve-user-session-proxy-old-w"><span></span></a>Retrieve Current User Session (Proxy Mode with Workspace ONE)</h4>
 
-**Sample return results for `cursor`:**
+<p>This sample demonstrates how to retrieve current user session data from the content provider and parse it into a JSON object. This applies when <strong>Proxy Mode</strong> is in use with Workpace ONE using the following <a href="../mc/">Managed Configurations</a>:</p>
 
-        {
-            "schemaVersion": "2.0",
-            "status": "SUCCESS",
-            "errorcode": 0,
-            "userLoggedInState": "1",
-            "eventType":"Login",
-            "isSSOInformationAvailable":"1",
-            "loginInformation":
-            {
-                "userLoginTime":"1729232875461",
-            },
+<ul>
+<li><strong>Application Mode:</strong> Proxy</li>
 
-            "logOutInformation":
-            {
-                "userLogoutTime":"1729232899461",
-                "logoutReason":"on_lock"
-            },
+<li><strong>Preferred Authentication App:</strong> Workpace ONE</li>
+</ul>
 
-            "userInformation":
-            {
-                "userId": "user@company.com",
-                "userRole": "test_group"
-            },
+<p>First, register the content observer to content resolver:</p>
 
-            "authenticationFactors":
-            {
-                {
-                    "schemaVersion":"1.0",    "factors":
-                    [
-                        {
-                            "factor": "FACE",
-                            "factorType": "PRIMARYPRIMARYFACTOR",
-                            "status": "EXECUTED"
-                        },
+<pre class="prettyprint"><code>    // Content provider API for current user session
+    public static final Uri URI_USER_CURRENT_SESSION = Uri.parse("content://com.zebra.mdna.els.provider/currentsession");
 
-                        {
-                            "factor":"PASSCODE",
-                            "factorType":"PRIMARYSECONDARYFACTOR1",
-                            "status":"EXECUTED"
+    // Register the content observer to content resolver 
+    getContentResolver().registerContentObserver(URI_USER_CURRENT_SESSION, false, contentObserverV1);
+
+    // Content observer to listen whenever Identity Guardian notifies on user events
+    private final ContentObserver contentObserverV1= new ContentObserver(mainHandler) {
+        @Override
+        public void onChange(boolean selfChange, @Nullable Uri uri) {
+            super.onChange(selfChange, uri);
+            //Always run provider queries in background thread to avoid ANR
+            new Thread(() -&gt; {
+                fetchCurrentUserSessionData();
+            }).start();
+        }
+    };
+</code></pre>
+
+<p>Next, retrieve the current user session data:</p>
+
+<pre class="prettyprint"><code>    public void fetchCurrentUserSessionData() {
+        ContentResolver cr = getContentResolver();
+        Cursor cursor = cr.query(URI_USER_CURRENT_SESSION, null, null, null, null);
+        try {
+            if (cursor != null) {
+                Log.i(TAG, "Cursor info" + cursor.getExtras());
+                Bundle extras = cursor.getExtras();
+                if (extras != null) {
+                    String result = extras.getString("RESULT", "");
+                    Log.i(TAG, "getDataForCurrentUser: key is " + result);
+                    if (!result.isEmpty()) {
+                        try {
+                            JSONObject resultObject = new JSONObject(result);
+                            Log.i(TAG, "Json Result : " + resultObject.toString(1)); //Actual result available here
+                        } catch (Exception e) {
+                            Log.e(TAG, "Exception in parsing  " + e.getMessage());
                         }
-                    ],
-
-                    "eventType":"CurrentUser",
-                    "lockScreenEventType":"on_unlock"
+                    }
                 }
-            },
-
-            "ssoInformation":
-            {
-                "ssoProvider": "PingId",
-                "ssoAccessToken": "12345abcde",
-                "ssoIDToken":"",
-                "ssoDataReceivedFromIDP":
-                {
-
-                    "sub": "user@company.com",
-                    "aud": "test123_new_test_none",
-                    "jti": "54321edcba",
-                    "iss": "https://test.zebra.com",
-                    "iat": 1727352498,
-                    "exp": 1727352647,
-                    "AdminJobID": "test-group",
-                    "location": "NY",
-                    "JobId": "testuser",
-                    "GroupID": "test-Group",
-                    "pi.sri": "46tGa230SsfoUoasdfJFzUTE.dXMtZWFzdC0y",
-                    "sid": "46tGa230SsfoUasdfAJFzUTE.dXMtZWFzdC0y",
-                    "nonce": "-W3pLAleOnWdfd8wqOW3pg"
-                }
-            },
-
-            "enrollmentInformation":
-            {
-                "enrollmentType":"Barcode",
-                "enrollmentId": "172208771078F577",
-                "securityTypes":"FACE,PASSCODE",
-                "validThrough":"1729436343123",
-                "storageType": "Barcode",
-                "enrollmentExpiryDate":"1729436343123",
-                "enrollmentCreatedOn":"1729232812461",
-                "enrollmentCreatedOnDeviceModel":"TC57",
-                "enrollmentCreatedOnDeviceSerialNo":"1234567890"
+            } else {
+                Log.i(TAG, "No user has logged into ZBA");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Exception in getDataForCurrentUser  " + e.getMessage());
+        } finally {
+            if (cursor != null) {
+                cursor.close();
             }
         }
--->
+    }
+</code></pre>
+
+<p><strong>Sample Response: User Login</strong></p>
+
+<p><strong>Note:</strong> In the login and logout response below, the <code>displayName</code>, <code>domain</code>, and <code>userName</code> properties are only populated when when Proxy Mode is used with Workpace ONE, as specified in the Managed Configurations. In all other configurations, these values return null.</p>
+
+<pre class="prettyprint"><code>    {
+        "code": 0,
+        "status": "SUCCESS",
+        "userData": {
+            "authenticationFactors": "{\"schemaVersion\":\"1.0\",\"factors\":[],\"eventType\":\"CurrentUser\"}",
+            "authenticationScheme": "",
+            "barcodeAuthenticatedOnDeviceSerialNo": "",
+            "barcodeCreatedOnDeviceModel": "",
+            "barcodeCreatedOnDeviceSerialNo": "",
+            "barcodeId": "",
+            "deviceModel": "TCa27",
+            "displayName": "IG",
+            "domain": "",
+            "logoutReason": "",
+            "securityTypes": "",
+            "ssoAccessToken": "",
+            "ssoData": "",
+            "ssoProvider": "",
+            "storageType": "",
+            "userId": "IG",
+            "userLoggedInState": "1",
+            "userLoginTime": "2026-11-08 13:09:11.721+0530",
+            "userLogoutTime": "",
+            "userName": "IG",
+            "userRole": "Manager"
+        }
+    }
+</code></pre>
+
+<p><strong>Sample Response: User Logout</strong></p>
+
+<pre class="prettyprint"><code>    {
+        "code": 0,
+        "status": "SUCCESS",
+        "userData": {
+            "authenticationFactors": "{\"schemaVersion\":\"1.0\",\"factors\":[],\"eventType\":\"CurrentUser\"}",
+            "authenticationScheme": "",
+            "barcodeAuthenticatedOnDeviceSerialNo": "",
+            "barcodeCreatedOnDeviceModel": "",
+            "barcodeCreatedOnDeviceSerialNo": "",
+            "barcodeId": "",
+            "deviceModel": "TC27",
+            "displayName": "IG",
+            "domain": "",
+            "logoutReason": "",
+            "securityTypes": "",
+            "ssoAccessToken": "",
+            "ssoData": "",
+            "ssoProvider": "",
+            "storageType": "",
+            "userId": "IG",
+            "userLoggedInState": "0",
+            "userLoginTime": "2026-11-08 13:09:11.721+0530",
+            "userLogoutTime": "2026-11-08 13:10:34.496+0530",
+            "userName": "IG",
+            "userRole": "Manager"
+        }
+    }
+</code></pre>
 
 <hr>
 
