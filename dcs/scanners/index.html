@@ -55,21 +55,238 @@
             text-align: center;
         }
 
-        /* Tile extras: the "open in a new tab" icon and the section tag chips.
-           bootstrap.min.css applies
+        /* Appearance of the "open in a new tab" icon. One place, rather than the
+           same declaration repeated inline on all 30 tiles. */
+        .new-tab-link i {
+            color: #3498DB;
+            font-size: 0.7em;
+            margin-left: 4px;
+        }
+
+        /* bootstrap.min.css applies
              a:focus { outline: 5px auto -webkit-focus-ring-color; }
-           and modern Chrome draws that focus ring nearly black, so after a
-           click a dark square is left sitting around the icon - and around the
-           tag chips, which are also bare anchors. Clear it for pointer
-           clicks, but keep a ring for keyboard users via :focus-visible;
-           browsers without :focus-visible simply drop that rule, which is how
-           they behaved before this existed. */
-        .new-tab-link:focus,
-        .tile-tag:focus { outline: none; }
-        .new-tab-link:focus-visible,
-        .tile-tag:focus-visible {
+           which modern Chrome draws nearly black, so after a click a dark box is
+           left sitting on whatever was clicked - tile titles, tag chips, the
+           tile's 72px icon and the new-tab icons alike.
+
+           Scoped to .media rather than to per-element classes: .media wraps every
+           link in a tile (media-left icon + media-body title, tags and new-tab
+           icon), so this covers all 30 tiles at once and any tile added later,
+           with no class to remember. The earlier .new-tab-link / .tile-tag
+           version only ever reached the five tiles those classes were on.
+
+           Keyboard users keep a ring via :focus-visible; browsers without
+           :focus-visible drop that rule and behave as they did before. */
+        .media a:focus { outline: none; }
+        .media a:focus-visible {
             outline: 2px solid #3498DB;
             outline-offset: 2px;
+        }
+
+        /* ------------------------------------------------------------------
+           PLATFORM SELECTOR ICONS
+           ------------------------------------------------------------------ */
+        /* Windows / Linux / Android / iOS are Font Awesome glyphs. Xamarin and
+           .NET MAUI have no FA 4.2 equivalent, so they use logo images - and the
+           two kinds looked unrelated: the glyphs are open line art on a
+           transparent background, while both logos are solid filled badges with
+           white knockout detail (a hexagon and a disc).
+
+           Rather than trying to turn the badges into line art - which would
+           destroy the white ".NET MAUI" wordmark - give every mark the same
+           badge: one 48px blue disc. The two logos already are discs, so they
+           just fill the box; the four glyphs get the disc from CSS with the
+           glyph knocked out in white.
+
+           #0074b2 is Bootstrap's link colour, i.e. what these glyphs were
+           already drawn in, and it is within a shade of the .NET MAUI logo's own
+           blue. Xamarin's hexagon is a lighter blue and stays slightly lighter -
+           that is its artwork, and only a recoloured asset would change it. */
+        .tablink .media-left { text-align: center; }
+        .tablink .media-left a {
+            display: inline-block;
+            width: 48px;
+            height: 48px;
+            line-height: 48px;
+            border-radius: 50%;
+            background: #0074b2;
+            overflow: hidden;      /* clips the hexagon's corners to the disc */
+            text-align: center;
+        }
+        /* Set on the anchor, including its hover/focus states, so Bootstrap's
+           a:hover{color:#23527c} cannot recolour the knocked-out glyph. */
+        .tablink .media-left a,
+        .tablink .media-left a:hover,
+        .tablink .media-left a:focus { color: #fff; }
+        /* Beats .fa-3x (0,1,0) on specificity (0,3,0), so no !important. */
+        .tablink .media-left i {
+            font-size: 26px;
+            line-height: 48px;
+            vertical-align: middle;
+        }
+        .tablink .media-left img {
+            display: block;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+        }
+
+        /* ------------------------------------------------------------------
+           SELECTED CATEGORY
+           ------------------------------------------------------------------ */
+        /* The selected tab used to be marked only by a grey 2px underline
+           written inline by openPage(). Now the icon carries the signal: every
+           unselected disc is greyscaled and faded, and the selected one is the
+           only mark in full colour.
+
+           greyscale() is a filter, so it works on the logo images as well as on
+           the CSS-drawn discs. That matters here - Xamarin and .NET MAUI are
+           bitmaps that fill their disc completely, so a background-color swap
+           would have changed four of the six buttons and silently skipped those
+           two.
+
+           The blue underline and the bold label are kept deliberately: colour
+           alone as the sole indicator fails WCAG 1.4.1, and the greyscale cue is
+           invisible to someone who cannot distinguish the hues. */
+        .tablink .media-left a {
+            filter: grayscale(1);
+            opacity: 0.6;
+            transition: filter 0.2s ease, opacity 0.2s ease;
+        }
+        .tablink .media-heading { color: #555; }
+
+        .tablink.is-selected .media-left a {
+            filter: none;
+            opacity: 1;
+        }
+        .tablink.is-selected .media-heading {
+            color: #005580;
+            font-weight: 700;
+        }
+        /* Hovering an unselected tab previews it at full colour, so the discs
+           double as the affordance. */
+        .tablink:hover .media-left a {
+            filter: none;
+            opacity: 1;
+        }
+
+        /* No underline in any state - the disc carries the signal. This has to
+           be stated explicitly rather than simply omitted: dcs_styles.css
+           declares ".tablink:hover { border-bottom: 2px solid #777 }", so
+           leaving hover alone would bring that grey line back. Same specificity,
+           but this block loads after it, so it wins. */
+        .tablink,
+        .tablink:hover,
+        .tablink.is-selected,
+        .tablink.is-selected:hover { border-bottom: none; }
+
+        /* ------------------------------------------------------------------
+           TILE ICONS ON SMALL SCREENS
+           ------------------------------------------------------------------ */
+        /* All 30 tiles share the same scanner-sdk-image-1.png, so the icon does
+           not distinguish one tile from another - it is decoration. On a phone it
+           costs 72px plus a 10px margin and the media-body's 15px padding, about
+           97px, or a quarter of a 360px screen, which pushes titles into extra
+           line wraps and squeezes the tag chips.
+
+           Hidden below 768px and the body's padding reclaimed with it. Nothing
+           is lost: the title, its new-tab icon and the tags all still link to
+           the same place the icon did.
+
+           Scoped to .team-member on purpose. The platform tab buttons use the
+           same .media-left / .media-body structure, but their icons are the
+           blue platform discs, which ARE meaningful and must survive. */
+        @media (max-width: 767px) {
+            .team-member .media-left { display: none; }
+            /* padding-left is an inline style on the element, so !important */
+            .team-member .media-body { padding-left: 0 !important; }
+        }
+
+        /* ------------------------------------------------------------------
+           FOOTER / END OF PAGE
+           ------------------------------------------------------------------ */
+        /* The footer is .navbar-fixed-bottom, which Bootstrap pins over the
+           bottom of the viewport at every width. On a phone its legal text wraps
+           to several lines and covers the tiles underneath.
+
+           Below 768px, put it back into the normal document flow so it appears
+           only when the reader reaches the end, with a gap above it. From 768px
+           up it stays pinned, so reserve space at the end of the page instead -
+           padding on the body rather than on a content wrapper, because unlike
+           the RTA pages this one has no single #page-content element.
+
+           Same treatment as the RTA Agent and RTA User Guide pages. */
+        @media (max-width: 767px) {
+            #footer.navbar-fixed-bottom {
+                position: static;
+                z-index: auto;
+            }
+            #footer { margin-top: 40px; }
+        }
+        @media (min-width: 768px) {
+            body.homepage { padding-bottom: 60px; }
+        }
+
+        /* ------------------------------------------------------------------
+           PLATFORM SELECTOR ON SMALL SCREENS
+           ------------------------------------------------------------------ */
+        /* Each of the seven .tablink buttons holds a .media block: a fa-3x glyph
+           (or a 120px logo image) beside a 17px label. Side by side at that size
+           they wrap into four tall rows on a phone. Below 768px, stack the icon
+           over the label and shrink both, so roughly four fit per row and the
+           whole selector drops from ~380px tall to ~120px.
+
+           Several declarations need !important because these buttons carry inline
+           style attributes - margin-bottom on .media, max-width/max-height and
+           margin-right on .media-left - and an inline style outranks a normal
+           stylesheet rule. */
+        @media (max-width: 767px) {
+            .tablink {
+                float: none;
+                padding: 6px 5px;
+                font-size: 11px;
+            }
+            .tablink .media {
+                display: block;
+                margin-bottom: 0 !important;
+                text-align: center;
+            }
+            /* Bootstrap renders these as table-cells, which is what puts the icon
+               and the label side by side; block stacks them instead. */
+            .tablink .media-left,
+            .tablink .media-body {
+                display: block;
+                max-width: none !important;
+                max-height: none !important;
+                margin-right: 0 !important;
+                padding: 0;
+                text-align: center;
+            }
+            /* Shrink the whole badge, keeping disc and mark in proportion so the
+               glyph buttons and the logo buttons stay identical in size. The
+               selectors target the icon element directly rather than .fa,
+               because the ChromeOS button uses Font Awesome 5's "fab" class
+               which this site's FA 4.2 does not define. */
+            .tablink .media-left a {
+                width: 30px;
+                height: 30px;
+                line-height: 30px;
+            }
+            .tablink .media-left i {
+                font-size: 16px;
+                line-height: 30px;
+            }
+            .tablink .media-left img {
+                width: 30px;
+                height: 30px;
+            }
+            .tablink .media-heading {
+                margin: 3px 0 0;
+                font-size: 11px;
+                line-height: 1.25;
+            }
+            /* The decorative anchor span only adds width at this scale. */
+            .tablink .heading-anchor { display: none; }
         }
     </style>
     <!--[if lt IE 9]>
@@ -809,7 +1026,7 @@
                                                 <a href="/dcs/scanners/123scan/" target="_blank" rel="noopener"
                                                    class="new-tab-link"
                                                    title="Open in a new tab"
-                                                   aria-label="Open 123Scan Configuration Utility in a new tab"><i class="fa fa-external-link" aria-hidden="true" style="color:#3498DB; font-size:0.7em; margin-left:4px;"></i></a>
+                                                   aria-label="Open 123Scan Configuration Utility in a new tab"><i class="fa fa-external-link" aria-hidden="true"></i></a>
                                             </h4>
                                             <p>123Scan is an easy-to-use, PC-based software tool that enables the quick and easy set-up of Zebra scanners. With over 600,000 users worldwide, this is the single utility you will need to setup your Zebra scanner.</p>
                                             <!-- These point at in-page anchors on the consolidated page, NOT at
@@ -834,6 +1051,10 @@
                                             <h4 class="media-heading anchor" id="-pc">
                                                 <a class="heading-anchor" href="#-windows-sdk"><span></span></a>
                                                 <a href="/dcs/scanners/sdk-windows/about">Barcode Scanner SDK for Windows</a>
+                                                <a href="/dcs/scanners/sdk-windows/about" target="_blank" rel="noopener"
+                                                   class="new-tab-link"
+                                                   title="Open in a new tab"
+                                                   aria-label="Open Barcode Scanner SDK for Windows in a new tab"><i class="fa fa-external-link" aria-hidden="true"></i></a>
                                             </h4>
                                             <p>Zebra Scanner Software Developer Kit (SDK) for Windows - an architectural framework providing a single programming interface across multiple programming languages and across multiple system environments for all scanners communication variants.</p>
                                             <a href="/dcs/scanners/sdk-windows/about/"><span class="label label-primary">Overview</span></a>
@@ -858,6 +1079,10 @@
                                             <h4 class="media-heading anchor" id="-opos-driver">
                                                 <a class="heading-anchor" href="#-opos-driver"><span></span></a>
                                                 <a href="/dcs/scanners/opos-windows/about">OPOS Drivers for Windows</a>
+                                                <a href="/dcs/scanners/opos-windows/about" target="_blank" rel="noopener"
+                                                   class="new-tab-link"
+                                                   title="Open in a new tab"
+                                                   aria-label="Open OPOS Drivers for Windows in a new tab"><i class="fa fa-external-link" aria-hidden="true"></i></a>
                                             </h4>
                                             <p>Zebra OPOS Driver which enables bar code data communication between any scanner and an OPOS compliant POS application via either a USB or RS-232 connection.</p>
                                             <a href="/dcs/scanners/opos-windows/about"><span class="label label-primary">Overview</span></a>
@@ -883,6 +1108,10 @@
                                             <h4 class="media-heading anchor" id="-opos-driver">
                                                 <a class="heading-anchor" href="#-jpos-driver"><span></span></a>
                                                 <a href="/dcs/scanners/jpos-driver/about/">JPOS Drivers for Windows</a>
+                                                <a href="/dcs/scanners/jpos-driver/about/" target="_blank" rel="noopener"
+                                                   class="new-tab-link"
+                                                   title="Open in a new tab"
+                                                   aria-label="Open JPOS Drivers for Windows in a new tab"><i class="fa fa-external-link" aria-hidden="true"></i></a>
                                             </h4>
                                             <p>An application accesses the JavaPOS device through the JavaPOS Device Interface, which is specified by Java interfaces.</p>
                                             <a href="/dcs/scanners/jpos-driver/about"><span class="label label-primary">Overview</span></a>
@@ -910,7 +1139,7 @@
                                                 <a href="/dcs/scanners/rta/user-guide/" target="_blank" rel="noopener"
                                                    class="new-tab-link"
                                                    title="Open in a new tab"
-                                                   aria-label="Open Real Time Alerts (RTA) User Guide in a new tab"><i class="fa fa-external-link" aria-hidden="true" style="color:#3498DB; font-size:0.7em; margin-left:4px;"></i></a>
+                                                   aria-label="Open Real Time Alerts (RTA) User Guide in a new tab"><i class="fa fa-external-link" aria-hidden="true"></i></a>
                                             </h4>
                                             <p>Real Time Alerts let a Zebra scanner notify the host when a monitored statistic reaches a threshold or an event occurs. Covers how alerts work and how to receive them through CoreScanner, OPOS and JPOS.</p>
                                             <a href="/dcs/scanners/rta/user-guide/#what-are-real-time-alerts" class="tile-tag"><span class="label label-primary">Overview</span></a>
@@ -936,7 +1165,7 @@
                                                 <a href="/dcs/scanners/rta/agent/" target="_blank" rel="noopener"
                                                    class="new-tab-link"
                                                    title="Open in a new tab"
-                                                   aria-label="Open Real Time Alerts (RTA) Agent in a new tab"><i class="fa fa-external-link" aria-hidden="true" style="color:#3498DB; font-size:0.7em; margin-left:4px;"></i></a>
+                                                   aria-label="Open Real Time Alerts (RTA) Agent in a new tab"><i class="fa fa-external-link" aria-hidden="true"></i></a>
                                             </h4>
                                             <p>A lightweight, cross-platform console application that manages and persists Real Time Alert (RTA) configurations on connected Zebra scanners, re-applying them automatically each time a scanner reconnects.</p>
                                             <a href="/dcs/scanners/rta/agent/#introduction" class="tile-tag"><span class="label label-primary">Overview</span></a>
@@ -959,6 +1188,10 @@
                                             <h4 class="media-heading anchor" id="-samples">
                                                 <a class="heading-anchor" href="#-samples"><span></span></a>
                                                 <a href="/dcs/scanners/powershell-scripts-windows/about/">Windows PowerShell Scripts for SDK</a>
+                                                <a href="/dcs/scanners/powershell-scripts-windows/about/" target="_blank" rel="noopener"
+                                                   class="new-tab-link"
+                                                   title="Open in a new tab"
+                                                   aria-label="Open Windows PowerShell Scripts for SDK in a new tab"><i class="fa fa-external-link" aria-hidden="true"></i></a>
                                             </h4>
                                             <p>This documentation provides a detailed guide on using PowerShell scripts to interact with Zebra scanners via the scanner SDKs.</p>
                                             <a href="/dcs/scanners/powershell-scripts-windows/about/"><span class="label label-primary">Overview</span></a>
@@ -979,6 +1212,10 @@
                                             <h4 class="media-heading anchor" id="-samples">
                                                 <a class="heading-anchor" href="#-samples"><span></span></a>
                                                 <a href="/dcs/scanners/wmi/about/">Scanner WMI Driver for Windows</a>
+                                                <a href="/dcs/scanners/wmi/about/" target="_blank" rel="noopener"
+                                                   class="new-tab-link"
+                                                   title="Open in a new tab"
+                                                   aria-label="Open Scanner WMI Driver for Windows in a new tab"><i class="fa fa-external-link" aria-hidden="true"></i></a>
                                             </h4>
                                             <p>Using a free provider plug-in from Zebra, WMI enables local and network remote management of a scanner.</p>
                                             <a href="/dcs/scanners/wmi/about/"><span class="label label-primary">Overview</span></a>
@@ -1002,6 +1239,10 @@
                                             <h4 class="media-heading anchor" id="-web-services">
                                                 <a class="heading-anchor" href="#-web-services"><span></span></a> 
                                                 <a href="/dcs/scanners/sms-windows/about/">Scanner Management Service (SMS) for Windows</a>
+                                                <a href="/dcs/scanners/sms-windows/about/" target="_blank" rel="noopener"
+                                                   class="new-tab-link"
+                                                   title="Open in a new tab"
+                                                   aria-label="Open Scanner Management Service (SMS) for Windows in a new tab"><i class="fa fa-external-link" aria-hidden="true"></i></a>
                                             </h4>
                                             <p>The SMS enables your enterprise to remotely manage its Zebra scanners. In addition to accessing asset tracking information and statistics, the SMS can set parameters and update firmware. </p>
                                             <a href="/dcs/scanners/sms-windows/about/"><span class="label label-primary">Overview</span></a>
@@ -1024,6 +1265,10 @@
                                             <h4 class="media-heading anchor" id="-samples">
                                                 <a class="heading-anchor" href="#-samples"><span></span></a>
                                                 <a href="/dcs/scanners/iot-connector/about/">IoT Connector for Windows</a>
+                                                <a href="/dcs/scanners/iot-connector/about/" target="_blank" rel="noopener"
+                                                   class="new-tab-link"
+                                                   title="Open in a new tab"
+                                                   aria-label="Open IoT Connector for Windows in a new tab"><i class="fa fa-external-link" aria-hidden="true"></i></a>
                                             </h4>
                                             <p>IoT Connector is a simple logging tool that will log events related to scanners to a text file. It can be configured to write the logs to several places like console and a text file at the same time or only to one of them.</p>
                                             <a href="/dcs/scanners/iot-connector/about/"><span class="label label-primary">Overview</span></a>
@@ -1044,6 +1289,10 @@
                                             <h4 class="media-heading anchor" id="-samples">
                                                 <a class="heading-anchor" href="#-samples"><span></span></a>
                                                 <a href="/dcs/scanners/datawedge-windows/about/">DataWedge for Scanners (DWS) for Windows</a>
+                                                <a href="/dcs/scanners/datawedge-windows/about/" target="_blank" rel="noopener"
+                                                   class="new-tab-link"
+                                                   title="Open in a new tab"
+                                                   aria-label="Open DataWedge for Scanners (DWS) for Windows in a new tab"><i class="fa fa-external-link" aria-hidden="true"></i></a>
                                             </h4>
                                             <p>DataWedge for Scanners (DWS) keeps track of which window has active focus on the computer and configures the scanner to send data to meet this window's input needs.</p>
                                             <a href="/dcs/scanners/datawedge-windows/about/"><span class="label label-primary">Overview</span></a>
@@ -1064,6 +1313,10 @@
                                             <h4 class="media-heading anchor" id="-samples">
                                                 <a class="heading-anchor" href="#-samples"><span></span></a>
                                                 <a href="/dcs/scanners/stc-windows/about/">Scan-To-Connect Utility for Windows</a>
+                                                <a href="/dcs/scanners/stc-windows/about/" target="_blank" rel="noopener"
+                                                   class="new-tab-link"
+                                                   title="Open in a new tab"
+                                                   aria-label="Open Scan-To-Connect Utility for Windows in a new tab"><i class="fa fa-external-link" aria-hidden="true"></i></a>
                                             </h4>
                                             <p>The Scan-To-Connect (STC) Utility simplifies the pairing process for Zebra Bluetooth scanners with a PC/tablet. It enables multiple Zebra Bluetooth scanners to pair with a PC/tablet in one simple step, without having to modify your app.</p>
                                             <a href="/dcs/scanners/stc-windows/about/"><span class="label label-primary">Overview</span></a>
@@ -1084,6 +1337,10 @@
                                             <h4 class="media-heading anchor" id="-samples">
                                                 <a class="heading-anchor" href="#-samples"><span></span></a>
                                                 <a href="/dcs/scanners/camera-sdk-windows/about">Color Camera SDK for Windows</a>
+                                                <a href="/dcs/scanners/camera-sdk-windows/about" target="_blank" rel="noopener"
+                                                   class="new-tab-link"
+                                                   title="Open in a new tab"
+                                                   aria-label="Open Color Camera SDK for Windows in a new tab"><i class="fa fa-external-link" aria-hidden="true"></i></a>
                                             </h4>
                                             <p>The Color Camera SDK for Windows provides the ability to manage camera connections, perform various operations, configure and retrieve information related to connected cameras.</p>
                                             <a href="/dcs/scanners/camera-sdk-windows/about/"><span class="label label-primary">Overview</span></a>
@@ -1109,6 +1366,10 @@
                                             <h4 class="media-heading anchor" id="-samples">
                                                 <a class="heading-anchor" href="#-samples"><span></span></a>
                                                 <a href="/dcs/scanners/twain/about/">TWAIN Driver for Windows</a>
+                                                <a href="/dcs/scanners/twain/about/" target="_blank" rel="noopener"
+                                                   class="new-tab-link"
+                                                   title="Open in a new tab"
+                                                   aria-label="Open TWAIN Driver for Windows in a new tab"><i class="fa fa-external-link" aria-hidden="true"></i></a>
                                             </h4>
                                             <p>The Zebra TWAIN driver for Windows which enables an imaging scanner to capture and transfer images to a TWAIN-compliant application</p>
                                             <a href="/dcs/scanners/twain/about/"><span class="label label-primary">Overview</span></a>
@@ -1137,6 +1398,10 @@
                                             <h4 class="media-heading anchor" id="-linux-sdk">
                                                 <a class="heading-anchor" href="#-linux-sdk"><span></span></a>
                                                 <a href="/dcs/scanners/sdk-linux/about">Barcode Scanner SDK for Linux</a>
+                                                <a href="/dcs/scanners/sdk-linux/about" target="_blank" rel="noopener"
+                                                   class="new-tab-link"
+                                                   title="Open in a new tab"
+                                                   aria-label="Open Barcode Scanner SDK for Linux in a new tab"><i class="fa fa-external-link" aria-hidden="true"></i></a>
                                             </h4>
                                             <p>The Software Development Kit (SDK) for Linux enables a developer to create an application that can control a Zebra scanner. The SDK also includes a JPOS driver for Linux.</p>
                                             <a href="/dcs/scanners/sdk-linux/about"><span class="label label-primary">Overview</span></a>
@@ -1161,6 +1426,10 @@
                                             <h4 class="media-heading anchor" id="-opos-driver">
                                                 <a class="heading-anchor" href="#-jpos-driver"><span></span></a>
                                                 <a href="/dcs/scanners/jpos-driver/about/">JPOS Drivers for Linux</a>
+                                                <a href="/dcs/scanners/jpos-driver/about/" target="_blank" rel="noopener"
+                                                   class="new-tab-link"
+                                                   title="Open in a new tab"
+                                                   aria-label="Open JPOS Drivers for Linux in a new tab"><i class="fa fa-external-link" aria-hidden="true"></i></a>
                                             </h4>
                                             <p>An application accesses the JavaPOS device through the JavaPOS Device Interface, which is specified by Java interfaces.</p>
                                             <a href="/dcs/scanners/jpos-driver/about"><span class="label label-primary">Overview</span></a>
@@ -1189,7 +1458,7 @@
                                                 <a href="/dcs/scanners/rta/user-guide/" target="_blank" rel="noopener"
                                                    class="new-tab-link"
                                                    title="Open in a new tab"
-                                                   aria-label="Open Real Time Alerts (RTA) User Guide in a new tab"><i class="fa fa-external-link" aria-hidden="true" style="color:#3498DB; font-size:0.7em; margin-left:4px;"></i></a>
+                                                   aria-label="Open Real Time Alerts (RTA) User Guide in a new tab"><i class="fa fa-external-link" aria-hidden="true"></i></a>
                                             </h4>
                                             <p>Real Time Alerts let a Zebra scanner notify the host when a monitored statistic reaches a threshold or an event occurs. Covers how alerts work and how to receive them through CoreScanner, OPOS and JPOS.</p>
                                             <a href="/dcs/scanners/rta/user-guide/#what-are-real-time-alerts" class="tile-tag"><span class="label label-primary">Overview</span></a>
@@ -1215,7 +1484,7 @@
                                                 <a href="/dcs/scanners/rta/agent/" target="_blank" rel="noopener"
                                                    class="new-tab-link"
                                                    title="Open in a new tab"
-                                                   aria-label="Open Real Time Alerts (RTA) Agent in a new tab"><i class="fa fa-external-link" aria-hidden="true" style="color:#3498DB; font-size:0.7em; margin-left:4px;"></i></a>
+                                                   aria-label="Open Real Time Alerts (RTA) Agent in a new tab"><i class="fa fa-external-link" aria-hidden="true"></i></a>
                                             </h4>
                                             <p>A lightweight, cross-platform console application that manages and persists Real Time Alert (RTA) configurations on connected Zebra scanners, re-applying them automatically each time a scanner reconnects.</p>
                                             <a href="/dcs/scanners/rta/agent/#introduction" class="tile-tag"><span class="label label-primary">Overview</span></a>
@@ -1238,6 +1507,10 @@
                                             <h4 class="media-heading anchor" id="-web-services">
                                                 <a class="heading-anchor" href="#-web-services"><span></span></a> 
                                                 <a href="/dcs/scanners/sms-linux/about/">Scanner Management Solution (SMS) for Linux</a>
+                                                <a href="/dcs/scanners/sms-linux/about/" target="_blank" rel="noopener"
+                                                   class="new-tab-link"
+                                                   title="Open in a new tab"
+                                                   aria-label="Open Scanner Management Solution (SMS) for Linux in a new tab"><i class="fa fa-external-link" aria-hidden="true"></i></a>
                                             </h4>
                                             <p>The Scanner Management Service (SMS) enables your enterprise to remotely manage its Zebra scanners. In addition to accessing asset tracking information and statistics, the SMS can set parameters and update firmware.</p>
                                             <a href="/dcs/scanners/sms-linux/about/"><span class="label label-primary">Overview</span></a>
@@ -1258,6 +1531,10 @@
                                             <h4 class="media-heading anchor" id="-samples">
                                                 <a class="heading-anchor" href="#-samples"><span></span></a>
                                                 <a href="/dcs/scanners/iot-connector/about/">IoT Connector for Linux</a>
+                                                <a href="/dcs/scanners/iot-connector/about/" target="_blank" rel="noopener"
+                                                   class="new-tab-link"
+                                                   title="Open in a new tab"
+                                                   aria-label="Open IoT Connector for Linux in a new tab"><i class="fa fa-external-link" aria-hidden="true"></i></a>
                                             </h4>
                                             <p>IoT Connector is a simple logging tool that will log events related to scanners to a text file. It can be configured to write the logs to several places like console and a text file at the same time or only to one of them.</p>
                                             <a href="/dcs/scanners/iot-connector/about/"><span class="label label-primary">Overview</span></a>
@@ -1277,6 +1554,10 @@
                                             <h4 class="media-heading anchor" id="-linux-sdk">
                                                 <a class="heading-anchor" href="#-linux-sdk"><span></span></a>
                                                 <a href="/dcs/scanners/clu-linux/about/">Command Line Utility for Linux</a>
+                                                <a href="/dcs/scanners/clu-linux/about/" target="_blank" rel="noopener"
+                                                   class="new-tab-link"
+                                                   title="Open in a new tab"
+                                                   aria-label="Open Command Line Utility for Linux in a new tab"><i class="fa fa-external-link" aria-hidden="true"></i></a>
                                             </h4>
                                             <p>The CLU (Command Line Utility) is an executable that enables Linux users to manage scanners from a terminal prompt or shell/bash script.</p>
                                             <a href="/dcs/scanners/clu-linux/about/"><span class="label label-primary">Overview</span></a>
@@ -1297,6 +1578,10 @@
                                             <h4 class="media-heading anchor" id="-samples">
                                                 <a class="heading-anchor" href="#-samples"><span></span></a>
                                                 <a href="/dcs/scanners/camera-sdk-linux/about/">Color Camera SDK for Linux</a>
+                                                <a href="/dcs/scanners/camera-sdk-linux/about/" target="_blank" rel="noopener"
+                                                   class="new-tab-link"
+                                                   title="Open in a new tab"
+                                                   aria-label="Open Color Camera SDK for Linux in a new tab"><i class="fa fa-external-link" aria-hidden="true"></i></a>
                                             </h4>
                                             <p>The Color Camera SDK for Linux provides the ability to manage camera connections, perform various operations, configure and retrieve information related to connected cameras.</p>
                                             <a href="/dcs/scanners/camera-sdk-linux/about/"><span class="label label-primary">Overview</span></a>
@@ -1321,6 +1606,10 @@
                                             <h4 class="media-heading anchor" id="-samples">
                                                 <a class="heading-anchor" href="#-samples"><span></span></a>
                                                 <a href="/dcs/scanners/camera-sdk-python/about/">Color Camera SDK for Python (Linux)</a>
+                                                <a href="/dcs/scanners/camera-sdk-python/about/" target="_blank" rel="noopener"
+                                                   class="new-tab-link"
+                                                   title="Open in a new tab"
+                                                   aria-label="Open Color Camera SDK for Python (Linux) in a new tab"><i class="fa fa-external-link" aria-hidden="true"></i></a>
                                             </h4>
                                             <p>The Color Camera SDK for Python (Linux) provides installation and programming information that allow Bioptic Color and Monochrome camera enabled application development for Linux operating system using Python.</p>
                                             <a href="/dcs/scanners/camera-sdk-python/about/"><span class="label label-primary">Overview</span></a>
@@ -1349,6 +1638,10 @@
                                             <h4 class="media-heading anchor" id="-android-sdk">
                                                 <a class="heading-anchor" href="#-android-sdk"><span></span></a>
                                                 <a href="/dcs/scanners/sdk-android/about">Barcode Scanner SDK for Android</a>
+                                                <a href="/dcs/scanners/sdk-android/about" target="_blank" rel="noopener"
+                                                   class="new-tab-link"
+                                                   title="Open in a new tab"
+                                                   aria-label="Open Barcode Scanner SDK for Android in a new tab"><i class="fa fa-external-link" aria-hidden="true"></i></a>
                                             </h4>
                                             <p>The Zebra Scanner SDK for Android enables cordless scanners to be connected and controlled by a tablet / smart phone without using a cradle, after pairing over Bluetooth.</p>
                                             <a href="/dcs/scanners/sdk-android/about"><span class="label label-primary">Overview</span></a>
@@ -1378,6 +1671,10 @@
                                             <h4 class="media-heading anchor" id="ios-sdk">
                                                 <a class="heading-anchor" href="#ios-sdk"><span></span></a>
                                                 <a href="/dcs/scanners/sdk-ios/about/">Barcode Scanner SDK for iOS</a>
+                                                <a href="/dcs/scanners/sdk-ios/about/" target="_blank" rel="noopener"
+                                                   class="new-tab-link"
+                                                   title="Open in a new tab"
+                                                   aria-label="Open Barcode Scanner SDK for iOS in a new tab"><i class="fa fa-external-link" aria-hidden="true"></i></a>
                                             </h4>
                                             <p>The Zebra Scanner Control app enables Zebra cordless scanners to be connected and controlled by a iPhone/iPad after Bluetooth pairing.</p>
                                             <a href="/dcs/scanners/sdk-ios/about/"><span class="label label-primary">Overview</span></a>
@@ -1401,6 +1698,10 @@
                                             <h4 class="media-heading anchor" id="-samples">
                                                 <a class="heading-anchor" href="#-samples"><span></span></a>
                                                 <a href="/dcs/scanners/sdk-ios-rfid/about/">RFID SDK for iOS</a>
+                                                <a href="/dcs/scanners/sdk-ios-rfid/about/" target="_blank" rel="noopener"
+                                                   class="new-tab-link"
+                                                   title="Open in a new tab"
+                                                   aria-label="Open RFID SDK for iOS in a new tab"><i class="fa fa-external-link" aria-hidden="true"></i></a>
                                             </h4>
                                             <p>The Scan-To-Connect (STC) Utility enables up to 7 Zebra Bluetooth scanners to pair to a PC / tablet, each in one simple step, without having to modify your app.</p>
                                             <a href="/dcs/scanners/sdk-ios-rfid/about/"><span class="label label-primary">Overview</span></a>
@@ -1428,6 +1729,10 @@
                                             <h4 class="media-heading anchor" id="-samples">
                                                 <a class="heading-anchor" href="#-samples"><span></span></a>
                                                 <a href="/dcs/scanners/xamarin-scanner/about">Xamarin Wrapper for Scanner SDK (Android and iOS)</a>
+                                                <a href="/dcs/scanners/xamarin-scanner/about" target="_blank" rel="noopener"
+                                                   class="new-tab-link"
+                                                   title="Open in a new tab"
+                                                   aria-label="Open Xamarin Wrapper for Scanner SDK (Android and iOS) in a new tab"><i class="fa fa-external-link" aria-hidden="true"></i></a>
                                             </h4>
                                             <p>Zebra Scanner SDK for Xamarin enables a developer to build native applications to connect and control Zebra Barcode scanners over a Bluetooth connection (no cradle involved) on iOS and Android devices from a single, shared C# codebase.</p>
                                             <a href="/dcs/scanners/xamarin-scanner/about/"><span class="label label-primary">Overview</span></a>
@@ -1451,6 +1756,10 @@
                                             <h4 class="media-heading anchor" id="-web-services">
                                                 <a class="heading-anchor" href="#-web-services"><span></span></a> 
                                                 <a href="/dcs/scanners/xamarin-rfid/about">Xamarin Wrapper for RFID SDK (iOS)</a>
+                                                <a href="/dcs/scanners/xamarin-rfid/about" target="_blank" rel="noopener"
+                                                   class="new-tab-link"
+                                                   title="Open in a new tab"
+                                                   aria-label="Open Xamarin Wrapper for RFID SDK (iOS) in a new tab"><i class="fa fa-external-link" aria-hidden="true"></i></a>
                                             </h4>
                                             <p>Zebra RFID SDK for Xamarin enables a developer to build native applications to connect and control Zebra Barcode scanners over Bluetooth on iOS devices from a single, shared C# codebase.</p>
                                             <a href="/dcs/scanners/xamarin-rfid/about/"><span class="label label-primary">Overview</span></a>
@@ -1479,6 +1788,10 @@
                                             <h4 class="media-heading anchor" id="-chrome-sdk">
                                                 <a class="heading-anchor" href="#-chrome-sdk"><span></span></a>
                                                 <a href="/dcs/scanners/chromeos/about">Barcode Scanner SDK for Chrome OS</a>
+                                                <a href="/dcs/scanners/chromeos/about" target="_blank" rel="noopener"
+                                                   class="new-tab-link"
+                                                   title="Open in a new tab"
+                                                   aria-label="Open Barcode Scanner SDK for Chrome OS in a new tab"><i class="fa fa-external-link" aria-hidden="true"></i></a>
                                             </h4>
                                             <p>The Scanner Software Development Kit (SDK) for Chrome allows developers to create Chrome apps. These apps can be run on any Chromebook and Chromium device. In addition, these apps can be run within a Windows Chrome browser version 69 or newer.</p>
                                             <a href="/dcs/scanners/chromeos/about"><span class="label label-primary">Overview</span></a>
@@ -1506,6 +1819,10 @@
                                             <h4 class="media-heading anchor" id="dot-net-maui-sdk">
                                                 <a class="heading-anchor" href="#dot-net-maui-sdk"><span></span></a>
                                                 <a href="/dcs/scanners/maui/about/">.NET MAUI Wrapper for Scanner SDK (Android & iOS)</a>
+                                                <a href="/dcs/scanners/maui/about/" target="_blank" rel="noopener"
+                                                   class="new-tab-link"
+                                                   title="Open in a new tab"
+                                                   aria-label="Open .NET MAUI Wrapper for Scanner SDK (Android & iOS) in a new tab"><i class="fa fa-external-link" aria-hidden="true"></i></a>
                                             </h4>
                                             <p>Zebra .NEW MAUI Wrapper for Scanner SDK enables a developer to build native applications to connect and control Zebra Barcode scanners on iOS and Android devices from a single, shared C# and XAML codebase.</p>
                                             <a href="/dcs/scanners/maui/about/"><span class="label label-primary">Overview</span></a>
@@ -1582,11 +1899,16 @@
               tablinks = document.getElementsByClassName("tablink");
               for (i = 0; i < tablinks.length; i++) {
                 tablinks[i].style.backgroundColor = "";
-                tablinks[i].style.borderBottom = "";
+                tablinks[i].classList.remove("is-selected");
               }
               document.getElementById(pageName).style.display = "block";
               elmnt.style.backgroundColor = color;
-              elmnt.style.borderBottom = "2px solid #777";
+              // Toggle a class rather than writing the underline inline, as this
+              // used to do with style.borderBottom = "2px solid #777". An inline
+              // style outranks the stylesheet, so the selected-state styling
+              // (underline colour, un-dimming the icon, bolding the label) would
+              // otherwise all have needed !important to take effect.
+              elmnt.classList.add("is-selected");
             }
             
             // Get the element with id="defaultOpen" and click on it
