@@ -33,6 +33,27 @@
         <link rel="shortcut icon" href="/favicon.ico">
         <script src="/js/jquery.js"></script>
     <style>
+        /* Click outline on links.
+
+           bootstrap sets a:focus{outline:5px auto -webkit-focus-ring-color},
+           which Chrome paints near-black: after clicking a link a dark box is
+           left sitting around it. This page <style> comes after the bootstrap
+           <link>, and the selector has the same specificity, so it wins on order.
+
+           Dropping the outline on :focus alone would also remove it for keyboard
+           users, so it is re-added on :focus-visible - which only matches when the
+           browser decides focus should be shown, i.e. keyboard and not pointer. In
+           a browser without :focus-visible the ring is simply absent, the same as
+           before this block existed.
+
+           Deliberately structural rather than class-based: the first attempt at
+           this on the scanners landing page keyed off .tile-tag and friends and so
+           only reached the handful of links that happened to carry the class. The
+           left nav and .sample-link rules further down are more specific and keep
+           their own treatment. */
+        a:focus { outline: none; }
+        a:focus-visible { outline: 2px solid #0074b2; outline-offset: 2px; }
+
         /* Left nav tree - fixed so it stays visible while scrolling */
         /* top must match where the content starts: body padding-top (110px) +
            the content container's margin-top (20px) = 130px, so the left nav and
@@ -261,37 +282,70 @@
         /* ------------------------------------------------------------------
            SAMPLE PROJECT LINKS
            ------------------------------------------------------------------ */
-        /* The .zip and GitHub links render as icons rather than text. The label
-           lives in title= (picked up by the Bootstrap tooltip that main.js
-           initialises for [data-toggle="tooltip"]) and in aria-label, because
-           the anchor has no text of its own for a screen reader to announce.
+        /* Sample downloads and the API door: one row per link, with the glyph in a
+           filled badge. Earlier these were plain text links with a slightly
+           enlarged icon, which read as a bulleted list rather than as something
+           to click, and on a phone gave a ~20px tap target.
+
+           The whole row is the anchor, so the label is near-black rather than
+           link-blue: the border, badge and hover state already carry the
+           affordance, and blue text on top of them reads as double emphasis.
+
+           display:flex keeps the label vertically centred against the 34px badge
+           whatever the label wraps to. Where flex is unavailable the anchor falls
+           back to a block and the inline-block badge still sits left of the
+           label, so the row degrades to roughly the previous appearance.
 
            The focus rules are the same fix used on the scanners landing page:
-           bootstrap's a:focus outline draws near-black in Chrome, which around a
-           bare icon reads as a dark box left behind after clicking. */
-        #page-content .sample-links { margin-bottom: 18px; }
-        /* One link per row, each label sitting beside its icon. */
+           bootstrap's a:focus outline draws near-black in Chrome, which reads as
+           a dark box left behind after clicking. */
+        #page-content .sample-links { margin: 0 0 18px; }
         #page-content .sample-link {
-            display: block;
-            color: #0074b2;
-            margin-bottom: 7px;
+            display: flex;
+            align-items: center;
+            max-width: 560px;
+            margin-bottom: 8px;
+            padding: 7px 14px 7px 7px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #fff;
+            color: #333;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background-color 200ms, border-color 200ms;
         }
-        /* Fixed-width icon gutter so both labels start at the same x - the
-           archive and GitHub glyphs are not the same width, so without this the
-           two rows would not line up. */
+        /* Fixed square so the archive and GitHub glyphs - which are not the same
+           width - still line their labels up at the same x. */
         #page-content .sample-link i {
             display: inline-block;
-            width: 1.7em;
-            font-size: 1.3em;
-            text-align: left;
-            vertical-align: -2px;
+            flex: 0 0 auto;
+            width: 34px;
+            height: 34px;
+            margin-right: 14px;
+            border-radius: 3px;
+            background: #0074b2;
+            color: #fff;
+            font-size: 1.15em;
+            line-height: 34px;
+            text-align: center;
         }
         #page-content .sample-link:hover,
-        #page-content .sample-link:focus { color: #005580; text-decoration: none; }
+        #page-content .sample-link:focus {
+            border-color: #0074b2;
+            background: #f5fafd;
+            color: #005580;
+            text-decoration: none;
+        }
+        #page-content .sample-link:hover i,
+        #page-content .sample-link:focus i { background: #005580; }
         #page-content .sample-link:focus { outline: none; }
         #page-content .sample-link:focus-visible {
             outline: 2px solid #0074b2;
-            outline-offset: 3px;
+            outline-offset: 2px;
+        }
+        @media (max-width: 767px) {
+            /* Full width on a phone: a ~48px row is a comfortable tap target. */
+            #page-content .sample-link { max-width: none; }
         }
         @media (max-width: 767px) {
             /* 85px header + the pinned Contents bar (~50px) + a small gap */
@@ -524,7 +578,6 @@
 
                                                     <p><strong>NOTE</strong> For a list of a scanner's supported attribute (parameter) numbers and definitions, refer to the Product Reference Guide for that model scanner, available from the Zebra Support website at <a href="http://www.zebra.com/support" target="_blank">http://www.zebra.com/support</a>. Attributes include configuration parameters, monitored data, and asset tracking information.</p>
                                                     
-                                                    <hr>
 
                                                     <h2 id="scannersdkarchitecture" class="anchor"><a class="heading-anchor" href="#scannersdkarchitecture"><span></span></a>Scanner SDK Architecture</h2>
                                                     
@@ -605,7 +658,6 @@
 
                                                     <p>Simulated HID Keyboard Output is a feature enabling scanners in USB SNAPI, USB IBM Table-top, USB OPOS, or SSI mode to emulate HID Keyboard keystrokes to a host system for scanned data labels. It sends the content of the scanned data label as HID Keyboard keystrokes thus emulating USB HID Keyboard scanner mode.</p>
 
-                                                    <hr>
 
                                                     <h2 id="multiplescannerdeviceidentification" class="anchor"><a class="heading-anchor" href="#multiplescannerdeviceidentification"><span></span></a>Multiple Scanner Device Identification Methodology For Applications</h2>
 
@@ -617,7 +669,6 @@
 
                                                     <p>The format of device asset tracking information can follow different naming conventions for device model, serial number or current firmware version. For example, the length of a serial number for DS6707 and DS9808 scanners can be different.</p>
 
-                                                    <hr>
 
                                                     <h2 id="multipleapplicationaccess" class="anchor"><a class="heading-anchor" href="#multipleapplicationaccess"><span></span></a>How Multiple Applications Access Multiple Scanners From Scanner SDK</h2>
 
@@ -703,7 +754,6 @@
 </pre>
 
 
-                                                    <hr>
 
                                                     <h2 id="supported-devices" class="anchor"><a class="heading-anchor" href="#supported-devices"><span></span></a>Supported Devices</h2>
                                                     
@@ -711,7 +761,6 @@
 
                                                     <a href="https://www.zebra.com/us/en/support-downloads/software/developer-tools/scanner-sdk-for-windows.html" target="_blank">https://www.zebra.com/us/en/support-downloads/software/developer-tools/scanner-sdk-for-windows.html</a>
 
-                                                    <hr>
 
                                                     <h2 id="version-history" class="anchor"><a class="heading-anchor" href="#version-history"><span></span></a>Version History</h2>
 
@@ -1685,7 +1734,6 @@
 
                                                     <p><strong>NOTE </strong>For a list of a scanner's supported attribute (parameter) numbers and definitions, refer to the Product Reference Guide for that model scanner, available from the Zebra Support website at <a href="http://www.zebra.com/support" target="_blank">http://www.zebra.com/support</a>. Attributes include configuration parameters, monitored data, and asset tracking information.</p>
 
-                                                    <hr>
 
                                                     <h2 id="sdkcomponents" class="anchor"><a class="heading-anchor" href="#sdkcomponents"><span></span></a>SDK Components</h2>
 
@@ -1731,7 +1779,6 @@
 
                                                     <p>The SDK installation package installs its components to the following default location: <strong>C:\Program Files\Zebra Technologies\Barcode Scanners\.</strong></p>
 
-                                                    <hr>
 
                                                     <h2 id="systemrequirments" class="anchor"><a class="heading-anchor" href="#systemrequirments"><span></span></a>System Requirements</h2>
 
@@ -1754,13 +1801,11 @@
 
                                                     <p>Recommended minimum hardware requirement: x86 PC for 32-bit SDK, or x64 PC for 64-bit SDK with 512Mb RAM.</p>
 
-                                                    <hr>
 
                                                     <h2 id="communicationmodes" class="anchor"><a class="heading-anchor" href="#communicationmodes"><span></span></a>Scanner Models Versus Communication Modes</h2>
 
                                                     <p>For an up-to-date table listing scanner models and their supported communication modes refer to the Scanner SDK for Windows website at: <a href="http://www.zebra.com/scannersdkforwindows" target="_blank">http://www.zebra.com/scannersdkforwindows</a>.</p>
 
-                                                    <hr>
 
                                                     <h2 id="installingthesdk" class="anchor"><a class="heading-anchor" href="#installingthesdk"><span></span></a>Installing the SDK</h2>
 
@@ -1848,7 +1893,6 @@
                                                         </li>
                                                     </ol>
 
-                                                    <hr>
 
                                                     <h2 id="installedcomponents" class="anchor"><a class="heading-anchor" href="#installedcomponents"><span></span></a>Installed Components</h2>
 
@@ -1897,7 +1941,6 @@
                                                         </tr>
                                                     </table><br />
 
-                                                    <hr>
 
                                                     <h2 id="configuration" class="anchor"><a class="heading-anchor" href="#configuration"><span></span></a>Configuration</h2>
 
@@ -2163,7 +2206,6 @@ ALT+[ BarcodeData #$
                                                     </ol>
 
 
-                                                    <hr>
 
                                                     <h2 id="silnetinstallationofsdk" class="anchor"><a class="heading-anchor" href="#silnetinstallationofsdk"><span></span></a>Silent Unattended Installation of the Scanner SDK</h2>
 
@@ -2271,7 +2313,6 @@ vcredist_x64.exe /install /quiet /norestart
 
                                                     <p><strong>NOTE</strong> For the attributes (parameters) applicable to a specific scanner, refer to the Product Reference Guide . Product Reference Guides may also contain an appendix listing the generic non-parameter attributes supported on most Zebra scanners.</p>
                                                     
-                                                    <hr>
 
                                                     <h2 id="testutilitiesprovidedinthesdk" class="anchor"><a class="heading-anchor" href="#testutilitiesprovidedinthesdk"><span></span></a>Test Utilities Provided in the SDK</h2>
 
@@ -2585,7 +2626,6 @@ vcredist_x64.exe /install /quiet /norestart
 
                                                     <p><strong>NOTE</strong> Sample source code for the ScanToConnect tab is included with installation of the SDK Sample Application. For further information on this functionality, contact the Zebra Technologies Global Customer Support Center at: <a href="https://www.zebra.com/support" target="_blank">www.zebra.com/support</a></p>
 
-                                                    <hr>
 
                                                     <h2 id="verifyscannersdkfuntionality" class="anchor"><a class="heading-anchor" href="#verifyscannersdkfuntionality"><span></span></a>How to Verify Scanner SDK Functionality</h2>
 
@@ -3988,7 +4028,6 @@ public static Image ProcessImageData(object ImageData)
                                                         </li>
                                                     </ol>
 
-                                                    <hr>
 
                                                     <h2 id="sample-app" class="anchor"><a class="heading-anchor" href="#sample-app"><span></span></a>Write Simple Application Using the Scanner SDK API</h2>
 
@@ -4451,7 +4490,6 @@ void OnBarcodeEvent(short eventType, ref string pscanData)
                                                         </li>
                                                     </ul>
 
-                                                    <hr>
 
                                                     <h2 id="scanner-id" class="anchor"><a class="heading-anchor" href="#scanner-id"><span></span></a>Scanner ID</h2>
 
@@ -4461,7 +4499,6 @@ void OnBarcodeEvent(short eventType, ref string pscanData)
 
                                                     <p>During a single CoreScanner driver instance, an RSM (Remote Scanner Management) supported scanner that is unplugged, and reconnected retaina its unique scanner ID. However, a non-RSM device is assigned a different scanner ID each time it is reconnected.</p>
 
-                                                    <hr>
 
                                                     <h2 id="api-commands" class="anchor"><a class="heading-anchor" href="#api-commands"><span></span></a>API Commands</h2>
 
@@ -4771,7 +4808,6 @@ HRESULT STDMETHODALLTYPE Close(
 
                                                     <p>Any other value - See Error and Status Codes on <a href="#error-codes">Appendix</a>.</p>
 
-                                                    <hr>
 
                                                     <h2 id="api-events" class="anchor"><a class="heading-anchor" href="#api-events"><span></span></a>API Events</h2>
 
@@ -5940,7 +5976,6 @@ void OnBinaryDataEvent(
 
                                                     <p>Both Intelligent Document Capture (IDC) and Signature Capture data are presented with the BinaryDataEvent. This event is fired by the CoreScanner service when this binary capture data is available. A client application has to register for image events using the RegisterForEvents opcode in order to receive BinaryDataEvents from the CoreScanner driver. The image data payload of a BinaryDataEvent is passed through the VARIANT type argument sfBinaryData. The event type captured, IDC or Signature, is specified with the dataFormat parameter of the event handler function. Document Capture data is formatted according to the ISO15434 Specification (see <a href="#intelligent-doc-cap">Description of Intelligent Document Capture Format</a> for details). Signature Capture data is formatted with the Zebra standard image format (refer to Signature Capture in the Appendix of Product Reference Guide for the image scanner in use).</p>
 
-                                                    <hr>
 
                                                     <h2 id="examples" class="anchor"><a class="heading-anchor" href="#examples"><span></span></a>Using the Methods (Examples)</h2>
 
@@ -8580,7 +8615,6 @@ void OnBinaryDataEvent(
                                                         </tr>
                                                     </table><br />
 
-                                                    <hr>
 
                                                     <h2 id="opcodes" class="anchor"><a class="heading-anchor" href="#opcodes"><span></span></a>Methods Invoked Through ExecCommand  Or ExecCommandAsync</h2>
 
@@ -8806,7 +8840,6 @@ void OnBinaryDataEvent(
 
                                                     <p><strong>NOTE: </strong>Only the weights less than 30g can be set to zero. Any weight higher than 30g will not set to Zero.</p>
 
-                                                    <hr>
 
                                                     <h2 id="action-attributes" class="anchor"><a class="heading-anchor" href="#action-attributes"><span></span></a>Action Attributes and Values</h2>
 
@@ -8958,7 +8991,6 @@ void OnBinaryDataEvent(
                                                         </tr>
                                                     </table><br />
 
-                                                    <hr>
 
                                                     <h2 id="intelligent-doc-cap" class="anchor"><a class="heading-anchor" href="#intelligent-doc-cap"><span></span></a>Description of Intelligent Document Capture Format</h2>
 
