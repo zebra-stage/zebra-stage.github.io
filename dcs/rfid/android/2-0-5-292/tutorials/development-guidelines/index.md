@@ -1,29 +1,5 @@
 # Development Guidelines for TC501, TC701, TC201 & ET4 Tablets
 
-- [Overview](#overview)
-- [Architectural Enhancements](#architectural-enhancements)
-  - [High-Performance Sessions](#high-performance-sessions)
-  - [Integrated OS Updates](#integrated-os-updates)
-  - [Instant Wake-Up](#instant-wake-up)
-  - [Focused Customization (CSP)](#focused-customization-csp)
-  - [Unified Data Connectivity](#unified-data-connectivity)
-  - [Hardware Prefiltering](#hardware-prefiltering)
-  - [Optimized Writes & Instant Reads](#optimized-writes--instant-reads)
-- [Flexible Connection Modes](#flexible-connection-modes)
-  - [RFID_ONLY Mode (Max Performance)](#rfid_only-mode-max-performance)
-  - [RFID+WAN Mode (Real-Time Sync)](#rfidwan-mode-real-time-sync)
-  - [API Configuration Control](#api-configuration-control)
-- [Performance Management](#performance-management)
-  - [WAN State vs. RFID Behavior](#wan-state-vs-rfid-behavior)
-- [WWAN + RFID Use Cases](#wwan--rfid-use-cases)
-  - [SIM & eSIM Combinations](#sim--esim-combinations)
-- [Built-in Safeguards](#built-in-safeguards)
-  - [USB & Charge Protection](#usb--charge-protection)
-  - [Low Battery Protection](#low-battery-protection)
-  - [Airplane Mode](#airplane-mode)
-  - [Idle Power-Save](#idle-power-save)
-- [Frequently Asked Questions](#frequently-asked-questions)
-
 ## Overview
 
 This guide provides the technical framework to implement high-performance RFID on Zebra TC501, TC701, TC201 & ET4 Tablets. It details foundational architectural enhancements, key connection modes, built-in safeguards, and recommended settings to optimize performance on these devices.
@@ -79,7 +55,7 @@ There are two primary connection modes available to manage device resources.
 
 By default, the device starts in RFID_ONLY mode to ensure the best possible scanning performance right away. Developers can easily switch the device to `RFID+WAN` mode using this simple code command:
 
-```
+```java
 void connect(ENUM_CONNECTION_MODE mode)
 ```
 
