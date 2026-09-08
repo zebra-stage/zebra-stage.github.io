@@ -3616,7 +3616,6 @@ When unlocking the device (e.g. pressing the power button or swiping to unlock),
         <th>Outcome</th>
     </tr>
   </thead>
-
   <tbody><tr>
     <td style="vertical-align: top; padding: 10px 20px 20px 10px;">
       1. Open the Identity Guardian app. Tap <strong>Unlock.</strong>
@@ -4304,13 +4303,207 @@ To edit the login credentials for an app through Guardian Safe:</p>
 
 <hr>
 
+<h2 id="quickaccess" class="anchor"><a class="heading-anchor" href="#quickaccess"><span></span></a>Quick Access</h2>
+
+<p><strong>Quick Access</strong> enables devices users to launch approved utility applications directly from the lock screen without authentication. By eliminating sign-in requirements for basic tools such as calculators or pairing utilities, operational efficiency increases while device security remains intact. Quick Access operates within an unauthenticated workspace launcher screen while the device remains locked.  </p>
+
+<p>This feature is supported in the following scenarios:</p>
+
+<ul>
+<li><strong><a href="../setup/#shareddevicessd">Shared Devices</a>:</strong> Available when the device is in a signed-out state.</li>
+
+<li><strong><a href="../setup/#personallyassigneddevicespd">Personally Assigned Devices</a>:</strong> Available whether a user is signed in or signed out.</li>
+</ul>
+
+<p><strong>System Behaviors:</strong></p>
+
+<ul>
+<li><strong>Real-Time Revocation:</strong> When an administrator revokes application access via EMM, the application icon is immediately removed from the <strong>Quick Access</strong> launcher on the device.</li>
+
+<li><strong>Uninstalled Application Handling:</strong> Configured applications not yet present on the device display a greyed-out icon. Tapping the icon displays a toast notification: "App is not installed."</li>
+
+<li><strong>Authentication Intercept:</strong> If an operator taps a valid NFC card or scans an Identity Guardian barcode while in the <strong>Quick Access</strong> launcher, a prompt appears asking if the user would like to log in. (Other barcode formats are ignored.)</li>
+
+<li><strong>Dynamic Install/Uninstall Synchronization:</strong> Applications installed or removed during an active launcher session update their launch state upon returning to the lock screen and relaunching <strong>Quick Access.</strong></li>
+</ul>
+
+<h3 id="adminsetup-23" class="anchor"><a class="heading-anchor" href="#adminsetup-23"><span></span></a>Admin Setup</h3>
+
+<p>Administrators configure Quick Access through EMM Managed Configurations to designated applications accessible from the lock screen.</p>
+
+<p><strong>EMM Managed Configuration Steps:</strong></p>
+
+<ol>
+<li><p>Under <strong><a href="../mc/#lockscreenconfiguration">Lock Screen Configuration</a>,</strong> click <strong>Add Application Details</strong> to configure a target application.</p></li>
+
+<li><p>For each app permitted on the lock screen, configure the following parameters:</p>
+
+<ul>
+<li><strong>Package Name:</strong> [Enter the package name of the app, e.g., <code>com.google.android.calculator</code>]</li>
+
+<li><strong>Activity Name:</strong> [Specify the activity name, use the wildcard <code>*</code> to allow any activity.]</li>
+
+<li><strong>Add to Quick Access:</strong> true</li></ul>
+
+<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <code>IMPORTANT:</code> Do <em>not</em> add the DataWedge application to Quick Access when Identity Guardian operates in Shared Device Mode. Doing so causes the device to display an endless "Initialization... please wait..." message until a manual hardware reboot occurs.</p></li>
+
+<li><p>Save and deploy the configuration to the devices.</p></li>
+</ol>
+
+<h4 id="keyconfigurationoperationalconsiderations" class="anchor"><a class="heading-anchor" href="#keyconfigurationoperationalconsiderations"><span></span></a>Key Configuration &amp; Operational Considerations</h4>
+
+<ol>
+<li><strong>Device-Specific Package &amp; Activity Mapping:</strong> Application package names or primary activity identifiers can vary for certain applications (e.g., Bluetooth Pairing Utility) depending on the device hardware model. 
+
+
+<ul>
+<li><strong>Resolution:</strong> Administrators must map the precise package and activity name corresponding to each specific device model. For example, for the Bluetooth Pairing Utility pre-installed on Zebra mobile computers:
+<table class="facelift" style="width:85%" border="1" padding="5px">
+<tbody><tr bgcolor="#dce8ef">
+    <th>Application</th>
+    <th>Device Model</th>
+    <th>Package Name</th>
+    <th>Activity Name</th>
+</tr>
+<tr>
+    <td><b>Bluetooth Pairing Utility</b></td>
+    <td>ET40</td>
+    <td><code>com.symbol.scanning.scanningframework</code></td>
+    <td><code>com.symbol.btapp.BTActivity</code></td>
+</tr>
+<tr>
+    <td><b>Bluetooth Pairing Utility</b></td>
+    <td>TC22</td>
+    <td><code>com.symbol.datawedge</code></td>
+    <td><code>com.symbol.btapp.BTActivity</code></td>
+</tr>
+</tbody></table></li></ul>
+</li>
+
+<li><strong>Secondary Activity Dependencies and Runtime Permissions:</strong> Certain applications fail to launch or function correctly if child activities (such as runtime permission dialogs or internal home activities) are not explicitly allowed. These auxiliary activities must be configured to prevent Identity Guardian from intercepting the workflow.
+
+
+<ul>
+<li><strong>Sample Secondary Home Screen Requirement:</strong>
+
+
+<ul>
+<li><strong>Input Target:</strong> <code>com.zebra.licensemgrservice</code> / <code>.ui.launch.LaunchActivity</code></li>
+
+<li><strong>Required Allowed Activity:</strong> <code>com.zebra.licensemgrservice</code> / <code>.ui.home.HomeActivity</code></li></ul>
+</li>
+
+<li><strong>Sample Runtime Permission Dialogs:</strong>
+
+
+<ul>
+<li><strong>Input Target:</strong> <code>com.google.android.youtube</code> / <code>*</code></li>
+
+<li><strong>Required Allowed Activity:</strong> <code>com.google.android.permissioncontroller</code> / <code>com.android.permissioncontroller.permission.ui.GrantPermissionsActivity</code>
+<em>(Enables operators to grant runtime permissions without Identity Guardian blocking the permission prompt).</em></li></ul>
+</li></ul>
+</li>
+
+<li><strong>Back-Press Navigation on Non-Standard Applications:</strong> Certain applications (such as Gmail) do not adhere to standard Android back-press navigation events.
+
+
+<ul>
+<li><strong>Operational Flow:</strong> Pressing the <strong>Back</strong> button within these applications directs the operator directly to the Identity Guardian lock screen rather than the Quick Access launcher interface.</li></ul>
+</li>
+
+<li><strong>StageNow Activity Configuration:</strong> The <strong>Quick Access</strong> launcher requires explicit activity endpoints and cannot resolve wildcard (<code>*</code>) entries for primary menu display. Configuring StageNow requires a two-part setup: registering the specific entry point for launcher display, and adding a secondary wildcard rule for background execution.
+
+
+<ul>
+<li><strong>Step 1: Register the Primary StageNow Interface -</strong> Define the explicit entry point to display StageNow in the Quick Access launcher:
+<table class="facelift" style="width:85%" border="1" padding="5px">
+    <tbody><tr bgcolor="#dce8ef">
+        <th>Parameter</th>
+        <th>Value</th>
+    </tr>
+    <tr>
+        <td><b>Package Name</b></td>
+        <td><code>com.zebra.devicemanager</code></td>
+    </tr>
+    <tr>
+        <td><b>Activity Name</b></td>
+        <td><code>com.zebra.devicemanager.stagenow.main.HomeScreen</code></td>
+    </tr>
+    <tr>
+        <td><b>Add to Quick Access</b></td>
+        <td><code>true</code></td>
+    </tr>
+</tbody></table></li>
+
+<li><strong>Step 2: Permit Secondary StageNow Activities -</strong> Create a secondary entry to allow auxiliary StageNow sub-activities to execute without adding unnecessary icons to the launcher interface:
+<table class="facelift" style="width:85%" border="1" padding="5px">
+    <tbody><tr bgcolor="#dce8ef">
+        <th>Parameter</th>
+        <th>Value</th>
+    </tr>
+    <tr>
+        <td><b>Package Name</b></td>
+        <td><code>com.zebra.devicemanager</code></td>
+    </tr>
+    <tr>
+        <td><b>Activity Name</b></td>
+        <td><code>*</code></td>
+    </tr>
+    <tr>
+        <td><b>Add to Quick Access</b></td>
+        <td><code>false</code></td>
+    </tr>
+</tbody></table></li></ul>
+</li>
+
+<li><strong>Overlay Suppression on Privileged System Interfaces:</strong> The floating <strong>Exit View</strong> button overlay may disappear when accessing privileged system screens or secure system dialogs (e.g., the Files / Documents UI, <code>com.android.documentsui</code>) due to built-in Android OS security controls.
+
+
+<ul>
+<li><strong>Recovery:</strong> Pressing the device <strong>Back</strong> button exits the privileged interface and immediately restores the <strong>Exit View</strong> overlay button.</li></ul>
+</li>
+
+<li><strong>Application State and Cache on Exit:</strong> In certain applications (e.g., Calculator), transient session data is cleared when exiting via the <strong>Back</strong> button, but preserved when exiting via the <strong>Exit View</strong> overlay button.
+
+
+<ul>
+<li><strong>Cause:</strong> The <strong>Back</strong> button triggers standard app closure and memory cleanup, whereas <strong>Exit View</strong> sends the application to the background without closing it.</li></ul>
+</li>
+</ol>
+
+<h3 id="usage-22" class="anchor"><a class="heading-anchor" href="#usage-22"><span></span></a>Usage</h3>
+
+<p><strong>Quick Access</strong> provides direct access to authorized utility applications without authentication into Identity Guardian.</p>
+
+<ol>
+<li>On the Identity Guardian lock screen, open the <strong>Quick Access</strong> icon located in the lower-left corner. 
+<img alt="image" style="height:450px" src="../../images/3-3/quick-access-icon.png"></li>
+
+<li>The launcher displays approved applications along with an <strong>Exit View</strong> overlay button. This button can be dragged to any location on the screen to prevent obstruction. 
+<img alt="image" style="height:450px" src="../../images/3-3/quick-access.png"></li>
+
+<li>Tap the icon of the desired application to launch. The <strong>Exit View</strong> button remains accessible over the active app.
+<img alt="image" style="height:450px" src="../../images/3-3/quick-access-app.png"></li>
+
+<li>Tap <strong>Exit View</strong> at any time to terminate the session and return to the primary lock screen.</li>
+
+<li>To authenticate directly from the launcher, scan a user barcode or tap an NFC card. A confirmation message appears to proceed with sign-in.
+<img alt="image" style="height:450px" src="../../images/3-3/quick-access-login.png"></li>
+</ol>
+
+<p><strong>NOTE:</strong> Disabled applications cannot be opened from the launcher; selecting a disabled application displays a message stating that the app is disabled. Similarly, attempting to open an uninstalled application displays an alert that the app is not installed.</p>
+
+<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <code>IMPORTANT:</code> Exiting the <strong>Quick Access</strong> launcher automatically clears application cache data for all apps on Shared Devices.</p>
+
+<hr>
+
 <h2 id="externaldisplay" class="anchor"><a class="heading-anchor" href="#externaldisplay"><span></span></a>External Display</h2>
 
 <p>Identity Guardian can detect when a device is connected to a <strong>Workstation Connect (WSC) dock with an external display.</strong> This functionality enables the system to block automatic check-ins while the device remains fully operational with the external display, providing a seamless and uninterrupted user experience.</p>
 
 <p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>Note:</strong> This feature is designed to work in WSC Mirror Mode only. Desktop Mode is not supported.</p>
 
-<h3 id="adminsetup-23" class="anchor"><a class="heading-anchor" href="#adminsetup-23"><span></span></a>Admin Setup</h3>
+<h3 id="adminsetup-24" class="anchor"><a class="heading-anchor" href="#adminsetup-24"><span></span></a>Admin Setup</h3>
 
 <p>Configure the following <a href="../mc/#lockscreenconfiguration">Managed Configurations</a>:</p>
 
@@ -4325,7 +4518,7 @@ To edit the login credentials for an app through Guardian Safe:</p>
 </li>
 </ul>
 
-<h3 id="usage-22" class="anchor"><a class="heading-anchor" href="#usage-22"><span></span></a>Usage</h3>
+<h3 id="usage-23" class="anchor"><a class="heading-anchor" href="#usage-23"><span></span></a>Usage</h3>
 
 <p>The following steps outline the system's behavior based on the external display configuration, dock type, and connection to an external display.</p>
 
@@ -4412,7 +4605,7 @@ To edit the login credentials for an app through Guardian Safe:</p>
 <li>Cloud Passcode login</li>
 </ul>
 
-<h3 id="adminsetup-24" class="anchor"><a class="heading-anchor" href="#adminsetup-24"><span></span></a>Admin Setup</h3>
+<h3 id="adminsetup-25" class="anchor"><a class="heading-anchor" href="#adminsetup-25"><span></span></a>Admin Setup</h3>
 
 <p>To allow users to access Personalized Device Settings, an administrator must first enable the feature at the account level within the <a href="/zebradna">Zebra DNA Cloud</a> console.</p>
 
@@ -4448,7 +4641,7 @@ To edit the login credentials for an app through Guardian Safe:</p>
 <li>Accessibility Settings</li>
 </ul>
 
-<h3 id="usage-23" class="anchor"><a class="heading-anchor" href="#usage-23"><span></span></a>Usage</h3>
+<h3 id="usage-24" class="anchor"><a class="heading-anchor" href="#usage-24"><span></span></a>Usage</h3>
 
 <p>To access the <strong>Personalized Device Settings</strong> and customize the device interface during an active session, follow these steps:</p>
 
