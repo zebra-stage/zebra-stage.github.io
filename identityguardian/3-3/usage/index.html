@@ -324,11 +324,13 @@ Other features:
 
 <li><strong><a href="#selfenrollment">Self-Enrollment</a> -</strong> Both enrollment and authentication are performed directly on the shared device, facilitated by the Authentication profile deployed by the administrator.</li>
 
-<li><strong><a href="#admincontrolledenrollment">Admin-Controlled Enrollment</a> -</strong> Zebra DNA Cloud users without SSO credentials can self-enroll directly on the device using a One-Time PIN (OTP) delivered via email.</li>
+<li><strong><a href="#admincontrolledenrollment">Admin-Controlled Enrollment</a> -</strong> Zebra DNA Cloud users without SSO credentials can self-enroll directly on the device using a One-Time PIN delivered via email.</li>
 </ul>
 
 <p>Once enrollment is complete, the user are provided the option to print or share the barcode if the <a href="../usage/#printsharebarcodezcreator">zCreator</a> app is installed. This app is mandatory for <em>Self-Enrollment</em> but optional for <em>Standard Enrollment,</em> since Standard Enrollment inherently includes the ability to save barcodes.
 <br></p>
+
+<p>For enhanced security, configure <a href="#automaticbarcodenfcexpiration">Automatic Barcode/NFC Expiration</a>. Once an enrollment expires for barcode or NFC card authentication modes, the system automatically restricts device access and prompts the user to re-enroll, ensuring credentials remain valid and up to date.</p>
 
 <hr>
 
@@ -604,7 +606,7 @@ Other features:
     <tr>
       <td>
         <p><strong>Step 3: Authenticate PIN</strong></p>
-        <p>Retrieve the OTP from email, enter the value, and tap <strong>Verify One Time PIN.</strong></p>
+        <p>Retrieve the One-Time PIN from email, enter the value, and tap <strong>Verify One Time PIN.</strong></p>
       </td>
       <td style="text-align: center; vertical-align: middle;">
           <img src="../../images/3-2/3.2-enroll-otp-2.png" style="height:300px;">
@@ -857,11 +859,139 @@ Other features:
     <tr>
         <td>End-User</td>
         <td><strong>Request Approved:</strong> If the request is approved, the user receives an approval email containing a re-enrollment One-Time PIN. Open <strong>Enroll User</strong> on the device to re-enroll. Follow the <a href="#admincontrolledenrollment">User Enrollment</a> steps above.<br><br><strong>Request Denied:</strong> If the request is denied, the user receives an email indicating the denied request. No further action can be taken on the device.</td>
-        <td style="text-align: center; vertical-align: middle;"><img src="../../images/3-2/../../images/3-2/lock-screen-enroll-user.jpg" style="height:250px;">
+        <td style="text-align: center; vertical-align: middle;"><img src="../../images/3-2/lock-screen-enroll-user.jpg" style="height:250px;">
         </td>
     </tr>
     </tbody>
 </table>
+
+<hr>
+
+<h4 id="automaticbarcodenfcexpiration" class="anchor"><a class="heading-anchor" href="#automaticbarcodenfcexpiration"><span></span></a>Automatic Barcode/NFC Expiration</h4>
+
+<p><strong>Automatic Barcode/NFC Expiration</strong> allows administrators to enforce enrollment expiration periods to maintain credential security for <a href="../setup/#shareddevicessd">Shared Devices</a>. Once an enrollment credential (barcode or NFC card) reaches its expiration date, the device immediately blocks access and launches a secure re-enrollment workflow, ensuring only authorized personnel retain active credentials.</p>
+
+<p><br></p>
+
+<h5 id="adminsetup-1" class="anchor"><a class="heading-anchor" href="#adminsetup-1"><span></span></a>Admin Setup</h5>
+
+<ul>
+<li><strong>Configure EMM Managed Configurations:</strong> 
+
+
+<ul>
+<li>Under <strong><a href="../mc/#shareddeviceauthentication">Shared Device Authentication</a>,</strong> enable <strong>Automatic Barcode Expiration</strong> by setting it to <code>true</code>. When enabled, the system blocks expired barcodes and triggers the re-enrollment workflow. When disabled, expiration timestamps are ignored, permitting device access with an expired barcode.</li>
+
+<li>Under <strong><a href="../mc/#enrollmentconfiguration">Enrollment Configuration</a></strong> locate <strong>Secure Re-Enrollment</strong> and set it to <code>true</code> to allow users to initiate self-service re-enrollment, or <code>false</code> to mandate administrator intervention.</li></ul>
+</li>
+
+<li><strong>Registered Email Address:</strong> The user account must have a valid email address configured in the ZDNA console to complete re-enrollment via <a href="#admincontrolledenrollment">One-Time PIN</a>.</li>
+
+<li><strong>Barcode Generation Utility:</strong> The <strong><a href="../usage/#printsharebarcodezcreator">zCreator</a></strong> application must be installed on the device to generate and print new enrollment barcodes following successful re-enrollment.</li>
+</ul>
+
+<p><strong>Limitations:</strong></p>
+
+<ul>
+<li><strong>Authentication Requirements for Re-enrollment:</strong> Secure re-enrollment requires verification through Single Sign-On (SSO) or a One-Time PIN sent to an accessible, registered email address. Users without SSO or a registered email cannot self-service and must contact an administrator.</li>
+
+<li><strong>Unsupported Authentication Methods:</strong> Secure self-service re-enrollment is <strong>not supported</strong> for <strong>Cloud Passcode</strong> or <strong>Pure SSO</strong> authentication modes. If an enrollment expires under these modes, device access remains blocked until an administrator intervenes.</li>
+</ul>
+
+<p><br></p>
+
+<h5 id="usage-2" class="anchor"><a class="heading-anchor" href="#usage-2"><span></span></a>Usage</h5>
+
+<p>The expiration workflow functions according to the primary authentication method configured on the device.</p>
+
+<p><strong>Scenario A: Barcode or NFC Authentication:</strong></p>
+
+<ol>
+<li><strong>Login Attempt:</strong> The user scans their expired barcode or taps their expired NFC credential.</li>
+
+<li><strong>Expiration Notification:</strong> An alert displays indicating that the enrollment has expired.
+
+
+<ul>
+<li><strong>If Secure Re-enrollment is Enabled:</strong> The user selects <strong>Re-enroll</strong>. 
+<img alt="image" style="height:350px" src="../../images/3-3/enrollment-expired.png"></li>
+
+<li><strong>If Secure Re-enrollment is Disabled:</strong> The user can only select <strong>Cancel</strong> and must contact an administrator.
+<img alt="image" style="height:350px" src="../../images/3-3/reenroll-disabled.png"></li></ul>
+</li>
+
+<li><strong>Identity Verification:</strong> After selecting Re-enroll, the user must complete identity verification before creating new credentials:
+
+
+<ul>
+<li><strong>SSO Configured:</strong> The user logs in with SSO credentials. Upon successful authentication, the system opens the self-enrollment screen.</li>
+
+<li><strong>SSO Not Configured (One-Time PIN Flow):</strong>
+
+
+<ol>
+<li>A 6-digit One-Time PIN is sent to the registered email address. </li>
+
+<li>The user submits the One-Time PIN on the device. Following successful verification, the system proceeds to the self-enrollment screen.</li></ol>
+</li></ul>
+</li>
+
+<li><strong>Self-Enrollment:</strong> The user follows on-screen prompts to establish a new passcode, facial biometric scan, or both.</li>
+
+<li><strong>Credential Generation:</strong> The user prints or writes the new credential to an NFC card using the <strong>zCreator</strong> application. Selecting <strong>Print</strong> or <strong>Write NFC</strong> transmits the updated enrollment record to the ZDNA console, visible under <strong>Device Users</strong>.</li>
+</ol>
+
+<p><strong>Scenario B: Cloud Passcode Authentication:</strong></p>
+
+<ol>
+<li><strong>Login Attempt:</strong> The user enters the <strong>Cloud Passcode</strong> on the device.</li>
+
+<li><strong>Verification:</strong> The system validates the passcode against the ZDNA portal.</li>
+
+<li><strong>Expiration Notification:</strong> If the passcode is valid but the enrollment has lapsed, a dialog notifies the user that the enrollment has expired. Because self-service re-enrollment is unsupported for <strong>Cloud Passcode</strong> authentication, the prompt only displays a <strong>Cancel</strong> button, requiring administrator assistance.</li>
+</ol>
+
+<p><strong>Scenario C: SSO-Only Authentication:</strong></p>
+
+<ol>
+<li><strong>Login Attempt:</strong> The user authenticates strictly with SSO credentials.</li>
+
+<li><strong>Verification:</strong> The system authenticates against the identity provider and verifies user status against the ZDNA portal.</li>
+
+<li><strong>Expiration Notification:</strong> If credentials pass but enrollment has expired, a dialog indicates that the enrollment has expired. Because self-service re-enrollment is unsupported for SSO-only mode, the interface presents only a <strong>Cancel</strong> option, requiring administrator intervention.</li>
+</ol>
+
+<p><strong>Error Handling and Edge Cases:</strong></p>
+
+<p>The table below outlines system behavior, on-screen notifications, and resolution steps for potential failure scenarios during re-enrollment:</p>
+
+<table class="facelift" style="width:100%" border="1" padding="5px">
+    <tbody><tr bgcolor="#dce8ef">
+        <th>Scenario</th>
+        <th>System Message</th>
+        <th>Required Action</th>
+    </tr>
+    <tr>
+        <td><b>Email Not Registered</b></td>
+        <td>"Email is not registered. Please contact administrator to complete re-enrollment."</td>
+        <td>The user must contact an administrator to associate a valid email address with the account in the ZDNA console.</td>
+    </tr>
+    <tr>
+        <td><b>Invalid One-Time PIN Entry</b></td>
+        <td>Displays remaining attempts (up to 3 total attempts).</td>
+        <td>Enter the correct 6-digit One-Time PIN received via email.</td>
+    </tr>
+    <tr>
+        <td><b>Exceeded One-Time PIN Attempts</b></td>
+        <td>"Maximum One-Time PIN verification attempts reached. Please request a new One-Time PIN."</td>
+        <td>Re-scan the expired barcode to generate a new One-Time PIN and restart verification.</td>
+    </tr>
+    <tr>
+        <td><b>User Profile Not Found</b></td>
+        <td>"Device user not found. Please contact admin for re-enrollment."</td>
+        <td>Contact an administrator to confirm the user profile exists and is active in the ZDNA console.</td>
+    </tr>
+</tbody></table>
 
 <hr>
 
@@ -1301,7 +1431,7 @@ Even if certain settings, like access to printer configurations, are disabled by
 <li>The Microsoft Authenticator (Broker App) must be configured for <em>shared device</em> mode.</li>
 </ul>
 
-<h4 id="adminsetup-1" class="anchor"><a class="heading-anchor" href="#adminsetup-1"><span></span></a>Admin Setup</h4>
+<h4 id="adminsetup-2" class="anchor"><a class="heading-anchor" href="#adminsetup-2"><span></span></a>Admin Setup</h4>
 
 <p>Configure the following <a href="../mc">Managed Configurations</a>:</p>
 
@@ -1368,7 +1498,7 @@ Even if certain settings, like access to printer configurations, are disabled by
 <li>Save and deploy the changes.</li>
 </ol>
 
-<h4 id="usage-2" class="anchor"><a class="heading-anchor" href="#usage-2"><span></span></a>Usage</h4>
+<h4 id="usage-3" class="anchor"><a class="heading-anchor" href="#usage-3"><span></span></a>Usage</h4>
 
 <p>The following steps outline the self-enrollment and barcode sharing experience for end-users on the device.</p>
 
@@ -1439,7 +1569,7 @@ Even if certain settings, like access to printer configurations, are disabled by
 
 <hr>
 
-<h3 id="adminsetup-2" class="anchor"><a class="heading-anchor" href="#adminsetup-2"><span></span></a>Admin Setup</h3>
+<h3 id="adminsetup-3" class="anchor"><a class="heading-anchor" href="#adminsetup-3"><span></span></a>Admin Setup</h3>
 
 <p>Configure the following <a href="../mc">Managed Configurations</a>:</p>
 
@@ -1561,7 +1691,7 @@ Even if certain settings, like access to printer configurations, are disabled by
 
 <p><br></p>
 
-<h4 id="adminsetup-3" class="anchor"><a class="heading-anchor" href="#adminsetup-3"><span></span></a>Admin Setup</h4>
+<h4 id="adminsetup-4" class="anchor"><a class="heading-anchor" href="#adminsetup-4"><span></span></a>Admin Setup</h4>
 
 <p>Configure the following parameter within <a href="../mc/#facialauthenticationconfiguration">Managed Configurations</a>:</p>
 
@@ -1578,7 +1708,7 @@ Even if certain settings, like access to printer configurations, are disabled by
 
 <p><br></p>
 
-<h4 id="usage-3" class="anchor"><a class="heading-anchor" href="#usage-3"><span></span></a>Usage</h4>
+<h4 id="usage-4" class="anchor"><a class="heading-anchor" href="#usage-4"><span></span></a>Usage</h4>
 
 <p>While a user authenticates using their face, a face icon appears instead of the live camera view. The icon's color indicates the quality of the scan:</p>
 
@@ -1688,7 +1818,7 @@ Even if certain settings, like access to printer configurations, are disabled by
 
 <p><br></p>
 
-<h4 id="adminsetup-4" class="anchor"><a class="heading-anchor" href="#adminsetup-4"><span></span></a>Admin Setup</h4>
+<h4 id="adminsetup-5" class="anchor"><a class="heading-anchor" href="#adminsetup-5"><span></span></a>Admin Setup</h4>
 
 <p>Configure the <a href="../mc/">Managed Configurations</a> based on deployment type: <a href="../setup/#shareddevicesd">Shared Device</a> or <a href="../setup/#personallyassigneddevice">Personal Device</a>.</p>
 
@@ -1740,7 +1870,7 @@ Even if certain settings, like access to printer configurations, are disabled by
 
 <p><br></p>
 
-<h4 id="usage-4" class="anchor"><a class="heading-anchor" href="#usage-4"><span></span></a>Usage</h4>
+<h4 id="usage-5" class="anchor"><a class="heading-anchor" href="#usage-5"><span></span></a>Usage</h4>
 
 <p>The user experience differs for the very first unlock after configuration deployment and all subsequent unlocks.</p>
 
@@ -1898,7 +2028,7 @@ The following examples illustrate how the failed attempt counter works in practi
 
 <p>When an organization rotates its security certificate, a new private key is generated. An administrator can add this new key to the <strong>Alternate Authentication Key</strong> field while keeping the original in the <strong>Authentication Key</strong> field. During this period, users can log in with barcodes generated from either key, ensuring uninterrupted access. To complete the transition, the administrator simply removes the old, phased-out key.</p>
 
-<h4 id="adminsetup-5" class="anchor"><a class="heading-anchor" href="#adminsetup-5"><span></span></a>Admin Setup</h4>
+<h4 id="adminsetup-6" class="anchor"><a class="heading-anchor" href="#adminsetup-6"><span></span></a>Admin Setup</h4>
 
 <p>Configure <a href="../mc/#shareddeviceauthentication">Managed Configurations</a>:</p>
 
@@ -1929,7 +2059,7 @@ The following examples illustrate how the failed attempt counter works in practi
 
 <p><br></p>
 
-<h4 id="usage-5" class="anchor"><a class="heading-anchor" href="#usage-5"><span></span></a>Usage</h4>
+<h4 id="usage-6" class="anchor"><a class="heading-anchor" href="#usage-6"><span></span></a>Usage</h4>
 
 <p>On the device lock screen, scan the enrollment barcode. The device grants access if the barcode corresponds to <em>any</em> active authentication key currently configured on the device.
 <img alt="image" style="height:350px" src="../../images/3-2/lock-screen.png"></p>
@@ -2061,7 +2191,7 @@ The following examples illustrate how the failed attempt counter works in practi
 
 <p><br></p>
 
-<h5 id="adminsetup-6" class="anchor"><a class="heading-anchor" href="#adminsetup-6"><span></span></a>Admin Setup</h5>
+<h5 id="adminsetup-7" class="anchor"><a class="heading-anchor" href="#adminsetup-7"><span></span></a>Admin Setup</h5>
 
 <p>Configure <a href="../mc">Managed Configurations</a>:</p>
 
@@ -2098,7 +2228,7 @@ The following examples illustrate how the failed attempt counter works in practi
 
 <p><br></p>
 
-<h5 id="usage-6" class="anchor"><a class="heading-anchor" href="#usage-6"><span></span></a>Usage</h5>
+<h5 id="usage-7" class="anchor"><a class="heading-anchor" href="#usage-7"><span></span></a>Usage</h5>
 
 <ol>
 <li>On the lock screen, tap the <strong>Scan to Unlock</strong> button.
@@ -2134,7 +2264,7 @@ The following examples illustrate how the failed attempt counter works in practi
 
 <p><br></p>
 
-<h4 id="adminsetup-7" class="anchor"><a class="heading-anchor" href="#adminsetup-7"><span></span></a>Admin Setup</h4>
+<h4 id="adminsetup-8" class="anchor"><a class="heading-anchor" href="#adminsetup-8"><span></span></a>Admin Setup</h4>
 
 <p>Configure <a href="../mc">Managed Configurations</a>:</p>
 
@@ -2151,7 +2281,7 @@ The following examples illustrate how the failed attempt counter works in practi
 
 <p><br></p>
 
-<h4 id="usage-7" class="anchor"><a class="heading-anchor" href="#usage-7"><span></span></a>Usage</h4>
+<h4 id="usage-8" class="anchor"><a class="heading-anchor" href="#usage-8"><span></span></a>Usage</h4>
 
 <ol>
 <li>In the lock screen, tap the menu icon in the top right corner and select <strong>Admin Bypass.</strong>
@@ -2173,7 +2303,7 @@ The following examples illustrate how the failed attempt counter works in practi
 
 <p><br></p>
 
-<h4 id="adminsetup-8" class="anchor"><a class="heading-anchor" href="#adminsetup-8"><span></span></a>Admin Setup</h4>
+<h4 id="adminsetup-9" class="anchor"><a class="heading-anchor" href="#adminsetup-9"><span></span></a>Admin Setup</h4>
 
 <p>Configure <a href="../mc">Managed Configurations</a>:</p>
 
@@ -2202,7 +2332,7 @@ The following examples illustrate how the failed attempt counter works in practi
 
 <p><br></p>
 
-<h4 id="usage-8" class="anchor"><a class="heading-anchor" href="#usage-8"><span></span></a>Usage</h4>
+<h4 id="usage-9" class="anchor"><a class="heading-anchor" href="#usage-9"><span></span></a>Usage</h4>
 
 <ol>
 <li>On the lock screen, tap the button with the customized text located above the <strong>Unlock</strong> button. The text on this button is based on the admin configuration.
@@ -2231,7 +2361,7 @@ The following examples illustrate how the failed attempt counter works in practi
 <li><strong>SSO User ID -</strong> The SSO user ID is case-sensitive — the string entered during <a href="#userenrollment">user enrollment</a> <em>must</em> exactly match that from the identity provider. Discrepancies may lead to authentication issues or failure.</li>
 </ul>
 
-<h4 id="adminsetup-9" class="anchor"><a class="heading-anchor" href="#adminsetup-9"><span></span></a>Admin Setup</h4>
+<h4 id="adminsetup-10" class="anchor"><a class="heading-anchor" href="#adminsetup-10"><span></span></a>Admin Setup</h4>
 
 <p>Configure <a href="../mc">Managed Configurations</a>:</p>
 
@@ -2273,7 +2403,7 @@ The following examples illustrate how the failed attempt counter works in practi
 <li>Save the changes and deploy them to the devices.</li>
 </ol>
 
-<h4 id="usage-9" class="anchor"><a class="heading-anchor" href="#usage-9"><span></span></a>Usage</h4>
+<h4 id="usage-10" class="anchor"><a class="heading-anchor" href="#usage-10"><span></span></a>Usage</h4>
 
 <ol>
 <li>On the lock screen, scan the user barcode.
@@ -2345,7 +2475,7 @@ The following examples illustrate how the failed attempt counter works in practi
 
 <p><br></p>
 
-<h4 id="adminsetup-10" class="anchor"><a class="heading-anchor" href="#adminsetup-10"><span></span></a>Admin Setup</h4>
+<h4 id="adminsetup-11" class="anchor"><a class="heading-anchor" href="#adminsetup-11"><span></span></a>Admin Setup</h4>
 
 <p>Configure <a href="../mc">Managed Configurations</a>:</p>
 
@@ -2377,7 +2507,7 @@ The following examples illustrate how the failed attempt counter works in practi
 <li>Save and deploy the changes.</li>
 </ol>
 
-<h4 id="usage-10" class="anchor"><a class="heading-anchor" href="#usage-10"><span></span></a>Usage</h4>
+<h4 id="usage-11" class="anchor"><a class="heading-anchor" href="#usage-11"><span></span></a>Usage</h4>
 
 <p>The <strong>SSO Temporary ID</strong> feature simplifies access after an initial one-time setup. The user workflow is divided into two main phases: initial enrollment and subsequent logins.</p>
 
@@ -2508,7 +2638,7 @@ The following examples illustrate how the failed attempt counter works in practi
 
 <p>Configure the <strong>Default SSO Domain</strong> to streamline user authentication for Microsoft Entra ID SSO by eliminating the need to manually enter the domain during login. The user only needs to type the username, and the default domain is automatically applied.</p>
 
-<h4 id="adminsetup-11" class="anchor"><a class="heading-anchor" href="#adminsetup-11"><span></span></a>Admin Setup</h4>
+<h4 id="adminsetup-12" class="anchor"><a class="heading-anchor" href="#adminsetup-12"><span></span></a>Admin Setup</h4>
 
 <p>Configure the following Managed Configuration:</p>
 
@@ -2518,7 +2648,7 @@ The following examples illustrate how the failed attempt counter works in practi
 <li>Save the changes and deploy them to the devices.</li>
 </ol>
 
-<h4 id="usage-11" class="anchor"><a class="heading-anchor" href="#usage-11"><span></span></a>Usage</h4>
+<h4 id="usage-12" class="anchor"><a class="heading-anchor" href="#usage-12"><span></span></a>Usage</h4>
 
 <ol>
 <li>On the lock screen, tap <strong>Unlock.</strong></li>
@@ -2540,7 +2670,7 @@ The following examples illustrate how the failed attempt counter works in practi
 
 <p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>Note:</strong> When Proxy Mode is active, attempting to launch the Identity Guardian app directly displays a message indicating that it is not intended to be launched in its current configuration.</p>
 
-<h4 id="adminsetup-12" class="anchor"><a class="heading-anchor" href="#adminsetup-12"><span></span></a>Admin Setup</h4>
+<h4 id="adminsetup-13" class="anchor"><a class="heading-anchor" href="#adminsetup-13"><span></span></a>Admin Setup</h4>
 
 <p>Configuring <strong>Proxy Mode</strong> requires preparing the third-party app, setting the Identity Guardian Managed Configurations, and deploying the changes.</p>
 
@@ -2586,7 +2716,7 @@ The following examples illustrate how the failed attempt counter works in practi
 
 <p><br></p>
 
-<h4 id="usage-12" class="anchor"><a class="heading-anchor" href="#usage-12"><span></span></a>Usage</h4>
+<h4 id="usage-13" class="anchor"><a class="heading-anchor" href="#usage-13"><span></span></a>Usage</h4>
 
 <p><strong>User Sign-In/Sign-Out Events:</strong></p>
 
@@ -2733,7 +2863,7 @@ The following examples illustrate how the failed attempt counter works in practi
 
 <p><br></p>
 
-<h3 id="adminsetup-13" class="anchor"><a class="heading-anchor" href="#adminsetup-13"><span></span></a>Admin Setup</h3>
+<h4 id="adminsetup-14" class="anchor"><a class="heading-anchor" href="#adminsetup-14"><span></span></a>Admin Setup</h4>
 
 <p>Configure the following <a href="../mc">Managed Configurations</a> through the EMM console or Zebra DNA:</p>
 
@@ -2781,7 +2911,7 @@ The following examples illustrate how the failed attempt counter works in practi
 
 <hr>
 
-<h3 id="userauthenticationscenarios" class="anchor"><a class="heading-anchor" href="#userauthenticationscenarios"><span></span></a>User Authentication Scenarios</h3>
+<h4 id="userauthenticationscenarios" class="anchor"><a class="heading-anchor" href="#userauthenticationscenarios"><span></span></a>User Authentication Scenarios</h4>
 
 <p><strong>This video demonstrates various scenarios of user device authentication.</strong> In this example, one group of authentication settings is applied to a <em>shared device</em> with the following configurations:</p>
 
@@ -2796,6 +2926,50 @@ The following examples illustrate how the failed attempt counter works in practi
 </ul>
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/SGTOuzPMF-k?si=4DsWxyzL8LPi5ZvC" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen=""></iframe>
+
+<hr>
+
+<h3 id="accountlockoutpasscode" class="anchor"><a class="heading-anchor" href="#accountlockoutpasscode"><span></span></a>Account Lockout (Passcode)</h3>
+
+<p><strong>Account Lockout</strong> allows the system to track consecutive failed <em>passcode</em> sign-in attempts. When the count exceeds the configured limit, the user account is temporarily locked for a pre-defined duration to protect against unauthorized access and brute-force passcode guessing. </p>
+
+<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>Note:</strong> <strong>Account Lockout</strong> applies to failed passcode entries only. It does not monitor or lock accounts based on failed biometric scans (e.g., facial recognition) or Single Sign-On (SSO) failures.</p>
+
+<h4 id="adminsetup-15" class="anchor"><a class="heading-anchor" href="#adminsetup-15"><span></span></a>Admin Setup</h4>
+
+<p>EMM Managed Configuration Steps:</p>
+
+<ol>
+<li>Under <a href="../mc/#securitysettings">Security Settings</a>, enable <strong>Account lockout configuration.</strong></li>
+
+<li>Set the desired settings:
+
+
+<ul>
+<li><strong>Enable account lockout after failed sign-in attempts:</strong> true</li>
+
+<li><strong>Maximum failed sign-in attempts:</strong> [Select the number of failed attempts before locking the account.]</li>
+
+<li><strong>Auto-unlock time for locked accounts:</strong> [Enter the number of minutes for the locked account to automatically unlock.]</li></ul>
+</li>
+</ol>
+
+<h4 id="usage-14" class="anchor"><a class="heading-anchor" href="#usage-14"><span></span></a>Usage</h4>
+
+<ol>
+<li><strong>Failed Sign-In Attempt:</strong> Entering an incorrect passcode triggers a "Login Error" alert indicating the remaining number of permitted attempts.
+<img alt="image" style="height:400px;" src="../../images/3-3/failed-attempt.png"> </li>
+
+<li><strong>Account Lockout:</strong> Reaching the failure threshold locks the account and displays an "Account Locked" notification.
+
+
+<ul>
+<li><strong>Note:</strong> The lockout notification displays the remaining lockout period rounded to whole minutes and does not show an active countdown in seconds.
+<img alt="image" style="height:400px;" src="../../images/3-3/account-locked.png"> </li></ul>
+</li>
+
+<li><strong>Account Recovery:</strong> Access restores automatically once the configured timeout elapses, or an administrator manually unlocks the account through ZDNA Cloud prior to expiration.</li>
+</ol>
 
 <hr>
 
@@ -2849,7 +3023,7 @@ The following examples illustrate how the failed attempt counter works in practi
 <li><strong>Force Logout:</strong> If both Auto Logout and Force Logout (under <a href="../mc/#shareddeviceauthentication">Shared Device Authentication</a> in Managed Configurations) are enabled, the logout is triggered by whichever condition is met first.</li>
 </ul>
 
-<h4 id="adminsetup-14" class="anchor"><a class="heading-anchor" href="#adminsetup-14"><span></span></a>Admin Setup</h4>
+<h4 id="adminsetup-16" class="anchor"><a class="heading-anchor" href="#adminsetup-16"><span></span></a>Admin Setup</h4>
 
 <p>Configure <a href="../mc">Managed Configurations</a>:</p>
 
@@ -2868,7 +3042,7 @@ The following examples illustrate how the failed attempt counter works in practi
 <li>Deploy to the devices.</li>
 </ol>
 
-<h4 id="usage-13" class="anchor"><a class="heading-anchor" href="#usage-13"><span></span></a>Usage</h4>
+<h4 id="usage-15" class="anchor"><a class="heading-anchor" href="#usage-15"><span></span></a>Usage</h4>
 
 <ol>
 <li>After a user logs in, the device functions normally.</li>
@@ -2886,7 +3060,7 @@ The following examples illustrate how the failed attempt counter works in practi
 
 <p><strong>Global Sign-Out</strong> enables any applications using Microsoft Entra ID Single Sign-On (SSO) on <em>shared devices</em> to perform a universal logout across all supported apps. This feature clears previously signed-in accounts and displays the Identity Guardian lock screen. For example, if Microsoft Teams is installed, a user who logs into to the device with their Microsoft Entra ID credentials is automatically signed into the Teams app. With Global Sign-Out enabled, signing out from either Teams or Identity Guardian triggers the removal of user data and presents the Identity Guardian lock screen for the next user login.</p>
 
-<h4 id="adminsetup-15" class="anchor"><a class="heading-anchor" href="#adminsetup-15"><span></span></a>Admin Setup</h4>
+<h4 id="adminsetup-17" class="anchor"><a class="heading-anchor" href="#adminsetup-17"><span></span></a>Admin Setup</h4>
 
 <p><strong>Prerequisites:</strong></p>
 
@@ -2906,7 +3080,7 @@ The following examples illustrate how the failed attempt counter works in practi
 <li>Enable <strong>Global Sign-Out in shared mode.</strong></li>
 </ol>
 
-<h4 id="usage-14" class="anchor"><a class="heading-anchor" href="#usage-14"><span></span></a>Usage</h4>
+<h4 id="usage-16" class="anchor"><a class="heading-anchor" href="#usage-16"><span></span></a>Usage</h4>
 
 <ol>
 <li><a href="#signout">Sign out</a> of the device or sign out from any app with Microsoft Entra ID SSO.</li>
@@ -2924,7 +3098,7 @@ The following examples illustrate how the failed attempt counter works in practi
   <p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>Important Note:</strong> The package name for Identity Guardian (com.zebra.mdna.els) cannot be added as an app for this feature. This restriction is in place to ensure that Identity Guardian operates without unintended disruptions.</p>
 </blockquote>
 
-<h4 id="adminsetup-16" class="anchor"><a class="heading-anchor" href="#adminsetup-16"><span></span></a>Admin Setup</h4>
+<h4 id="adminsetup-18" class="anchor"><a class="heading-anchor" href="#adminsetup-18"><span></span></a>Admin Setup</h4>
 
 <p><strong>Steps to Configure "Clear Application Data" in Identity Guardian Managed Configurations:</strong></p>
 
@@ -2957,7 +3131,7 @@ The following examples illustrate how the failed attempt counter works in practi
 
 <p><img alt="image" style="height:400px" src="../../images/3-2/clear-app-data.jpg"></p>
 
-<h4 id="usage-15" class="anchor"><a class="heading-anchor" href="#usage-15"><span></span></a>Usage</h4>
+<h4 id="usage-17" class="anchor"><a class="heading-anchor" href="#usage-17"><span></span></a>Usage</h4>
 
 <ol>
 <li><a href="#signout">Sign out</a> the device.</li>
@@ -2979,7 +3153,7 @@ The following examples illustrate how the failed attempt counter works in practi
 
 <p><br></p>
 
-<h4 id="adminsetup-17" class="anchor"><a class="heading-anchor" href="#adminsetup-17"><span></span></a>Admin Setup</h4>
+<h4 id="adminsetup-19" class="anchor"><a class="heading-anchor" href="#adminsetup-19"><span></span></a>Admin Setup</h4>
 
 <p>Configure <a href="../mc">Managed Configurations</a>:</p>
 
@@ -2998,7 +3172,7 @@ The following examples illustrate how the failed attempt counter works in practi
 
 <p><br></p>
 
-<h4 id="usage-16" class="anchor"><a class="heading-anchor" href="#usage-16"><span></span></a>Usage</h4>
+<h4 id="usage-18" class="anchor"><a class="heading-anchor" href="#usage-18"><span></span></a>Usage</h4>
 
 <p>To create or edit a custom message on the lock screen:</p>
 
@@ -3039,7 +3213,7 @@ The following examples illustrate how the failed attempt counter works in practi
 
 <p><br></p>
 
-<h4 id="adminsetup-18" class="anchor"><a class="heading-anchor" href="#adminsetup-18"><span></span></a>Admin Setup</h4>
+<h4 id="adminsetup-20" class="anchor"><a class="heading-anchor" href="#adminsetup-20"><span></span></a>Admin Setup</h4>
 
 <p>Configure <a href="../mc">Managed Configurations</a>:</p>
 
@@ -3070,7 +3244,7 @@ The following examples illustrate how the failed attempt counter works in practi
 
 <p><br></p>
 
-<h4 id="usage-17" class="anchor"><a class="heading-anchor" href="#usage-17"><span></span></a>Usage</h4>
+<h4 id="usage-19" class="anchor"><a class="heading-anchor" href="#usage-19"><span></span></a>Usage</h4>
 
 <ol>
 <li>On the lock screen, tap the unlock button:
@@ -3101,7 +3275,7 @@ When unlocking the device (e.g. pressing the power button or swiping to unlock),
 
 <p><br>&nbsp;</p>
 
-<h4 id="adminsetup-19" class="anchor"><a class="heading-anchor" href="#adminsetup-19"><span></span></a>Admin Setup</h4>
+<h4 id="adminsetup-21" class="anchor"><a class="heading-anchor" href="#adminsetup-21"><span></span></a>Admin Setup</h4>
 
 <p>Configure the following required <a href="../mc">Managed Configurations</a> settings:</p>
 
@@ -3156,7 +3330,7 @@ When unlocking the device (e.g. pressing the power button or swiping to unlock),
 
 <p><br></p>
 
-<h4 id="usage-18" class="anchor"><a class="heading-anchor" href="#usage-18"><span></span></a>Usage</h4>
+<h4 id="usage-20" class="anchor"><a class="heading-anchor" href="#usage-20"><span></span></a>Usage</h4>
 
 <p>On a locked device with an active user session, unlock the device by simpliy tapping the assigned NFC card or scanning the user barcode.</p>
 
@@ -3176,7 +3350,7 @@ When unlocking the device (e.g. pressing the power button or swiping to unlock),
 
 <p><br></p>
 
-<h4 id="adminsetup-20" class="anchor"><a class="heading-anchor" href="#adminsetup-20"><span></span></a>Admin Setup</h4>
+<h4 id="adminsetup-22" class="anchor"><a class="heading-anchor" href="#adminsetup-22"><span></span></a>Admin Setup</h4>
 
 <p>To enable Microsoft SSO Session Persistence, configure the following <a href="../mc">Managed Configurations</a>:</p>
 
@@ -3217,7 +3391,7 @@ When unlocking the device (e.g. pressing the power button or swiping to unlock),
 
 <p><br></p>
 
-<h4 id="usage-19" class="anchor"><a class="heading-anchor" href="#usage-19"><span></span></a>Usage</h4>
+<h4 id="usage-21" class="anchor"><a class="heading-anchor" href="#usage-21"><span></span></a>Usage</h4>
 
 <p>This section discusses how to use the Microsoft SSO Session Persistence feature.</p>
 
@@ -3327,7 +3501,7 @@ When unlocking the device (e.g. pressing the power button or swiping to unlock),
 
 <li><strong>Lost Barcodes:</strong> If an Identity Guardian user loses their barcode, the stored information in Guardian Safe <em>cannot</em> be accessed with a newly created enrollment barcode. Consequently, new credentials (user name and password) must be saved again for all applications.</li>
 
-<li><strong>Supported Authentication Values:</strong> Only applications with user ID and password fields are supported. Applications requiring OTP (one-time password) fields are <em>not</em> supported. Acceptable values for the user ID can vary by application and may include values such as an email address, phone number or user name.</li>
+<li><strong>Supported Authentication Values:</strong> Only applications with user ID and password fields are supported. Applications requiring One-Time PIN fields are <em>not</em> supported. Acceptable values for the user ID can vary by application and may include values such as an email address, phone number or user name.</li>
 
 <li><strong>App Challenges:</strong> Certain apps may experience difficulties when saving or entering credentials in Guardian Safe. If you encounter such issues, please contact Zebra technical support for assistance.</li>
 
@@ -3397,7 +3571,7 @@ When unlocking the device (e.g. pressing the power button or swiping to unlock),
 
 <p><br></p>
 
-<h4 id="adminsetup-21" class="anchor"><a class="heading-anchor" href="#adminsetup-21"><span></span></a>Admin Setup</h4>
+<h4 id="adminsetup-23" class="anchor"><a class="heading-anchor" href="#adminsetup-23"><span></span></a>Admin Setup</h4>
 
 <p>Administrators must configure the authentication settings to enable tokenless access for Guardian Safe. These settings are managed via the Shared Device Authentication section within the Enterprise Mobility Management (EMM) console or Zebra DNA Cloud.</p>
 
@@ -3441,7 +3615,7 @@ When unlocking the device (e.g. pressing the power button or swiping to unlock),
 
 <p><br></p>
 
-<h4 id="usage-20" class="anchor"><a class="heading-anchor" href="#usage-20"><span></span></a>Usage</h4>
+<h4 id="usage-22" class="anchor"><a class="heading-anchor" href="#usage-22"><span></span></a>Usage</h4>
 
 <p>The following workflows detail how the end-user can enroll, authenticate, and manage credentials using the tokenless SSO and Zebra DNA Cloud Passcode features within Guardian Safe.</p>
 
@@ -4251,7 +4425,7 @@ To edit the login credentials for an app through Guardian Safe:</p>
 
 <p>The <strong>Device Alarm</strong> is an audible alert activated when a user is not logged into the device or it is not returned to the powered cradle within the specified timeout period. These conditions can be configured and managed by the administrator via Managed Configurations. This feature is designed to prevent devices from remaining idle in unauthorized locations and to ensure they are returned to their cradle after use.</p>
 
-<h3 id="adminsetup-22" class="anchor"><a class="heading-anchor" href="#adminsetup-22"><span></span></a>Admin Setup</h3>
+<h3 id="adminsetup-24" class="anchor"><a class="heading-anchor" href="#adminsetup-24"><span></span></a>Admin Setup</h3>
 
 <p>Configure <a href="../mc">Managed Configurations</a>:</p>
 
@@ -4268,7 +4442,7 @@ To edit the login credentials for an app through Guardian Safe:</p>
 <li>Save the changes.</li>
 </ol>
 
-<h3 id="usage-21" class="anchor"><a class="heading-anchor" href="#usage-21"><span></span></a>Usage</h3>
+<h3 id="usage-23" class="anchor"><a class="heading-anchor" href="#usage-23"><span></span></a>Usage</h3>
 
 <p>The alarm is activated when a device is removed from its cradle and the user does not log in before the specified countdown ends, or when a user logs out and does not return the device to a powered cradle or log back in within the specified timeout period. The alarm sounds continuously until it is deactivated. This applies even a voice call is accepted while a user is not signed in - the alarm will continue to ring.</p>
 
@@ -4303,7 +4477,7 @@ To edit the login credentials for an app through Guardian Safe:</p>
 
 <hr>
 
-<h2 id="quickaccess" class="anchor"><a class="heading-anchor" href="#quickaccess"><span></span></a>Quick Access</h2>
+<h2 id="quickaccessapps" class="anchor"><a class="heading-anchor" href="#quickaccessapps"><span></span></a>Quick Access (Apps)</h2>
 
 <p><strong>Quick Access</strong> enables devices users to launch approved utility applications directly from the lock screen without authentication. By eliminating sign-in requirements for basic tools such as calculators or pairing utilities, operational efficiency increases while device security remains intact. Quick Access operates within an unauthenticated workspace launcher screen while the device remains locked.  </p>
 
@@ -4312,7 +4486,7 @@ To edit the login credentials for an app through Guardian Safe:</p>
 <ul>
 <li><strong><a href="../setup/#shareddevicessd">Shared Devices</a>:</strong> Available when the device is in a signed-out state.</li>
 
-<li><strong><a href="../setup/#personallyassigneddevicespd">Personally Assigned Devices</a>:</strong> Available whether a user is signed in or signed out.</li>
+<li><strong><a href="../setup/#personallyassigneddevicespd">Personally Assigned Devices</a>:</strong> Accessible from the Identity Guardian lock screen.</li>
 </ul>
 
 <p><strong>System Behaviors:</strong></p>
@@ -4327,7 +4501,7 @@ To edit the login credentials for an app through Guardian Safe:</p>
 <li><strong>Dynamic Install/Uninstall Synchronization:</strong> Applications installed or removed during an active launcher session update their launch state upon returning to the lock screen and relaunching <strong>Quick Access.</strong></li>
 </ul>
 
-<h3 id="adminsetup-23" class="anchor"><a class="heading-anchor" href="#adminsetup-23"><span></span></a>Admin Setup</h3>
+<h3 id="adminsetup-25" class="anchor"><a class="heading-anchor" href="#adminsetup-25"><span></span></a>Admin Setup</h3>
 
 <p>Administrators configure Quick Access through EMM Managed Configurations to designated applications accessible from the lock screen.</p>
 
@@ -4471,29 +4645,27 @@ To edit the login credentials for an app through Guardian Safe:</p>
 </li>
 </ol>
 
-<h3 id="usage-22" class="anchor"><a class="heading-anchor" href="#usage-22"><span></span></a>Usage</h3>
+<h3 id="usage-24" class="anchor"><a class="heading-anchor" href="#usage-24"><span></span></a>Usage</h3>
 
 <p><strong>Quick Access</strong> provides direct access to authorized utility applications without authentication into Identity Guardian.</p>
 
 <ol>
 <li>On the Identity Guardian lock screen, open the <strong>Quick Access</strong> icon located in the lower-left corner. 
-<img alt="image" style="height:450px" src="../../images/3-3/quick-access-icon.png"></li>
+<img alt="image" style="height:400px" src="../../images/3-3/quick-access-icon.png"></li>
 
 <li>The launcher displays approved applications along with an <strong>Exit View</strong> overlay button. This button can be dragged to any location on the screen to prevent obstruction. 
-<img alt="image" style="height:450px" src="../../images/3-3/quick-access.png"></li>
+<img alt="image" style="height:400px" src="../../images/3-3/quick-access.png"></li>
 
 <li>Tap the icon of the desired application to launch. The <strong>Exit View</strong> button remains accessible over the active app.
-<img alt="image" style="height:450px" src="../../images/3-3/quick-access-app.png"></li>
+<img alt="image" style="height:400px" src="../../images/3-3/quick-access-app.png"></li>
 
-<li>Tap <strong>Exit View</strong> at any time to terminate the session and return to the primary lock screen.</li>
+<li>Tap <strong>Exit View</strong> at any time to terminate the session and return to the main lock screen. On <a href="../setup/#shareddevicessd">Shared Devices</a>, this action also clears the cached data of any applications opened during the Quick Access session.</li>
 
 <li>To authenticate directly from the launcher, scan a user barcode or tap an NFC card. A confirmation message appears to proceed with sign-in.
-<img alt="image" style="height:450px" src="../../images/3-3/quick-access-login.png"></li>
+<img alt="image" style="height:400px" src="../../images/3-3/quick-access-login.png"></li>
 </ol>
 
-<p><strong>NOTE:</strong> Disabled applications cannot be opened from the launcher; selecting a disabled application displays a message stating that the app is disabled. Similarly, attempting to open an uninstalled application displays an alert that the app is not installed.</p>
-
-<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <code>IMPORTANT:</code> Exiting the <strong>Quick Access</strong> launcher automatically clears application cache data for all apps on Shared Devices.</p>
+<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>NOTE:</strong> Disabled applications cannot be opened from the launcher; selecting a disabled application displays a message stating that the app is disabled. Similarly, attempting to open an uninstalled application displays an alert that the app is not installed.</p>
 
 <hr>
 
@@ -4503,7 +4675,7 @@ To edit the login credentials for an app through Guardian Safe:</p>
 
 <p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>Note:</strong> This feature is designed to work in WSC Mirror Mode only. Desktop Mode is not supported.</p>
 
-<h3 id="adminsetup-24" class="anchor"><a class="heading-anchor" href="#adminsetup-24"><span></span></a>Admin Setup</h3>
+<h3 id="adminsetup-26" class="anchor"><a class="heading-anchor" href="#adminsetup-26"><span></span></a>Admin Setup</h3>
 
 <p>Configure the following <a href="../mc/#lockscreenconfiguration">Managed Configurations</a>:</p>
 
@@ -4518,7 +4690,7 @@ To edit the login credentials for an app through Guardian Safe:</p>
 </li>
 </ul>
 
-<h3 id="usage-23" class="anchor"><a class="heading-anchor" href="#usage-23"><span></span></a>Usage</h3>
+<h3 id="usage-25" class="anchor"><a class="heading-anchor" href="#usage-25"><span></span></a>Usage</h3>
 
 <p>The following steps outline the system's behavior based on the external display configuration, dock type, and connection to an external display.</p>
 
@@ -4550,7 +4722,9 @@ To edit the login credentials for an app through Guardian Safe:</p>
 
 <h2 id="personalizeddevicesettings" class="anchor"><a class="heading-anchor" href="#personalizeddevicesettings"><span></span></a>Personalized Device Settings</h2>
 
-<p>The <strong>Personalized Device Settings</strong> feature grants access to specified Android system settings so individual users can tailor device preferences for their specific needs. This ensures a productive and personalized workflow on devices during an authenticated session.</p>
+<p>The <strong>Personalized Device Settings</strong> feature grants access to specified Android system settings so individual users can tailor device preferences for their specific needs. This ensures a productive and personalized workflow on devices during an authenticated session. </p>
+
+<p>Personalized settings are restricted to a single barcode per user profile. If a user is associated with multiple barcodes, scanning a new barcode causes the device to restore its default system settings.</p>
 
 <p>Users can modify and personalize the following categories of device settings:</p>
 
@@ -4605,7 +4779,7 @@ To edit the login credentials for an app through Guardian Safe:</p>
 <li>Cloud Passcode login</li>
 </ul>
 
-<h3 id="adminsetup-25" class="anchor"><a class="heading-anchor" href="#adminsetup-25"><span></span></a>Admin Setup</h3>
+<h3 id="adminsetup-27" class="anchor"><a class="heading-anchor" href="#adminsetup-27"><span></span></a>Admin Setup</h3>
 
 <p>To allow users to access Personalized Device Settings, an administrator must first enable the feature at the account level within the <a href="/zebradna">Zebra DNA Cloud</a> console.</p>
 
@@ -4641,7 +4815,7 @@ To edit the login credentials for an app through Guardian Safe:</p>
 <li>Accessibility Settings</li>
 </ul>
 
-<h3 id="usage-24" class="anchor"><a class="heading-anchor" href="#usage-24"><span></span></a>Usage</h3>
+<h3 id="usage-26" class="anchor"><a class="heading-anchor" href="#usage-26"><span></span></a>Usage</h3>
 
 <p>To access the <strong>Personalized Device Settings</strong> and customize the device interface during an active session, follow these steps:</p>
 
