@@ -266,6 +266,8 @@
 <li><strong><a href="#emm">Enterprise Mobility Management (EMM) system</a>:</strong> Enables administrators to deploy the application and establish usage policies, device controls, and restrictions via <a href="../mc/">Managed Configurations</a>.</li>
 </ul>
 
+<p><a href="#securenfc">Secure NFC</a> extends Identity Guardian authentication by enabling encrypted credential storage on contactless smart cards. The architecture pairs Identity Guardian for policy-driven card reading and user sign-in with zCreator for secure card provisioning and credential encryption, delivering enterprise-grade badge authentication without disrupting existing building access infrastructure.</p>
+
 <h3 id="quickstartdeployment" class="anchor"><a class="heading-anchor" href="#quickstartdeployment"><span></span></a>Quick-Start Deployment</h3>
 
 <p>Follow each phase sequentially for deployment.</p>
@@ -410,6 +412,100 @@
 <li><strong>Minimum Capacity:</strong> A minimum card capacity of 4 KB is required to successfully store user enrollment data.</li>
 
 <li><strong>Third-Party Card Coexistence:</strong> Supports enterprise access control badges (e.g., Salto)</li>
+</ul>
+
+<hr>
+
+<h2 id="securenfc" class="anchor"><a class="heading-anchor" href="#securenfc"><span></span></a>Secure NFC</h2>
+
+<p><strong>Secure NFC</strong> provides hardware-level, encrypted authentication for workers using contactless smart cards. Operating alongside the zCreator companion app, Secure NFC enables organization to migrate from unencrypted card storage to encrypted storage with zero-downtime key rotation and multi-application card coexistence with existing enterprise access control systems. </p>
+
+<p>Identity Guardian supports two card data storage architectures:</p>
+
+<ol>
+<li><strong>Secure Layer (Recommended):</strong> Encrypts user credentials using cryptographic key sets. Supports <strong>Append Mode</strong>, allowing Identity Guardian to write credential data without corrupting existing card applications (such as building access control).</li>
+
+<li><strong>Standard NDEF (Legacy):</strong> Uses the standard open NFC Data Exchange Format. Does not support encryption or card coexistence; writing in NDEF format overwrites all existing data on the card.</li>
+</ol>
+
+<p>To deploy using an EMM, refer to <a href="#shareddevicessd">Shared Devices</a> and configure <strong>NFC Configurations</strong> for <a href="../mc/#nfcconfiguration">Identity Guardian</a> and <a href="../mc/#nfcconfiguration-1">zCreator</a> within Managed Configurations.</p>
+
+<hr>
+
+<h3 id="readwriteexecutionlogic" class="anchor"><a class="heading-anchor" href="#readwriteexecutionlogic"><span></span></a>Read/Write Execution Logic</h3>
+
+<p>Operational behavior across <a href="../mc/#nfcconfiguration">Identity Guardian</a> and <a href="../mc/#nfcconfiguration-1">zCreator</a> depends on the selected <a href="../mc/#nfcstoragearea">NFC Data Storage</a> mode and the other configured Managed Configuration policies.</p>
+
+<ul>
+<li><strong>Read Operations (Identity Guardian):</strong> Identity Guardian utilizes an adaptive read flow that automatically falls back between formats. This enables simultaneous support for legacy unencrypted cards and modern encrypted cards across the same device fleet without administrative intervention. If both reads fail, it tries the Default Factory Key.
+
+
+<ul>
+<li><strong>When set to "Standard NDEF":</strong> Identity Guardian attempts to read unencrypted NDEF records first. If no valid NDEF data is detected, it falls back to read <strong>Secure Layer</strong> data.</li>
+
+<li><strong>When set to "Secure Layer":</strong> Identity Guardian evaluates encrypted sectors using the configured key hierarchy first. If no secure record is found, it automatically falls back to read legacy <strong>NDEF</strong> data.</li></ul>
+</li>
+
+<li><strong>Write Operations (zCreator):</strong> The zCreator enrollment application consistently provisions new credentials using the configured <strong>Primary Write Key</strong>. Data handling varies by storage mode:
+
+
+<ul>
+<li><strong>Standard NDEF:</strong> Data is written to the unencrypted NDEF public message area. NDEF does not support data appending; performing a write operation overwrites existing card data.</li>
+
+<li><strong>Secure Layer (Encrypted):</strong> Credentials are encrypted and written to dedicated secure sectors. When <strong>User Data Operation</strong> is set to <strong>Append</strong>, zCreator allocates available secure sectors to write Identity Guardian credentials without altering existing third-party card data (such as access control systems).</li></ul>
+</li>
+</ul>
+
+<hr>
+
+<h3 id="applicationidentifieraid" class="anchor"><a class="heading-anchor" href="#applicationidentifieraid"><span></span></a>Application Identifier (AID)</h3>
+
+<p>The Application Identifier (AID) is a unique <strong>3-character alphanumeric string</strong> that identifies the specific memory sector reserved for Identity Guardian on the card.</p>
+
+<ul>
+<li><strong>Matching Requirement:</strong> The AID configured in the Identity Guardian read policy must match the AID configured in the zCreator write policy.</li>
+
+<li><strong>Function:</strong> During a card tap, Identity Guardian queries the card directory for this specific AID to locate and decrypt user credentials rapidly.</li>
+</ul>
+
+<hr>
+
+<h3 id="securitykeys" class="anchor"><a class="heading-anchor" href="#securitykeys"><span></span></a>Security Keys</h3>
+
+<p>When deploying Secure NFC, administrators must define security keys in EMM Managed Configurations. If key fields are left blank, the applications automatically fall back to proprietary factory default keys.</p>
+
+<p>Custom encryption keys deployed through EMM must comply with strict format requirements. For details, refer to the respective <a href="../mc/#nfcconfiguration">Identity Guardian</a> and <a href="../mc/#nfcconfiguration-1">zCreator</a> sections for NFC Configuration.</p>
+
+<p>Security best practices dictate periodic key rotation. Identity Guardian uses a dual-key (Primary and Secondary) architecture to ensure seamless key transitions across active card fleets without operational disruption:</p>
+
+<ul>
+<li><strong>Write Logic:</strong> zCreator <em>always</em> writes new credentials using the configured <strong>Primary Write Key</strong>.</li>
+
+<li><strong>Read Logic:</strong> Identity Guardian evaluates keys in sequence: <strong>Primary Read Key</strong> ➔ <strong>Secondary Read Key</strong> ➔ <strong>Factory Default Key</strong>.</li>
+</ul>
+
+<p><strong>Key Rotation Procedure:</strong></p>
+
+<ol>
+<li>In the EMM console, copy the existing active production key into the <strong>Secondary Key</strong> fields (Secondary Read / Secondary Write) for both Identity Guardian and zCreator.</li>
+
+<li>Enter the newly generated key into the <strong>Primary Key</strong> fields (Primary Read / Primary Write).</li>
+
+<li>Deploy the updated policy profiles.</li>
+
+<li>Active cardholders continue authenticating via the Secondary Key fallback until their cards are reprovisioned with the new Primary Key during regular enrollment cycles.</li>
+</ol>
+
+<hr>
+
+<h3 id="bestpractices" class="anchor"><a class="heading-anchor" href="#bestpractices"><span></span></a>Best Practices</h3>
+
+<ul>
+<li><strong>Card Stability During Write:</strong> Operators must hold the card stationary against the mobile computer's NFC antenna until the on-screen confirmation displays. Premature removal interrupts writing and can lock the card sector.</li>
+
+<li><strong>Card Overwrite Protection:</strong> To prevent accidentally overwriting an active employee badge, ensure the <strong>Allow Different User Overwrite</strong> parameter is set to <strong>false</strong> in the zCreator policy.</li>
+
+<li><strong>Downgrade Sanitization:</strong> When migrating cards from <strong>Secure Layer</strong> back to legacy <strong>NDEF,</strong> always execute a <strong><code>Wipe card and write</code></strong> operation to prevent orphaned encrypted blocks from lingering in card memory.</li>
 </ul>
 
 <hr>
@@ -1701,34 +1797,41 @@ Make any other required edits for the user, including multiple roles if needed, 
 <p>Follow these steps to set up the dedicated enrollment device, enabling users to register into the system from a single device:</p>
 
 <ol>
-<li><strong>Create an Enrollment profile:</strong> Configure the Enrollment Profile using Managed Configurations, ensuring the following key settings are applied. <em>Adjust any other unlisted settings as needed to meet your specific enrollment requirements:</em>
+<li><p><strong>Create an Enrollment profile:</strong> Configure the Enrollment Profile using Managed Configurations, ensuring the following key settings are applied. <em>Adjust any other unlisted settings as needed to meet your specific enrollment requirements:</em></p>
 
+<p></p><ul>
+<li><a href="../mc/#usagemode">Usage Mode</a>:</li></ul><p></p>
 
-<ul>
-<li><a href="../mc/#usagemode">Usage Mode</a>:
-
-
-<ul>
+<p></p><ul>
 <li><strong>Application Mode:</strong> ENROLLMENT</li></ul>
-</li>
+<p></p></li><p></p>
 
-<li><a href="../mc/#enrollmentconfiguration">Enrollment Configurations</a>:
+<p></p><li><a href="../mc/#enrollmentconfiguration">Enrollment Configurations</a>:</li><p></p>
 
+<p></p><ul>
+<li><strong>Enrollment Key:</strong> [Enter the enrollment key to encrypt user data.]</li></ul><p></p>
 
-<ul>
-<li><strong>Enrollment Key:</strong> [Enter the enrollment key to encrypt user data.]</li>
+<p></p><li><strong>Number of facial images to be enrolled:</strong> [This applies only if facial authentication is required (<strong>Allow facial opt-out</strong> is set to <strong>false</strong>). For barcode printing, enter <strong>1</strong>, as it is the only valid value for this scenario. For other use cases, enter the appropriate value based on your requirements.]</li><p></p>
 
-<li><strong>Number of facial images to be enrolled:</strong> [This applies only if facial authentication is required (<strong>Allow facial opt-out</strong> is set to <strong>false</strong>). For barcode printing, enter <strong>1</strong>, as it is the only valid value for this scenario. For other use cases, enter the appropriate value based on your requirements.]</li>
+<p></p><li><strong>Allow opening barcode during enrollment:</strong> [Enable this option to allow barcode printing during the enrollment process. This displays the <strong>Print</strong> button at the last step of enrollment.]</li><p></p>
 
-<li><strong>Allow opening barcode during enrollment:</strong> [Enable this option to allow barcode printing during the enrollment process. This displays the <strong>Print</strong> button at the last step of enrollment.]</li>
+<p></p><li><strong>Enrollment Storage Method:</strong> [Select <strong>NFC</strong> or <strong>Barcode</strong>]</li>
+<p></p>
 
-<li><strong>Enrollment Storage Method:</strong> [Select <strong>NFC</strong> or <strong>Barcode</strong>]</li></ul>
-</li></ul>
-</li>
+<p></p><li><a href="#nfcconfiguration">NFC Configurations</a>: Applies for NFC card usage.</li><p></p>
 
-<li><strong>Install and configure zCreator for barcode use:</strong> Set up the zCreator application profile and apply Managed Configurations based on the selected Entrollment Storage Method:
-<strong>Option A: Configure zCreator for Barcode Use</strong>
+<p></p><ul>
+<li><strong>NFC Data Storage:</strong> Select <strong>Secure Layer</strong> (encrypted AES storage, recommended) or <strong>Standard NDEF</strong> (unencrypted legacy format).</li></ul><p></p>
 
+<p></p><li><strong>IG Data Identifier (AID):</strong> [Enter the 3-character Application Identifier (AID). This must match the AID configured in the Identity Guardian read policy.]</li><p></p>
+
+<p></p><li><strong>MIFARE Classic Keys:</strong> [Enter the 12-character hexadecimal <strong>Primary Read/Write Keys</strong> and <strong>Secondary Read/Write Keys.</strong>]</li><p></p>
+
+<p></p><li><strong>DESFire EV3 Keys:</strong> [Enter the 32-character hexadecimal <strong>Primary Read/Write Keys</strong> and <strong>Secondary Read/Write Keys.</strong>]</li>
+<p></p>
+
+<li><p><strong>Install and configure zCreator:</strong> If NFC or Barcode is in use, set up the zCreator application profile and apply Managed Configurations based on the selected Enrollment Storage Method:<br>
+<strong>Option A: Configure zCreator for Barcode Use</strong></p>
 
 <ul>
 <li><a href="../mc/#settingsaccess">Settings Access</a>: [Set to <strong>1</strong> to allow user access to zCreator settings, otherwise set to <strong>2</strong> to restrict access.]</li>
@@ -1740,17 +1843,17 @@ Make any other required edits for the user, including multiple roles if needed, 
 <li><strong>QR Code Size:</strong> [Specify the size of the QR Code to be printed.]</li>
 
 <li><strong>Orientation:</strong> [Specify the orientation for the printed barcode.]</li></ul>
-</li>
 
-<li><a href="../mc/#sharetosettings">Share-to Settings</a>:
+<p></p></li><p></p>
 
+<p></p><li><a href="../mc/#sharetosettings">Share-to Settings</a>:</li><p></p>
 
 <ul>
 <li><strong>Sharing:</strong> [Set to <strong>1</strong> to allow the user to share the barcode from within the app, otherwise set to <strong>0</strong> to disable.]</li></ul>
-</li>
 
-<li><a href="../mc/#printersettings">Printer Settings</a>: Configure printer settings for network (WiFi or Ethernet) or Bluetooth printing, if required:
+<p></p></ul></li><p></p>
 
+<p></p><li><a href="../mc/#printersettings">Printer Settings</a>: Configure printer settings for network (WiFi or Ethernet) or Bluetooth printing, if required:</li><p></p>
 
 <ul>
 <li><strong>Network Settings:</strong> [Set to <strong>1</strong> to allow the user to change the network printer configuration, otherwise set to <strong>0.</strong>]</li>
@@ -1759,40 +1862,36 @@ Make any other required edits for the user, including multiple roles if needed, 
 
 <li><strong>Bluetooth Settings:</strong> [Set to <strong>1</strong> to allow the user to change the Bluetooth printer configuration, otherwise set to <strong>0.</strong>]</li>
 
-<li><strong>Bluetooth MAC Address:</strong> [Enter the Bluetooth printer MAC address in the format <code>XX:XX:XX:XX:XX:XX</code>, where <code>X</code> is a hexadecimal digit (0-9, A-F).]
-<strong>Option B: Configure zCreator for NFC Card Use</strong> </li></ul>
-</li>
+<li><strong>Bluetooth MAC Address:</strong> [Enter the Bluetooth printer MAC address in the format <code>XX:XX:XX:XX:XX:XX</code>, where <code>X</code> is a hexadecimal digit (0-9, A-F).] <br></li></ul>
 
-<li><strong>NFC Data Storage (nfcStorageArea):</strong> Select Secure Layer (encrypted AES storage, recommended) or NDEF (unencrypted legacy format).</li>
+<p></p>
 
-<li>User Data Operation (nfcUserDataOperation): Select the card write mode:
+<p><strong>Option B: Configure zCreator for NFC Card Use</strong> </p>
+
+<ul>
+<li><strong><a href="../mc/#nfcconfiguration">NFC Configurations</a>:</strong>
 
 
 <ul>
-<li>Append: Writes Identity Guardian credentials to available card sectors without modifying third-party data (e.g., building access).</li>
+<li><strong>NFC Data Storage:</strong> Select <strong>Secure Layer</strong> (encrypted AES storage, recommended) or <strong>Standard NDEF</strong> (unencrypted legacy format).</li>
 
-<li>Wipe Storage and Write: Clears existing Identity Guardian data before writing new credentials.</li>
+<li><strong>User Data Operation:</strong> Select the card write mode: <strong>Append</strong> (Writes Identity Guardian credentials to available card sectors without modifying third-party data, e.g., building access), <strong>Wipe Storage and Write</strong> (Clears existing Identity Guardian data before writing new credentials), or <strong>Wipe card and write</strong> (Formats the entire card prior to writing credentials, required when downgrading from Secure Layer to NDEF).</li>
 
-<li>Wipe card and write: Formats the entire card prior to writing credentials (required when downgrading from Secure Layer to NDEF).</li></ul>
-</li>
+<li><strong>Allow Different User Overwrite:</strong> [Set to <strong>false</strong> to block overwriting cards previously assigned to another user ID; set to <strong>true</strong> to allow reassignment.]</li>
 
-<li>Allow Overwrite (nfcAllowDifferentUserOverwrite): Set to false to block overwriting cards previously assigned to another user ID; set to true to allow reassignment.</li>
+<li><strong>IG Data Identifier (AID):</strong> [Enter the 3-character Application Identifier (AID). This must match the AID configured in the Identity Guardian read policy.]</li>
 
-<li>Data Identifier (nfcAid): Enter the 3-character Application Identifier (AID). This must match the AID configured in the Identity Guardian read policy.</li>
+<li><strong>MIFARE Classic Keys:</strong> [Enter the 12-character hexadecimal <strong>Primary Read/Write Keys</strong> and <strong>Secondary Read/Write Keys.</strong>]</li>
 
-<li>Security Key Sets:
+<li><strong>DESFire EV3 Keys:</strong> [Enter the 32-character hexadecimal <strong>Primary Read/Write Keys</strong> and <strong>Secondary Read/Write Keys.</strong>]</li>
 
+<li><strong>Card Master Key:</strong> [For Secure NFC, enter a card master key.]</li></ul>
 
-<ul>
-<li>MIFARE Classic Keys (nfcMifareKeySet): Enter the 12-character hexadecimal Primary Read/Write and Secondary Read/Write keys.</li>
+<p></p></li></ul><p></p>
 
-<li>DESFire EV3 Keys (nfcDESFireKeySet): Enter the 32-character hexadecimal Primary Read/Write, Secondary Read/Write, and Master Application keys.</li></ul>
-</li></ul>
-</li>
+<li><p><strong>Deploy the Enrollment and zCreator profiles.</strong> Push the configured profiles to the designated enrollment device.</p></li>
 
-<li><strong>Deploy the Enrollment and zCreator profiles.</strong> Push the configured profiles to the designated enrollment device.</li>
-
-<li><strong>Launch Identity Guardian and Complete Enrollment.</strong> Open Identity Guardian on the enrollment device. Users can complete the enrollment process by following the prompts. Available options, such as printing a barcode during enrollment, depend on the profile configurations.</li>
+<li><p><strong>Launch Identity Guardian and Complete Enrollment.</strong> Open Identity Guardian on the enrollment device. Users can complete the enrollment process by following the prompts. Available options, such as printing a barcode during enrollment, depend on the profile configurations.</p></li>
 </ol>
 
 <p><strong>II. User Authentication</strong></p>
