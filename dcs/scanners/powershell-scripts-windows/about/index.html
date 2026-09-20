@@ -220,19 +220,7 @@ $XmlContent.LoadXml($XML)
                                                             </ul>
 <pre class="prettyprint">
 <code>
-$XmlContent.scanners.scanner | Format-Table -AutoSize @{
-    Name = 'Scanner ID'; Expression = {$_.scannerID}
-}, @{
-    Name = 'Host Mode'; Expression = {$_.type}
-}, @{
-    Name = 'Model Number'; Expression = {$_.modelnumber}
-}, @{
-    Name = 'Serial Number'; Expression = {$_.serialnumber}
-}, @{
-    Name = 'Date of Manufacture'; Expression = {$_.DoM}
-}, @{
-    Name = 'Scanner Firmware Version'; Expression = {$_.firmware}
-}
+$XmlContent.scanners.scanner | Format-Table -AutoSize @{Name = 'Scanner ID'; Expression = {$_.scannerID}}, @{Name = 'Host Mode'; Expression = {$_.type}}, @{Name = 'Model Number'; Expression = {$_.modelnumber}}, @{Name = 'Serial Number'; Expression = {$_.serialnumber}}, @{Name = 'Date of Manufacture'; Expression = {$_.DoM}}, @{Name = 'Scanner Firmware Version'; Expression = {$_.firmware}}, @{Name = 'Config Name'; Expression = {$_.configname}}
 </code>
 </pre>
                                                         </li>
@@ -468,6 +456,182 @@ public void BarcodeEvent(int dataType, string pscanData) {
 <code>
 $Action = { Write-Host $event.SourceArgs }
 Register-ObjectEvent -InputObject $ScannerWrapperObject -SourceIdentifier "BarcodeEvents" -EventName "OnBarcode" -Action $Action
+</code>
+</pre>
+                                                        </li>
+                                                    </ul>
+
+                                                    <h3 id="powershell-event-registration-pnp" class="anchor"><a class="heading-anchor" href="#powershell-event-registration-pnp"><span></span></a>Event Registration for PNP Events</h3>
+
+                                                    <p>PNP (Plug and Play) events notify the script when a scanner is physically or logically attached to or detached from the host. In the script for handling firmware updates, a process is set up to register for PNP events and handle them as they occur.</p>
+
+                                                    <h3 id="powershell-event-handling-pnp" class="anchor"><a class="heading-anchor" href="#powershell-event-handling-pnp"><span></span></a>Event Handling (PNP Events)</h3>
+
+                                                    <p><strong>C# Syntax:</strong></p>
+
+<pre class="prettyprint">
+<code>
+void OnPNPEvent(SHORT eventType, BSTR *ppnpData)
+</code>
+</pre>
+
+                                                    <p><strong>PowerShell Integration:</strong></p>
+
+                                                    <p>The event handling is set up in PowerShell by integrating C# code using <strong>Add-Type</strong> to define and handle events.</p>
+
+                                                    <h3 id="powershell-event-key-points-pnp" class="anchor"><a class="heading-anchor" href="#powershell-event-key-points-pnp"><span></span></a>Key Points</h3>
+
+                                                    <ul>
+                                                        <li>
+                                                            <strong>Define a Delegate:</strong>
+
+                                                            <p>A delegate <strong>CoreScannerEventHandler</strong> is defined in C#. This delegate specifies the signature for methods that can handle PNP and RMD events.</p>
+
+<pre class="prettyprint">
+<code>
+public delegate void CoreScannerEventHandler(int eventType, string pscanData);
+</code>
+</pre>
+                                                        </li>
+                                                        <li>
+                                                            <strong>Event Handling Class:</strong>
+
+                                                            <p>The <strong>CoreScannerWrapper</strong> class encapsulates the logic for handling plug and play events. It includes an <strong>OnPNPEvent</strong> which is triggered whenever an attach or detach event is received.</p>
+
+<pre class="prettyprint">
+<code>
+public static event CoreScannerEventHandler OnPNPEvent;
+</code>
+</pre>
+                                                        </li>
+                                                        <li>
+                                                            <strong>Registering for Events:</strong>
+
+                                                            <p>The <strong>RegisterForEvents</strong> method configures the scanner to listen to specific events (in this case, PNP events). It constructs an XML string to specify which events to register.</p>
+
+<pre class="prettyprint">
+<code>
+string inXml = "&lt;inArgs>&lt;cmdArgs>&lt;arg-int>1&lt;/arg-int>&lt;arg-int>16&lt;/arg-int>&lt;/cmdArgs>&lt;/inArgs>";
+
+coreScannerObject.GetType().InvokeMember("ExecCommand", BindingFlags.InvokeMethod, null, coreScannerObject, new object[] { 1001, inXml, out outXml, status });
+</code>
+</pre>
+
+                                                        </li>
+                                                        <li>
+                                                            <strong>Event Callback:</strong>
+
+                                                            <p>The <strong>PNPEvent</strong> method serves as the callback that processes PNP data when an event is received. It uses the <strong>OnPNPEvent</strong> to notify subscribers of new PNP data.</p>
+
+<pre class="prettyprint">
+<code>
+private void PNPEvent(int eventType, string data)
+{
+    if (OnPNPEvent != null)
+    {
+        OnPNPEvent(eventType, data);
+    }
+}
+</code>
+</pre>
+                                                        </li>
+                                                        <li>
+                                                            <strong>PowerShell Integration:</strong>
+
+                                                            <p>In PowerShell, <strong>Register-ObjectEvent</strong> is used to bind the event handler to a PowerShell action, allowing PNP data to be processed in real-time within the script.</p>
+
+<pre class="prettyprint">
+<code>
+$Action = { Write-Host $event.SourceArgs }
+Register-ObjectEvent -InputObject $ScannerEventWatcher -SourceIdentifier "PNPEvents" -EventName "OnPNPEvent" -Action $ActionPNPEvent
+</code>
+</pre>
+                                                        </li>
+                                                    </ul>
+
+                                                    <h3 id="powershell-event-registration-rmd" class="anchor"><a class="heading-anchor" href="#powershell-event-registration-rmd"><span></span></a>Event Registration for RMD Events</h3>
+
+                                                    <p>In the script for handling firmware updates and configuration uploads, a process is set up to register for RMD events and handle them as they occur.</p>
+
+                                                    <h3 id="powershell-event-handling-rmd" class="anchor"><a class="heading-anchor" href="#powershell-event-handling-rmd"><span></span></a>Event Handling (RMD Events)</h3>
+
+                                                    <p><strong>C# Syntax:</strong></p>
+
+<pre class="prettyprint">
+<code>
+void OnScanRMDEvent(SHORT eventType, BSTR *prmdData)
+</code>
+</pre>
+
+                                                    <p><strong>PowerShell Integration:</strong></p>
+
+                                                    <p>The event handling is set up in PowerShell by integrating C# code using <strong>Add-Type</strong> to define and handle events.</p>
+
+                                                    <h3 id="powershell-event-key-points-rmd" class="anchor"><a class="heading-anchor" href="#powershell-event-key-points-rmd"><span></span></a>Key Points</h3>
+
+                                                    <ul>
+                                                        <li>
+                                                            <strong>Define a Delegate:</strong>
+
+                                                            <p>A delegate <strong>CoreScannerEventHandler</strong> is defined in C#. This delegate specifies the signature for methods that can handle PNP and RMD events.</p>
+
+<pre class="prettyprint">
+<code>
+public delegate void CoreScannerEventHandler(int eventType, string pscanData);
+</code>
+</pre>
+                                                        </li>
+                                                        <li>
+                                                            <strong>Event Handling Class:</strong>
+
+                                                            <p>The <strong>CoreScannerWrapper</strong> class encapsulates the logic for handling RMD events. It includes an <strong>OnScanRMDEvent</strong> which is triggered whenever an RMD event is received.</p>
+
+<pre class="prettyprint">
+<code>
+public static event CoreScannerEventHandler OnScanRMDEvent;
+</code>
+</pre>
+                                                        </li>
+                                                        <li>
+                                                            <strong>Registering for Events:</strong>
+
+                                                            <p>The <strong>RegisterForEvents</strong> method configures the scanner to listen to specific events (in this case, RMD events). It constructs an XML string to specify which events to register.</p>
+
+<pre class="prettyprint">
+<code>
+string inXml = "&lt;inArgs>&lt;cmdArgs>&lt;arg-int>1&lt;/arg-int>&lt;arg-int>8&lt;/arg-int>&lt;/cmdArgs>&lt;/inArgs>";
+
+coreScannerObject.GetType().InvokeMember("ExecCommand", BindingFlags.InvokeMethod, null, coreScannerObject, new object[] { 1001, inXml, out outXml, status });
+</code>
+</pre>
+
+                                                        </li>
+                                                        <li>
+                                                            <strong>Event Callback:</strong>
+
+                                                            <p>The <strong>ScanRMDEvent</strong> method serves as the callback that processes RMD data when an event is received. It uses the <strong>OnScanRMDEvent</strong> to notify subscribers of new RMD data.</p>
+
+<pre class="prettyprint">
+<code>
+private void ScanRMDEvent(int eventType, string data)
+{
+    if (OnScanRMDEvent != null)
+    {
+        OnScanRMDEvent(eventType, data);
+    }
+}
+</code>
+</pre>
+                                                        </li>
+                                                        <li>
+                                                            <strong>PowerShell Integration:</strong>
+
+                                                            <p>In PowerShell, <strong>Register-ObjectEvent</strong> is used to bind the event handler to a PowerShell action, allowing RMD data to be processed in real-time within the script.</p>
+
+<pre class="prettyprint">
+<code>
+$Action = { Write-Host $event.SourceArgs }
+Register-ObjectEvent -InputObject $ScannerEventWatcher -SourceIdentifier "RMDEvents" -EventName "OnScanRMDEvent" -Action $ActionRMDEvent
 </code>
 </pre>
                                                         </li>
