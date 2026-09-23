@@ -1,0 +1,1654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<title>Impinj Gen2X API Reference</title>
+<link href="https://fonts.googleapis.com/css?family=Inter:400,600,700,900&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/custom-api.css?v=20260622-7" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+</head>
+<body>
+
+<div id="topbar">
+  <button id="sidebar-toggle" type="button" aria-label="Open navigation">&#9776;</button>
+  <div id="topbar-logo-section">
+    <img class="topbar-logo" src="assets/zebra-logo.png" alt="Zebra Technologies" width="99" height="32" decoding="async" />
+    <span class="topbar-vr" aria-hidden="true"></span>
+    <div id="topbar-title">Impinj Gen2X API Reference</div>
+  </div>
+  <div id="topbar-search-wrap">
+    <span class="topbar-search-icon" aria-hidden="true">&#128269;</span>
+    <input id="topbar-search" type="search" placeholder="Search commands&hellip; (/ to focus)" autocomplete="off" aria-label="Search API reference" />
+    <button id="topbar-search-clear" type="button" style="display:none;" aria-label="Clear search">&#x2715;</button>
+    <div id="topbar-search-dropdown"></div>
+  </div>
+  <button id="download-full-doc" type="button" disabled>Download PDF</button>
+</div>
+
+<div id="sidebar-overlay"></div>
+
+<nav id="sidebar" aria-label="API navigation">
+  <div id="sidebar-title">Impinj Gen2X API Reference</div>
+  <div id="sidebar-search-wrap">
+    <input id="sidebar-search" type="search" placeholder="Filter navigation&hellip;" aria-label="Filter navigation" />
+  </div>
+  <div id="sidebar-breadcrumb"></div>
+  <div id="nav-content"></div>
+</nav>
+
+<main id="main">
+  <div id="content" class="is-loading">
+    <div class="loading-spinner" aria-hidden="true"></div>
+    <p>Loading API reference&hellip;</p>
+  </div>
+</main>
+
+<div id="floating-tools" aria-label="Page tools">
+  <button id="back-to-top" type="button" title="Back to top" aria-label="Back to top">&#8593;</button>
+</div>
+
+<script>
+(function () {
+'use strict';
+
+/* ══════════════════════════════════════════════════════════════
+   Utilities
+══════════════════════════════════════════════════════════════ */
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+function slugify(text) {
+  return String(text).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+}
+function opIdFromPath(path) {
+  return slugify(String(path||'').replace(/^\//,''));
+}
+function formatExampleLabel(key) {
+  if (!key) return 'Example';
+  if (/^example\s*\d+$/i.test(key)) return 'Example ' + (key.match(/\d+/)||[''])[0];
+  if (/\s/.test(key)) return key;
+  return key.replace(/_/g,' ').replace(/\b\w/g, function(c){ return c.toUpperCase(); });
+}
+function formatExampleLabelFromValue(key, example) {
+  if (!/^example\s*\d+$/i.test(String(key||''))) return formatExampleLabel(key);
+  var value = example && typeof example==='object' && Object.prototype.hasOwnProperty.call(example,'value')
+    ? example.value
+    : example;
+  var command = value && value.command;
+  var scanType = value && value.payload && Array.isArray(value.payload.scanType) ? value.payload.scanType : null;
+  if ((command==='start'||command==='stop') && scanType) {
+    var action = command==='start' ? 'Start' : 'Stop';
+    var hasBle = scanType.indexOf('ble') !== -1;
+    var hasRfid = scanType.indexOf('rfid') !== -1;
+    if (hasBle && hasRfid) return action + ' BLE and RFID';
+    if (hasBle) return action + ' BLE only';
+    if (hasRfid) return action + ' RFID only';
+  }
+  if (command==='set_bleConfig') {
+    var ble = value && value.payload && value.payload.ble;
+    if (ble && ble.enable===false) return 'Disable BLE';
+    if (ble && ble.protocols) return 'Configure protocol filters';
+    if (ble && ble.additionalFilters && Object.prototype.hasOwnProperty.call(ble.additionalFilters,'rssi')) return 'Apply RSSI filter';
+    if (ble && Object.prototype.hasOwnProperty.call(ble,'scanIntervalSec')) return 'Set scan interval';
+    if (ble && ble.enable===true) return 'Enable BLE';
+  }
+  return formatExampleLabel(key);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Markdown renderer (FXR90 style — more robust than prior version)
+══════════════════════════════════════════════════════════════ */
+function md(text, options) {
+  if (!text) return '';
+  options = options || {};
+  var codeBlocks = [];
+  var tokenPrefix = '@@CODE_BLOCK_';
+  var normalized = text.replace(/\r\n?/g,'\n').replace(/```([a-zA-Z0-9_-]+)?\n([\s\S]*?)```/g, function(_,lang,code){
+    var language = (lang||'').toLowerCase();
+    var cls = language ? ' class="language-'+language+'"' : '';
+    var token = tokenPrefix+codeBlocks.length+'@@';
+    codeBlocks.push('<pre'+cls+'><code'+cls+'>'+escHtml(code.trim())+'</code></pre>');
+    return token;
+  });
+  return normalized.split(/\n{2,}/).map(function(block){
+    var trimmed = block.trim();
+    if (!trimmed) return '';
+    if (trimmed.indexOf(tokenPrefix)===0) return codeBlocks[parseInt(trimmed.slice(tokenPrefix.length),10)]||trimmed;
+    return renderMdBlock(trimmed, options);
+  }).join('');
+}
+function formatInline(text) {
+  if (!text) return '';
+  var htmlBlocks = [];
+  var htmlTokenPrefix = '@@HTML_BLOCK_';
+  var safeText = String(text)
+    .replace(/<div class="payload-section">[\s\S]*?<!-- \/payload-section -->/g, function(block){
+      var token = htmlTokenPrefix + htmlBlocks.length + '@@';
+      htmlBlocks.push(sanitizePayloadSection(block));
+      return token;
+    })
+    .replace(/<div class="endpoint-block">[\s\S]*?<\/table><\/div>/g, function(block){
+      var token = htmlTokenPrefix + htmlBlocks.length + '@@';
+      htmlBlocks.push(sanitizeEndpointBlock(block));
+      return token;
+    });
+  var rendered = escHtml(safeText)
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(_,t,href){
+      var h = href.trim();
+      var isExt = /^https?:/.test(h);
+      var attrs = isExt ? ' target="_blank" rel="noopener"' : '';
+      return '<a href="'+escHtml(h)+'"'+attrs+'>'+escHtml(t)+'</a>';
+    });
+  return rendered.replace(/@@HTML_BLOCK_(\d+)@@/g, function(_, index){
+    return htmlBlocks[Number(index)] || '';
+  });
+}
+function sanitizePayloadSection(block) {
+  var template = document.createElement('template');
+  template.innerHTML = String(block);
+  var allowedTags = { DIV: true, BUTTON: true, PRE: true, CODE: true, P: true, STRONG: true };
+  Array.prototype.slice.call(template.content.querySelectorAll('*')).forEach(function(el){
+    if (!allowedTags[el.tagName]) {
+      el.replaceWith(document.createTextNode(el.textContent || ''));
+      return;
+    }
+    Array.prototype.slice.call(el.attributes).forEach(function(attr){
+      var keep = attr.name === 'class' || attr.name === 'id' || attr.name === 'data-tab' || attr.name === 'type';
+      if (!keep) el.removeAttribute(attr.name);
+    });
+  });
+  return template.innerHTML;
+}
+function sanitizeEndpointBlock(block) {
+  var template = document.createElement('template');
+  template.innerHTML = String(block);
+  var allowedTags = {
+    DIV: true, TABLE: true, TBODY: true, TR: true, TD: true, CODE: true, SPAN: true
+  };
+  Array.prototype.slice.call(template.content.querySelectorAll('*')).forEach(function(el){
+    if (!allowedTags[el.tagName]) {
+      el.replaceWith(document.createTextNode(el.textContent || ''));
+      return;
+    }
+    Array.prototype.slice.call(el.attributes).forEach(function(attr){
+      var keepClass = attr.name === 'class' && /^(DIV|SPAN)$/.test(el.tagName);
+      if (!keepClass) el.removeAttribute(attr.name);
+    });
+  });
+  return template.innerHTML;
+}
+function copyText(text, onSuccess, onFailure) {
+  function done() { if (typeof onSuccess === 'function') onSuccess(); }
+  function fail() { if (typeof onFailure === 'function') onFailure(); }
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(done).catch(fallbackCopy);
+    return;
+  }
+  fallbackCopy();
+
+  function fallbackCopy() {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly','');
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      if (document.execCommand('copy')) done();
+      else fail();
+    } catch (e) {
+      fail();
+    } finally {
+      document.body.removeChild(ta);
+    }
+  }
+}
+function renderMdBlock(block, options) {
+  var trimmedBlock = block.trim();
+  if (/^<div class="payload-section">/.test(trimmedBlock)) {
+    return formatInline(trimmedBlock);
+  }
+  var lines = block.split('\n');
+  if (lines.every(function(l){ return /^>\s?/.test(l); })) {
+    return '<blockquote><p>'+lines.map(function(l){ return formatInline(l.replace(/^>\s?/,'')); }).join('<br>')+'</p></blockquote>';
+  }
+  var headingMatch = block.match(/^(#{1,6})\s+(.+)$/);
+  if (headingMatch && lines.length===1) return renderHeading(headingMatch[1].length, headingMatch[2], options);
+  if (isMarkdownTable(lines)) return renderMarkdownTable(lines);
+  var parts = [];
+  var idx = 0;
+  while (idx < lines.length) {
+    var cur = lines[idx].trim();
+    if (!cur) { idx++; continue; }
+    var headingInline = cur.match(/^(#{1,6})\s+(.+)$/);
+    if (headingInline) {
+      parts.push(renderHeading(headingInline[1].length, headingInline[2], options));
+      idx++;
+      continue;
+    }
+    if (/^\d+\.\s+/.test(cur)) {
+      var oItems = [];
+      while (idx<lines.length && /^\d+\.\s+/.test(lines[idx].trim())) {
+        var itemHtml = formatInline(lines[idx].trim().replace(/^\d+\.\s+/,''));
+        idx++;
+        var subItems = [];
+        while (idx<lines.length && /^\s+[-*]\s+/.test(lines[idx])) {
+          subItems.push(formatInline(lines[idx].trim().replace(/^[-*]\s+/,'')));
+          idx++;
+        }
+        if (subItems.length) {
+          itemHtml += '<ul>'+subItems.map(function(s){ return '<li>'+s+'</li>'; }).join('')+'</ul>';
+        }
+        oItems.push(itemHtml);
+      }
+      parts.push('<ol class="md-ol">'+oItems.map(function(i){ return '<li>'+i+'</li>'; }).join('')+'</ol>');
+      continue;
+    }
+    if (/^[-*]\s+/.test(cur)) {
+      var uItems = [];
+      while (idx<lines.length && /^[-*]\s+/.test(lines[idx].trim())) {
+        uItems.push(lines[idx].trim().replace(/^[-*]\s+/,''));
+        idx++;
+      }
+      parts.push('<ul>'+uItems.map(function(i){ return '<li>'+formatInline(i)+'</li>'; }).join('')+'</ul>');
+      continue;
+    }
+    var pLines = [cur]; idx++;
+    while (idx<lines.length) {
+      var next = lines[idx].trim();
+      if (!next || /^[-*]\s+/.test(next) || /^\d+\.\s+/.test(next) || isMarkdownTableStart(lines, idx)) break;
+      pLines.push(next); idx++;
+    }
+    parts.push('<p>'+pLines.map(formatInline).join('<br>')+'</p>');
+  }
+  return parts.join('');
+}
+function isMarkdownTable(lines) {
+  return lines.length >= 2 &&
+    /^\s*\|.*\|\s*$/.test(lines[0]) &&
+    /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(lines[1]);
+}
+function isMarkdownTableStart(lines, idx) {
+  return idx + 1 < lines.length && isMarkdownTable([lines[idx], lines[idx + 1]]);
+}
+function splitTableRow(line) {
+  return line.trim().replace(/^\|/,'').replace(/\|$/,'').split('|').map(function(cell){
+    return cell.trim();
+  });
+}
+function renderMarkdownTable(lines) {
+  var header = splitTableRow(lines[0]);
+  var rows = lines.slice(2).filter(function(line){ return /^\s*\|.*\|\s*$/.test(line); }).map(splitTableRow);
+  return '<table class="md-table"><thead><tr>' +
+    header.map(function(cell){ return '<th>'+formatInline(cell)+'</th>'; }).join('') +
+    '</tr></thead><tbody>' +
+    rows.map(function(row){
+      return '<tr>'+header.map(function(_, i){ return '<td>'+formatInline(row[i] || '')+'</td>'; }).join('')+'</tr>';
+    }).join('') +
+    '</tbody></table>';
+}
+function renderHeading(level, text, options) {
+  var headingMap = options.headingMap || {};
+  var targetLevel = headingMap[level] || level;
+  targetLevel = Math.max(1, Math.min(6, targetLevel));
+  var idAttr = '';
+  if (options.idPrefix) idAttr = ' id="'+options.idPrefix+'-'+slugify(text)+'"';
+  var displayText = text.replace(/^\d+\.\s+/,'');
+  return '<h'+targetLevel+' class="md-h'+level+'"'+idAttr+'>'+formatInline(displayText)+'</h'+targetLevel+'>';
+}
+function stripMarkdown(text) {
+  if (!text) return '';
+  return text
+    .replace(/\*\*(.+?)\*\*/g,'$1')
+    .replace(/`([^`]+)`/g,'$1')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g,'$1')
+    .replace(/^#{1,6}\s+/gm,'')
+    .replace(/^>\s?/gm,'')
+    .replace(/^[-*]\s+/gm,'• ')
+    .replace(/^\d+\.\s+/gm,'')
+    .trim();
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Schema rendering (FXR90 style — enum chips + meta pills)
+══════════════════════════════════════════════════════════════ */
+var schemaNodeUid = 0;
+var schemaTableUid = 0;
+
+function getSchemaType(schema) {
+  if (!schema) return 'object';
+  if (schema.enum && (Array.isArray(schema.enum) || typeof schema.enum === 'string')) return 'enum';
+  if (schema.type) return schema.type;
+  if (schema.properties) return 'object';
+  if (schema.items) return 'array';
+  if (schema.oneOf) return 'oneOf';
+  if (schema.anyOf) return 'anyOf';
+  if (schema.allOf) return 'allOf';
+  return 'object';
+}
+function getSchemaDescriptionHtml(schema) {
+  if (!schema) return '';
+  var descText = '';
+  if (typeof schema.description==='string' && schema.description.trim()) {
+    descText = schema.description;
+  } else if (schema.type==='array' && schema.items) {
+    if (typeof schema.items.description==='string' && schema.items.description.trim()) {
+      descText = 'Array items: '+schema.items.description.trim();
+    } else if (schema.items.type) {
+      descText = 'Array of '+schema.items.type;
+    }
+  }
+  var parts = [];
+  if (descText) parts.push('<div class="schema-description">'+md(descText, {headingMap:{1:6,2:6,3:6,4:6,5:6,6:6}})+'</div>');
+  var meta = [];
+  if (schema.format) meta.push('<span class="schema-meta-item">Format: <strong>'+escHtml(String(schema.format))+'</strong></span>');
+  if (schema.pattern) meta.push('<span class="schema-meta-item">Pattern: <code>'+escHtml(String(schema.pattern))+'</code></span>');
+  if (schema.minLength!==undefined) meta.push('<span class="schema-meta-item">Min length: <strong>'+schema.minLength+'</strong></span>');
+  if (schema.maxLength!==undefined) meta.push('<span class="schema-meta-item">Max length: <strong>'+schema.maxLength+'</strong></span>');
+  if (schema.minimum!==undefined) meta.push('<span class="schema-meta-item">Min: <strong>'+schema.minimum+'</strong></span>');
+  if (schema.maximum!==undefined) meta.push('<span class="schema-meta-item">Max: <strong>'+schema.maximum+'</strong></span>');
+  if (schema.default!==undefined) meta.push('<span class="schema-meta-item">Default: <code>'+escHtml(JSON.stringify(schema.default))+'</code></span>');
+  if (schema.nullable) meta.push('<span class="schema-meta-item">Nullable</span>');
+  if (meta.length) parts.push('<div class="schema-meta">'+meta.join('')+'</div>');
+  return parts.join('');
+}
+function getSchemaEnumLine(schema) {
+  if (!schema||!schema.enum) return '';
+  var values = Array.isArray(schema.enum) ? schema.enum : String(schema.enum).split(/\s+/).filter(Boolean);
+  if (!values.length) return '';
+  return '<div class="schema-allowed"><span class="schema-allowed-label">Allowed:</span><div class="schema-allowed-values">'+
+    values.map(function(v){ return '<span class="schema-enum-chip">'+escHtml(String(v))+'</span>'; }).join('')+'</div></div>';
+}
+function buildSchemaNodeRows(name, schema, depth, parentUid, isRequired) {
+  if (!schema) return '';
+  var rows = '';
+  var type = getSchemaType(schema);
+  var descHtml = getSchemaDescriptionHtml(schema);
+  var enumLine = getSchemaEnumLine(schema);
+  var descWithEnum = descHtml + (enumLine||'');
+  var hasChildren = !!(
+    (schema.properties && Object.keys(schema.properties).length) ||
+    schema.items ||
+    (schema.oneOf && schema.oneOf.length) ||
+    (schema.anyOf && schema.anyOf.length) ||
+    (schema.allOf && schema.allOf.length)
+  );
+  var nodeId = hasChildren ? 'sn-'+(++schemaNodeUid) : '';
+  var indentClass = 'schema-indent-'+Math.min(depth,5);
+  var reqBadge = isRequired ? '<span class="schema-req">*</span>' : '';
+  var rowAttrs = parentUid ? ' data-parent="'+parentUid+'" style="display:none;"' : '';
+  var toggleHtml = hasChildren
+    ? '<button type="button" class="schema-toggle-inline" data-target="'+nodeId+'" aria-label="Toggle nested fields">&minus;</button>'
+    : '<span class="schema-toggle-spacer"></span>';
+  rows += '<tr class="schema-row"'+rowAttrs+'>'+
+    '<td class="'+(depth>0?indentClass:'')+'">'+toggleHtml+'<span class="schema-field">'+escHtml(name)+'</span>'+reqBadge+'</td>'+
+    '<td><span class="schema-type" data-type="'+escHtml(type)+'">'+escHtml(type)+'</span></td>'+
+    '<td>'+descWithEnum+'</td>'+
+    '</tr>';
+  if (schema.properties) {
+    var required = schema.required||[];
+    Object.keys(schema.properties).forEach(function(key){
+      rows += buildSchemaNodeRows(key, schema.properties[key], depth+1, nodeId, required.indexOf(key)!==-1);
+    });
+  }
+  if (schema.items) {
+    if (schema.items.properties) {
+      var itemReq = schema.items.required||[];
+      Object.keys(schema.items.properties).forEach(function(key){
+        rows += buildSchemaNodeRows(key, schema.items.properties[key], depth+1, nodeId, itemReq.indexOf(key)!==-1);
+      });
+    } else {
+      rows += buildSchemaNodeRows('item', schema.items, depth+1, nodeId, false);
+    }
+  }
+  ['allOf','anyOf','oneOf'].forEach(function(kw){
+    if (!Array.isArray(schema[kw])) return;
+    schema[kw].forEach(function(child,i){ rows += buildSchemaNodeRows(kw+' '+(i+1), child, depth+1, nodeId, false); });
+  });
+  return rows;
+}
+function schemaTable(schema) {
+  if (!schema) return '';
+  var tableId = 'schema-table-'+(++schemaTableUid);
+  var rows = '';
+  if (schema.properties && Object.keys(schema.properties).length) {
+    var required = schema.required||[];
+    Object.keys(schema.properties).forEach(function(key){
+      rows += buildSchemaNodeRows(key, schema.properties[key], 0, null, required.indexOf(key)!==-1);
+    });
+  } else {
+    rows = buildSchemaNodeRows('payload', schema, 0, null, false);
+  }
+  return '<div class="schema-toolbar">'+
+    '<button type="button" class="schema-toolbar-btn" data-schema-table="'+tableId+'" data-schema-action="expand">Expand all</button>'+
+    '<button type="button" class="schema-toolbar-btn" data-schema-table="'+tableId+'" data-schema-action="collapse">Collapse all</button>'+
+    '</div>'+
+    '<table class="schema-table" data-schema-table-id="'+tableId+'"><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Error table (BLE-specific: 5 columns including IoT status code)
+══════════════════════════════════════════════════════════════ */
+function errorTable(codes) {
+  if (!codes||!codes.length) return '';
+  var rows = codes.map(function(e){
+    return '<tr><td>'+e.code+'</td><td><code>'+escHtml(e.iot_status_code||'')+'</code></td><td>'+escHtml(e.description||'')+'</td><td>'+escHtml(e.cause||'')+'</td><td>'+escHtml(e.recommended_action||'')+'</td></tr>';
+  }).join('');
+  return '<div class="payload-heading">Error Codes</div>'+
+    '<table class="error-table"><thead><tr><th>Code</th><th>Status</th><th>Description</th><th>Cause</th><th>Action</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Interactive JSON renderer (FXR90 custom renderer)
+══════════════════════════════════════════════════════════════ */
+function jsonToken(text, cls) {
+  var span = document.createElement('span');
+  span.className = cls;
+  span.textContent = text;
+  return span;
+}
+function jsonCollapsedPreview(value, isLast) {
+  var text;
+  if (Array.isArray(value)) {
+    text = '[ '+value.length+' item'+(value.length===1?'':'s')+' ]';
+  } else {
+    var keys = Object.keys(value||{});
+    if (!keys.length) {
+      text = '{ }';
+    } else {
+      var fk = keys[0];
+      var fv = value[fk];
+      var fvStr = fv===null?'null':Array.isArray(fv)?'[ ... ]':typeof fv==='object'?'{ ... }':JSON.stringify(fv);
+      text = '{ '+JSON.stringify(fk)+': '+fvStr+(keys.length>1?', ...':'')+' }';
+    }
+  }
+  if (!isLast) text += ',';
+  return text;
+}
+function createJsonLine(opts) {
+  var line = document.createElement('div');
+  line.className = 'jl';
+  if (opts.nodeId) line.setAttribute('data-node-id', opts.nodeId);
+  line.setAttribute('data-parent-node', opts.parentNodeId!=null ? opts.parentNodeId : '');
+  var indent = document.createElement('span');
+  indent.className = 'ji';
+  indent.style.width = (opts.depth*16)+'px';
+  line.appendChild(indent);
+  if (opts.toggleNodeId) {
+    var toggle = document.createElement('button');
+    toggle.type = 'button'; toggle.className = 'jt';
+    toggle.textContent = '−';
+    toggle.setAttribute('aria-label','Toggle JSON node');
+    toggle.setAttribute('data-node-id', opts.toggleNodeId);
+    line.appendChild(toggle);
+  } else {
+    var spacer = document.createElement('span');
+    spacer.className = 'jt-spacer';
+    line.appendChild(spacer);
+  }
+  if (opts.key!=null) {
+    line.appendChild(jsonToken(JSON.stringify(String(opts.key)),'jk'));
+    line.appendChild(jsonToken(': ','jp'));
+  }
+  if (opts.openToken) line.appendChild(jsonToken(opts.openToken,'jp jopen-token'));
+  if (opts.valueToken) line.appendChild(jsonToken(opts.valueToken.text, opts.valueToken.cls));
+  if (opts.trailingComma) line.appendChild(jsonToken(',','jp'));
+  if (opts.previewText) {
+    var preview = document.createElement('span');
+    preview.className = 'jpreview';
+    preview.textContent = ' '+opts.previewText;
+    preview.style.display = 'none';
+    line.appendChild(preview);
+  }
+  return line;
+}
+function buildJsonInteractive(value) {
+  var viewer = document.createElement('div');
+  viewer.className = 'json-interactive';
+  var nodeSeq = 0;
+  function renderNode(nodeValue, depth, key, isLast, parentNodeId) {
+    var isArray = Array.isArray(nodeValue);
+    var isObj = nodeValue!==null && typeof nodeValue==='object' && !isArray;
+    if (!isArray && !isObj) {
+      var token;
+      if (nodeValue===null) token = {text:'null',cls:'jnull'};
+      else if (typeof nodeValue==='string') token = {text:JSON.stringify(nodeValue),cls:'jstr'};
+      else if (typeof nodeValue==='number') token = {text:String(nodeValue),cls:'jnum'};
+      else if (typeof nodeValue==='boolean') token = {text:nodeValue?'true':'false',cls:'jbool'};
+      else token = {text:JSON.stringify(nodeValue),cls:'jstr'};
+      viewer.appendChild(createJsonLine({depth:depth,key:key,valueToken:token,trailingComma:!isLast,parentNodeId:parentNodeId}));
+      return;
+    }
+    var nodeId = 'jn-'+(++nodeSeq);
+    var openChar = isArray?'[':'{';
+    var closeChar = isArray?']':'}';
+    viewer.appendChild(createJsonLine({depth:depth,key:key,openToken:openChar,previewText:jsonCollapsedPreview(nodeValue,isLast),toggleNodeId:nodeId,nodeId:nodeId,parentNodeId:parentNodeId}));
+    var entries;
+    if (isArray) {
+      entries = nodeValue.map(function(item,i){ return {key:null,value:item,isLast:i===nodeValue.length-1}; });
+    } else {
+      var keys = Object.keys(nodeValue);
+      entries = keys.map(function(k,i){ return {key:k,value:nodeValue[k],isLast:i===keys.length-1}; });
+    }
+    entries.forEach(function(e){ renderNode(e.value,depth+1,e.key,e.isLast,nodeId); });
+    viewer.appendChild(createJsonLine({depth:depth,valueToken:{text:closeChar,cls:'jp'},trailingComma:!isLast,parentNodeId:nodeId}));
+  }
+  renderNode(value,0,null,true,null);
+  return viewer;
+}
+function getChildLines(root, nodeId) {
+  return Array.prototype.slice.call(root.querySelectorAll('.jl[data-parent-node="'+nodeId+'"]'));
+}
+function getDescendantLines(root, nodeId) {
+  var results = []; var queue = getChildLines(root,nodeId).slice();
+  while (queue.length) {
+    var line = queue.shift(); results.push(line);
+    var cid = line.getAttribute('data-node-id');
+    if (cid) getChildLines(root,cid).forEach(function(c){ queue.push(c); });
+  }
+  return results;
+}
+function expandNode(root, nodeId) {
+  var opener = root.querySelector('.jl[data-node-id="'+nodeId+'"]');
+  if (!opener) return;
+  var btn = opener.querySelector('.jt[data-node-id="'+nodeId+'"]');
+  var preview = opener.querySelector('.jpreview');
+  var openToken = opener.querySelector('.jopen-token');
+  if (btn) btn.textContent = '−';
+  if (preview) preview.style.display = 'none';
+  if (openToken) openToken.style.display = '';
+  getChildLines(root,nodeId).forEach(function(l){ l.style.display='flex'; });
+}
+function collapseNode(root, nodeId) {
+  var opener = root.querySelector('.jl[data-node-id="'+nodeId+'"]');
+  if (!opener) return;
+  var btn = opener.querySelector('.jt[data-node-id="'+nodeId+'"]');
+  var preview = opener.querySelector('.jpreview');
+  var openToken = opener.querySelector('.jopen-token');
+  if (btn) btn.textContent = '+';
+  if (preview) preview.style.display = 'inline';
+  if (openToken) openToken.style.display = 'none';
+  getDescendantLines(root,nodeId).forEach(function(l){
+    l.style.display = 'none';
+    var nid = l.getAttribute('data-node-id');
+    if (nid) {
+      var nb = l.querySelector('.jt[data-node-id="'+nid+'"]');
+      var np = l.querySelector('.jpreview');
+      var nt = l.querySelector('.jopen-token');
+      if (nb) nb.textContent = '+';
+      if (np) np.style.display = 'inline';
+      if (nt) nt.style.display = 'none';
+    }
+  });
+}
+function expandAllJson(viewer) {
+  if (!viewer) return;
+  viewer.querySelectorAll('.jl').forEach(function(l){ l.style.display='flex'; });
+  viewer.querySelectorAll('.jt').forEach(function(b){ b.textContent='−'; });
+  viewer.querySelectorAll('.jpreview').forEach(function(p){ p.style.display='none'; });
+  viewer.querySelectorAll('.jopen-token').forEach(function(t){ t.style.display=''; });
+}
+function collapseTopLevelJson(viewer) {
+  if (!viewer) return;
+  expandAllJson(viewer);
+  viewer.querySelectorAll('.jl[data-node-id][data-parent-node=""]').forEach(function(line){
+    var nid = line.getAttribute('data-node-id');
+    if (nid) collapseNode(viewer,nid);
+  });
+}
+function expandFirstLevelJson(viewer) {
+  if (!viewer) return;
+  collapseTopLevelJson(viewer);
+  viewer.querySelectorAll('.jl[data-parent-node=""]').forEach(function(line){
+    var nid = line.getAttribute('data-node-id');
+    if (nid) expandNode(viewer,nid);
+  });
+}
+function wireJsonInteractive(viewer) {
+  if (!viewer) return;
+  viewer.addEventListener('click', function(e){
+    var btn = e.target.closest('.jt');
+    if (!btn) return;
+    var nodeId = btn.getAttribute('data-node-id');
+    if (!nodeId) return;
+    if (btn.textContent==='−') collapseNode(viewer,nodeId);
+    else expandNode(viewer,nodeId);
+  });
+}
+function buildJsonViewerWrap(rawText, options) {
+  options = options || {};
+  var parsed = JSON.parse(rawText);
+  var wrapper = document.createElement('div');
+  wrapper.className = 'json-viewer-wrap';
+  var toolbar = document.createElement('div');
+  toolbar.className = 'jv-toolbar';
+  var left = document.createElement('div');
+  left.className = 'jv-toolbar-left';
+  var expandBtn = document.createElement('button');
+  expandBtn.type = 'button'; expandBtn.className = 'jv-toolbar-btn';
+  expandBtn.textContent = 'Expand all';
+  var collapseBtn = document.createElement('button');
+  collapseBtn.type = 'button'; collapseBtn.className = 'jv-toolbar-btn';
+  collapseBtn.textContent = 'Collapse all';
+  left.appendChild(expandBtn);
+  left.appendChild(collapseBtn);
+  var label = document.createElement('div');
+  label.className = 'jv-lang-label';
+  label.textContent = 'JSON';
+  var copyBtn = document.createElement('button');
+  copyBtn.type = 'button'; copyBtn.className = 'jv-toolbar-btn jv-copy-btn';
+  copyBtn.textContent = 'Copy';
+  var interactive = buildJsonInteractive(parsed);
+  wireJsonInteractive(interactive);
+  expandBtn.addEventListener('click', function(){ expandAllJson(interactive); });
+  collapseBtn.addEventListener('click', function(){ collapseTopLevelJson(interactive); });
+  copyBtn.addEventListener('click', function(){
+    copyText(rawText, function(){
+      copyBtn.textContent = 'Copied!';
+      setTimeout(function(){ copyBtn.textContent='Copy'; }, 1500);
+    }, function(){
+      copyBtn.textContent = 'Copy failed';
+      setTimeout(function(){ copyBtn.textContent='Copy'; }, 1500);
+    });
+  });
+  toolbar.appendChild(left);
+  toolbar.appendChild(label);
+  toolbar.appendChild(copyBtn);
+  wrapper.appendChild(toolbar);
+  wrapper.appendChild(interactive);
+  wrapper.setAttribute('data-json-raw', rawText);
+  if (options.expandAll) expandAllJson(interactive);
+  else expandFirstLevelJson(interactive);
+  return wrapper;
+}
+function setJsonViewerData(container, value) {
+  if (!container) return;
+  var raw = JSON.stringify(value,null,2);
+  var interactive = container.querySelector('.json-interactive');
+  if (!interactive) return;
+  var newInteractive;
+  try { newInteractive = buildJsonInteractive(JSON.parse(raw)); } catch(e){ return; }
+  wireJsonInteractive(newInteractive);
+  interactive.parentNode.replaceChild(newInteractive, interactive);
+  container.setAttribute('data-json-raw', raw);
+  expandFirstLevelJson(newInteractive);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Copy buttons, collapse toggles, schema wiring
+══════════════════════════════════════════════════════════════ */
+function addCopyButtons() {
+  document.querySelectorAll('pre:not([data-copy])').forEach(function(pre){
+    pre.setAttribute('data-copy','1');
+    var btn = document.createElement('button');
+    btn.className = 'copy-btn'; btn.textContent = 'Copy';
+    btn.addEventListener('click', function(){
+      var text = pre.textContent.replace('Copy','').replace('Copied!','').trim();
+      copyText(text, function(){
+        btn.textContent = 'Copied!';
+        setTimeout(function(){ btn.textContent='Copy'; }, 1500);
+      }, function(){
+        btn.textContent = 'Copy failed';
+        setTimeout(function(){ btn.textContent='Copy'; }, 1500);
+      });
+    });
+    pre.appendChild(btn);
+  });
+}
+function addCollapseToggles(root) {
+  var scope = root||document;
+  scope.querySelectorAll('pre:not([data-json-processed])').forEach(function(pre){
+    var code = pre.querySelector('code.language-json');
+    if (!code) return;
+    pre.setAttribute('data-json-processed','1');
+    var rawText = code.textContent.trim();
+    try {
+      var wrapper = buildJsonViewerWrap(rawText, {expandAll: !!pre.closest('#op-ble_data_events')});
+      pre.parentNode.replaceChild(wrapper, pre);
+    } catch(e) {
+      if (window.Prism) Prism.highlightElement(code);
+    }
+  });
+}
+function collapseChildren(parentId, root) {
+  var scope = root||document;
+  scope.querySelectorAll('[data-parent="'+parentId+'"]').forEach(function(row){
+    row.style.display = 'none';
+    var nestedToggle = row.querySelector('.schema-toggle-inline');
+    if (nestedToggle) {
+      nestedToggle.textContent = '+';
+      collapseChildren(nestedToggle.getAttribute('data-target'), scope);
+    }
+  });
+}
+function wireSchemaToggles() {
+  document.querySelectorAll('.schema-toggle-inline').forEach(function(btn){
+    if (btn.getAttribute('data-wired')) return;
+    btn.setAttribute('data-wired','1');
+    var targetId = btn.getAttribute('data-target');
+    var table = btn.closest('.schema-table');
+    var children = table ? table.querySelectorAll('[data-parent="'+targetId+'"]') : [];
+    children.forEach(function(row){ row.style.display=''; });
+    btn.textContent = '−';
+    btn.addEventListener('click', function(){
+      var isExpanded = btn.textContent==='−';
+      if (isExpanded) { collapseChildren(targetId,table); btn.textContent='+'; }
+      else { children.forEach(function(row){ row.style.display=''; }); btn.textContent='−'; }
+    });
+  });
+}
+function wireSchemaToolbars() {
+  document.querySelectorAll('.schema-toolbar-btn').forEach(function(btn){
+    if (btn.getAttribute('data-wired')) return;
+    btn.setAttribute('data-wired','1');
+    btn.addEventListener('click', function(){
+      var tableId = btn.getAttribute('data-schema-table');
+      var table = document.querySelector('[data-schema-table-id="'+tableId+'"]');
+      if (!table) return;
+      if (btn.getAttribute('data-schema-action')==='expand') {
+        table.querySelectorAll('.schema-row').forEach(function(r){ r.style.display=''; });
+        table.querySelectorAll('.schema-toggle-inline').forEach(function(t){ t.textContent='−'; });
+      } else {
+        table.querySelectorAll('.schema-row[data-parent]').forEach(function(r){ r.style.display='none'; });
+        table.querySelectorAll('.schema-toggle-inline').forEach(function(t){ t.textContent='+'; });
+      }
+    });
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════
+   REST artifacts (BLE-specific)
+══════════════════════════════════════════════════════════════ */
+var REST_ARTIFACTS = {
+  'Enable Protected Mode':                  'enableTagProtection',
+  'Disable Protected Mode':                 'disableTagProtection',
+  'Enable Inventory of Protected Tags':     'enableTagVisibility',
+  'Clear Protected Mode Configuration':     'disableTagVisibility',
+  'Enable Protected Mode with Short Range': 'enableShortRange',
+  'Enable FastID':                          'enableFastid',
+  'Disable FastID':                         'disableFastid',
+  'Enable TagFocus':                        'enableTagfocus',
+  'Disable TagFocus':                       'disableTagfocus',
+  'Quiet Tags':                             'quietTags',
+  'Unquiet Tags':                           'unquietTags',
+  'Get Gen2X Config':                       'getGen2xConfig',
+  'Start':                                  'start',
+  'Stop':                                   'stop'
+};
+var REST_BUNDLE = {};
+function getRestArtifact(folder, suffix) {
+  if (!REST_BUNDLE[folder]) return undefined;
+  var data = REST_BUNDLE[folder][suffix];
+  return (data===undefined) ? undefined : data;
+}
+function toPrettyJson(data) {
+  if (data===null||data===undefined) return null;
+  return JSON.stringify(data,null,2);
+}
+/* A REST body counts as "blank" (endpoint returns/needs nothing) when it is
+   null, an empty/whitespace-only string, or an empty object/array. */
+function isBlankRestBody(v) {
+  if (v===null) return true;
+  if (typeof v==='string') return v.trim()==='';
+  if (typeof v==='object') return Object.keys(v).length===0;
+  return false;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Render operation (FXR90 structure + BLE REST tabs)
+══════════════════════════════════════════════════════════════ */
+function renderDownloadExamples(examples) {
+  var keys = Object.keys(examples||{});
+  if (!keys.length) return '';
+  return keys.map(function(k){
+    var entry = examples[k] || {};
+    var value = Object.prototype.hasOwnProperty.call(entry,'value') ? entry.value : entry;
+    var desc = typeof entry.description==='string' ? entry.description : '';
+    return '<div class="download-example">' +
+      '<h5>'+escHtml(formatExampleLabelFromValue(k, entry))+'</h5>' +
+      (desc ? '<div class="example-description">'+md(desc)+'</div>' : '') +
+      '<pre><code>'+escHtml(toPrettyJson(value)||'')+'</code></pre>' +
+      '</div>';
+  }).join('');
+}
+function renderDownloadSingleExample(label, value) {
+  if (value===undefined) return '';
+  if (value===null) return '<p class="no-response-body">(no body)</p>';
+  return '<div class="download-example"><h5>'+escHtml(label)+'</h5><pre><code>'+escHtml(toPrettyJson(value)||'')+'</code></pre></div>';
+}
+function renderDownloadOperation(path, method, op) {
+  var summary = op.summary||path;
+  var isEvent = !!op['x-event'];
+  var restFolder = REST_ARTIFACTS[summary]||null;
+  var ct = op.requestBody && op.requestBody.content ? op.requestBody.content['application/json'] : null;
+  var resKey = op.responses ? Object.keys(op.responses)[0] : null;
+  var res = resKey ? op.responses[resKey] : null;
+  var rct = res && res.content ? res.content['application/json'] : null;
+  var html = '<section class="download-operation">';
+  html += '<h3>'+escHtml(summary)+'</h3>';
+  if (!isEvent) html += '<div class="download-meta"><span>'+escHtml(String(method||'').toUpperCase())+'</span><code>'+escHtml(path)+'</code></div>';
+  if (op.description) html += '<div class="md-content">'+md(op.description)+'</div>';
+  if (ct) {
+    html += '<h4>MQTT request</h4>';
+    html += renderDownloadExamples(ct.examples||{});
+    if (ct.schema) html += '<h4>MQTT request schema</h4>'+schemaTable(ct.schema);
+  }
+  if (rct && !isEvent) {
+    html += '<h4>MQTT response</h4>';
+    html += renderDownloadExamples(rct.examples||{});
+    if (rct.schema) html += '<h4>MQTT response schema</h4>'+schemaTable(rct.schema);
+  }
+  if (restFolder) {
+    var restReqExamples = getRestArtifact(restFolder,'request_examples');
+    var restReqExample = getRestArtifact(restFolder,'request_example');
+    var restReqSchema = getRestArtifact(restFolder,'request_schema');
+    var restResExample = getRestArtifact(restFolder,'response_example');
+    var restResSchema = getRestArtifact(restFolder,'response_schema');
+    var reqHasNoBody = (restReqExample===null);
+    var resIsBlank = (restResExample!==undefined) && isBlankRestBody(restResExample);
+    html += '<h4>REST request</h4>';
+    if (restReqExamples) {
+      var restReqExampleObj = {};
+      Object.keys(restReqExamples).forEach(function(k){ restReqExampleObj[k] = {value:restReqExamples[k]}; });
+      html += renderDownloadExamples(restReqExampleObj);
+    } else {
+      html += renderDownloadSingleExample('REST request example', restReqExample);
+    }
+    /* No REST request body (e.g. GET) → no REST request schema table. */
+    if (restReqSchema && !reqHasNoBody) html += '<h4>REST request schema</h4>'+schemaTable(restReqSchema);
+    html += '<h4>REST response</h4>';
+    if (resIsBlank) {
+      html += '<p class="no-response-body">Returns a blank response &mdash; the REST endpoint sends no response body.</p>';
+    } else {
+      html += renderDownloadSingleExample('REST response example', restResExample);
+      /* Only show response schema when there is an actual response body. */
+      if (restResSchema!==undefined&&restResSchema!==null) html += '<h4>REST response schema</h4>'+schemaTable(restResSchema);
+    }
+  }
+  html += '</section>';
+  return html;
+}
+function buildFullDocumentHtml(spec) {
+  var tagMap = {};
+  (spec.tags||[]).forEach(function(t){ tagMap[t.name]={description:t.description||'',operations:[]}; });
+  Object.keys(spec.paths||{}).forEach(function(path){
+    Object.keys(spec.paths[path]).forEach(function(method){
+      var op = spec.paths[path][method];
+      (op.tags||['default']).forEach(function(tagName){
+        if (!tagMap[tagName]) tagMap[tagName]={description:'',operations:[]};
+        tagMap[tagName].operations.push({path:path,method:method,op:op});
+      });
+    });
+  });
+  var orderedTags = [];
+  (spec['x-tagGroups']||[]).forEach(function(group){
+    (group.tags||[]).forEach(function(tagName){ if (tagMap[tagName]) orderedTags.push(tagName); });
+  });
+  Object.keys(tagMap).forEach(function(tagName){ if (orderedTags.indexOf(tagName)===-1) orderedTags.push(tagName); });
+  var docTitle = spec.info&&spec.info.title?spec.info.title:'API Reference';
+  var genDate = new Date().toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});
+  var content = '<header class="doc-cover">';
+  content += '<h1>'+escHtml(docTitle)+'</h1>';
+  if (spec.info&&spec.info.version) content += '<p class="doc-version">Version '+escHtml(spec.info.version)+'</p>';
+  content += '<p class="doc-generated">Generated '+escHtml(genDate)+'</p>';
+  content += '</header>';
+  if (spec.info&&spec.info.description) content += '<div class="md-content doc-intro">'+md(spec.info.description)+'</div>';
+  orderedTags.forEach(function(tagName){
+    var tag = tagMap[tagName];
+    content += '<section class="download-tag"><h2>'+escHtml(tagName)+'</h2>';
+    if (tag.description) content += '<div class="md-content">'+md(tag.description)+'</div>';
+    tag.operations.forEach(function(entry){ content += renderDownloadOperation(entry.path,entry.method,entry.op); });
+    content += '</section>';
+  });
+  return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>'+escHtml(docTitle)+'</title>' +
+    '<style>' +
+    '*{box-sizing:border-box;}' +
+    'body{font-family:Inter,Segoe UI,Arial,sans-serif;color:#172033;line-height:1.55;margin:0;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}' +
+    'main{max-width:980px;margin:0 auto;padding:40px 32px;}' +
+    '.doc-cover{padding:32px 0 24px;border-bottom:3px solid #1f5be3;margin-bottom:8px;}' +
+    'h1{font-size:38px;color:#1f5be3;margin:0 0 10px;line-height:1.12;}' +
+    'h2{font-size:26px;border-bottom:1px solid #d7deea;padding-bottom:8px;margin-top:40px;page-break-after:avoid;break-after:avoid;}' +
+    'h3{font-size:22px;margin-top:32px;page-break-after:avoid;break-after:avoid;}' +
+    'h4{font-size:16px;text-transform:uppercase;letter-spacing:.04em;color:#5f6f89;margin-top:28px;page-break-after:avoid;break-after:avoid;}' +
+    'h5{font-size:15px;margin:16px 0 8px;page-break-after:avoid;break-after:avoid;}' +
+    'p,li{color:#30415f;}' +
+    '.doc-version{color:#5f6f89;margin:0;font-size:16px;font-weight:600;}' +
+    '.doc-generated{color:#8a97ad;margin:4px 0 0;font-size:13px;}' +
+    'table{width:100%;border-collapse:collapse;margin:12px 0 20px;page-break-inside:auto;}' +
+    'tr{page-break-inside:avoid;break-inside:avoid;}' +
+    'th,td{border:1px solid #d7deea;padding:10px 12px;text-align:left;vertical-align:top;word-break:break-word;}' +
+    'th{background:#f6f8fb;}' +
+    'code{font-family:Consolas,Monaco,monospace;background:#f3f6fa;border:1px solid #d7deea;border-radius:4px;padding:1px 5px;word-break:break-word;}' +
+    'pre{background:#172033;color:#f8fafc;border-radius:8px;padding:16px;overflow:auto;white-space:pre-wrap;word-break:break-word;}' +
+    'pre code{background:transparent;border:0;color:inherit;padding:0;}' +
+    '.download-meta{display:flex;gap:10px;align-items:center;margin:8px 0 16px;}' +
+    '.download-meta span{font-weight:700;background:#eaf1ff;color:#1f5be3;border-radius:999px;padding:3px 10px;}' +
+    '.download-tag{page-break-before:always;break-before:page;}' +
+    '.download-tag:first-of-type{page-break-before:avoid;break-before:avoid;}' +
+    '.download-operation{page-break-inside:avoid;break-inside:avoid;border-top:1px solid #edf1f7;padding-top:8px;}' +
+    '.endpoint-block{margin:16px 0;}' +
+    '.ep-heading{display:inline-block;background:#1f5be3;color:#fff;border-radius:6px;padding:8px 12px;font-weight:700;margin-bottom:8px;}' +
+    '.schema-toolbar,.schema-toggle-inline{display:none!important;}' +
+    '@page{size:A4;margin:16mm 14mm;}' +
+    '@media print{main{max-width:none;padding:0;}a{color:inherit;text-decoration:none;}.download-operation{page-break-inside:auto;}}' +
+    '</style></head><body><main>' + content + '</main></body></html>';
+}
+function downloadFullDocument(spec) {
+  var html = buildFullDocumentHtml(spec);
+  var btn = document.getElementById('download-full-doc');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Preparing PDF...';
+  }
+  // Native browser "Save as PDF" is the most reliable, highest-quality path for a
+  // long document: selectable text, correct pagination, and no canvas-size limits.
+  openPrintableDocument(html, btn);
+}
+function openPrintableDocument(html, btn) {
+  function restore(){
+    if (btn) { btn.disabled = false; btn.textContent = 'Download PDF'; }
+  }
+  var printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    alert('Pop-up blocked. Allow pop-ups for this page, then click "Download PDF" again to save the full document.');
+    restore();
+    return;
+  }
+  printWindow.document.open();
+  printWindow.document.write(html);
+  printWindow.document.close();
+  printWindow.focus();
+  // Wait for fonts/layout in the new window before invoking the print dialog,
+  // where the user chooses "Save as PDF".
+  var triggered = false;
+  function triggerPrint(){
+    if (triggered) return;
+    triggered = true;
+    try { printWindow.print(); } catch (e) {}
+    restore();
+  }
+  if (printWindow.document.fonts && printWindow.document.fonts.ready) {
+    printWindow.document.fonts.ready.then(function(){ setTimeout(triggerPrint, 150); });
+  }
+  setTimeout(triggerPrint, 900);
+}
+function wireDownloadFullDocument(spec) {
+  var btn = document.getElementById('download-full-doc');
+  if (!btn) return;
+  btn.disabled = false;
+  if (btn.getAttribute('data-wired')) return;
+  btn.setAttribute('data-wired','1');
+  btn.addEventListener('click', function(){ downloadFullDocument(spec); });
+}
+function renderOperation(path, method, op) {
+  var summary = op.summary||path;
+  var id = opIdFromPath(path);
+  var desc = op.description||'';
+  var isEvent = !!op['x-event'];
+  var restFolder = REST_ARTIFACTS[summary]||null;
+
+  var restReqExamplesData = restFolder ? getRestArtifact(restFolder,'request_examples') : undefined;
+  var restReqExampleData  = restFolder ? getRestArtifact(restFolder,'request_example')  : undefined;
+  var restReqSchemaData   = restFolder ? getRestArtifact(restFolder,'request_schema')   : undefined;
+  var restResExampleData  = restFolder ? getRestArtifact(restFolder,'response_example') : undefined;
+  var restResSchemaData   = restFolder ? getRestArtifact(restFolder,'response_schema')  : undefined;
+  var restReqExampleJson = toPrettyJson(restReqExampleData);
+  var restReqExampleEmpty = (restReqExampleData===null);
+  /* A blank REST response = null, empty string, or empty object/array (endpoint returns no body). */
+  var restResIsBlank = (restResExampleData!==undefined) && isBlankRestBody(restResExampleData);
+  var restResExampleJson = restResIsBlank ? '' : toPrettyJson(restResExampleData);
+  var restResExampleEmpty = restResIsBlank;
+  /* No REST request body (e.g. GET) → don't render a REST request schema table. */
+  var restReqSchemaHtml = (restReqSchemaData && !restReqExampleEmpty) ? schemaTable(restReqSchemaData) : '';
+  /* Blank REST response → don't render a REST response schema table. */
+  var restResSchemaHtml = (restResSchemaData!==undefined&&restResSchemaData!==null&&!restResIsBlank) ? schemaTable(restResSchemaData) : '';
+
+  var reqExampleJson = '';
+  var reqHtml = '';
+  if (op.requestBody && op.requestBody.content) {
+    var ct = op.requestBody.content['application/json'];
+    if (ct) {
+      var exObj = ct.examples||{};
+      var reqExKeys = Object.keys(exObj);
+      if (reqExKeys.length && exObj[reqExKeys[0]].value) {
+        reqExampleJson = JSON.stringify(exObj[reqExKeys[0]].value,null,2);
+      }
+      var schemaHtml = ct.schema ? schemaTable(ct.schema) : '';
+      reqHtml = '<div class="payload-section">';
+      reqHtml += '<div class="payload-heading">Request Payload</div>';
+      reqHtml += '<div class="tab-bar">';
+      if (reqExampleJson) reqHtml += '<button class="tab-btn active" data-tab="req-ex-'+id+'">MQTT Example</button>';
+      if (schemaHtml) reqHtml += '<button class="tab-btn'+(reqExampleJson?'':' active')+'" data-tab="req-sc-'+id+'">MQTT Schema</button>';
+      if (restReqExamplesData||restReqExampleJson||restReqExampleEmpty) reqHtml += '<button class="tab-btn" data-tab="req-rest-ex-'+id+'">REST Example</button>';
+      if (restReqSchemaHtml) reqHtml += '<button class="tab-btn" data-tab="req-rest-sc-'+id+'">REST Schema</button>';
+      reqHtml += '</div>';
+
+      if (reqExampleJson) {
+        reqHtml += '<div class="tab-panel active" id="req-ex-'+id+'">';
+        if (reqExKeys.length > 1) {
+          var reqExVals = {};
+          reqExKeys.forEach(function(k){
+            reqExVals[k] = {value:exObj[k].value, description:typeof exObj[k].description==='string'?exObj[k].description:''};
+          });
+          reqHtml += '<select class="example-select" data-panel="req-ex-'+id+'" data-examples="'+encodeURIComponent(JSON.stringify(reqExVals))+'">';
+          reqExKeys.forEach(function(k){ reqHtml += '<option value="'+escHtml(k)+'">'+escHtml(formatExampleLabelFromValue(k, reqExVals[k]))+'</option>'; });
+          reqHtml += '</select>';
+        }
+        reqHtml += '<pre class="language-json"><code class="language-json">'+escHtml(reqExampleJson)+'</code></pre>';
+        reqHtml += '</div>';
+      }
+      if (schemaHtml) reqHtml += '<div class="tab-panel'+(reqExampleJson?'':' active')+'" id="req-sc-'+id+'">'+schemaHtml+'</div>';
+
+      if (restReqExamplesData) {
+        var rreKeys = Object.keys(restReqExamplesData);
+        var rreVals = {};
+        rreKeys.forEach(function(k){ rreVals[k] = {value:restReqExamplesData[k]}; });
+        reqHtml += '<div class="tab-panel" id="req-rest-ex-'+id+'">';
+        if (rreKeys.length > 1) {
+          reqHtml += '<select class="example-select" data-panel="req-rest-ex-'+id+'" data-examples="'+encodeURIComponent(JSON.stringify(rreVals))+'">';
+          rreKeys.forEach(function(k){ reqHtml += '<option value="'+escHtml(k)+'">'+escHtml(formatExampleLabelFromValue(k, rreVals[k]))+'</option>'; });
+          reqHtml += '</select>';
+        }
+        reqHtml += '<pre class="language-json"><code class="language-json">'+escHtml(toPrettyJson(restReqExamplesData[rreKeys[0]]))+'</code></pre>';
+        reqHtml += '</div>';
+      } else if (restReqExampleJson) {
+        reqHtml += '<div class="tab-panel" id="req-rest-ex-'+id+'"><pre class="language-json"><code class="language-json">'+escHtml(restReqExampleJson)+'</code></pre></div>';
+      } else if (restReqExampleEmpty) {
+        reqHtml += '<div class="tab-panel" id="req-rest-ex-'+id+'"><p class="no-response-body">(no request body needed)</p></div>';
+      }
+      if (restReqSchemaHtml) reqHtml += '<div class="tab-panel" id="req-rest-sc-'+id+'">'+restReqSchemaHtml+'</div>';
+      reqHtml += '</div>';
+    }
+  }
+
+  var resHtml = '';
+  if (op.responses && !isEvent) {
+    var resKey = Object.keys(op.responses)[0];
+    var res = op.responses[resKey];
+    if (res && res.content && res.content['application/json']) {
+      var rct = res.content['application/json'];
+      var resExObj = rct.examples||{};
+      var resExKeys = Object.keys(resExObj);
+      var resSchemaHtml = (rct.schema && !isEvent) ? schemaTable(rct.schema) : '';
+      var resExampleJson = '';
+      if (resExKeys.length && resExObj[resExKeys[0]].value) {
+        resExampleJson = JSON.stringify(resExObj[resExKeys[0]].value,null,2);
+      }
+      resHtml = '<div class="payload-section">';
+      resHtml += '<div class="payload-heading">'+(isEvent?'Event Payload':'Response Payload')+'</div>';
+      var hasResContent = resExKeys.length||resSchemaHtml||restResExampleJson||restResExampleEmpty||restResSchemaHtml;
+      if (hasResContent) {
+        resHtml += '<div class="tab-bar">';
+        if (resExKeys.length) resHtml += '<button class="tab-btn active" data-tab="res-ex-'+id+'">'+(isEvent?'Event Example':'MQTT Example')+'</button>';
+        if (resSchemaHtml) resHtml += '<button class="tab-btn'+(resExKeys.length?'':' active')+'" data-tab="res-sc-'+id+'">'+(isEvent?'Event Schema':'MQTT Schema')+'</button>';
+        if (restResExampleJson||restResExampleEmpty) resHtml += '<button class="tab-btn" data-tab="res-rest-ex-'+id+'">REST Example</button>';
+        if (restResSchemaHtml) resHtml += '<button class="tab-btn" data-tab="res-rest-sc-'+id+'">REST Schema</button>';
+        resHtml += '</div>';
+        if (resExKeys.length) {
+          resHtml += '<div class="tab-panel active" id="res-ex-'+id+'">';
+          if (resExKeys.length > 1) {
+            var resExVals = {};
+            resExKeys.forEach(function(k){ resExVals[k]={value:resExObj[k].value,description:typeof resExObj[k].description==='string'?resExObj[k].description:''}; });
+            resHtml += '<select class="example-select" data-panel="res-ex-'+id+'" data-examples="'+encodeURIComponent(JSON.stringify(resExVals))+'">';
+            resExKeys.forEach(function(k){ resHtml += '<option value="'+escHtml(k)+'">'+escHtml(formatExampleLabelFromValue(k, resExVals[k]))+'</option>'; });
+            resHtml += '</select>';
+          }
+          resHtml += '<pre class="language-json"><code class="language-json">'+escHtml(resExampleJson)+'</code></pre>';
+          resHtml += '</div>';
+        }
+        if (resSchemaHtml) resHtml += '<div class="tab-panel'+(resExKeys.length?'':' active')+'" id="res-sc-'+id+'">'+resSchemaHtml+'</div>';
+        if (restResExampleJson) {
+          resHtml += '<div class="tab-panel" id="res-rest-ex-'+id+'"><pre class="language-json"><code class="language-json">'+escHtml(restResExampleJson)+'</code></pre></div>';
+        } else if (restResExampleEmpty) {
+          resHtml += '<div class="tab-panel" id="res-rest-ex-'+id+'"><p class="no-response-body">Returns a blank response &mdash; the REST endpoint sends no response body.</p></div>';
+        }
+        if (restResSchemaHtml) resHtml += '<div class="tab-panel" id="res-rest-sc-'+id+'">'+restResSchemaHtml+'</div>';
+      }
+      resHtml += '</div>';
+    }
+  }
+
+  return '<div class="operation" id="op-'+id+'">'+
+    '<div class="op-title-bar"><div class="op-title-wrap"><h3 class="op-title">'+escHtml(summary)+'</h3></div></div>'+
+    '<div class="op-description md-content">'+md(desc,{idPrefix:id,headingMap:{1:3,2:3,3:4,4:5,5:5,6:5}})+'</div>'+
+    reqHtml+resHtml+'</div><hr class="op-divider">';
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Topbar search
+══════════════════════════════════════════════════════════════ */
+function wireTopbarSearch(spec) {
+  var input = document.getElementById('topbar-search');
+  var clearBtn = document.getElementById('topbar-search-clear');
+  var dropdown = document.getElementById('topbar-search-dropdown');
+  if (!input) return;
+  var index = [];
+  var paths = spec.paths||{};
+  Object.keys(paths).forEach(function(path){
+    Object.keys(paths[path]).forEach(function(method){
+      var op = paths[path][method];
+      var id = opIdFromPath(path);
+      var tag = (op.tags||[''])[0];
+      var summary = op.summary||path;
+      var description = op.description||'';
+      index.push({
+        id:id, summary:summary, summaryLower:summary.toLowerCase(),
+        tag:tag, tagLower:tag.toLowerCase(),
+        path:path, pathLower:path.toLowerCase(),
+        description:description, descriptionLower:description.toLowerCase(),
+        text:[summary,path,description,tag].join(' ').toLowerCase(), isTag:false
+      });
+    });
+  });
+  (spec.tags||[]).forEach(function(t){
+    index.push({
+      id:slugify(t.name), summary:t.name, summaryLower:t.name.toLowerCase(),
+      tag:t.name, tagLower:t.name.toLowerCase(), path:'', pathLower:'',
+      description:t.description||'', descriptionLower:(t.description||'').toLowerCase(),
+      text:(t.name+' '+(t.description||'')).toLowerCase(), isTag:true
+    });
+  });
+  function esc(text){ return text.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+  function norm(q){ return (q||'').toLowerCase().trim(); }
+  function highlight(text,q) {
+    if (!text) return '';
+    var safe = escHtml(text);
+    if (!q) return safe;
+    var terms = norm(q).split(/\s+/).filter(Boolean).map(esc);
+    if (!terms.length) return safe;
+    return safe.replace(new RegExp('('+terms.join('|')+')','ig'),'<mark>$1</mark>');
+  }
+  function snippet(text,q) {
+    if (!text) return '';
+    var clean = stripMarkdown(text).replace(/\s+/g,' ').trim();
+    if (!clean) return '';
+    var query = norm(q);
+    if (!query) return clean.length>88?clean.slice(0,87)+'…':clean;
+    var lower = clean.toLowerCase();
+    var i = lower.indexOf(query);
+    if (i===-1) return clean.length>88?clean.slice(0,87)+'…':clean;
+    var start = Math.max(0,i-36), end = Math.min(clean.length,i+query.length+48);
+    return (start>0?'…':'')+clean.slice(start,end)+(end<clean.length?'…':'');
+  }
+  function score(item,q){
+    if(!q) return -1;
+    var s=0;
+    if(item.summaryLower===q) s+=1000; else if(item.summaryLower.indexOf(q)===0) s+=900; else if(item.summaryLower.indexOf(q)!==-1) s+=700;
+    if(item.tagLower===q) s+=500; else if(item.tagLower.indexOf(q)===0) s+=420; else if(item.tagLower.indexOf(q)!==-1) s+=260;
+    if(item.pathLower.indexOf(q)!==-1) s+=320;
+    if(item.descriptionLower.indexOf(q)!==-1) s+=180;
+    if(item.text.indexOf(q)!==-1) s+=100;
+    s += item.isTag?10:30;
+    return s;
+  }
+  function getMatches(q){
+    return index.map(function(item){ return {item:item,score:score(item,q)}; })
+      .filter(function(e){ return e.score>0; })
+      .sort(function(a,b){ return b.score!==a.score?b.score-a.score:a.item.summary.localeCompare(b.item.summary); })
+      .slice(0,8).map(function(e){ return e.item; });
+  }
+  var currentMatches = []; var activeIndex = -1;
+  function setActive(i){
+    var items = dropdown.querySelectorAll('.topbar-search-item');
+    if (!items.length) return;
+    activeIndex = Math.max(0,Math.min(i,items.length-1));
+    items.forEach(function(item,idx){
+      var active = idx===activeIndex;
+      item.classList.toggle('active',active);
+      item.setAttribute('aria-selected',active?'true':'false');
+      if (active) item.scrollIntoView({block:'nearest'});
+    });
+  }
+  function openResult(item){
+    var targetId = item.isTag?'tag-'+item.id:'op-'+item.id;
+    var target = document.getElementById(targetId);
+    if (target) {
+      var topbarH = document.getElementById('topbar').offsetHeight;
+      window.scrollTo({top:target.getBoundingClientRect().top+window.pageYOffset-topbarH-12,behavior:'smooth'});
+      target.classList.add('search-highlight');
+      setTimeout(function(){ target.classList.remove('search-highlight'); },2200);
+    }
+    dropdown.style.display = 'none';
+    input.value = item.summary;
+    clearBtn.style.display = 'inline-block';
+  }
+  function showDropdown(q){
+    dropdown.innerHTML = ''; activeIndex = -1;
+    if (!q) { dropdown.style.display='none'; currentMatches=[]; return; }
+    var matches = getMatches(q); currentMatches = matches;
+    if (!matches.length) {
+      dropdown.innerHTML = '<div class="topbar-search-empty">No results for "'+escHtml(q)+'"</div>';
+      dropdown.style.display = 'block'; return;
+    }
+    matches.forEach(function(item){
+      var row = document.createElement('button');
+      row.type='button'; row.className='topbar-search-item'; row.setAttribute('role','option');
+      var badge = document.createElement('span');
+      badge.className = item.isTag?'topbar-search-badge tag':'topbar-search-badge op';
+      badge.textContent = item.isTag?'CAT':'CMD';
+      var body = document.createElement('span'); body.className='topbar-search-body';
+      var lbl = document.createElement('span'); lbl.className='topbar-search-label';
+      lbl.innerHTML = highlight(item.summary,q);
+      var snip = document.createElement('span'); snip.className='topbar-search-snippet';
+      snip.innerHTML = highlight(snippet(item.description||item.path,q),q);
+      body.appendChild(lbl); body.appendChild(snip);
+      var tg = document.createElement('span'); tg.className='topbar-search-tag';
+      tg.textContent = item.isTag?'Tag':item.tag;
+      row.appendChild(badge); row.appendChild(body); row.appendChild(tg);
+      row.addEventListener('mouseenter',function(){
+        dropdown.querySelectorAll('.topbar-search-item').forEach(function(el,i){
+          el.classList.toggle('active',el===row);
+          el.setAttribute('aria-selected',el===row?'true':'false');
+          if (el===row) activeIndex=i;
+        });
+      });
+      row.addEventListener('click',function(){ openResult(item); });
+      dropdown.appendChild(row);
+    });
+    var footer = document.createElement('div'); footer.className='topbar-search-footer';
+    footer.textContent = matches.length+' result'+(matches.length===1?'':'s')+' · ↑↓ navigate · Enter open · Esc close';
+    dropdown.appendChild(footer);
+    dropdown.style.display = 'block'; setActive(0);
+  }
+  input.addEventListener('input',function(){
+    var q = norm(input.value);
+    clearBtn.style.display = q?'inline-block':'none';
+    showDropdown(q);
+  });
+  input.addEventListener('keydown',function(e){
+    if (dropdown.style.display==='none') return;
+    if (e.key==='ArrowDown') { e.preventDefault(); setActive(activeIndex+1); }
+    else if (e.key==='ArrowUp') { e.preventDefault(); setActive(activeIndex-1); }
+    else if (e.key==='Enter') { if (currentMatches.length){ e.preventDefault(); openResult(currentMatches[Math.max(0,activeIndex)]||currentMatches[0]); } }
+    else if (e.key==='Escape') { dropdown.style.display='none'; }
+  });
+  clearBtn.addEventListener('click',function(){ input.value=''; clearBtn.style.display='none'; dropdown.style.display='none'; });
+  document.addEventListener('click',function(e){ if (!e.target.closest('#topbar-search-wrap')) dropdown.style.display='none'; });
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Main render
+══════════════════════════════════════════════════════════════ */
+function render(spec) {
+  var content = document.getElementById('content');
+  var nav = document.getElementById('nav-content');
+  var searchInput = document.getElementById('sidebar-search');
+  var html = '';
+  var navHtml = '';
+
+  /* Info title heading */
+  if (spec.info && spec.info.title) {
+    html += '<div class="info-title-block"><h1 class="info-page-title">'+escHtml(spec.info.title)+'</h1></div>';
+  }
+
+  /* Info description */
+  if (spec.info && spec.info.description) {
+    html += '<div class="info-description md-content">'+md(spec.info.description,{idPrefix:'info',headingMap:{1:2,2:2,3:3,4:4,5:5,6:6}})+'</div>';
+    /* Nav links for ## headings */
+    var infoSections = [];
+    spec.info.description.replace(/^## (.+)$/gm,function(_,t){ infoSections.push(t); });
+    if (infoSections.length) {
+      navHtml += '<div class="nav-group" data-group="getting-started">'+
+        '<span class="nav-group-label">Getting started</span>'+
+        '<span class="nav-group-indicator">−</span></div>'+
+        '<div class="nav-group-children" data-group-children="getting-started">';
+      infoSections.forEach(function(t){
+        var id = 'info-'+slugify(t);
+        navHtml += '<a class="nav-tag" href="#'+id+'">'+escHtml(t)+'</a>';
+      });
+      navHtml += '</div>';
+      navHtml += '<hr class="nav-divider">';
+    }
+  }
+
+  /* Build tag map */
+  var tagMap = {};
+  (spec.tags||[]).forEach(function(t){ tagMap[t.name]={description:t.description||'',operations:[]}; });
+  var paths = spec.paths||{};
+  Object.keys(paths).forEach(function(path){
+    Object.keys(paths[path]).forEach(function(method){
+      var op = paths[path][method];
+      (op.tags||['default']).forEach(function(tagName){
+        if (!tagMap[tagName]) tagMap[tagName]={description:'',operations:[]};
+        tagMap[tagName].operations.push({path:path,method:method,op:op});
+      });
+    });
+  });
+
+  /* Render nav — grouped if x-tagGroups present, flat otherwise */
+  var tagGroups = spec['x-tagGroups'];
+  var flatTags  = Object.keys(tagMap);
+
+  function renderNavTags(tagNames) {
+    tagNames.forEach(function(tagName){
+      var tag = tagMap[tagName];
+      if (!tag) return;
+      var tagId = slugify(tagName);
+      navHtml += '<a class="nav-tag" href="#tag-'+tagId+'">'+escHtml(tagName)+'</a>';
+      tag.operations.forEach(function(entry){
+        var opId = opIdFromPath(entry.path);
+        navHtml += '<a class="nav-op" href="#op-'+opId+'">'+escHtml(entry.op.summary||entry.path)+'</a>';
+      });
+      /* Tag section content */
+      html += '<div class="tag-section" id="tag-'+tagId+'">';
+      html += '<h2 class="tag-heading">'+escHtml(tagName)+'</h2>';
+      if (tag.description) html += '<div class="tag-description md-content">'+md(tag.description)+'</div>';
+      tag.operations.forEach(function(entry){ html += renderOperation(entry.path,entry.method,entry.op); });
+      html += '</div><hr class="tag-divider">';
+    });
+  }
+
+  /* Single flat list of tags (no x-tagGroup section headings), ordered by
+     x-tagGroups when present so content/nav order stays predictable. */
+  var orderedTags = [];
+  if (tagGroups && tagGroups.length) {
+    tagGroups.forEach(function(group){
+      (group.tags||[]).forEach(function(t){ if (orderedTags.indexOf(t)===-1) orderedTags.push(t); });
+    });
+  }
+  flatTags.forEach(function(t){ if (orderedTags.indexOf(t)===-1) orderedTags.push(t); });
+  renderNavTags(orderedTags);
+
+  content.innerHTML = html;
+  content.classList.remove('is-loading');
+  nav.innerHTML = navHtml;
+
+  /* Wire collapsible nav groups */
+  document.querySelectorAll('.nav-group').forEach(function(group){
+    if (group.getAttribute('data-nav-wired')) return;
+    group.setAttribute('data-nav-wired','1');
+    var groupName = group.getAttribute('data-group');
+    var children = document.querySelector('.nav-group-children[data-group-children="'+groupName+'"]');
+    var indicator = group.querySelector('.nav-group-indicator');
+    if (!children||!indicator) return;
+    group.addEventListener('click',function(){
+      var collapsed = children.classList.toggle('collapsed');
+      indicator.textContent = collapsed?'+':'−';
+      sessionStorage.setItem('nav-group-'+groupName, collapsed?'collapsed':'expanded');
+    });
+  });
+
+  /* Topbar search */
+  wireTopbarSearch(spec);
+
+  /* Sidebar search filter */
+  if (searchInput && !searchInput.getAttribute('data-wired')) {
+    searchInput.setAttribute('data-wired','1');
+    searchInput.addEventListener('input',function(){
+      var q = (searchInput.value||'').toLowerCase().trim();
+      var tagLinks = Array.prototype.slice.call(nav.querySelectorAll('.nav-tag'));
+      var opLinks = Array.prototype.slice.call(nav.querySelectorAll('.nav-op'));
+      if (!q) {
+        tagLinks.forEach(function(t){ t.style.display=''; });
+        opLinks.forEach(function(o){ o.style.display=''; });
+        nav.querySelectorAll('.nav-group-children').forEach(function(ch){ ch.classList.remove('collapsed'); });
+        nav.querySelectorAll('.nav-group-indicator').forEach(function(i){ i.textContent='−'; });
+        return;
+      }
+      var opMatchByTag = {};
+      opLinks.forEach(function(op){
+        var match = (op.textContent||'').toLowerCase().indexOf(q)!==-1;
+        op.style.display = match?'':'none';
+        if (match) {
+          var prev = op.previousElementSibling;
+          while (prev && !prev.classList.contains('nav-tag')) prev = prev.previousElementSibling;
+          if (prev) opMatchByTag[prev.getAttribute('href')] = true;
+        }
+      });
+      tagLinks.forEach(function(tag){
+        var tagMatch = (tag.textContent||'').toLowerCase().indexOf(q)!==-1;
+        tag.style.display = (tagMatch||!!opMatchByTag[tag.getAttribute('href')])?'':'none';
+      });
+      /* Auto-expand groups with results */
+      nav.querySelectorAll('.nav-group-children').forEach(function(ch){
+        var hasVisible = Array.prototype.slice.call(ch.querySelectorAll('.nav-op,.nav-tag'))
+          .some(function(el){ return el.style.display!=='none'; });
+        if (hasVisible) {
+          ch.classList.remove('collapsed');
+          var gname = ch.getAttribute('data-group-children');
+          var ind = nav.querySelector('.nav-group[data-group="'+gname+'"] .nav-group-indicator');
+          if (ind) ind.textContent = '−';
+        }
+      });
+    });
+  }
+
+  /* Tab buttons */
+  document.querySelectorAll('.tab-btn').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var tabId = btn.getAttribute('data-tab');
+      var bar = btn.parentElement;
+      bar.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      var section = bar.closest('.payload-section');
+      if (section) section.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+      var target = document.getElementById(tabId);
+      if (target) target.classList.add('active');
+    });
+  });
+
+  addCollapseToggles(content);
+  addCopyButtons();
+  wireSchemaToggles();
+  wireSchemaToolbars();
+  if (window.Prism) Prism.highlightAllUnder(content);
+
+  /* Example dropdown change handler — works with custom JSON viewer */
+  document.querySelectorAll('.example-select').forEach(function(sel){
+    sel.addEventListener('change',function(){
+      var panelId = sel.getAttribute('data-panel');
+      var panel = document.getElementById(panelId);
+      if (!panel) return;
+      var viewerWrap = panel.querySelector('.json-viewer-wrap');
+      var pre = panel.querySelector('pre code');
+      var descEl = panel.querySelector('.example-description');
+      var examplesJson = sel.getAttribute('data-examples');
+      if (!examplesJson) return;
+      try {
+        var examples = JSON.parse(decodeURIComponent(examplesJson));
+        var selectedExample = examples[sel.value];
+        var val, desc = '';
+        if (selectedExample && typeof selectedExample==='object' && Object.prototype.hasOwnProperty.call(selectedExample,'value')) {
+          val = selectedExample.value;
+          desc = typeof selectedExample.description==='string' ? selectedExample.description : '';
+        } else {
+          val = selectedExample;
+        }
+        if (descEl) {
+          if (desc) { descEl.innerHTML=md(desc); descEl.style.display=''; }
+          else { descEl.innerHTML=''; descEl.style.display='none'; }
+        }
+        if (val!==undefined) {
+          if (viewerWrap) { setJsonViewerData(viewerWrap,val); return; }
+          if (pre) { pre.textContent=JSON.stringify(val,null,2); if (window.Prism) Prism.highlightElement(pre); }
+        }
+      } catch(e){}
+    });
+  });
+
+  /* Active nav highlight on scroll — unified scroll-spy.
+     All anchored regions (Getting-started headings, tag sections, and
+     operations) are collected in document order. On scroll we pick the last
+     region whose top has passed below the topbar, then highlight its nav
+     link(s): operations also light up their parent tag. */
+  var TOPBAR_H = document.getElementById('topbar') ? document.getElementById('topbar').offsetHeight : 52;
+  var navOpLinks = Array.prototype.slice.call(document.querySelectorAll('.nav-op'));
+  var navTagLinks = Array.prototype.slice.call(document.querySelectorAll('.nav-tag'));
+  /* DOM order: info headings, then each tag-section followed by its operations */
+  var spyEls = Array.prototype.slice.call(
+    document.querySelectorAll('.info-description h2, .info-description h3, .tag-section, .operation')
+  );
+  var lastActive = null;
+
+  function hrefsForActive(el) {
+    if (!el) return { tagHref: null, opHref: null };
+    if (el.classList.contains('operation')) {
+      var p = el.parentElement;
+      while (p && !p.classList.contains('tag-section')) p = p.parentElement;
+      return { tagHref: p ? '#'+p.id : null, opHref: '#'+el.id };
+    }
+    /* info heading or tag-section */
+    return { tagHref: '#'+el.id, opHref: null };
+  }
+
+  function atPageBottom() {
+    var doc = document.documentElement;
+    return (window.innerHeight + window.scrollY) >= (doc.scrollHeight - 2);
+  }
+
+  function updateActiveNav() {
+    if (!spyEls.length) return;
+    var threshold = TOPBAR_H + 12;
+    var active = null;
+    /* Bottom of page → always the last section (handles short final sections
+       whose top never reaches the trigger line). */
+    if (atPageBottom()) {
+      active = spyEls[spyEls.length - 1];
+    } else {
+      for (var i=0; i<spyEls.length; i++) {
+        if (spyEls[i].getBoundingClientRect().top <= threshold) active = spyEls[i];
+        else break; /* tops are monotonic in document order */
+      }
+      if (!active) active = spyEls[0]; /* top of page → first section */
+    }
+
+    var h = hrefsForActive(active);
+    navTagLinks.forEach(function(link){
+      link.classList.toggle('active', !!h.tagHref && link.getAttribute('href')===h.tagHref);
+    });
+    navOpLinks.forEach(function(link){
+      link.classList.toggle('active', !!h.opHref && link.getAttribute('href')===h.opHref);
+    });
+
+    /* Group active highlight + breadcrumb */
+    document.querySelectorAll('.nav-group').forEach(function(g){ g.classList.remove('active-group'); });
+    var activeOp = nav.querySelector('.nav-op.active');
+    if (activeOp) {
+      var ch = activeOp.parentElement;
+      while (ch && !ch.classList.contains('nav-group-children')) ch = ch.parentElement;
+      var bc = document.getElementById('sidebar-breadcrumb');
+      if (bc) {
+        var parentTag = activeOp.previousElementSibling;
+        while (parentTag && !parentTag.classList.contains('nav-tag')) parentTag = parentTag.previousElementSibling;
+        if (ch) {
+          var gname = ch.getAttribute('data-group-children');
+          var gel = nav.querySelector('.nav-group[data-group="'+gname+'"]');
+          if (gel) gel.classList.add('active-group');
+          var glabel = gel ? (gel.querySelector('.nav-group-label')||{}).textContent : '';
+          bc.textContent = (glabel ? glabel+' › ' : '') + (parentTag ? parentTag.textContent.trim() : '');
+        } else {
+          bc.textContent = parentTag ? parentTag.textContent.trim() : '';
+        }
+      }
+    }
+    var activeLink = nav.querySelector('.nav-op.active')||nav.querySelector('.nav-tag.active');
+    if (activeLink && activeLink!==lastActive) { lastActive=activeLink; activeLink.scrollIntoView({block:'nearest'}); }
+  }
+
+  /* Anchor scroll with topbar offset */
+  document.addEventListener('click',function(e){
+    var anchor = e.target.closest('a[href^="#"]');
+    if (!anchor) return;
+    var targetId = anchor.getAttribute('href').slice(1);
+    var target = document.getElementById(targetId);
+    if (!target) return;
+    e.preventDefault();
+    var top = target.getBoundingClientRect().top + window.pageYOffset - TOPBAR_H - 8;
+    window.scrollTo({top:top,behavior:'smooth'});
+    history.pushState(null,'','#'+targetId);
+    updateActiveNav();
+  });
+
+  /* rAF-throttled handler so rapid scroll/resize events stay smooth */
+  var navTick = false;
+  function scheduleActiveNav() {
+    if (navTick) return;
+    navTick = true;
+    window.requestAnimationFrame(function(){ navTick = false; updateActiveNav(); });
+  }
+  window.addEventListener('scroll', scheduleActiveNav, {passive:true});
+  window.addEventListener('resize', scheduleActiveNav, {passive:true});
+  window.addEventListener('hashchange', updateActiveNav);
+  window.addEventListener('load', updateActiveNav);
+  updateActiveNav();
+
+  /* Mobile sidebar */
+  (function(){
+    var toggle = document.getElementById('sidebar-toggle');
+    var overlay = document.getElementById('sidebar-overlay');
+    var sidebar = document.getElementById('sidebar');
+    if (!toggle||!overlay||!sidebar) return;
+    function open(){ sidebar.classList.add('open'); overlay.classList.add('visible'); document.body.style.overflow='hidden'; }
+    function close(){ sidebar.classList.remove('open'); overlay.classList.remove('visible'); document.body.style.overflow=''; }
+    toggle.addEventListener('click',open);
+    overlay.addEventListener('click',close);
+    document.querySelectorAll('.nav-tag,.nav-op').forEach(function(link){
+      link.addEventListener('click',function(){ if (window.innerWidth<=900) close(); });
+    });
+  })();
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Back-to-top + search shortcut
+══════════════════════════════════════════════════════════════ */
+function wireBackToTop() {
+  var btn = document.getElementById('back-to-top');
+  if (!btn||btn.getAttribute('data-wired')) return;
+  btn.setAttribute('data-wired','1');
+  window.addEventListener('scroll',function(){ btn.classList.toggle('visible',window.scrollY>420); },{passive:true});
+  btn.addEventListener('click',function(){ window.scrollTo({top:0,behavior:'smooth'}); });
+}
+function wireSearchShortcut() {
+  if (document.body.getAttribute('data-search-shortcut')) return;
+  document.body.setAttribute('data-search-shortcut','1');
+  document.addEventListener('keydown',function(e){
+    if (e.key!=='/'||e.ctrlKey||e.metaKey||e.altKey) return;
+    var tag = e.target&&e.target.tagName?e.target.tagName.toLowerCase():'';
+    if (tag==='input'||tag==='textarea'||tag==='select'||(e.target&&e.target.isContentEditable)) return;
+    e.preventDefault();
+    var s = document.getElementById('topbar-search');
+    if (s) s.focus();
+  });
+}
+
+wireBackToTop();
+wireSearchShortcut();
+
+/* ══════════════════════════════════════════════════════════════
+   Load spec + REST artifacts
+══════════════════════════════════════════════════════════════ */
+Promise.all([
+  fetch('openapi_md.json?v='+Date.now()).then(function(r){
+    if (!r.ok) throw new Error('Failed to load openapi_md.json: '+r.status);
+    return r.json();
+  }),
+  fetch('rest_artifacts.json?v='+Date.now()).then(function(r){
+    if (!r.ok) return {};
+    return r.json();
+  }).catch(function(){ return {}; })
+]).then(function(results){
+  REST_BUNDLE = results[1];
+  render(results[0]);
+  wireDownloadFullDocument(results[0]);
+}).catch(function(err){
+  var content = document.getElementById('content');
+  content.classList.remove('is-loading');
+  content.innerHTML = '<p class="error-msg">Error loading spec: '+escHtml(err.message)+'</p>';
+});
+
+})();
+</script>
+</body>
+</html>

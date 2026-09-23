@@ -1,0 +1,3 @@
+﻿Impinj Protected Mode is a feature that renders a tag invisible to an RFID reader unless the reader first provides the correct 32-bit access password. This prevents unauthorized access, reading, or cloning of the tag. Protected Mode is a tag-scoped feature — it targets individual tags by EPC. You can use the following APIs to enable or disable protection, control tag visibility, and restrict tag responses to short-range only.
+
+The target tag must have a valid 32-bit Access Password configured before using Protected Mode operations. The `password` parameter used in the TagProtect APIs is the same Access Password stored on the tag. To write that password, see [Setting the Access Password](#info-how-to-set-the-access-password) in the guide introduction.

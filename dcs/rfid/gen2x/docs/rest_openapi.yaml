@@ -1,0 +1,956 @@
+openapi: 3.1.0
+info:
+  title: Gen2X API Reference - REST
+  description: |-
+    # Overview
+
+    Use these REST APIs to configure and control Impinj Gen2X features on Zebra fixed RFID readers.
+
+    This guide covers:
+    - Tag Protection: Lock individual tags with a password so they are invisible to unauthorized readers.
+    - FastID: Return EPC and TID in a single inventory response.
+    - TagFocus: Keep already-read tags silent so the reader focuses on unread tags.
+    - Tag Quieting: Silence specific tags by EPC ID.
+
+    Impinj Gen2X extends Gen2 radio and logical layers. Tags must support Gen2X features.
+
+    # Authentication
+
+    You can authorize requests using either method below:
+    - Bearer token (recommended): Execute /cloud/localRestLogin to get a token, then use Authorization: Bearer <token>.
+    - Basic authentication: Use administrator credentials.
+
+    # How to Set the Access Password
+
+    The Access Password is stored in words 2-3 of the Gen2 RESERVED bank.
+
+    ## 1. Read the current password
+
+    Read words 0-3 of the RESERVED bank.
+
+    **Request**
+
+    ```http
+    PUT /cloud/mode
+    ```
+
+    **Body**
+
+    ```json
+    {
+      "type": "CUSTOM",
+      "antennas": [1],
+      "transmitPower": 30,
+      "filter": {
+        "value": "e28011b0a5050076c4d7530a",
+        "match": "prefix",
+        "operation": "include"
+      },
+      "accesses": [
+        {
+          "type": "READ",
+          "config": {
+            "membank": "RESERVED",
+            "wordPointer": 0,
+            "wordCount": 4
+          }
+        }
+      ]
+    }
+    ```
+
+    ## 2. Start the reader
+
+    ```http
+    PUT /cloud/start
+    ```
+
+    ```json
+    {}
+    ```
+
+    Wait about 12 seconds.
+
+    Send an empty body. applyImpinjGen2X applies a staged Gen2X configuration and is not used when setting the password.
+
+    ## 3. Stop the reader
+
+    ```http
+    PUT /cloud/stop
+    ```
+
+    Check the tag data stream for accessResults.
+
+    For example:
+
+    ```json
+    {
+      "data": {
+        "idHex": "e28011b0a5050076c4d7530a",
+        "accessResults": [
+          "1234876512348765"
+        ]
+      }
+    }
+    ```
+
+    The last 8 characters are the Access Password:
+
+    ```text
+    12348765
+    ```
+
+    If accessResults is 0000000000000000, no Access Password is set.
+
+    ## 4. Write the Access Password
+
+    For example, to set the password to A1B2C3D4, write it at wordPointer 2.
+
+    **Request**
+
+    ```http
+    PUT /cloud/mode
+    ```
+
+    **Body**
+
+    ```json
+    {
+      "type": "CUSTOM",
+      "antennas": [1],
+      "transmitPower": 30,
+      "filter": {
+        "value": "e28011b0a5050076c4d7530a",
+        "match": "prefix",
+        "operation": "include"
+      },
+      "accesses": [
+        {
+          "type": "WRITE",
+          "config": {
+            "membank": "RESERVED",
+            "wordPointer": 2,
+            "data": "A1B2C3D4"
+          }
+        }
+      ]
+    }
+    ```
+
+    ## 5. Start, wait, and stop
+
+    Start the reader, wait about 12 seconds, and then stop the reader.
+
+    A successful write returns:
+
+    ```json
+    {
+      "data": {
+        "idHex": "e28011b0a5050076c4d7530a",
+        "accessResults": [
+          "SUCCESS"
+        ]
+      }
+    }
+    ```
+
+    ## 6. Verify the password
+
+    Repeat Steps 1-3.
+
+    The result should contain the password you wrote:
+
+    ```json
+    {
+      "data": {
+        "idHex": "e28011b0a5050076c4d7530a",
+        "accessResults": [
+          "00000000A1B2C3D4"
+        ]
+      }
+    }
+    ```
+
+    The last 8 characters must match the password:
+
+    ```text
+    A1B2C3D4
+    ```
+
+    The tag is now ready for Tag Protection operations.
+
+    **Important:** Include the filter when writing the password so that the password is written only to the target tag.
+
+    **Do not use 00000000 as the Access Password.**
+
+    # Getting Started
+
+    1. Use GET /cloud/impinjGen2X to check the currently saved Gen2X configuration.
+    2. Use PUT /cloud/stop to stop the IoT cloud service (if it is running).
+    3. Use PUT /cloud/impinjGen2X to stage one or more feature updates.
+    4. Use GET /cloud/impinjGen2X to verify the staged Gen2X configuration before starting the radio.
+    5. Use PUT /cloud/start to start the service and apply staged configuration.
+  version: 3.0.0
+  termsOfService: https://www.zebra.com/ap/en/terms-conditions.html
+  contact:
+    name: API Support
+    url: https://www.zebra.com/ap/en/support-downloads/rfid.html
+externalDocs:
+  description: Find out more about IoT
+  url: https://zebradevs.github.io/rfid-ziotc-docs/
+servers:
+  - url: http://<device-ip>:<port>
+    description: Device REST API base URL
+paths:
+  /cloud/impinjGen2X:
+    get:
+      tags:
+        - ImpinjGen2X
+      summary: Get Impinj Gen2X configuration
+      description: |
+        Retrieves the last saved Impinj Gen2X feature. After any successful PUT, the response contains exactly one of `fastID`, `tagFocus`, `tagProtect`, or `tagQuieting`. A later PUT replaces the stored object. GET is not a merge of all features, and it does not show whether that config is running. Use `GET /cloud/status` and `impinjGen2X.isActive` for the current inventory session.
+
+        If Gen2X has never been configured, HTTP 200 returns an empty body (not JSON `{}`). After the first successful PUT, GET always returns a JSON object. `PUT /cloud/impinjGen2X` with `{}` is rejected (422).
+
+        **No request payload required/applicable.**
+      operationId: getImpinjGen2X
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                maxProperties: 1
+                description: >-
+                  Last saved Impinj Gen2X feature. Exactly one feature object is present
+                  after any successful PUT. If Gen2X has never been configured, the 200
+                  body is empty (not JSON `{}`).
+                properties:
+                  fastID:
+                    type: object
+                    description: FastID configuration. Present only if fastID was previously configured.
+                    properties:
+                      enabled:
+                        type: boolean
+                        description: Whether FastID is enabled.
+                        example: true
+                    required:
+                      - enabled
+                  tagProtect:
+                    type: object
+                    description: TagProtect configuration. Present only if tagProtect was previously configured.
+                    properties:
+                      action:
+                        type: string
+                        description: Last configured protection action.
+                        enum:
+                          - enableTagProtection
+                          - disableTagProtection
+                          - enableTagVisibility
+                          - disableTagVisibility
+                        example: enableTagProtection
+                      password:
+                        type: string
+                        description: 8-character hexadecimal 32-bit password.
+                        minLength: 8
+                        maxLength: 8
+                        pattern: '^[0-9A-Fa-f]{8}$'
+                        example: '77777777'
+                      tagID:
+                        type: string
+                        description: >-
+                          Hexadecimal tagID (EPC) of the target tag.
+                          Only present when action is enableTagProtection or disableTagProtection.
+                        pattern: '^[0-9A-Fa-f]+$'
+                        example: 'e2801191a5030069073b426d'
+                      enableShortRange:
+                        type: boolean
+                        description: Whether short-range protection mode is enabled.
+                        example: true
+                    required:
+                      - action
+                      - password
+                  tagFocus:
+                    type: object
+                    description: TagFocus configuration. Present only if tagFocus was previously configured.
+                    properties:
+                      enabled:
+                        type: boolean
+                        description: Whether TagFocus is enabled.
+                        example: true
+                    required:
+                      - enabled
+                  tagQuieting:
+                    type: object
+                    description: >-
+                      TagQuieting configuration. Present only if tagQuieting was previously
+                      configured. Exactly one of basic or advanced is returned.
+                    oneOf:
+                      - required: [basic]
+                      - required: [advanced]
+                    properties:
+                      basic:
+                        type: object
+                        description: Basic TagQuieting configuration.
+                        properties:
+                          action:
+                            type: string
+                            description: Last configured quiet action.
+                            enum:
+                              - quiet
+                              - unquiet
+                            example: quiet
+                          tagIDs:
+                            type: array
+                            description: List of tag IDs (EPC strings) that are to be quieted or unquieted.
+                            items:
+                              type: string
+                              pattern: '^[0-9A-Fa-f]+$'
+                              example: 'e2801191a5030069073b426d'
+                        required:
+                          - action
+                          - tagIDs
+                      advanced:
+                        type: object
+                        description: Advanced TagQuieting using state-aware SELECT.
+                        required:
+                          - tagQuietMasks
+                          - target
+                          - stateAwareAction
+                        properties:
+                          preSelect:
+                            type: array
+                            maxItems: 31
+                            items:
+                              type: object
+                              required: [target, action, mask]
+                              properties:
+                                target:
+                                  type: string
+                                  enum: [S0, S1, S2, S3, SL]
+                                action:
+                                  type: string
+                                  enum:
+                                    - ASSERTSL_DEASSERTSL
+                                    - ASSERTSL_NOTHING
+                                    - NOTHING_DEASSERTSL
+                                    - NEGATESL_NOTHING
+                                    - DEASSERTSL_ASSERTSL
+                                    - DEASSERTSL_NOTHING
+                                    - NOTHING_ASSERTSL
+                                    - NOTHING_NEGATESL
+                                    - INVA_INVB
+                                    - INVA_NOTHING
+                                    - NOTHING_INVB
+                                    - FLIPAB_NOTHING
+                                    - INVB_INVA
+                                    - INVB_NOTHING
+                                    - NOTHING_INVA
+                                    - NOTHING_FLIPAB
+                                mask:
+                                  type: object
+                                  required: [bank, pointer, length, value]
+                                  properties:
+                                    bank:
+                                      type: string
+                                      enum: [EPC, TID, USER, RESERVED]
+                                    pointer:
+                                      type: integer
+                                      minimum: 0
+                                      maximum: 65535
+                                    length:
+                                      type: integer
+                                      minimum: 1
+                                      maximum: 255
+                                    value:
+                                      type: string
+                                      pattern: '^[0-9A-Fa-f]+$'
+                          tagQuietMasks:
+                            type: array
+                            minItems: 1
+                            maxItems: 3
+                            uniqueItems: true
+                            items:
+                              type: string
+                              enum: [S0A, S0B, S2A, S2B, S3A, S3B, SL_ASSERT, SL_DEASSERT]
+                          target:
+                            type: string
+                            enum: [SL, S0, S1, S2, S3]
+                          stateAwareAction:
+                            type: string
+                            enum:
+                              - ASSERTSL_DEASSERTSL
+                              - ASSERTSL_NOTHING
+                              - NOTHING_DEASSERTSL
+                              - NEGATESL_NOTHING
+                              - DEASSERTSL_ASSERTSL
+                              - DEASSERTSL_NOTHING
+                              - NOTHING_ASSERTSL
+                              - NOTHING_NEGATESL
+                              - INVA_INVB
+                              - INVA_NOTHING
+                              - NOTHING_INVB
+                              - FLIPAB_NOTHING
+                              - INVB_INVA
+                              - INVB_NOTHING
+                              - NOTHING_INVA
+                              - NOTHING_FLIPAB
+              examples:
+                fastID_configured:
+                  summary: Last saved FastID, enabled true
+                  value:
+                    fastID:
+                      enabled: true
+                fastID_disabled:
+                  summary: Last saved FastID, enabled false
+                  value:
+                    fastID:
+                      enabled: false
+                tagFocus_configured:
+                  summary: Last saved TagFocus
+                  value:
+                    tagFocus:
+                      enabled: true
+                tagProtect_configured:
+                  summary: Last saved TagProtect
+                  value:
+                    tagProtect:
+                      action: enableTagProtection
+                      password: '77777777'
+                      tagID: 'e2801191a5030069073b426d'
+                      enableShortRange: true
+                tagQuieting_configured:
+                  summary: Last saved basic TagQuieting
+                  value:
+                    tagQuieting:
+                      basic:
+                        action: quiet
+                        tagIDs:
+                          - 'e2801191a5030069073b426d'
+                tagQuieting_advanced:
+                  summary: Last saved advanced TagQuieting
+                  value:
+                    tagQuieting:
+                      advanced:
+                        preSelect:
+                          - target: SL
+                            action: ASSERTSL_NOTHING
+                            mask:
+                              bank: EPC
+                              pointer: 32
+                              length: 96
+                              value: E280123456789012345678AB
+                          - target: S2
+                            action: INVB_INVA
+                            mask:
+                              bank: EPC
+                              pointer: 32
+                              length: 96
+                              value: E280AABBCCDDEEFF11223344
+                        tagQuietMasks:
+                          - SL_ASSERT
+                          - S2B
+                        target: SL
+                        stateAwareAction: ASSERTSL_DEASSERTSL
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    example: 1
+                  message:
+                    type: string
+                    example: "problem getting response for get_impinjGen2X"
+      security:
+        - bearerAuth: []
+        - basicAuth: []
+    put:
+      tags:
+        - ImpinjGen2X
+      summary: Set Impinj Gen2X configuration
+      description: Configures Impinj Gen2X proprietary features (FastID, TagProtect, TagFocus, TagQuieting). At least one feature object must be provided. Use PUT /cloud/start with applyImpinjGen2X set to true to apply staged settings.
+      operationId: setImpinjGen2X
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: >-
+                Configures Impinj Gen2X proprietary features. At least one feature object
+                (fastID, tagProtect, tagFocus, or tagQuieting) must be provided.
+              minProperties: 1
+              properties:
+                fastID:
+                  type: object
+                  description: >-
+                    Impinj FastID embeds the tag TID along with the EPC in every inventory response, eliminating
+                    the need for separate TID read operations and improving throughput.
+                  properties:
+                    enabled:
+                      type: boolean
+                      description: Enable or disable the FastID feature.
+                      example: true
+                  required:
+                    - enabled
+                tagProtect:
+                  description: >-
+                    Impinj TagProtect prevents unauthorized cloning and reading of tags using
+                    a password-based protection mechanism. It is a feature that renders a tag invisible
+                    to an RFID reader. The tag becomes RF silent and does not respond to Gen2 commands
+                    unless the reader first provides the correct 32-bit password.
+                    The required fields depend on the action:
+                    tagID is required for enableTagProtection/disableTagProtection and must be omitted for
+                    enableTagVisibility/disableTagVisibility.
+                  oneOf:
+                    - type: object
+                      title: Protect or Unprotect Tag
+                      description: Protect or unprotect a specific tag identified by its EPC.
+                      properties:
+                        action:
+                          type: string
+                          description: >-
+                            enableTagProtection sets a tag to protected mode;
+                            disableTagProtection removes protection from a specific tag.
+                          enum:
+                            - enableTagProtection
+                            - disableTagProtection
+                          example: enableTagProtection
+                        password:
+                          type: string
+                          description: 8-character hexadecimal 32-bit password used for tag protection.
+                          minLength: 8
+                          maxLength: 8
+                          pattern: '^[0-9A-Fa-f]{8}$'
+                          example: '77777777'
+                        tagID:
+                          type: string
+                          description: Hexadecimal tagID (EPC) of the target tag.
+                          pattern: '^([0-9A-Fa-f]{24})+$'
+                          example: 'e2801191a5030069073b426d'
+                        enableShortRange:
+                          type: boolean
+                          description: Enables short-range protection mode for higher security.
+                          example: true
+                      required:
+                        - action
+                        - password
+                        - tagID
+                    - type: object
+                      title: Enable or Disable Protected Tag Reading
+                      description: Enable or disable the reader's ability to read protected tags.
+                      properties:
+                        action:
+                          type: string
+                          description: >-
+                            enableTagVisibility enables the reader to read protected tags;
+                            disableTagVisibility disables reading of protected tags.
+                          enum:
+                            - enableTagVisibility
+                            - disableTagVisibility
+                          example: enableTagVisibility
+                        password:
+                          type: string
+                          description: 8-character hexadecimal 32-bit password used for tag protection.
+                          minLength: 8
+                          maxLength: 8
+                          pattern: '^[0-9A-Fa-f]{8}$'
+                          example: '77777777'
+                        enableShortRange:
+                          type: boolean
+                          description: Enables short-range protection mode for higher security.
+                          example: false
+                      required:
+                        - action
+                        - password
+                tagFocus:
+                  type: object
+                  description: >-
+                    Impinj TagFocus instructs tags that have already been inventoried to remain
+                    unresponsive thus enabling the reader to focus on other tags. By reducing tag
+                    chatter, TagFocus improves read rates and accuracy in dense tag environments.
+                    TagFocus targets tags inventoried in session S1.
+                  properties:
+                    enabled:
+                      type: boolean
+                      description: Enable or disable the TagFocus feature.
+                      example: true
+                  required:
+                    - enabled
+                tagQuieting:
+                  type: object
+                  description: >-
+                    Impinj TagQuieting configuration. Provide exactly one of basic or advanced.
+                  oneOf:
+                    - required: [basic]
+                    - required: [advanced]
+                  properties:
+                    basic:
+                      type: object
+                      description: >-
+                        Basic TagQuieting configuration for quieting or unquieting specific
+                        tags identified by their EPC.
+                      properties:
+                        action:
+                          type: string
+                          description: >-
+                            "quiet" silences the specified tags for the current inventory round;
+                            "unquiet" restores previously quieted tags.
+                          enum:
+                            - quiet
+                            - unquiet
+                          example: quiet
+                        tagIDs:
+                          type: array
+                          description: >-
+                            Non-empty list of hexadecimal EPC strings identifying the tags
+                            to quiet or unquiet.
+                          minItems: 1
+                          items:
+                            type: string
+                            description: Hexadecimal EPC string of a tag.
+                            pattern: '^[0-9A-Fa-f]+$'
+                            example: 'e2801191a5030069073b426d'
+                      required:
+                        - action
+                        - tagIDs
+                    advanced:
+                      type: object
+                      description: Advanced TagQuieting using state-aware SELECT.
+                      required:
+                        - tagQuietMasks
+                        - target
+                        - stateAwareAction
+                      properties:
+                        preSelect:
+                          type: array
+                          description: Optional SELECT operations before quieting. Maximum 31 items.
+                          maxItems: 31
+                          items:
+                            type: object
+                            required: [target, action, mask]
+                            properties:
+                              target:
+                                type: string
+                                enum: [S0, S1, S2, S3, SL]
+                              action:
+                                type: string
+                                enum:
+                                  - ASSERTSL_DEASSERTSL
+                                  - ASSERTSL_NOTHING
+                                  - NOTHING_DEASSERTSL
+                                  - NEGATESL_NOTHING
+                                  - DEASSERTSL_ASSERTSL
+                                  - DEASSERTSL_NOTHING
+                                  - NOTHING_ASSERTSL
+                                  - NOTHING_NEGATESL
+                                  - INVA_INVB
+                                  - INVA_NOTHING
+                                  - NOTHING_INVB
+                                  - FLIPAB_NOTHING
+                                  - INVB_INVA
+                                  - INVB_NOTHING
+                                  - NOTHING_INVA
+                                  - NOTHING_FLIPAB
+                              mask:
+                                type: object
+                                required: [bank, pointer, length, value]
+                                properties:
+                                  bank:
+                                    type: string
+                                    enum: [EPC, TID, USER, RESERVED]
+                                  pointer:
+                                    type: integer
+                                    minimum: 0
+                                    maximum: 65535
+                                  length:
+                                    type: integer
+                                    minimum: 1
+                                    maximum: 255
+                                  value:
+                                    type: string
+                                    pattern: '^[0-9A-Fa-f]+$'
+                        tagQuietMasks:
+                          type: array
+                          minItems: 1
+                          maxItems: 3
+                          uniqueItems: true
+                          items:
+                            type: string
+                            enum: [S0A, S0B, S2A, S2B, S3A, S3B, SL_ASSERT, SL_DEASSERT]
+                        target:
+                          type: string
+                          enum: [SL, S0, S1, S2, S3]
+                        stateAwareAction:
+                          type: string
+                          enum:
+                            - ASSERTSL_DEASSERTSL
+                            - ASSERTSL_NOTHING
+                            - NOTHING_DEASSERTSL
+                            - NEGATESL_NOTHING
+                            - DEASSERTSL_ASSERTSL
+                            - DEASSERTSL_NOTHING
+                            - NOTHING_ASSERTSL
+                            - NOTHING_NEGATESL
+                            - INVA_INVB
+                            - INVA_NOTHING
+                            - NOTHING_INVB
+                            - FLIPAB_NOTHING
+                            - INVB_INVA
+                            - INVB_NOTHING
+                            - NOTHING_INVA
+                            - NOTHING_FLIPAB
+            examples:
+              enable_fastID:
+                value:
+                  fastID:
+                    enabled: true
+              disable_fastID:
+                value:
+                  fastID:
+                    enabled: false
+              protect_tag:
+                value:
+                  tagProtect:
+                    action: enableTagProtection
+                    password: '77777777'
+                    tagID: 'e2801191a5030069073b426d'
+                    enableShortRange: true
+              unprotect_tag:
+                value:
+                  tagProtect:
+                    action: disableTagProtection
+                    password: '77777777'
+                    tagID: 'e2801191a5030069073b426d'
+              enable_protect_read:
+                value:
+                  tagProtect:
+                    action: enableTagVisibility
+                    password: '77777777'
+              disable_protect_read:
+                value:
+                  tagProtect:
+                    action: disableTagVisibility
+                    password: '77777777'
+              enable_tagFocus:
+                value:
+                  tagFocus:
+                    enabled: true
+              disable_tagFocus:
+                value:
+                  tagFocus:
+                    enabled: false
+              quiet_tags:
+                summary: Basic — quiet by EPC list
+                value:
+                  tagQuieting:
+                    basic:
+                      action: quiet
+                      tagIDs:
+                        - 'e2801191a5030069073b426d'
+                        - 'e2801191a5030069073b426e'
+              unquiet_tags:
+                summary: Basic — unquiet by EPC list
+                value:
+                  tagQuieting:
+                    basic:
+                      action: unquiet
+                      tagIDs:
+                        - 'e2801191a5030069073b426d'
+              advanced_quiet_tags:
+                summary: Advanced — quiet with state-aware SELECT
+                value:
+                  tagQuieting:
+                    advanced:
+                      preSelect:
+                        - target: SL
+                          action: ASSERTSL_NOTHING
+                          mask:
+                            bank: EPC
+                            pointer: 32
+                            length: 96
+                            value: E280123456789012345678AB
+                        - target: S2
+                          action: INVB_INVA
+                          mask:
+                            bank: EPC
+                            pointer: 32
+                            length: 96
+                            value: E280AABBCCDDEEFF11223344
+                      tagQuietMasks:
+                        - SL_ASSERT
+                        - S2B
+                      target: SL
+                      stateAwareAction: ASSERTSL_DEASSERTSL
+              advanced_unquiet_tags:
+                summary: Advanced — unquiet with state-aware SELECT
+                value:
+                  tagQuieting:
+                    advanced:
+                      preSelect:
+                        - target: SL
+                          action: DEASSERTSL_NOTHING
+                          mask:
+                            bank: EPC
+                            pointer: 32
+                            length: 96
+                            value: E280123456789012345678AB
+                        - target: S2
+                          action: INVA_INVB
+                          mask:
+                            bank: EPC
+                            pointer: 32
+                            length: 96
+                            value: E280AABBCCDDEEFF11223344
+                      tagQuietMasks:
+                        - SL_DEASSERT
+                        - S2A
+                      target: SL
+                      stateAwareAction: DEASSERTSL_ASSERTSL
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: string
+                example: ""
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invalid payload for set_impinjGen2X api"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    example: 1
+                  message:
+                    type: string
+                    example: "problem getting response for set_impinjGen2X"
+      security:
+        - bearerAuth: []
+        - basicAuth: []
+
+  /cloud/start:
+    put:
+      tags:
+        - Control
+      summary: Start IOT Cloud Service
+      description: |
+        Starts IOT cloud service and applies staged Gen2X configuration.
+
+        **No request payload required/applicable unless applying Gen2X configuration.**
+      operationId: startIotCloudService
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                applyImpinjGen2X:
+                  type: boolean
+                  description: Set true to apply staged Impinj Gen2X configuration while starting.
+                  example: true
+      responses:
+        '200':
+          description: OK (no response body)
+          content:
+            application/json:
+              schema:
+                type: string
+                example: ""
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    example: 1
+                  message:
+                    type: string
+                    example: "problem getting response for start"
+      security:
+        - bearerAuth: []
+        - basicAuth: []
+
+  /cloud/stop:
+    put:
+      tags:
+        - Control
+      summary: Stop IOT Cloud Service
+      description: |
+        Stops IOT cloud service.
+
+        **No request payload required/applicable.**
+      operationId: stopIotCloudService
+      responses:
+        '200':
+          description: OK (no response body)
+          content:
+            application/json:
+              schema:
+                type: string
+                example: ""
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    example: 1
+                  message:
+                    type: string
+                    example: "problem getting response for stop"
+      security:
+        - bearerAuth: []
+        - basicAuth: []
+
+
+tags:
+  - name: ImpinjGen2X
+    description: Retrieve and configure Impinj Gen2X feature settings.
+  - name: Control
+    description: Start and stop the IoT cloud service.
+
+x-tagGroups:
+  - name: Gen2X Configuration
+    tags:
+      - ImpinjGen2X
+  - name: Service Control
+    tags:
+      - Control
+
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+      description: Use administrator credentials.
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Use bearer token from /cloud/localRestLogin.

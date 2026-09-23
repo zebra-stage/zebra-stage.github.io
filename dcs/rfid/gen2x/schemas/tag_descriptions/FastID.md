@@ -1,0 +1,1 @@
+﻿Use FastID to receive both the EPC (Electronic Product Code) and TID (Tag Identifier) in a single inventory response. This eliminates the need for a separate TID read operation and significantly improves inventory throughput and efficiency. FastID is a reader-scoped feature — once enabled, it applies to all tags during inventory.
