@@ -733,7 +733,7 @@ function generatePDF(op, path) {
      doc.setFont('helvetica', 'bold');
      doc.setFontSize(9);
      doc.setTextColor(white[0], white[1], white[2]);
-     doc.text('IoT Connector MQTT API (FXR readers)', margin, 11);
+     doc.text('FXR Fixed Readers API Documentation', margin, 11);
      doc.setFont('helvetica', 'normal');
      doc.setFontSize(8);
      doc.text(op.summary || path, pageW - margin, 11, { align: 'right' });
@@ -750,7 +750,7 @@ function generatePDF(op, path) {
      doc.setFont('helvetica', 'normal');
      doc.setFontSize(7);
      doc.setTextColor(white[0], white[1], white[2]);
-     doc.text('IoT Connector MQTT API (FXR readers)  |  Zebra Technologies', margin, pageH - 5);
+     doc.text('FXR Fixed Readers API Documentation  |  Zebra Technologies', margin, pageH - 5);
      /* use jsPDF's built-in page number — never drift */
      doc.text('Page ' + doc.internal.getCurrentPageInfo().pageNumber, pageW - margin, pageH - 5, { align: 'right' });
    }
