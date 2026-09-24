@@ -75,44 +75,54 @@ The RFID behavior is intelligently managed based on the cellular (WAN) state:
 
 ---
 
-## WWAN + RFID Use Cases
+## WWAN + RFID Operations
 
-### SIM & eSIM Combinations
+### Overview & Operating Modes
 
-The system behavior varies based on your SIM configuration:
+Device behavior depends on the selected operating mode:
 
-In case of "RFID Only mode" Mode
+- RFID Only Mode: WWAN connectivity is completely disabled, regardless of the number or presence of physical SIMs or eSIM profiles.
+- RFID + WWAN Mode:
+  - When RFID is OFF: Standard WWAN services operate normally with no restrictions.
+  - When RFID is ON:
+    - Single Active Subscription: The active SIM/eSIM continues operating normally without interruption.
+    - Dual Active Subscriptions (Physical SIM + eSIM or Dual eSIM): The Non-DDS (Non-Default Data Subscription) is temporarily deactivated while RFID is active. It automatically resumes once RFID is turned OFF.
 
-- WWAN will not be available irrespective of number of Phy SIM or eSIM presence.
+### SIM Configurations
 
-In case of "RFID + WWAN" Mode
+The following tables outline the definitions for SIM states and the subscription behaviors when RFID is ON across various SIM slot configurations.
 
-- If **RFID is OFF** then there will not be any impact to WWAN service.
-- In case of **RFID in ON**
-  - If only one SIM/eSIM active then it will continue in the same state, no impact.
-  - If two subscriptions are active ( Phy SIM+ eSIM or eSIM+eSIM ) then **Non DDS** (non default data sub) subscriptions will get deactivated as soon as RFID is ON and resume back once RFID is OFF.
+#### State Definitions
 
-Not Active : SIM Present, Network Removed\
-In Service : SIM present, Network service Active\
-Not Present : No SIM Present
+| State | Description |
+| --- | --- |
+| In Service | SIM/eSIM is present and network cellular service is actively connected. |
+| Not Active | SIM/eSIM is present, but cellular network service is temporarily disconnected/deactivated. |
+| Not Present | No physical SIM card is inserted or no eSIM profile is loaded in the slot. |
 
-| Scenario | RFID | Default Data Sub | Physical SIM | ESIM 1 | ESIM 2 | Mode |
-| --- | --- | --- | --- | --- | --- | --- |
-| Physical SIM, E-SIM, Either Present or not Present | ON | NA | Not Active | Not Active | Not Active | RFID Only |
-| No Physical SIM, No ESIM | ON | NA | Not Present | Not Present | Not Present | RFID Only |
-| 1 Physical SIM & 1 ESIM | ON | Physical SIM | In Service | Not Active | Not Present | RFID + WWAN |
-| 1 Physical SIM & 1 ESIM | ON | ESIM | Not Active | In Service | Not Present | RFID + WWAN |
-| 1 Physical SIM & NO ESIM | ON | NA | In Service | Not Present | Not Present | RFID + WWAN |
-| No Physical SIM & 1 ESIM (1st Slot) | ON | NA | Not Present | In Service | Not Present | RFID + WWAN |
-| No Physical SIM & 1 ESIM (2nd Slot) | ON | NA | Not Present | Not Present | In Service | RFID + WWAN |
-| No Physical SIM & 2 ESIM | ON | ESIM | Not Present | In Service | Not Active | RFID + WWAN |
-| No Physical SIM & 2 ESIM | ON | ESIM | Not Present | Not Active | In Service | RFID + WWAN |
+#### Combination Matrix
 
-| # | Scenario | Device Behavior |
+| Operating Mode | Scenario / Setup | Default Data Sub (DDS) | Physical SIM | eSIM Slot 1 | eSIM Slot 2 |
+| --- | --- | --- | --- | --- | --- |
+| **RFID Only** | Physical SIM / eSIM present or not present | N/A | Not Active | Not Active | Not Active |
+| **RFID Only** | No Physical SIM & No eSIM | N/A | Not Present | Not Present | Not Present |
+| **RFID + WWAN** | 1 Physical SIM & 1 eSIM | Physical SIM | In Service | Not Active | Not Present |
+| **RFID + WWAN** | 1 Physical SIM & 1 eSIM | eSIM 1 | Not Active | In Service | Not Present |
+| **RFID + WWAN** | 1 Physical SIM & No eSIM | Physical SIM | In Service | Not Present | Not Present |
+| **RFID + WWAN** | No Physical SIM & 1 eSIM (Slot 1) | eSIM 1 | Not Present | In Service | Not Present |
+| **RFID + WWAN** | No Physical SIM & 1 eSIM (Slot 2) | eSIM 2 | Not Present | Not Present | In Service |
+| **RFID + WWAN** | No Physical SIM & 2 eSIMs | eSIM 1 | Not Present | In Service | Not Active |
+| **RFID + WWAN** | No Physical SIM & 2 eSIMs | eSIM 2 | Not Present | Not Active | In Service |
+
+### Coexistence Scenarios
+
+The following table details system and priority behaviors during simultaneous voice, data, and RFID operations:
+
+| Scenario | Condition & User Action | System / Device Behavior |
 | --- | --- | --- |
-| 1 | **WWAN data + RFID usage**<br>A) User is in WWAN Data Mode and attempts to use RFID in RFID + WWAN mode<br>B) User is in WWAN Data Mode and attempts to use RFID in RFID ONLY mode | A) Both WWAN Data and RFID scanning shall work<br>B) RFID is active, no WWAN data transmition |
-| 2 | {ONLY ON DEVICE WITH PROXIMITY SENSOR}<br>**WWAN call near head + RFID usage**<br>A) User is in WWAN call with device near head and attempts to use RFID<br>B) User uses RFID in RFID+WWAN mode and WWAN call attempts<br>C) User uses RFID in RFID ONLY mode and WWAN call attempts | RFID restricted due to SAR prevention<br>A) RFID shall not connect, WWAN call remains active<br>B) WWAN call is active, RFID disconnects with a notification<br>C) WWAN call cannot happen in RFID ONLY mode, RFID is still active |
-| 3 | **WWAN call hand free + RFID usage**<br>A) User is in WWAN call with device in Handsfree mode and attempts to use RFID<br>B) User uses RFID in RFID+WWAN mode and WWAN call attempts<br>C) User uses RFID in RFID ONLY mode and WWAN call attempts | Limited to toggle mode (due to QC WWAN/RFID design)<br>A) RFID shall connect, WWAN call goes on hold<br>B) WWAN call is active, RFID disconnects with a notification<br>C) WWAN call cannot happen in RFID ONLY mode, RFID is still active |
+| **Data & RFID** | • A: Active WWAN data transmission; user initiates RFID in RFID + WWAN mode.<br>• B: Active WWAN data transmission; user initiates RFID in RFID Only mode. | • A: Both WWAN data and RFID operate concurrently.<br>• B: RFID is active; WWAN data transmission is blocked. |
+| **Voice Call (Near Head)**<br>***(Devices with Proximity Sensor only)*** | • A: User is on a handset call (near head) and attempts to use RFID.<br>• B: User is actively using RFID in RFID + WWAN mode and a call is attempted.<br>• C: User is actively using RFID in RFID Only mode and a call is attempted. | • A: RFID will not connect; the WWAN call remains active uninterrupted.<br>• B: WWAN call takes priority; RFID disconnects and displays a user notification.<br>• C: WWAN call cannot be established; RFID remains active. |
+| **Voice Call (Handsfree)** | • A: User is on a handsfree/speaker call and attempts to use RFID.<br>• B: User is actively using RFID in RFID + WWAN mode and a call is attempted.<br>• C: User is actively using RFID in RFID Only mode and a call is attempted. | • A: RFID connects successfully; the WWAN call is placed on hold.<br>• B: WWAN call takes priority; RFID disconnects and displays a user notification.<br>• C: WWAN call cannot be established; RFID remains active. |
 
 ---
 
