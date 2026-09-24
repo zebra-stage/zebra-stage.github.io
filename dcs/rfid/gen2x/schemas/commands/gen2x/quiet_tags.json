@@ -1,0 +1,283 @@
+{
+    "title": "quiet_tags",
+    "description": "Selectively silences specific tags so they do not participate in inventory rounds.",
+    "x-tag": "Tag Quieting",
+    "type": "object",
+    "required": [
+        "command",
+        "command_id",
+        "payload"
+    ],
+    "properties": {
+        "command": {
+            "type": "string",
+            "const": "set_impinjGen2X",
+            "description": "MQTT command name"
+        },
+        "command_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier to correlate request with response"
+        },
+        "payload": {
+            "type": "object",
+            "required": [
+                "tagQuieting"
+            ],
+            "properties": {
+                "tagQuieting": {
+                    "type": "object",
+                    "properties": {
+                        "basic": {
+                            "type": "object",
+                            "required": [
+                                "action",
+                                "tagIDs"
+                            ],
+                            "properties": {
+                                "action": {
+                                    "type": "string",
+                                    "const": "quiet",
+                                    "description": "Silence the specified tags"
+                                },
+                                "tagIDs": {
+                                    "type": "array",
+                                    "minItems": 1,
+                                    "items": {
+                                        "type": "string",
+                                        "pattern": "^[0-9A-Fa-f]+$"
+                                    },
+                                    "description": "List of tag EPCs (hex strings) to quiet"
+                                }
+                            },
+                            "description": "Basic tag quieting settings"
+                        },
+                        "advanced": {
+                            "type": "object",
+                            "description": "Advanced TagQuieting configuration using Impinj Gen2X proprietary features.",
+                            "required": [
+                                "tagQuietMasks",
+                                "target",
+                                "stateAwareAction"
+                            ],
+                            "properties": {
+                                "preSelect": {
+                                    "type": "array",
+                                    "description": "Optional array of SELECT operations to position tags into specific session states before applying the state-aware SELECT. Maximum 31 items allowed.",
+                                    "maxItems": 31,
+                                    "items": {
+                                        "type": "object",
+                                        "required": [
+                                            "target",
+                                            "action",
+                                            "mask"
+                                        ],
+                                        "properties": {
+                                            "target": {
+                                                "type": "string",
+                                                "description": "Session or flag to target.",
+                                                "enum": [
+                                                    "S0",
+                                                    "S1",
+                                                    "S2",
+                                                    "S3",
+                                                    "SL"
+                                                ]
+                                            },
+                                            "action": {
+                                                "type": "string",
+                                                "description": "Action to perform on the target. For target SL, provide an SL action using ASSERTSL, DEASSERTSL, or NEGATESL. For targets S0, S1, S2, or S3, provide a session action using INVA, INVB, or FLIPAB.",
+                                                "enum": [
+                                                    "ASSERTSL_DEASSERTSL",
+                                                    "ASSERTSL_NOTHING",
+                                                    "NOTHING_DEASSERTSL",
+                                                    "NEGATESL_NOTHING",
+                                                    "DEASSERTSL_ASSERTSL",
+                                                    "DEASSERTSL_NOTHING",
+                                                    "NOTHING_ASSERTSL",
+                                                    "NOTHING_NEGATESL",
+                                                    "INVA_INVB",
+                                                    "INVA_NOTHING",
+                                                    "NOTHING_INVB",
+                                                    "FLIPAB_NOTHING",
+                                                    "INVB_INVA",
+                                                    "INVB_NOTHING",
+                                                    "NOTHING_INVA",
+                                                    "NOTHING_FLIPAB"
+                                                ]
+                                            },
+                                            "mask": {
+                                                "type": "object",
+                                                "description": "Memory mask for tag selection.",
+                                                "required": [
+                                                    "bank",
+                                                    "pointer",
+                                                    "length",
+                                                    "value"
+                                                ],
+                                                "properties": {
+                                                    "bank": {
+                                                        "type": "string",
+                                                        "description": "Memory bank to match against.",
+                                                        "enum": [
+                                                            "EPC",
+                                                            "TID",
+                                                            "USER",
+                                                            "RESERVED"
+                                                        ]
+                                                    },
+                                                    "pointer": {
+                                                        "type": "integer",
+                                                        "description": "Bit offset in memory bank.",
+                                                        "minimum": 0,
+                                                        "maximum": 65535
+                                                    },
+                                                    "length": {
+                                                        "type": "integer",
+                                                        "description": "Number of bits to match.",
+                                                        "minimum": 1,
+                                                        "maximum": 255
+                                                    },
+                                                    "value": {
+                                                        "type": "string",
+                                                        "description": "Hex string value to match (even length, valid hex characters).",
+                                                        "pattern": "^[0-9A-Fa-f]+$"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "tagQuietMasks": {
+                                    "type": "array",
+                                    "description": "Session-state combinations to check. Minimum 1, maximum 3 items. No duplicate session prefixes allowed (e.g., S0A and S0B together).",
+                                    "minItems": 1,
+                                    "maxItems": 3,
+                                    "uniqueItems": true,
+                                    "items": {
+                                        "type": "string",
+                                        "enum": [
+                                            "S0A",
+                                            "S0B",
+                                            "S2A",
+                                            "S2B",
+                                            "S3A",
+                                            "S3B",
+                                            "SL_ASSERT",
+                                            "SL_DEASSERT"
+                                        ]
+                                    }
+                                },
+                                "target": {
+                                    "type": "string",
+                                    "description": "Which flag to manipulate based on state check.",
+                                    "enum": [
+                                        "SL",
+                                        "S0",
+                                        "S1",
+                                        "S2",
+                                        "S3"
+                                    ]
+                                },
+                                "stateAwareAction": {
+                                    "type": "string",
+                                    "description": "Action to perform when tags match the tagQuietMasks pattern. For target SL, provide an SL action using ASSERTSL, DEASSERTSL, or NEGATESL. For targets S0, S1, S2, or S3, provide a session action using INVA, INVB, or FLIPAB.",
+                                    "enum": [
+                                        "ASSERTSL_DEASSERTSL",
+                                        "ASSERTSL_NOTHING",
+                                        "NOTHING_DEASSERTSL",
+                                        "NEGATESL_NOTHING",
+                                        "DEASSERTSL_ASSERTSL",
+                                        "DEASSERTSL_NOTHING",
+                                        "NOTHING_ASSERTSL",
+                                        "NOTHING_NEGATESL",
+                                        "INVA_INVB",
+                                        "INVA_NOTHING",
+                                        "NOTHING_INVB",
+                                        "FLIPAB_NOTHING",
+                                        "INVB_INVA",
+                                        "INVB_NOTHING",
+                                        "NOTHING_INVA",
+                                        "NOTHING_FLIPAB"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "description": "Tag quieting configuration. Provide exactly one of basic or advanced.",
+                    "oneOf": [
+                        {
+                            "required": [
+                                "basic"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "advanced"
+                            ]
+                        }
+                    ]
+                }
+            },
+            "description": "Command payload containing the feature configuration"
+        }
+    },
+    "examples": [
+        {
+            "command": "set_impinjGen2X",
+            "command_id": "43505552-cb1b-406c-a027-cf101f576034",
+            "payload": {
+                "tagQuieting": {
+                    "basic": {
+                        "action": "quiet",
+                        "tagIDs": [
+                            "e28011b0a5050076c4d751e9",
+                            "e28011b0a5050076c4d77307",
+                            "e28011b0a5050076c4d751ec",
+                            "e28011b0a5050076c4d7530a",
+                            "e28011b0a5050076c4d751e4"
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "command": "set_impinjGen2X",
+            "command_id": "6f1e2a90-3c4b-4d5e-8f01-23456789abcd",
+            "payload": {
+                "tagQuieting": {
+                    "advanced": {
+                        "preSelect": [
+                            {
+                                "target": "SL",
+                                "action": "ASSERTSL_NOTHING",
+                                "mask": {
+                                    "bank": "EPC",
+                                    "pointer": 32,
+                                    "length": 96,
+                                    "value": "E280123456789012345678AB"
+                                }
+                            },
+                            {
+                                "target": "S2",
+                                "action": "INVB_INVA",
+                                "mask": {
+                                    "bank": "EPC",
+                                    "pointer": 32,
+                                    "length": 96,
+                                    "value": "E280AABBCCDDEEFF11223344"
+                                }
+                            }
+                        ],
+                        "tagQuietMasks": [
+                            "SL_ASSERT",
+                            "S2B"
+                        ],
+                        "target": "SL",
+                        "stateAwareAction": "ASSERTSL_DEASSERTSL"
+                    }
+                }
+            }
+        }
+    ]
+}

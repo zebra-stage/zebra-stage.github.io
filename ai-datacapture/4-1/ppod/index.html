@@ -287,29 +287,35 @@
 
 <p>The PPOD Blueprint offers two operational modes: a <strong>Non-Guided</strong> mode for post-capture analysis and a <strong>Guided</strong> mode for live, interactive feedback.</p>
 
+<p>Non-Guided mode operates with the device's rear camera or the color imager (if available on the device). The color imager captures the package barcode and the proof of delivery image simultaneously. </p>
+
 <p>Choosing the right approach depends on the application's requirements for user interaction and workflow integration. The table below outlines the key differences.</p>
 
 <table class="facelift" style="width:100%" border="1" padding="5px">
     <thead>
         <tr bgcolor="#dce8ef">
         <th>Aspect</th>
-        <th>Non-Guided PPOD (Non-Interactive)</th>
-        <th>Guided PPOD (Live Feedback)</th>
+        <th>Non-Guided PPOD - Rear Camera<br>(Non-Interactive)</th>
+        <th>Non-Guided PPOD - Color Imager<br>(Non-Interactive)</th>
+        <th>Guided PPOD - Rear Camera<br> (Live Feedback)</th>
         </tr>
     </thead>
     <tbody>
         <tr>
             <td>Interaction Model</td>
             <td><b>Post-capture &amp; Non-interactive.</b> Analysis happens after the image is taken.</td>
+            <td><b>Post-capture &amp; Non-interactive.</b> Analysis happens after the image is taken.</td>
             <td><b>Live &amp; Interactive.</b> Provides real-time guidance before the image is taken.</td>
         </tr>
         <tr>
             <td>Primary Use Case</td>
             <td>Fast capture and non-disruptive batch processing of existing images.</td>
+            <td>Fast capture of package barcode and proof of delivery image to reduce delivery time while providing non-disruptive batch processing of existing images.</td>
             <td>Prioritizing first-time image quality and compliance through live guidance.</td>
         </tr>
         <tr>
             <td>Core Technology</td>
+            <td><code>ImageAttributesDetector</code> &amp; <code>ImageTransformDetector</code> on a static image.</td>
             <td><code>ImageAttributesDetector</code> &amp; <code>ImageTransformDetector</code> on a static image.</td>
             <td><code>EntityTrackerAnalyzer</code> processing a live camera feed.</td>
         </tr>
@@ -326,7 +332,7 @@
 
 <h2 id="nonguidedppod" class="anchor"><a class="heading-anchor" href="#nonguidedppod"><span></span></a>Non-Guided PPOD</h2>
 
-<p>The <strong>Non-Guided Picture Proof of Delivery (PPOD)</strong> is a flexible method for processing images after they have been captured. Unlike the guided (live feedback) model, this workflow focuses on analyzing pre-existing or newly captured images without real-time user guidance.</p>
+<p>The <strong>Non-Guided Picture Proof of Delivery (PPOD)</strong> is a flexible method for processing images after they have been captured by the rear camera or color imager. Unlike the guided (live feedback) model, this workflow focuses on analyzing pre-existing or newly captured images without real-time user guidance.</p>
 
 <p>This method allows developers to embed an analysis and transformation pipeline into an existing application with minimal disruption to the established user workflow. The core process involves taking an image and passing it to one or more detectors to verify its compliance and redact sensitive information.</p>
 
@@ -342,11 +348,19 @@
 <li><strong>Component-Based:</strong> Primarily uses <a href="../imageattributes/">ImageAttributesDetector</a> for compliance checks and the <a href="../imagetransform/">ImageTransformDetector</a> for privacy redaction on a static image.</li>
 </ul>
 
+<p>Select the appropriate workflow based on device usage:</p>
+
+<ul>
+<li><a href="#standardworkflow">Standard Worklow</a></li>
+
+<li><a href="#colorimagerworkflow">Color Imager Workflow</a></li>
+</ul>
+
 <hr>
 
-<h3 id="workflow" class="anchor"><a class="heading-anchor" href="#workflow"><span></span></a>Workflow</h3>
+<h3 id="standardworkflow" class="anchor"><a class="heading-anchor" href="#standardworkflow"><span></span></a>Standard Workflow</h3>
 
-<p>The Non-Guided PPOD workflow provides a flexible pipeline for processing static images after capture. The process begins by initializing the SDK and the required detectors (ImageAttributesDetector, ImageTransformDetector). Once the image is loaded, there are two distinct processing paths available:</p>
+<p>The Non-Guided PPOD standard workflow provides a flexible pipeline for processing static images after capture from the rear camera. The process begins by initializing the SDK and the required detectors (<code>ImageAttributesDetector</code>, <code>ImageTransformDetector</code>). Once the image is loaded, there are two distinct processing paths available:</p>
 
 <ul>
 <li><strong>Analyze then Transform:</strong> First, analyze the image with <code>ImageAttributesDetector</code>, and then optionaally apply privacy redaction with <code>ImageTransformDetector</code>.</li>
@@ -356,7 +370,57 @@
 
 <p><img alt="image" style="height:900px" src="../../images/4-1/non-guided-ppod.png"></p>
 
-<p><em>Non-Guided PPOD Workflow</em></p>
+<p><em>Non-Guided PPOD Standard Workflow</em></p>
+
+<hr>
+
+<h3 id="colorimagerworkflow" class="anchor"><a class="heading-anchor" href="#colorimagerworkflow"><span></span></a>Color Imager Workflow</h3>
+
+<p>Devices equipped with the AC670 Color Imager support receiving a color image through DataWedge while simultaneously capturing the package barcode. </p>
+
+<ul>
+<li><strong>Code &amp; Pipeline Impact:</strong> The core PPOD pipeline and AI Data Capture SDK code remain unchanged. The only additional requirement is configuring the DataWedge profile to use Workflow Input with workflow ID <code>scan_and_snap</code>. </li>
+
+<li><strong>Offline Compatibility:</strong> Adding this DataWedge configuration enables hardware-triggered capture without altering or restricting the default ability to load pre-captured and offline images. </li>
+
+<li><strong>Trigger Handling:</strong> Pressing the device trigger automatically initiates image capture through DataWedge. Manual trigger listeners or camera management code are not required. </li>
+</ul>
+
+<p><strong>Requirements:</strong></p>
+
+<p>The following minimum version requirements must be met:</p>
+
+<ul>
+<li>Scanning Framework v43.63.44.0 or higher </li>
+
+<li>DataWedge version v15.0.90 or higher </li>
+</ul>
+
+<p><strong>Implementation Steps:</strong></p>
+
+<ol>
+<li><strong>Configure DataWedge Profile:</strong> Configure the DataWedge profile for the target application to perform image capture using Workflow Input with the workflow identifier <code>scan_and_snap</code>. For simultaneous barcode decoding alongside the image, enable the target barcode symbologies in this profile.</li>
+
+<li><strong>Register Image Callback &amp; Initialize SDK:</strong> Register an Intent broadcast receiver or callback to receive the image payload from DataWedge. Initialize the AI Data Capture SDK detectors: <code>ImageAttributesDetector</code> and <code>ImageTransformDetector</code>. </li>
+
+<li><strong>Capture and Process Image:</strong> Press the hardware trigger on the device to initiate image capture. Depending on the profile configuration, the application receives either an Image or Image and Barcode. The captured image is returned in the callback Intent as a raw NV21 (<code>ImageFormat.NV21</code>) byte array with width, height, and stride metadata. The received image then passes to the pipeline for PPOD attribute analysis and privacy redaction.  </li>
+</ol>
+
+<p><strong>Reference Documentation &amp; APIS:</strong></p>
+
+<p>For detailed information on configuring DataWedge Intent APIs and Workflow Input parameters, refer to the following resources:</p>
+
+<ul>
+<li><a href="/datawedge/latest/guide/input/workflow/#scanan">DataWedge "Scan and Snap" Workflow Input Configuration</a>: Guide on setting up the "Scan and Snap" workflow input features.</li>
+
+<li><a href="/latest/guide/api/setconfig/#scanandsnap">DataWedge SetConfig API Reference</a>: Complete parameter and configuration details for SetConfig API.</li>
+
+<li><a href="/datawedge/latest/guide/programmers-guides/workflow-input/">DataWedge Workflow Input Programmer's Guide</a>: Comprehensive development guidelines for Workflow Input implementation.</li>
+</ul>
+
+<p><img alt="image" style="height:900px" src="../../images/4-1/non-guided-imager.jpg"></p>
+
+<p><em>Non-Guided PPOD Color Imager Workflow</em></p>
 
 <hr>
 

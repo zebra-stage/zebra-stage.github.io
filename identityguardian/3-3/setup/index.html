@@ -266,9 +266,11 @@
 <li><strong><a href="#emm">Enterprise Mobility Management (EMM) system</a>:</strong> Enables administrators to deploy the application and establish usage policies, device controls, and restrictions via <a href="../mc/">Managed Configurations</a>.</li>
 </ul>
 
+<p><a href="#securenfc">Secure NFC</a> extends Identity Guardian authentication by enabling encrypted credential storage on contactless smart cards. The architecture pairs Identity Guardian for policy-driven card reading and user sign-in with zCreator for secure card provisioning and credential encryption, delivering enterprise-grade badge authentication without disrupting existing building access infrastructure.</p>
+
 <h3 id="quickstartdeployment" class="anchor"><a class="heading-anchor" href="#quickstartdeployment"><span></span></a>Quick-Start Deployment</h3>
 
-<p>Follow each phase sequentially for deployment.</p>
+<p>Complete each phase sequentially to deploy Identity Guardian.</p>
 
 <table class="facelift" style="width:90%; border-collapse: collapse;" border="1" cellpadding="8">
   <thead>
@@ -282,30 +284,34 @@
     <tr>
       <td><b>1</b></td>
       <td><a href="#requirements">Requirements</a></td>
-      <td>Acquire APK(s), verify OS/hardware, and check EMM dependencies.</td>
+      <td>Acquire APK(s), verify device hardware and OS compatibility, and check EMM dependencies.</td>
     </tr>
     <tr>
       <td><b>2</b></td>
       <td><a href="#ssointegration">SSO Integration</a></td>
-      <td>(Optional) Register the application with an Identity Provider (Entra ID, PingID, or Okta).</td>
+      <td>(Optional) Register the application within an Identity Provider (Entra ID, PingID, or Okta).</td>
     </tr>
     <tr>
       <td><b>3</b></td>
-      <td><a href="#deploymentprovisioning">Deployment &amp; Provisioning</a></td>
-      <td>Install APK(s), configure allowlists, define device architectures (Shared vs Personal), deploy configurations, and configure peripherals (DataWedge or zCreator).</td>
+      <td><a href="#deploymentconfiguration">Deployment &amp; Configuration</a></td>
+      <td>Install APK(s), configure allowlists, define deployment architectures (Shared vs Personal), push Managed Configurations, and configure companion tools (DataWedge or zCreator).</td>
     </tr>
     <tr>
       <td><b>4</b></td>
       <td><a href="#playstoreupdates">Play Store Updates</a></td>
-      <td>Apply Play Store update rules for appication version control.</td>
+      <td>Define Play Store maintenance rules for appication version control.</td>
     </tr>
     <tr>
       <td><b>5</b></td>
       <td><a href="#uninstallation">Uninstallation</a></td>
-      <td>When required, handle uninstallation cleanup procedures.</td>
+      <td>Perform application removal and device  cleanup procedures when needed.</td>
     </tr>
   </tbody>
 </table>
+
+<p><br></p>
+
+<p>Following deployment, users proceed to <a href="#enrollauthenticateuser">Enroll &amp; Authenticate</a> to provision credentials and access devices.</p>
 
 <hr>
 
@@ -374,7 +380,7 @@
 
 <h3 id="zcreatorrequirements" class="anchor"><a class="heading-anchor" href="#zcreatorrequirements"><span></span></a>zCreator Requirements</h3>
 
-<p>zCreator is a companion application enabling users to print or share Identity Guardian user barcodes containing encrypted verification data, and store user enrollment data on NFC cards for user authentication.</p>
+<p>zCreator is a companion application enabling administrators and users to print or share Identity Guardian user barcodes containing encrypted verification data, and store user enrollment data onto NFC cards for user authentication.</p>
 
 <p><strong>Supported Printers:</strong></p>
 
@@ -387,13 +393,123 @@
 <p><strong>NFC Card Specifications:</strong></p>
 
 <ul>
-<li><strong>Compatible Card Types:</strong> Mifare, DESFire EV3, Salto</li>
+<li><strong>Operating Frequency:</strong> 13.56 MHz (NFC standard)</li>
 
-<li><strong>Operating Frequency:</strong> NFC cards must operate at 13.56 MHz, the standard frequency for NFC technology.</li>
+<li><strong>Compatible Card Types:</strong> 
 
-<li><strong>Supported Format:</strong> Only NDEF format is supported. Note that the application overwrites any existing data present on the card.</li>
+
+<ul>
+<li>MIFARE Classic</li>
+
+<li>MIFARE DESFire EV3</li></ul>
+</li>
+
+<li><strong>Storage Formats:</strong> 
+
+
+<ul>
+<li>Secure Layer (encrypted)</li>
+
+<li>NDEF (unencrypted) </li></ul>
+</li>
 
 <li><strong>Minimum Capacity:</strong> A minimum card capacity of 4 KB is required to successfully store user enrollment data.</li>
+
+<li><strong>Third-Party Card Coexistence:</strong> Supports enterprise access control badges (e.g., Salto)</li>
+</ul>
+
+<hr>
+
+<h2 id="securenfc" class="anchor"><a class="heading-anchor" href="#securenfc"><span></span></a>Secure NFC</h2>
+
+<p><strong>Secure NFC</strong> provides hardware-level, encrypted authentication for workers using contactless smart cards. Operating alongside the zCreator companion app, Secure NFC enables organization to migrate from unencrypted card storage to encrypted storage with zero-downtime key rotation and multi-application card coexistence with existing enterprise access control systems. </p>
+
+<p>Identity Guardian supports two card data storage architectures:</p>
+
+<ol>
+<li><strong>Secure Layer (Recommended):</strong> Encrypts user credentials using cryptographic key sets. Supports <strong>Append Mode</strong>, allowing Identity Guardian to write credential data without corrupting existing card applications (such as building access control).</li>
+
+<li><strong>Standard NDEF (Legacy):</strong> Uses the standard open NFC Data Exchange Format. Does not support encryption or card coexistence; writing in NDEF format overwrites all existing data on the card.</li>
+</ol>
+
+<p>To deploy using an EMM, refer to <a href="#shareddevicessd">Shared Devices</a> and configure <strong>NFC Configurations</strong> for <a href="../mc/#nfcconfiguration">Identity Guardian</a> and <a href="../mc/#nfcconfiguration-1">zCreator</a> within Managed Configurations.</p>
+
+<hr>
+
+<h3 id="readwriteexecutionlogic" class="anchor"><a class="heading-anchor" href="#readwriteexecutionlogic"><span></span></a>Read/Write Execution Logic</h3>
+
+<p>Operational behavior across <a href="../mc/#nfcconfiguration">Identity Guardian</a> and <a href="../mc/#nfcconfiguration-1">zCreator</a> depends on the selected <strong>NFC Data Storage</strong> mode and the other configured Managed Configuration policies.</p>
+
+<ul>
+<li><strong>Read Operations (Identity Guardian):</strong> Identity Guardian utilizes an adaptive read flow that automatically falls back between formats. This enables simultaneous support for legacy unencrypted cards and modern encrypted cards across the same device fleet without administrative intervention. If both reads fail, it tries the Default Factory Key.
+
+
+<ul>
+<li><strong>When set to "Standard NDEF":</strong> Identity Guardian attempts to read unencrypted NDEF records first. If no valid NDEF data is detected, it falls back to read <strong>Secure Layer</strong> data.</li>
+
+<li><strong>When set to "Secure Layer":</strong> Identity Guardian evaluates encrypted sectors using the configured key hierarchy first. If no secure record is found, it automatically falls back to read legacy <strong>NDEF</strong> data.</li></ul>
+</li>
+
+<li><strong>Write Operations (zCreator):</strong> The zCreator enrollment application consistently provisions new credentials using the configured <strong>Primary Write Key</strong>. Data handling varies by storage mode:
+
+
+<ul>
+<li><strong>Standard NDEF:</strong> Data is written to the unencrypted NDEF public message area. NDEF does not support data appending; performing a write operation overwrites existing card data.</li>
+
+<li><strong>Secure Layer (Encrypted):</strong> Credentials are encrypted and written to dedicated secure sectors. When <strong>User Data Operation</strong> is set to <strong>Append</strong>, zCreator allocates available secure sectors to write Identity Guardian credentials without altering existing third-party card data (such as access control systems).</li></ul>
+</li>
+</ul>
+
+<hr>
+
+<h3 id="applicationidentifieraid" class="anchor"><a class="heading-anchor" href="#applicationidentifieraid"><span></span></a>Application Identifier (AID)</h3>
+
+<p>The Application Identifier (AID) is a unique <strong>3-character alphanumeric string</strong> that identifies the specific memory sector reserved for Identity Guardian on the card.</p>
+
+<ul>
+<li><strong>Matching Requirement:</strong> The AID configured in the Identity Guardian read policy must match the AID configured in the zCreator write policy.</li>
+
+<li><strong>Function:</strong> During a card tap, Identity Guardian queries the card directory for this specific AID to locate and decrypt user credentials rapidly.</li>
+</ul>
+
+<hr>
+
+<h3 id="securitykeys" class="anchor"><a class="heading-anchor" href="#securitykeys"><span></span></a>Security Keys</h3>
+
+<p>When deploying Secure NFC, administrators must define security keys in EMM Managed Configurations. If key fields are left blank, the applications automatically fall back to proprietary factory default keys.</p>
+
+<p>Custom encryption keys deployed through EMM must comply with strict format requirements. For details, refer to the respective <a href="../mc/#nfcconfiguration">Identity Guardian</a> and <a href="../mc/#nfcconfiguration-1">zCreator</a> sections for NFC Configuration.</p>
+
+<p>Security best practices dictate periodic key rotation. Identity Guardian uses a dual-key (Primary and Secondary) architecture to ensure seamless key transitions across active card fleets without operational disruption:</p>
+
+<ul>
+<li><strong>Write Logic:</strong> zCreator <em>always</em> writes new credentials using the configured <strong>Primary Write Key</strong>.</li>
+
+<li><strong>Read Logic:</strong> Identity Guardian evaluates keys in sequence: <strong>Primary Read Key</strong> ➔ <strong>Secondary Read Key</strong> ➔ <strong>Factory Default Key</strong>.</li>
+</ul>
+
+<p><strong>Key Rotation Procedure:</strong></p>
+
+<ol>
+<li>In the EMM console, copy the existing active production key into the <strong>Secondary Key</strong> fields (Secondary Read / Secondary Write) for both Identity Guardian and zCreator.</li>
+
+<li>Enter the newly generated key into the <strong>Primary Key</strong> fields (Primary Read / Primary Write).</li>
+
+<li>Deploy the updated policy profiles.</li>
+
+<li>Active cardholders continue authenticating via the Secondary Key fallback until their cards are reprovisioned with the new Primary Key during regular enrollment cycles.</li>
+</ol>
+
+<hr>
+
+<h3 id="bestpractices" class="anchor"><a class="heading-anchor" href="#bestpractices"><span></span></a>Best Practices</h3>
+
+<ul>
+<li><strong>Card Stability During Write:</strong> Operators must hold the card stationary against the mobile computer's NFC antenna until the on-screen confirmation displays. Premature removal interrupts writing and can lock the card sector.</li>
+
+<li><strong>Card Overwrite Protection:</strong> To prevent accidentally overwriting an active employee badge, ensure the <strong>Allow Different User Overwrite</strong> parameter is set to <strong>false</strong> in the zCreator policy.</li>
+
+<li><strong>Downgrade Sanitization:</strong> When migrating cards from <strong>Secure Layer</strong> back to legacy <strong>NDEF,</strong> always execute a <strong><code>Wipe card and write</code></strong> operation to prevent orphaned encrypted blocks from lingering in card memory.</li>
 </ul>
 
 <hr>
@@ -1068,7 +1184,7 @@ Make any other required edits for the user, including multiple roles if needed, 
 
 <hr>
 
-<h2 id="deploymentprovisioning" class="anchor"><a class="heading-anchor" href="#deploymentprovisioning"><span></span></a>Deployment &amp; Provisioning</h2>
+<h2 id="deploymentconfiguration" class="anchor"><a class="heading-anchor" href="#deploymentconfiguration"><span></span></a>Deployment &amp; Configuration</h2>
 
 <p>Identity Guardian is deployed to devices utilizing an Enterprise Mobility Management (EMM) system, such as <a href="/zebradna">Zebra DNA Cloud</a> or a third-party platform. Administrators configure application policies via <a href="../mc">Managed Configurations</a> to establish the necessary settings for Identity Guardian and zCreator. As detailed in the <a href="#overview">Overview</a>, profiles must be explicitly tailored to the chosen deployment architecture: <a href="#shareddevicessd">Shared Devices</a> or <a href="#personallyassigneddevicespd">Personally Assigned Devices</a>.</p>
 
@@ -1077,8 +1193,7 @@ Make any other required edits for the user, including multiple roles if needed, 
 <p><a href="#ienrollmentappinstall">I. Enrollment &amp; App Install</a><br>
 <a href="#iiconfigureemmallowlistingshareddeviceskiosks">II. Configure EMM Allowlisting (Shared Devices &amp; Kiosks)</a><br>
 <a href="#iiiconfiguresettingsmanagedconfigurations">III. Configure Settings (Managed Configurations)</a><br>
-<a href="#ivlaunchapp">IV. Launch App</a> <br>
-<a href="#venrollauthenticateuser">V. Enroll &amp; Authenticate User</a></p>
+<a href="#ivlaunchapp">IV. Launch App</a> <br></p>
 
 <hr>
 
@@ -1536,25 +1651,6 @@ Make any other required edits for the user, including multiple roles if needed, 
 
 <hr>
 
-<h3 id="venrollauthenticateuser" class="anchor"><a class="heading-anchor" href="#venrollauthenticateuser"><span></span></a>V. Enroll &amp; Authenticate User</h3>
-
-<p>Users proceed through the enrollment process by following the Identity Guardian on-screen prompts. After enrollment completion, users authenticate to sign in to the device based on the Authentication Configuration (<a href="#shareddevicessd">Shared Device</a> or <a href="#personallyassigneddevicespd">Personal Device</a>) established by the administrator.</p>
-
-<ul>
-<li><strong>Shared Devices:</strong>
-
-
-<ul>
-<li><strong>Standard Enrollment:</strong> Users enroll on a dedicated enrollment device and authenticate on a separate shared device; see <a href="../usage/#standardenrollment">standard enrollment</a> and <a href="../usage/#signinauthentication">authentication</a>.</li>
-
-<li><strong>Self-Enrollment:</strong> Users complete both enrollment and authentication on the same shared device; see <a href="../usage/#selfenrollment">self-enrollment</a> and <a href="../usage/#signinauthentication">authentication</a>.</li></ul>
-</li>
-
-<li><strong>Personally Assigned Devices:</strong> Users complete both enrollment and authentication on their personally assigned device; see <a href="../usage/#personllyassigneddevice">personal device user enrollment</a> and <a href="../usage/#signinauthentication">authentication</a>.</li>
-</ul>
-
-<hr>
-
 <h3 id="shareddevicessd" class="anchor"><a class="heading-anchor" href="#shareddevicessd"><span></span></a>Shared Devices (SD)</h3>
 
 <p>In environments where <strong>a single device is shared among multiple users,</strong> Identity Guardian ensures <strong>secure and personalized access</strong> tailored to each user's organizational role. To access a shared device, users must first complete a <strong>one-time enrollment</strong> with Identity Guardian, which can involve capturing the user's facial vectors for facial recognition. Shared devices can support an unlimited number of registered users, offering both flexibility and scalability to organizations.</p>
@@ -1592,16 +1688,12 @@ Make any other required edits for the user, including multiple roles if needed, 
 <li>After completing enrollment, <strong>authentication is performed on a separate shared device</strong> configured with the Authentication profile, also deployed by the administrator. Authentication methods such as Single Sign-On (SSO) or user barcodes are used.</li></ul>
 </li>
 
-<li><strong><a href="#selfenrollment">Self-Enrollment</a> -</strong> <em>This method combines both enrollment and authentication on the same shared device.</em> The device is configured with a unified Authentication profile that incorporates enrollment settings defined by the administrator. Users complete enrollment and authenticate directly on the same shared device. This streamlined approach is best suited for environments where users independently manage their enrollment and authentication on shared devices.</li>
-
-<li><strong><a href="#admincontrolledenrollment">Admin-Controlled Enrollment</a> -</strong> <em>This method enables non-SSO users managed by Zebra DNA Cloud to self-enroll through the Identity Guardian app on-device or a web browser on a host PC.</em> It extends self-service onboarding without requiring manual administrator setup interventions.
-
-
-<ul>
-<li><strong>Administrators create user records in Zebra DNA Cloud.</strong></li>
-
-<li><strong>Users initiate the one-time PIN email</strong> through either the Identity Guardian app on the device or the web browser on a host PC using the invitation username. Enrollment is completed by authenticating the received one-time PIN, setting a passcode, and provisioning physical barcode or NFC credentials.</li></ul>
-</li>
+<li><strong><a href="#selfenrollment">Self-Enrollment</a> -</strong> <em>This method combines both enrollment and authentication on the same shared device.</em> The device is configured with a unified Authentication profile that incorporates enrollment settings defined by the administrator. Users complete enrollment and authenticate directly on the same shared device. This streamlined approach is best suited for environments where users independently manage their enrollment and authentication on shared devices.
+<!-- 
+- **[Admin-Controlled Enrollment](#admincontrolledenrollment) -** _This method enables non-SSO users managed by Zebra DNA Cloud to self-enroll through the Identity Guardian app on-device or a web browser on a host PC._ It extends self-service onboarding without requiring manual administrator setup interventions.
+  - **Administrators create user records in Zebra DNA Cloud.**
+  - **Users initiate the one-time PIN email** through either the Identity Guardian app on the device or the web browser on a host PC using the invitation username. Enrollment is completed by authenticating the received one-time PIN, setting a passcode, and provisioning physical barcode or NFC credentials.
+--></li>
 </ul>
 
 <p>For these enrollment methods, there are three main types of secure enrollment mechanisms:</p>
@@ -1707,10 +1799,23 @@ Make any other required edits for the user, including multiple roles if needed, 
 <li><strong>Allow opening barcode during enrollment:</strong> [Enable this option to allow barcode printing during the enrollment process. This displays the <strong>Print</strong> button at the last step of enrollment.]</li>
 
 <li><strong>Enrollment Storage Method:</strong> [Select <strong>NFC</strong> or <strong>Barcode</strong>]</li></ul>
+</li>
+
+<li><a href="#nfcconfiguration">NFC Configurations</a>: Applies for NFC card usage.
+
+
+<ul>
+<li><strong>NFC Data Storage:</strong> Select <strong>Secure Layer</strong> (encrypted AES storage, recommended) or <strong>Standard NDEF</strong> (unencrypted legacy format).</li>
+
+<li><strong>IG Data Identifier (AID):</strong> [Enter the 3-character Application Identifier (AID). This must match the AID configured in the Identity Guardian read policy.]</li>
+
+<li><strong>MIFARE Classic Keys:</strong> [Enter the 12-character hexadecimal <strong>Primary Read/Write Keys</strong> and <strong>Secondary Read/Write Keys.</strong>]</li>
+
+<li><strong>DESFire EV3 Keys:</strong> [Enter the 32-character hexadecimal <strong>Primary Read/Write Keys</strong> and <strong>Secondary Read/Write Keys.</strong>]</li></ul>
 </li></ul>
 </li>
 
-<li><strong>Install and configure zCreator for barcode use:</strong> Set up a zCreator profile and configure the managed configuration settings applicable for barcodes:
+<li><strong>If applicable, install zCreator and create a profile for barcode use:</strong> 
 
 
 <ul>
@@ -1743,6 +1848,30 @@ Make any other required edits for the user, including multiple roles if needed, 
 <li><strong>Bluetooth Settings:</strong> [Set to <strong>1</strong> to allow the user to change the Bluetooth printer configuration, otherwise set to <strong>0.</strong>]</li>
 
 <li><strong>Bluetooth MAC Address:</strong> [Enter the Bluetooth printer MAC address in the format <code>XX:XX:XX:XX:XX:XX</code>, where <code>X</code> is a hexadecimal digit (0-9, A-F).]</li></ul>
+</li></ul>
+</li>
+
+<li><strong>If applicable, install zCreator and create a profile for NFC use:</strong> 
+
+
+<ul>
+<li><strong><a href="../mc/#nfcconfiguration">NFC Configurations</a>:</strong>
+
+
+<ul>
+<li><strong>NFC Data Storage:</strong> Select <strong>Secure Layer</strong> (encrypted AES storage, recommended) or <strong>Standard NDEF</strong> (unencrypted legacy format).</li>
+
+<li><strong>User Data Operation:</strong> Select the card write mode: <strong>Append</strong> (Writes Identity Guardian credentials to available card sectors without modifying third-party data, e.g., building access), <strong>Wipe Storage and Write</strong> (Clears existing Identity Guardian data before writing new credentials), or <strong>Wipe card and write</strong> (Formats the entire card prior to writing credentials, required when downgrading from Secure Layer to NDEF).</li>
+
+<li><strong>Allow Different User Overwrite:</strong> [Set to <strong>false</strong> to block overwriting cards previously assigned to another user ID; set to <strong>true</strong> to allow reassignment.]</li>
+
+<li><strong>IG Data Identifier (AID):</strong> [Enter the 3-character Application Identifier (AID). This must match the AID configured in the Identity Guardian read policy.]</li>
+
+<li><strong>MIFARE Classic Keys:</strong> [Enter the 12-character hexadecimal <strong>Primary Read/Write Keys</strong> and <strong>Secondary Read/Write Keys.</strong>]</li>
+
+<li><strong>DESFire EV3 Keys:</strong> [Enter the 32-character hexadecimal <strong>Primary Read/Write Keys</strong> and <strong>Secondary Read/Write Keys.</strong>]</li>
+
+<li><strong>Card Master Key:</strong> [For Secure NFC, enter a card master key.]</li></ul>
 </li></ul>
 </li>
 
@@ -2030,25 +2159,24 @@ Make any other required edits for the user, including multiple roles if needed, 
 
 <p>After enrollment is complete, users can <a href="../usage/#signinauthentication">authenticate and sign in</a> to the device.</p>
 
-<hr>
+<!-- 
+---
 
-<h4 id="admincontrolledenrollment" class="anchor"><a class="heading-anchor" href="#admincontrolledenrollment"><span></span></a>Admin-Controlled Enrollment</h4>
+#### Admin-Controlled Enrollment
 
-<p><strong>Admin-Controlled Enrollment</strong> enables non-SSO shared-device users managed by <a href="/zebradna">Zebra DNA Cloud</a> to self-enroll, either through a web browser on a host PC or the Identity Guardian app on the device. This extends self-service enrollment to non-SSO environments while eliminating manual administrator setup interventions.</p>
+**Admin-Controlled Enrollment** enables non-SSO shared-device users managed by [Zebra DNA Cloud](/zebradna) to self-enroll, either through a web browser on a host PC or the Identity Guardian app on the device. This extends self-service enrollment to non-SSO environments while eliminating manual administrator setup interventions.
 
-<p>After an administrator creates the user record in ZDNA Cloud, the system sends an email invitation initiating enrollment. Operational behavior depends on the configured Enrollment Type:</p>
+After an administrator creates the user record in ZDNA Cloud, the system sends an email invitation initiating enrollment. Operational behavior depends on the configured Enrollment Type:
 
-<ul>
-<li><strong>Identity Guardian App (IG):</strong> On the mobile devices, the user requests a one-time PIN via email, completes on-device verification, and prints a barcode or writes to an NFC card from the app to generate physical credentials.</li>
+- **Identity Guardian App (IG):** On the mobile devices, the user requests a one-time PIN via email, completes on-device verification, and prints a barcode or writes to an NFC card from the app to generate physical credentials.
+- **Web Browser (WEB):** On the host PC, the user requests a one-time PIN via email, completes browser-based verification, and receives generated credential files via email.
 
-<li><strong>Web Browser (WEB):</strong> On the host PC, the user requests a one-time PIN via email, completes browser-based verification, and receives generated credential files via email.</li>
-</ul>
+For enrolled users, self-service profile updates and lost credential replacements are available. The administrator approves credential replacement requests through the [Device Users](/zebradna/latest/usage/#deviceusers) page on ZDNA Cloud.
 
-<p>For enrolled users, self-service profile updates and lost credential replacements are available. The administrator approves credential replacement requests through the <a href="/zebradna/latest/usage/#deviceusers">Device Users</a> page on ZDNA Cloud.</p>
+For user workflow, refer to the [Admin-Controlled Enrollment](../usage/#admincontrolledenrollment) guide.
 
-<p>For user workflow, refer to the <a href="../usage/#admincontrolledenrollment">Admin-Controlled Enrollment</a> guide.</p>
+Self-enrollment is accessible for non-SSO users through issued email invitations containing a one-time PIN.
 
-<p>Self-enrollment is accessible for non-SSO users through issued email invitations containing a one-time PIN.</p>
 
 <table class="facelift" style="width:100%; border-collapse: collapse;" border="1" cellpadding="8">
   <thead>
@@ -2072,28 +2200,20 @@ Make any other required edits for the user, including multiple roles if needed, 
   </tbody>
 </table>
 
-<p><br></p>
 
-<h5 id="prerequisites" class="anchor"><a class="heading-anchor" href="#prerequisites"><span></span></a>Prerequisites</h5>
+<br />
 
-<p>The following conditions must be met prior to initiating enrollment:</p>
+##### Prerequisites
 
-<ul>
-<li><strong>Device Software:</strong> Identity Guardian 3.2 or higher installed on devices managed by Zebra DNA Cloud 6.8 or higher.</li>
+The following conditions must be met prior to initiating enrollment:
 
-<li><strong>User Account:</strong> Active user account created in <a href="/zebradna">Zebra DNA Cloud</a>, triggering an enrollment invitation email invitation to the user.</li>
-
-<li><strong>Profile Assignment:</strong> Identity Guardian profile deployed to the device with the following Managed Configurations:
-
-
-<ul>
-<li><strong><a href="../mc/#enrollmentconfiguration">Enrollment Configuration</a>:</strong> Configured per enrollment requirements (e.g., Passcode Rules, Enrollment Storage Method, etc.).</li>
-
-<li><strong><a href="../mc/#facialauthenticationconfiguration">Facial Authentication Configuration</a>:</strong> Configured per facial authentication requirements.</li>
-
-<li><strong><a href="../mc/#admincontrolledenrollment">Admin Controlled Enrollment</a>:</strong> <strong>Enrollment Type</strong> is set to <code>IG</code> and adjust the remaining options as needed (such as reminder frequency and PIN expiration).</li></ul>
-</li>
-</ul>
+- **Device Software:** Identity Guardian 3.2 or higher installed on devices managed by Zebra DNA Cloud 6.8 or higher.
+- **User Account:** Active user account created in [Zebra DNA Cloud](/zebradna), triggering an enrollment invitation email invitation to the user.
+- **Profile Assignment:** Identity Guardian profile deployed to the device with the following Managed Configurations:
+  - **[Enrollment Configuration](../mc/#enrollmentconfiguration):** Configured per enrollment requirements (e.g., Passcode Rules, Enrollment Storage Method, etc.).
+  - **[Facial Authentication Configuration](../mc/#facialauthenticationconfiguration):** Configured per facial authentication requirements.
+  - **[Admin Controlled Enrollment](../mc/#admincontrolledenrollment):** **Enrollment Type** is set to `IG` and adjust the remaining options as needed (such as reminder frequency and PIN expiration).
+-->
 
 <hr>
 
@@ -2506,6 +2626,25 @@ Toggle on <strong>Network Parameters</strong> and enter the IP address of the ne
 <li>The SSO session times out.</li></ul>
 </li>
 </ol>
+
+<hr>
+
+<h2 id="enrollauthenticateuser" class="anchor"><a class="heading-anchor" href="#enrollauthenticateuser"><span></span></a>Enroll &amp; Authenticate User</h2>
+
+<p>Following deployment to the devices, users complete enrollment through on-screen prompts in Identity Guardian. Once enrolled, users authenticate to unlock and sign in to devices according to the access model established by the administrator:</p>
+
+<ul>
+<li><strong><a href="#shareddevicessd">Shared Device</a>:</strong>
+
+
+<ul>
+<li><strong>Standard Enrollment:</strong> Users enroll on a dedicated enrollment device and authenticate on separate shared pool devices; see <a href="../usage/#standardenrollment">standard enrollment</a> and <a href="../usage/#signinauthentication">authentication</a>.</li>
+
+<li><strong>Self-Enrollment:</strong> Users complete both enrollment and authentication on the same shared device; see <a href="../usage/#selfenrollment">self-enrollment</a> and <a href="../usage/#signinauthentication">authentication</a>.</li></ul>
+</li>
+
+<li><strong><a href="#personallyassigneddevicespd">Personally Assigned Device</a>:</strong> Users complete both enrollment and authentication on a dedicated personal device; see <a href="../usage/#personllyassigneddevice">personal device user enrollment</a> and <a href="../usage/#signinauthentication">authentication</a>.</li>
+</ul>
 
 <hr>
 
