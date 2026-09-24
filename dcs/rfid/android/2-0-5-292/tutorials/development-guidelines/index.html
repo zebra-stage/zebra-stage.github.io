@@ -120,7 +120,13 @@
                         <div class="col-sm-3 hidden-sm hidden-xs" id="sidebar">
 
 
-                            <nav id="toc" data-toggle="toc" data-spy="affix" style="height: 75%; max-width: 225px; overflow-y: auto; ">
+                            <style>
+                                /* Keep the fixed left nav clear of the footer: allow for the nav's top offset and the footer height. */
+                                #toc { max-height: calc(100vh - 230px); }
+                                /* Below 1100px the header wraps to two lines, so the nav starts 100px lower. */
+                                @media (max-width: 1099px) { #toc { max-height: calc(100vh - 330px); } }
+                            </style>
+                            <nav id="toc" data-toggle="toc" data-spy="affix" style="max-width: 225px; overflow-y: auto; ">
 
                                 <ul class="nav">
                                     <li><strong>Development Guidelines</strong></li>
@@ -146,9 +152,24 @@
                             </script>
                             <link rel="stylesheet" href="https://cdn.rawgit.com/afeld/bootstrap-toc/v0.3.0/dist/bootstrap-toc.min.css">
                             <script src="https://cdn.rawgit.com/afeld/bootstrap-toc/v0.3.0/dist/bootstrap-toc.min.js"></script>
+                            <style>
+                                nav[data-toggle=toc] .nav .nav .nav>li>a { padding-left: 40px; }
+                                nav[data-toggle=toc] .nav .nav .nav>li>a:focus,
+                                nav[data-toggle=toc] .nav .nav .nav>li>a:hover { padding-left: 39px; }
+                                nav[data-toggle=toc] .nav .nav .nav>.active>a { padding-left: 38px; }
+                            </style>
                             <script type="text/javascript">
                                 $(document).ready(function() {
-
+                                    // bootstrap-toc lists only h2 and h3 headings; nest each h4 under its h3.
+                                    $('#mainContent h3').each(function() {
+                                        var $subs = $(this).nextUntil('h2, h3', 'h4');
+                                        var $item = $('#toc a[href="#' + this.id + '"]').parent();
+                                        if (!$subs.length || !$item.length) return;
+                                        var $list = $('<ul class="nav"></ul>').appendTo($item);
+                                        $subs.each(function() {
+                                            $list.append($('<li></li>').append($('<a></a>').attr('href', '#' + this.id).text($(this).text())));
+                                        });
+                                    });
                                 });
 
                             </script>
@@ -219,21 +240,21 @@
 
                                                 <p>There are two primary connection modes available to manage device resources.</p>
 
-                                                <h3 id="rfid_only-mode-max-performance" class="anchor"><a class="heading-anchor" href="#rfid_only-mode-max-performance"><span></span></a>RFID_ONLY Mode (Max Performance)</h3>
+                                                <h3 id="rfid_only-mode-max-performance" class="anchor" data-toc-skip><a class="heading-anchor" href="#rfid_only-mode-max-performance"><span></span></a>RFID_ONLY Mode (Max Performance)</h3>
 
                                                 <ul>
                                                     <li>How it works: Dedicates the device's full resources to the RFID reader while temporarily pausing cellular connectivity.</li>
                                                     <li>Benefit: Eliminates potential radio interference to guarantee the fastest read rates and peak throughput.</li>
                                                 </ul>
 
-                                                <h3 id="rfidwan-mode-real-time-sync" class="anchor"><a class="heading-anchor" href="#rfidwan-mode-real-time-sync"><span></span></a>RFID+WAN Mode (Real-Time Sync)</h3>
+                                                <h3 id="rfidwan-mode-real-time-sync" class="anchor" data-toc-skip><a class="heading-anchor" href="#rfidwan-mode-real-time-sync"><span></span></a>RFID+WAN Mode (Real-Time Sync)</h3>
 
                                                 <ul>
                                                     <li>How it works: Allows standard data operations to co-exist simultaneously with active RFID scanning.</li>
                                                     <li>Benefit: Enables instant data updates while keeping cellular data active. It intelligently prioritizes voice calls, pausing RFID scanning only while you are on a call.</li>
                                                 </ul>
 
-                                                <h3 id="api-configuration-control" class="anchor"><a class="heading-anchor" href="#api-configuration-control"><span></span></a>API Configuration Control</h3>
+                                                <h3 id="api-configuration-control" class="anchor" data-toc-skip><a class="heading-anchor" href="#api-configuration-control"><span></span></a>API Configuration Control</h3>
 
                                                 <p>By default, the device starts in RFID_ONLY mode to ensure the best possible scanning performance right away. Developers can easily switch the device to <code>RFID+WAN</code> mode using this simple code command:</p>
 
@@ -245,7 +266,7 @@ void connect(ENUM_CONNECTION_MODE mode)
 
                                                 <h2 id="performance-management" class="anchor"><a class="heading-anchor" href="#performance-management"><span></span></a>Performance Management</h2>
 
-                                                <h3 id="wan-state-vs-rfid-behavior" class="anchor"><a class="heading-anchor" href="#wan-state-vs-rfid-behavior"><span></span></a>WAN State vs. RFID Behavior</h3>
+                                                <h3 id="wan-state-vs-rfid-behavior" class="anchor" data-toc-skip><a class="heading-anchor" href="#wan-state-vs-rfid-behavior"><span></span></a>WAN State vs. RFID Behavior</h3>
 
                                                 <p>The RFID behavior is intelligently managed based on the cellular (WAN) state:</p>
 
@@ -274,159 +295,179 @@ void connect(ENUM_CONNECTION_MODE mode)
 
                                                 <hr>
 
-                                                <h2 id="wwan--rfid-use-cases" class="anchor"><a class="heading-anchor" href="#wwan--rfid-use-cases"><span></span></a>WWAN + RFID Use Cases</h2>
+                                                <h2 id="wwan--rfid-operations" class="anchor"><a class="heading-anchor" href="#wwan--rfid-operations"><span></span></a>WWAN + RFID Operations</h2>
 
-                                                <h3 id="sim--esim-combinations" class="anchor"><a class="heading-anchor" href="#sim--esim-combinations"><span></span></a>SIM &amp; eSIM Combinations</h3>
+                                                <h3 id="overview--operating-modes" class="anchor"><a class="heading-anchor" href="#overview--operating-modes"><span></span></a>Overview &amp; Operating Modes</h3>
 
-                                                <p>The system behavior varies based on your SIM configuration:</p>
-
-                                                <p>In case of &ldquo;RFID Only mode&rdquo; Mode</p>
+                                                <p>Device behavior depends on the selected operating mode:</p>
 
                                                 <ul>
-                                                    <li>WWAN will not be available irrespective of number of Phy SIM or eSIM presence.</li>
-                                                </ul>
-
-                                                <p>In case of &ldquo;RFID + WWAN&rdquo; Mode</p>
-
-                                                <ul>
-                                                    <li>If <strong>RFID is OFF</strong> then there will not be any impact to WWAN service.</li>
-                                                    <li>In case of <strong>RFID in ON</strong>
+                                                    <li>RFID Only Mode: WWAN connectivity is completely disabled, regardless of the number or presence of physical SIMs or eSIM profiles.</li>
+                                                    <li>RFID + WWAN Mode:
                                                         <ul>
-                                                            <li>If only one SIM/eSIM active then it will continue in the same state, no impact.</li>
-                                                            <li>If two subscriptions are active ( Phy SIM+ eSIM or eSIM+eSIM ) then <strong>Non DDS</strong> (non default data sub) subscriptions will get deactivated as soon as RFID is ON and resume back once RFID is OFF.</li>
+                                                            <li>When RFID is OFF: Standard WWAN services operate normally with no restrictions.</li>
+                                                            <li>When RFID is ON:
+                                                                <ul>
+                                                                    <li>Single Active Subscription: The active SIM/eSIM continues operating normally without interruption.</li>
+                                                                    <li>Dual Active Subscriptions (Physical SIM + eSIM or Dual eSIM): The Non-DDS (Non-Default Data Subscription) is temporarily deactivated while RFID is active. It automatically resumes once RFID is turned OFF.</li>
+                                                                </ul>
+                                                            </li>
                                                         </ul>
                                                     </li>
                                                 </ul>
 
-                                                <p>Not Active : SIM Present, Network Removed<br>
-                                                    In Service : SIM present, Network service Active<br>
-                                                    Not Present : No SIM Present</p>
+                                                <h3 id="sim-configurations" class="anchor"><a class="heading-anchor" href="#sim-configurations"><span></span></a>SIM Configurations</h3>
+
+                                                <p>The following tables outline the definitions for SIM states and the subscription behaviors when RFID is ON across various SIM slot configurations.</p>
+
+                                                <h4 id="state-definitions" class="anchor"><a class="heading-anchor" href="#state-definitions"><span></span></a>State Definitions</h4>
+
+                                                <table class="table table-bordered">
+                                                    <thead>
+                                                        <tr>
+                                                            <th scope="col">State</th>
+                                                            <th scope="col">Description</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td>In Service</td>
+                                                            <td>SIM/eSIM is present and network cellular service is actively connected.</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Not Active</td>
+                                                            <td>SIM/eSIM is present, but cellular network service is temporarily disconnected/deactivated.</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Not Present</td>
+                                                            <td>No physical SIM card is inserted or no eSIM profile is loaded in the slot.</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+
+                                                <h4 id="combination-matrix" class="anchor"><a class="heading-anchor" href="#combination-matrix"><span></span></a>Combination Matrix</h4>
+
+                                                <div class="table-responsive">
+                                                    <table class="table table-bordered">
+                                                        <thead>
+                                                            <tr>
+                                                                <th scope="col">Operating Mode</th>
+                                                                <th scope="col">Scenario / Setup</th>
+                                                                <th scope="col">Default Data Sub (DDS)</th>
+                                                                <th scope="col">Physical SIM</th>
+                                                                <th scope="col">eSIM Slot 1</th>
+                                                                <th scope="col">eSIM Slot 2</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <tr>
+                                                                <td><strong>RFID Only</strong></td>
+                                                                <td>Physical SIM / eSIM present or not present</td>
+                                                                <td>N/A</td>
+                                                                <td>Not Active</td>
+                                                                <td>Not Active</td>
+                                                                <td>Not Active</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>RFID Only</strong></td>
+                                                                <td>No Physical SIM &amp; No eSIM</td>
+                                                                <td>N/A</td>
+                                                                <td>Not Present</td>
+                                                                <td>Not Present</td>
+                                                                <td>Not Present</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>RFID + WWAN</strong></td>
+                                                                <td>1 Physical SIM &amp; 1 eSIM</td>
+                                                                <td>Physical SIM</td>
+                                                                <td>In Service</td>
+                                                                <td>Not Active</td>
+                                                                <td>Not Present</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>RFID + WWAN</strong></td>
+                                                                <td>1 Physical SIM &amp; 1 eSIM</td>
+                                                                <td>eSIM 1</td>
+                                                                <td>Not Active</td>
+                                                                <td>In Service</td>
+                                                                <td>Not Present</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>RFID + WWAN</strong></td>
+                                                                <td>1 Physical SIM &amp; No eSIM</td>
+                                                                <td>Physical SIM</td>
+                                                                <td>In Service</td>
+                                                                <td>Not Present</td>
+                                                                <td>Not Present</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>RFID + WWAN</strong></td>
+                                                                <td>No Physical SIM &amp; 1 eSIM (Slot 1)</td>
+                                                                <td>eSIM 1</td>
+                                                                <td>Not Present</td>
+                                                                <td>In Service</td>
+                                                                <td>Not Present</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>RFID + WWAN</strong></td>
+                                                                <td>No Physical SIM &amp; 1 eSIM (Slot 2)</td>
+                                                                <td>eSIM 2</td>
+                                                                <td>Not Present</td>
+                                                                <td>Not Present</td>
+                                                                <td>In Service</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>RFID + WWAN</strong></td>
+                                                                <td>No Physical SIM &amp; 2 eSIMs</td>
+                                                                <td>eSIM 1</td>
+                                                                <td>Not Present</td>
+                                                                <td>In Service</td>
+                                                                <td>Not Active</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>RFID + WWAN</strong></td>
+                                                                <td>No Physical SIM &amp; 2 eSIMs</td>
+                                                                <td>eSIM 2</td>
+                                                                <td>Not Present</td>
+                                                                <td>Not Active</td>
+                                                                <td>In Service</td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+
+                                                <h3 id="coexistence-scenarios" class="anchor"><a class="heading-anchor" href="#coexistence-scenarios"><span></span></a>Coexistence Scenarios</h3>
+
+                                                <p>The following table details system and priority behaviors during simultaneous voice, data, and RFID operations:</p>
 
                                                 <div class="table-responsive">
                                                     <table class="table table-bordered">
                                                         <thead>
                                                             <tr>
                                                                 <th scope="col">Scenario</th>
-                                                                <th scope="col">RFID</th>
-                                                                <th scope="col">Default Data Sub</th>
-                                                                <th scope="col">Physical SIM</th>
-                                                                <th scope="col">ESIM 1</th>
-                                                                <th scope="col">ESIM 2</th>
-                                                                <th scope="col">Mode</th>
+                                                                <th scope="col">Condition &amp; User Action</th>
+                                                                <th scope="col">System / Device Behavior</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody>
                                                             <tr>
-                                                                <td>Physical SIM, E-SIM, Either Present or not Present</td>
-                                                                <td>ON</td>
-                                                                <td>NA</td>
-                                                                <td>Not Active</td>
-                                                                <td>Not Active</td>
-                                                                <td>Not Active</td>
-                                                                <td>RFID Only</td>
+                                                                <td><strong>Data &amp; RFID</strong></td>
+                                                                <td>&bull; A: Active WWAN data transmission; user initiates RFID in RFID + WWAN mode.<br>&bull; B: Active WWAN data transmission; user initiates RFID in RFID Only mode.</td>
+                                                                <td>&bull; A: Both WWAN data and RFID operate concurrently.<br>&bull; B: RFID is active; WWAN data transmission is blocked.</td>
                                                             </tr>
                                                             <tr>
-                                                                <td>No Physical SIM, No ESIM</td>
-                                                                <td>ON</td>
-                                                                <td>NA</td>
-                                                                <td>Not Present</td>
-                                                                <td>Not Present</td>
-                                                                <td>Not Present</td>
-                                                                <td>RFID Only</td>
+                                                                <td><strong>Voice Call (Near Head)</strong><br><strong><em>(Devices with Proximity Sensor only)</em></strong></td>
+                                                                <td>&bull; A: User is on a handset call (near head) and attempts to use RFID.<br>&bull; B: User is actively using RFID in RFID + WWAN mode and a call is attempted.<br>&bull; C: User is actively using RFID in RFID Only mode and a call is attempted.</td>
+                                                                <td>&bull; A: RFID will not connect; the WWAN call remains active uninterrupted.<br>&bull; B: WWAN call takes priority; RFID disconnects and displays a user notification.<br>&bull; C: WWAN call cannot be established; RFID remains active.</td>
                                                             </tr>
                                                             <tr>
-                                                                <td>1 Physical SIM &amp; 1 ESIM</td>
-                                                                <td>ON</td>
-                                                                <td>Physical SIM</td>
-                                                                <td>In Service</td>
-                                                                <td>Not Active</td>
-                                                                <td>Not Present</td>
-                                                                <td>RFID + WWAN</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>1 Physical SIM &amp; 1 ESIM</td>
-                                                                <td>ON</td>
-                                                                <td>ESIM</td>
-                                                                <td>Not Active</td>
-                                                                <td>In Service</td>
-                                                                <td>Not Present</td>
-                                                                <td>RFID + WWAN</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>1 Physical SIM &amp; NO ESIM</td>
-                                                                <td>ON</td>
-                                                                <td>NA</td>
-                                                                <td>In Service</td>
-                                                                <td>Not Present</td>
-                                                                <td>Not Present</td>
-                                                                <td>RFID + WWAN</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>No Physical SIM &amp; 1 ESIM (1st Slot)</td>
-                                                                <td>ON</td>
-                                                                <td>NA</td>
-                                                                <td>Not Present</td>
-                                                                <td>In Service</td>
-                                                                <td>Not Present</td>
-                                                                <td>RFID + WWAN</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>No Physical SIM &amp; 1 ESIM (2nd Slot)</td>
-                                                                <td>ON</td>
-                                                                <td>NA</td>
-                                                                <td>Not Present</td>
-                                                                <td>Not Present</td>
-                                                                <td>In Service</td>
-                                                                <td>RFID + WWAN</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>No Physical SIM &amp; 2 ESIM</td>
-                                                                <td>ON</td>
-                                                                <td>ESIM</td>
-                                                                <td>Not Present</td>
-                                                                <td>In Service</td>
-                                                                <td>Not Active</td>
-                                                                <td>RFID + WWAN</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>No Physical SIM &amp; 2 ESIM</td>
-                                                                <td>ON</td>
-                                                                <td>ESIM</td>
-                                                                <td>Not Present</td>
-                                                                <td>Not Active</td>
-                                                                <td>In Service</td>
-                                                                <td>RFID + WWAN</td>
+                                                                <td><strong>Voice Call (Handsfree)</strong></td>
+                                                                <td>&bull; A: User is on a handsfree/speaker call and attempts to use RFID.<br>&bull; B: User is actively using RFID in RFID + WWAN mode and a call is attempted.<br>&bull; C: User is actively using RFID in RFID Only mode and a call is attempted.</td>
+                                                                <td>&bull; A: RFID connects successfully; the WWAN call is placed on hold.<br>&bull; B: WWAN call takes priority; RFID disconnects and displays a user notification.<br>&bull; C: WWAN call cannot be established; RFID remains active.</td>
                                                             </tr>
                                                         </tbody>
                                                     </table>
                                                 </div>
-
-                                                <table class="table table-bordered">
-                                                    <thead>
-                                                        <tr>
-                                                            <th scope="col">#</th>
-                                                            <th scope="col">Scenario</th>
-                                                            <th scope="col">Device Behavior</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        <tr>
-                                                            <td>1</td>
-                                                            <td><strong>WWAN data + RFID usage</strong><br>A) User is in WWAN Data Mode and attempts to use RFID in RFID + WWAN mode<br>B) User is in WWAN Data Mode and attempts to use RFID in RFID ONLY mode</td>
-                                                            <td>A) Both WWAN Data and RFID scanning shall work<br>B) RFID is active, no WWAN data transmition</td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td>2</td>
-                                                            <td>{ONLY ON DEVICE WITH PROXIMITY SENSOR}<br><strong>WWAN call near head + RFID usage</strong><br>A) User is in WWAN call with device near head and attempts to use RFID<br>B) User uses RFID in RFID+WWAN mode and WWAN call attempts<br>C) User uses RFID in RFID ONLY mode and WWAN call attempts</td>
-                                                            <td>RFID restricted due to SAR prevention<br>A) RFID shall not connect, WWAN call remains active<br>B) WWAN call is active, RFID disconnects with a notification<br>C) WWAN call cannot happen in RFID ONLY mode, RFID is still active</td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td>3</td>
-                                                            <td><strong>WWAN call hand free + RFID usage</strong><br>A) User is in WWAN call with device in Handsfree mode and attempts to use RFID<br>B) User uses RFID in RFID+WWAN mode and WWAN call attempts<br>C) User uses RFID in RFID ONLY mode and WWAN call attempts</td>
-                                                            <td>Limited to toggle mode (due to QC WWAN/RFID design)<br>A) RFID shall connect, WWAN call goes on hold<br>B) WWAN call is active, RFID disconnects with a notification<br>C) WWAN call cannot happen in RFID ONLY mode, RFID is still active</td>
-                                                        </tr>
-                                                    </tbody>
-                                                </table>
 
                                                 <hr>
 
