@@ -5,71 +5,275 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="light dark" />
   <title>IoT Connector REST API (FXR readers)</title>
+  <script>
+    (function () {
+      var root = document.documentElement;
+      var storageKey = "fxr-color-theme";
+      var legacyStorageKey = "mqtt-color-theme";
+      var media = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+
+      function readSavedTheme() {
+        try {
+          var saved = localStorage.getItem(storageKey) || localStorage.getItem(legacyStorageKey);
+          if ((saved === "light" || saved === "dark") && !localStorage.getItem(storageKey)) {
+            localStorage.setItem(storageKey, saved);
+            localStorage.removeItem(legacyStorageKey);
+          }
+          return saved === "light" || saved === "dark" ? saved : null;
+        } catch (error) {
+          return null;
+        }
+      }
+
+      function systemTheme() {
+        return media && media.matches ? "dark" : "light";
+      }
+
+      function applyTheme(theme) {
+        var isDark = theme === "dark";
+        root.classList.toggle("dark-mode", isDark);
+        root.style.colorScheme = isDark ? "dark" : "light";
+      }
+
+      function saveTheme(theme) {
+        try {
+          localStorage.setItem(storageKey, theme);
+          localStorage.removeItem(legacyStorageKey);
+        } catch (error) {}
+      }
+
+      applyTheme(readSavedTheme() || systemTheme());
+
+      window.initializeFXRSwaggerTheme = function () {
+        var started = false;
+        var lastIsDark;
+
+        function start() {
+          if (started) return;
+          started = true;
+          applyTheme(readSavedTheme() || systemTheme());
+          lastIsDark = root.classList.contains("dark-mode");
+          var userActionPending = false;
+          var toolbar = document.querySelector(".swagger-ui .topbar .download-url-wrapper") ||
+            document.querySelector(".swagger-ui .topbar .wrapper");
+          var nativeThemeButtons = document.querySelectorAll(".swagger-ui .topbar button");
+          for (var i = 0; i < nativeThemeButtons.length; i += 1) {
+            var nativeButton = nativeThemeButtons[i];
+            var signature = [
+              nativeButton.className || "",
+              nativeButton.getAttribute("aria-label") || "",
+              nativeButton.getAttribute("title") || ""
+            ].join(" ");
+            if (/dark|light|theme|mode/i.test(signature)) nativeButton.style.display = "none";
+          }
+
+          var themeButton = document.createElement("button");
+          var themeIcon = document.createElement("span");
+          var themeLabel = document.createElement("span");
+          themeButton.id = "fxr-theme-toggle";
+          themeButton.type = "button";
+          themeIcon.setAttribute("aria-hidden", "true");
+          themeIcon.className = "fxr-theme-toggle-icon";
+          themeLabel.className = "fxr-theme-toggle-label";
+          themeButton.appendChild(themeIcon);
+          themeButton.appendChild(themeLabel);
+          if (toolbar) toolbar.appendChild(themeButton);
+
+          function updateThemeButton() {
+            var isDark = root.classList.contains("dark-mode");
+            var nextTheme = isDark ? "light" : "dark";
+            themeIcon.textContent = isDark ? "☀" : "☾";
+            themeLabel.textContent = isDark ? "Light" : "Dark";
+            themeButton.setAttribute("aria-label", "Switch to " + nextTheme + " mode");
+            themeButton.setAttribute("aria-pressed", String(isDark));
+            themeButton.title = "Switch to " + nextTheme + " mode";
+          }
+
+          updateThemeButton();
+          themeButton.addEventListener("click", function () {
+            var theme = root.classList.contains("dark-mode") ? "light" : "dark";
+            lastIsDark = theme === "dark";
+            applyTheme(theme);
+            saveTheme(theme);
+            updateThemeButton();
+          });
+
+          document.addEventListener("click", function (event) {
+            var target = event.target;
+            if (!target || !target.closest || !target.closest(".swagger-ui .topbar button")) return;
+            userActionPending = true;
+            setTimeout(function () {
+              var isDark = root.classList.contains("dark-mode");
+              if (isDark !== lastIsDark) {
+                lastIsDark = isDark;
+                saveTheme(isDark ? "dark" : "light");
+              }
+              userActionPending = false;
+            }, 0);
+          }, true);
+
+          var classObserver = new MutationObserver(function () {
+            var isDark = root.classList.contains("dark-mode");
+            if (isDark === lastIsDark) return;
+
+            if (userActionPending) {
+              lastIsDark = isDark;
+              saveTheme(isDark ? "dark" : "light");
+              updateThemeButton();
+              return;
+            }
+
+            var saved = readSavedTheme();
+            if (saved && isDark !== (saved === "dark")) {
+              lastIsDark = saved === "dark";
+              applyTheme(saved);
+              updateThemeButton();
+              return;
+            }
+            lastIsDark = isDark;
+            updateThemeButton();
+          });
+          classObserver.observe(root, { attributes: true, attributeFilter: ["class"] });
+
+          if (media) {
+            var syncWithSystemTheme = function (event) {
+              if (readSavedTheme()) return;
+              lastIsDark = event.matches;
+              applyTheme(event.matches ? "dark" : "light");
+              updateThemeButton();
+            };
+            if (media.addEventListener) media.addEventListener("change", syncWithSystemTheme);
+            else if (media.addListener) media.addListener(syncWithSystemTheme);
+          }
+
+          window.addEventListener("storage", function (event) {
+            if (event.key !== storageKey && event.key !== legacyStorageKey) return;
+            var theme = readSavedTheme() || systemTheme();
+            lastIsDark = theme === "dark";
+            applyTheme(theme);
+            updateThemeButton();
+          });
+        }
+
+        function startWhenReady() {
+          if (!document.querySelector(".swagger-ui .topbar")) return false;
+          requestAnimationFrame(function () {
+            requestAnimationFrame(start);
+          });
+          return true;
+        }
+
+        if (!startWhenReady()) {
+          var contentObserver = new MutationObserver(function () {
+            if (!startWhenReady()) return;
+            contentObserver.disconnect();
+          });
+          contentObserver.observe(document.getElementById("swagger-ui"), { childList: true, subtree: true });
+        }
+      };
+    })();
+  </script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css" />
-  <style id="fxr-dark-mode">
+  <style id="fxr-theme-overrides">
+    html { color-scheme: light; background: #fafafa; }
     body { margin: 0; background: #fafafa; }
-    @media (prefers-color-scheme: dark) {
-      html { color-scheme: dark; background: #1b1f2a; }
-      body,
-      #swagger-ui,
-      .swagger-ui,
-      .swagger-ui .wrapper,
-      .swagger-ui .scheme-container,
-      .swagger-ui .information-container,
-      .swagger-ui .opblock,
-      .swagger-ui .opblock-body,
-      .swagger-ui .opblock-description-wrapper,
-      .swagger-ui .opblock-section-header,
-      .swagger-ui .responses-inner,
-      .swagger-ui .model-box,
-      .swagger-ui .model-container {
-        background: #1b1f2a !important;
-        color: #ffffff !important;
-        -webkit-text-fill-color: #ffffff !important;
-        forced-color-adjust: none;
+    #fxr-theme-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-width: 88px;
+      height: 40px;
+      margin-left: 10px;
+      padding: 0 14px;
+      border: 2px solid #ffffff;
+      border-radius: 4px;
+      background: #ffffff;
+      color: #1b1f2a;
+      font: 600 14px/1 sans-serif;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    #fxr-theme-toggle:hover { background: #f0f3f6; }
+    #fxr-theme-toggle:focus-visible {
+      outline: 3px solid #61affe;
+      outline-offset: 2px;
+    }
+    .fxr-theme-toggle-icon { font-size: 17px; line-height: 1; }
+    html.dark-mode #fxr-theme-toggle {
+      background: #232836;
+      border-color: #6ea8dc;
+      color: #ffffff;
+    }
+    html.dark-mode #fxr-theme-toggle:hover { background: #2c3344; }
+    @media (max-width: 640px) {
+      #fxr-theme-toggle {
+        min-width: 40px;
+        width: 40px;
+        padding: 0;
       }
-      .swagger-ui,
-      .swagger-ui *,
-      .swagger-ui *::before,
-      .swagger-ui *::after {
-        color: #ffffff !important;
-        -webkit-text-fill-color: #ffffff !important;
-        forced-color-adjust: none;
-      }
-      .swagger-ui table,
-      .swagger-ui table thead,
-      .swagger-ui table tbody,
-      .swagger-ui table tr,
-      .swagger-ui table th,
-      .swagger-ui table td,
-      .swagger-ui .markdown,
-      .swagger-ui .markdown p,
-      .swagger-ui .markdown li,
-      .swagger-ui .markdown strong,
-      .swagger-ui .renderedMarkdown,
-      .swagger-ui .renderedMarkdown p,
-      .swagger-ui .renderedMarkdown li,
-      .swagger-ui .renderedMarkdown strong {
-        background: #1b1f2a !important;
-        color: #ffffff !important;
-        -webkit-text-fill-color: #ffffff !important;
-        border-color: #5b6478 !important;
-      }
-      .swagger-ui code,
-      .swagger-ui .markdown code,
-      .swagger-ui .renderedMarkdown code {
-        color: #ffffff !important;
-        -webkit-text-fill-color: #ffffff !important;
-        background: #4a2d63 !important;
-      }
-      .swagger-ui input,
-      .swagger-ui select,
-      .swagger-ui textarea {
-        background: #232836 !important;
-        color: #ffffff !important;
-        -webkit-text-fill-color: #ffffff !important;
-        border-color: #5b6478 !important;
-      }
+      .fxr-theme-toggle-label { display: none; }
+    }
+    html.dark-mode { color-scheme: dark; background: #1b1f2a; }
+    html.dark-mode body,
+    html.dark-mode #swagger-ui,
+    html.dark-mode .swagger-ui,
+    html.dark-mode .swagger-ui .wrapper,
+    html.dark-mode .swagger-ui .scheme-container,
+    html.dark-mode .swagger-ui .information-container,
+    html.dark-mode .swagger-ui .opblock,
+    html.dark-mode .swagger-ui .opblock-body,
+    html.dark-mode .swagger-ui .opblock-description-wrapper,
+    html.dark-mode .swagger-ui .opblock-section-header,
+    html.dark-mode .swagger-ui .responses-inner,
+    html.dark-mode .swagger-ui .model-box,
+    html.dark-mode .swagger-ui .model-container {
+      background: #1b1f2a !important;
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+      forced-color-adjust: none;
+    }
+    html.dark-mode .swagger-ui,
+    html.dark-mode .swagger-ui *,
+    html.dark-mode .swagger-ui *::before,
+    html.dark-mode .swagger-ui *::after {
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+      forced-color-adjust: none;
+    }
+    html.dark-mode .swagger-ui table,
+    html.dark-mode .swagger-ui table thead,
+    html.dark-mode .swagger-ui table tbody,
+    html.dark-mode .swagger-ui table tr,
+    html.dark-mode .swagger-ui table th,
+    html.dark-mode .swagger-ui table td,
+    html.dark-mode .swagger-ui .markdown,
+    html.dark-mode .swagger-ui .markdown p,
+    html.dark-mode .swagger-ui .markdown li,
+    html.dark-mode .swagger-ui .markdown strong,
+    html.dark-mode .swagger-ui .renderedMarkdown,
+    html.dark-mode .swagger-ui .renderedMarkdown p,
+    html.dark-mode .swagger-ui .renderedMarkdown li,
+    html.dark-mode .swagger-ui .renderedMarkdown strong {
+      background: #1b1f2a !important;
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+      border-color: #5b6478 !important;
+    }
+    html.dark-mode .swagger-ui code,
+    html.dark-mode .swagger-ui .markdown code,
+    html.dark-mode .swagger-ui .renderedMarkdown code {
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+      background: #4a2d63 !important;
+    }
+    html.dark-mode .swagger-ui input,
+    html.dark-mode .swagger-ui select,
+    html.dark-mode .swagger-ui textarea {
+      background: #232836 !important;
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+      border-color: #5b6478 !important;
     }
   </style>
 </head>
@@ -80,7 +284,7 @@
   <script>
     window.onload = function () {
       window.ui = SwaggerUIBundle({
-        url: "../FXR_60-90_rest_api.yaml?v=" + Date.now(),
+        url: "../FXR_60-90_rest_api.yaml",
         dom_id: "#swagger-ui",
         deepLinking: true,
         presets: [
@@ -89,8 +293,7 @@
         ],
         layout: "StandaloneLayout"
       });
-      var dark = document.getElementById("fxr-dark-mode");
-      if (dark) document.head.appendChild(dark);
+      window.initializeFXRSwaggerTheme();
     };
   </script>
 </body>
