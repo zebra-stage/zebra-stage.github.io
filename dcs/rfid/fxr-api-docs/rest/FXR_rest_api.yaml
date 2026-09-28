@@ -375,13 +375,19 @@ paths:
 
         |---|---|---|
 
-        | `monitor.connected` | Is a monitor attached? | Display APIs apply only when a monitor is present. |
+        | `monitor.status` | Is a monitor attached (`connected` or `disconnected`)? | Display APIs apply only when a monitor is connected. |
 
-        | `monitor.supportedResolutions` | Which resolutions are supported? | List of resolutions supported by the monitor hardware. Use these values in `PUT /cloud/displayConfig`. |
+        | `monitor.details[].supportedResolutions` | Which resolutions are supported? | List of resolutions supported by the monitor hardware. Use these values in `PUT /cloud/displayConfig`. |
 
-        | `monitor.currentResolution` | What resolution is active? | Confirms the current `<width>x<height>` string. |
+        | `monitor.details[].currentResolution` | What resolution is active? | Confirms the current `<width>x<height>` string. |
 
-        | `monitor.screenActive` | Is the panel awake? | `true` when the display is on; `false` when sleeping. |
+        | `monitor.details[].screenActive` | Is the panel awake? | `true` when the display is on; `false` when sleeping. |
+
+        | `monitor.details[].orientation` | What is the current screen rotation? | `landscape`, `portrait`, `landscape-flipped`, or `portrait-flipped`. |
+
+        | `keyboard.status`, `mouse.status`, `touch.status` | Is each input device attached? | `connected` or `disconnected`. |
+
+        | `keyboard.keyboardLayout` | Which keyboard layout is active? | Matches the `keyboardLayout` set with `PUT /cloud/displayConfig`. |
 
         '
       operationId: getInputOutputDevices
@@ -4732,6 +4738,8 @@ paths:
         | `capabilities.gen2xFeaturesSupported` | Which Impinj Gen2X features does this model support? | `FASTID`, `TAGFOCUS`, `TAGQUIETING`, `PROTECTEDMODE`. |
 
         | `capabilities.stackLED` | Is a stack LED present? | Readers with a stack LED report `supported: true` and colors. FXR90 reports `supported: false`. |
+
+        | `capabilities.antennas` | Which ports are `internal`? | On integrated-antenna models such as the FXR60, port 5 is the near-field internal antenna and port 6 is the far-field internal antenna. Use `antennas: [5]` in `set_mode` for close-range reads, or `antennas: [6]` for standard range. |
 
         '
       operationId: getReadercapabilities
@@ -11035,7 +11043,7 @@ components:
           default: HIGH_INTERFERENCE
         antennas:
           type: array
-          description: "\n\n\n\n\n An array of integers representing the antenna ports to use to read tags.\n\n If absent, all antenna ports are used."
+          description: "\n\n\n\n\n An array of integers representing the antenna ports to use to read tags.\n\n If absent, all antenna ports are used.\n\n On integrated-antenna models such as the FXR60, the internal ports reported by get_readerCapabilities are not identical: port 5 is the near-field antenna (short-range reads close to the reader) and port 6 is the far-field antenna (standard read range). Use antennas: [5] for close-range reads only, or antennas: [6] for standard-range reads."
           items:
             type: integer
         filter:
@@ -12248,7 +12256,7 @@ components:
                     description: Manufacturer name of the monitor.
                   model:
                     type: string
-                    description: Model name of teh monitor.
+                    description: Model name of the monitor.
                   currentResolution:
                     type: string
                     description: The currently active display resolution.
@@ -14456,7 +14464,7 @@ components:
           properties:
             antennas:
               type: array
-              description: Antenna inventory reported by the reader. Each item includes the antenna port number and whether it is external or internal.
+              description: 'Antenna inventory reported by the reader. Each item includes the antenna port number and whether it is external or internal. On integrated-antenna models such as the FXR60, the internal ports are not identical: port 5 is the near-field internal antenna (short-range reads close to the reader) and port 6 is the far-field internal antenna (standard read range). Use `antennas: [5]` in `set_mode` for close-range reads only, or `antennas: [6]` for standard-range reads.'
               items:
                 type: object
                 properties:
@@ -14465,7 +14473,7 @@ components:
                     description: Antenna port number.
                   type:
                     type: string
-                    description: Antenna mounting type.
+                    description: Antenna mounting type. On integrated-antenna models such as the FXR60, port 5 (internal) is the near-field antenna and port 6 (internal) is the far-field antenna.
                     enum:
                     - external
                     - internal
@@ -14942,7 +14950,7 @@ components:
           description: Authentication method for fetching the certificate file. Authentication type NONE and certificate-based download authentication are not supported on FXR readers.
         authenticationOptions:
           type: object
-          description: Credentials object used when `authenticationType` is `BASIC`. The reader accepts this key. Spec 11 still names it `options`.
+          description: Credentials object used when `authenticationType` is `BASIC`.
           required:
           - username
           - password
@@ -15922,7 +15930,7 @@ components:
           - BASIC
         authenticationOptions:
           type: object
-          description: Credentials object used when `authenticationType` is `BASIC`. The reader accepts this key. Spec 11 still names it `options`; keep `authenticationOptions` until the developer updates.
+          description: Credentials object used when `authenticationType` is `BASIC`.
           required:
           - username
           - password

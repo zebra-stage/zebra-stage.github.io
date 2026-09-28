@@ -10,9 +10,6 @@
             "name": "Control"
         },
         {
-            "name": "Operating-modes"
-        },
-        {
             "name": "ImpinjGen2X"
         },
         {
@@ -584,7 +581,7 @@
                                                 },
                                                 "antennas": {
                                                     "type": "array",
-                                                    "description": "\n\n\n\n\n An array of integers representing the antenna ports to use to read tags.\n\n If absent, all antenna ports are used.",
+                                                    "description": "\n\n\n\n\n An array of integers representing the antenna ports to use to read tags.\n\n If absent, all antenna ports are used.\n\n On integrated-antenna models such as the FXR60, the internal ports reported by get_readerCapabilities are not identical: port 5 is the near-field antenna (short-range reads close to the reader) and port 6 is the far-field antenna (standard read range). Use antennas: [5] for close-range reads only, or antennas: [6] for standard-range reads.",
                                                     "items": {
                                                         "type": "integer"
                                                     }
@@ -1678,7 +1675,7 @@
                                                     },
                                                     "antennas": {
                                                         "type": "array",
-                                                        "description": "\n\n\n\n\n An array of integers representing the antenna ports to use to read tags.\n\n If absent, all antenna ports are used.",
+                                                        "description": "\n\n\n\n\n An array of integers representing the antenna ports to use to read tags.\n\n If absent, all antenna ports are used.\n\n On integrated-antenna models such as the FXR60, the internal ports reported by get_readerCapabilities are not identical: port 5 is the near-field antenna (short-range reads close to the reader) and port 6 is the far-field antenna (standard read range). Use antennas: [5] for close-range reads only, or antennas: [6] for standard-range reads.",
                                                         "items": {
                                                             "type": "integer"
                                                         }
@@ -4186,7 +4183,7 @@
                     "ImpinjGen2X"
                 ],
                 "summary": "Set Impinjgen2X",
-                "description": "## 1. Description\n\nThe `set_impinjGen2X` command configures Impinj Gen2X proprietary RFID features on the reader.\n\nThis command allows you to configure:\n\n- FastID tag TID embedding through `fastID`\n- Tag protection and visibility control through `tagProtect`\n- TagFocus session suppression through `tagFocus`\n- Tag quieting (basic or advanced) through `tagQuieting`\n\nUse this command to:\n\n- Enable FastID to embed the TID in every inventory response without a separate read\n- Protect specific tags with a 32-bit password to prevent unauthorized reads\n- Enable TagFocus to improve read rates in dense tag environments by suppressing already-inventoried tags\n- Quiet specific tags (by EPC) to exclude them from inventory responses\n\n## 2. Command Details\n\n| Property | Value |\n|---|---|\n| MQTT Command | `set_impinjGen2X` |\n| Pattern Name | Impinj Gen2X Configuration |\n| REST Endpoint | `PUT /cloud/impinjGen2X` |\n| Communication Type | Bidirectional (Cloud to Device, Device to Cloud) |\n| Applies To | FXR readers |\n| Content-Type | `application/json` |\n| Success Response | `200 OK` |\n| Error Responses | `422 Unprocessable Entity`, `500 Internal Server Error` |\n| Supported Features | `fastID`, `tagProtect`, `tagFocus`, `tagQuieting` |\n| Supported TagProtect Actions | `enableTagProtection`, `disableTagProtection`, `enableTagVisibility`, `disableTagVisibility` |\n| Supported TagQuieting Modes | `basic` (quiet/unquiet by EPC list), `advanced` (pre-select with mask) |\n| Supported TagQuieting Basic Actions | `quiet`, `unquiet` |\n| Advanced tagQuieting only | Select targets (`S0`, `S1`, `S2`, `S3`, `SL`) and tag quiet masks (`S0A`, `S0B`, `S2A`, `S2B`, `S3A`, `S3B`, `SL_ASSERT`, `SL_DEASSERT`) apply only to `tagQuieting` with `\"mode\": \"advanced\"`. Basic tagQuieting uses an EPC list only. |\n| Mutually Exclusive Features | `fastID`, `tagProtect`, `tagFocus`, `tagQuieting` (exactly one feature object per request) |\n\n## 3. Before You Begin\n\nDecide which Gen2X feature to configure before sending this command. Send **exactly one** of `fastID`, `tagProtect`, `tagFocus`, or `tagQuieting`. An empty body or any combination of two or more features is rejected. To apply the saved configuration during inventory, send `start` with `applyImpinjGen2X: true`.\n\n### Access Password for TagProtect\n\n`set_impinjGen2X` does **not** write a password onto the tag. `tagProtect.password` must be the 32-bit Access Password already stored in the tag's Gen2 `RESERVED` bank (words 2–3).\n\nTo store a password on the tag:\n\n1. `set_mode` — WRITE 8 hex characters to `RESERVED` at `wordPointer: 2`. Add a `filter` for that tag's EPC so other tags are not written.\n2. `start` — inventory must run for the write to take effect.\n3. `set_impinjGen2X` — send the same 8 characters in `tagProtect.password`.\n\nExample — write the Access Password to `RESERVED` words 2–3 for one tag, then start inventory so the write takes effect:\n\n```json\n{\n  \"type\": \"CUSTOM\",\n  \"antennas\": [1],\n  \"transmitPower\": 30,\n  \"filter\": {\n    \"value\": \"e28011b0a5050076c4d7530a\",\n    \"match\": \"prefix\",\n    \"operation\": \"include\"\n  },\n  \"accesses\": [\n    {\n      \"type\": \"WRITE\",\n      \"config\": {\n        \"membank\": \"RESERVED\",\n        \"wordPointer\": 2,\n        \"data\": \"A1B2C3D4\"\n      }\n    }\n  ]\n}\n```\n\nDo not use `00000000` — Gen2 treats that as no password, so Protected Mode cannot apply. A password mismatch still returns HTTP 200 and leaves the tag unprotected.\n\n| What You Need | Details |\n|---|---|\n| Feature selection | Exactly one of `fastID`, `tagProtect`, `tagFocus`, or `tagQuieting` per request. An empty body or two features together is rejected. `tagProtect` cannot be combined with the others. |\n| FastID | Decide whether to enable or disable TID embedding. |\n| TagProtect action | Choose one of: `enableTagProtection` (protect a specific tag), `disableTagProtection` (remove protection from a tag), `enableTagVisibility` (allow reading protected tags), `disableTagVisibility` (block reading protected tags). |\n| TagProtect password | Exactly 8 hex characters. Must match the Access Password already on the tag (`RESERVED` words 2–3). Not `00000000`. TagProtect does not create this password — write it first with `set_mode`. A mismatch returns 200 and does not protect the tag. |\n| TagProtect tag EPC | `tagID` (hex EPC) is required for `enableTagProtection` and `disableTagProtection`. It must be omitted for `enableTagVisibility` and `disableTagVisibility`. |\n| TagFocus | Whether to enable or disable the feature. TagFocus targets session S1. |\n| TagQuieting | For basic: provide `action` (`quiet`/`unquiet`) and the `tagIDs` EPC array (maximum 31 tag IDs per request). For advanced: provide the `preSelect` array, `tagQuietMasks`, `target`, and `stateAwareAction`. |\n| Inventory state | Configure Gen2X before starting inventory. Stop any active inventory first with `stop`. |\n| Activation | PUT only saves the configuration. Start with `applyImpinjGen2X: true` to apply it. |\n\n## 4. Choosing a Gen2X Feature\n\nThe Gen2X feature you select determines the reader's behavior during inventory. Choose based on your operational goal.\n\n| Feature | Description | Scope |\n|---|---|---|\n| `fastID` | Returns the EPC and TID together in a single read, eliminating the need for a separate TID read. Best for applications that require chip-level identity (anti-counterfeit, authentication). | Reader-scoped |\n| `tagProtect` | Password-protects individual tags or controls reader visibility of protected tags. Use for securing sensitive items or restricting access. | Tag-scoped |\n| `tagFocus` | Silences already-read tags so the reader focuses only on new tags entering the field. Ideal for portal and conveyor applications. | Reader-scoped |\n| `tagQuieting` (basic) | Silences a specific list of tag EPCs from being reported during inventory. Use when you know exactly which tags to suppress. | Reader-scoped |\n| `tagQuieting` (advanced) | Uses Gen2 select pre-conditions (mask + state-aware action) to silence tags based on memory content or session state. Use for complex filtering in dense environments. | Reader-scoped |\n\n> Mutually exclusive: only one of `fastID`, `tagProtect`, `tagFocus`, or `tagQuieting` per request. Combining any two returns HTTP 422.\n\n## 5. Choosing TagProtect Actions\n\nTagProtect operations either lock/unlock individual tags or temporarily allow the reader to see already-protected tags. Each action has specific field requirements.\n\n| Action | What It Does | Required Fields | Key Constraints |\n|---|---|---|---|\n| `enableTagProtection` | Permanently protects a tag; the tag becomes invisible to standard reads until unprotected. Protection lives on the tag, not in reader filtering. | `password`, `tagID` | `password` must match the tag Access Password (8 hex, not `00000000`). Optional `enableShortRange` reduces read range during protection. If omitted, the reader stores `false`. A wrong password still returns 200 and the tag stays visible. |\n| `disableTagProtection` | Removes protection from a previously protected tag, restoring normal visibility. | `password`, `tagID` | `password` must match the tag's existing access password exactly. |\n| `enableTagVisibility` | Temporarily allows the reader to read protected tags during this session. Does not change the tag's protection state. | `password` | Reader-scoped; affects all protected tags in field. |\n| `disableTagVisibility` | Restores the default behavior where protected tags are hidden from the reader. | `password` | Reverts the effect of `enableTagVisibility`. |\n\n> Important: `enableTagProtection` and `disableTagProtection` are tag-specific (require `tagID`). `enableTagVisibility` and `disableTagVisibility` are reader-wide visibility toggles.\n\n## 6. Choosing TagQuieting Strategy\n\nTagQuieting silences tags from being reported during inventory. Choose between **basic** (EPC-list based) and **advanced** (Gen2 select mask based) depending on your filtering complexity.\n\n### Basic TagQuieting\n\n| Field | What It Controls |\n|---|---|\n| `action: quiet` | Silences the listed tags from being reported in future inventories. |\n| `action: unquiet` | Intended to restore reporting for listed tags. Quieting is session-scoped; starting without `applyImpinjGen2X` is what makes a quieted tag visible again. |\n| `tagIDs` | Array of EPCs (hex strings) to quiet or unquiet. Maximum **31 EPCs** per request. |\n\n### Advanced TagQuieting\n\nAdvanced quieting uses Gen2 select pre-conditions to silence tags based on memory content and state, instead of explicit EPC lists.\n\nSupported select targets: `S0`, `S1`, `S2`, `S3`, `SL`.\n\nSupported tag quiet masks: `S0A`, `S0B`, `S2A`, `S2B`, `S3A`, `S3B`, `SL_ASSERT`, `SL_DEASSERT`.\n\nSupported Gen2 memory banks for `preSelect[].mask.bank`: `EPC`, `TID`, `USER`, `RESERVED`.\n\n| Field | What It Controls |\n|---|---|\n| `preSelect[]` | Array of Gen2 select operations applied **before** quieting. Each entry contains `target`, `action`, and `mask`. |\n| `preSelect[].target` | The session flag or SL to act upon (`S0`, `S1`, `S2`, `S3`, `SL`). |\n| `preSelect[].action` | The state-aware action to take on match/mismatch. SL targets use ASSERTSL / DEASSERTSL / NEGATESL pairs (e.g., `ASSERTSL_NOTHING`, `NEGATESL_NOTHING`). Session targets use INVA / INVB / FLIPAB pairs (e.g., `INVB_INVA`, `FLIPAB_NOTHING`). |\n| `preSelect[].mask` | The memory mask: `bank` (EPC/TID/USER/RESERVED), `pointer` (bit offset), `length` (bits), `value` (hex). |\n| `tagQuietMasks` | Array of session-flag combinations defining the quieted state (`S0A`, `S2B`, `SL_ASSERT`, `SL_DEASSERT`, etc.). |\n| `target` | The target session/flag used for the actual quieting operation. |\n| `stateAwareAction` | Same enum as `preSelect[].action` (e.g., `ASSERTSL_DEASSERTSL`, `DEASSERTSL_ASSERTSL`, `NEGATESL_NOTHING`, `FLIPAB_NOTHING`). |\n\n> Important: Use `basic` when you have a discrete list of EPCs. Use `advanced` when filtering by memory content, session state, or complex multi-step Gen2 select conditions.\n\n## 7. Choosing FastID and TagFocus\n\n`fastID` and `tagFocus` each use an `enabled` flag. Neither can be sent in the same request as any other Gen2X feature.\n\n### `fastID`\n\n| Field | What It Controls |\n|---|---|\n| `enabled: true` | On Gen2X-capable tags, inventory events use `format: \"fastID\"` and `idHex` is 48 hex characters (24 EPC + 24 TID). There is no separate `tid` field. Non-Gen2X tags stay `format: \"epc\"` with EPC-only `idHex`. |\n| `enabled: false` | Standard EPC-only reads (`format: \"epc\"`). |\n\n**Use FastID when:** Your application needs TID for every tag (e.g., authentication, chip-level traceability) and you want to avoid the extra round-trip of a separate TID read. Parse `idHex` by length, or key off `format == \"fastID\"`. A client that treats `idHex` as always the EPC will read a 48-character value as one long EPC.\n\n### `tagFocus`\n\n| Field | What It Controls |\n|---|---|\n| `enabled: true` | Once a tag is read, it is silenced for the rest of the inventory cycle. The reader focuses only on new tags entering the field. TagFocus targets session S1. |\n| `enabled: false` | Standard inventory behavior; tags can be reported multiple times. |\n\nTo measure TagFocus, set `reportFilter.duration` to `0` on the mode. The reader's default report filter de-duplicates to one event per tag, which hides the repeat-read drop.\n\n**Use TagFocus when:** You operate portals, conveyors, or other scenarios with many duplicate reads of the same tag set and want unique-tag reporting.\n\n## 8. Applying the Configuration\n\nCalling this command only **saves** the configuration on the reader; it is not active until inventory is started with the activation flag.\n\n### REST Workflow\n\n```text\nPUT  /cloud/stop                 -> stop any active inventory\nPUT  /cloud/impinjGen2X          -> save the configuration\nGET  /cloud/impinjGen2X          -> verify the saved configuration\nPUT  /cloud/start                -> body: { \"applyImpinjGen2X\": true }\n```\n\n### Request Format\n\nEvery request to this command follows this structure:\n\n```http\nPUT /cloud/impinjGen2X HTTP/1.1\nHost: <reader-address>\nAuthorization: Bearer <token>\nContent-Type: application/json\n\n{\n  // exactly one Gen2X feature object\n}\n```\n\n### Success Response (`200 OK`)\n\n```http\nHTTP/1.1 200 OK\nContent-Type: application/json\n\n{\n  \"message\": \"Success: Gen2X configured. Use applyImpinjGen2X flag in start command to apply features.\"\n}\n```\n\n### Error Responses\n\n| Status Code | Meaning | When It Occurs |\n|---|---|---|\n| `422 Unprocessable Entity` | Validation error | Empty body, mutually exclusive features sent together, invalid enum value, or constraint violation. |\n| `500 Internal Server Error` | Reader-side failure | Internal reader error while persisting the configuration. |\n",
+                "description": "## 1. Description\n\nThe `set_impinjGen2X` command configures Impinj Gen2X proprietary RFID features on the reader.\n\nThis command allows you to configure:\n\n- FastID tag TID embedding through `fastID`\n- Tag protection and visibility control through `tagProtect`\n- TagFocus session suppression through `tagFocus`\n- Tag quieting (basic or advanced) through `tagQuieting`\n\nUse this command to:\n\n- Enable FastID to embed the TID in every inventory response without a separate read\n- Protect specific tags with a 32-bit password to prevent unauthorized reads\n- Enable TagFocus to improve read rates in dense tag environments by suppressing already-inventoried tags\n- Quiet specific tags (by EPC) to exclude them from inventory responses\n\n## 2. Command Details\n\n| Property | Value |\n|---|---|\n| MQTT Command | `set_impinjGen2X` |\n| Pattern Name | Impinj Gen2X Configuration |\n| REST Endpoint | `PUT /cloud/impinjGen2X` |\n| Communication Type | Bidirectional (Cloud to Device, Device to Cloud) |\n| Applies To | FXR readers |\n| Content-Type | `application/json` |\n| Success Response | `200 OK` |\n| Error Responses | `response: \"failure\"` with `code` and `message` in `payload` |\n| Supported Features | `fastID`, `tagProtect`, `tagFocus`, `tagQuieting` |\n| Supported TagProtect Actions | `enableTagProtection`, `disableTagProtection`, `enableTagVisibility`, `disableTagVisibility` |\n| Supported TagQuieting Modes | `basic` (quiet/unquiet by EPC list), `advanced` (pre-select with mask) |\n| Supported TagQuieting Basic Actions | `quiet`, `unquiet` |\n| Advanced tagQuieting only | Select targets (`S0`, `S1`, `S2`, `S3`, `SL`) and tag quiet masks (`S0A`, `S0B`, `S2A`, `S2B`, `S3A`, `S3B`, `SL_ASSERT`, `SL_DEASSERT`) apply only to `tagQuieting` with `\"mode\": \"advanced\"`. Basic tagQuieting uses an EPC list only. |\n| Mutually Exclusive Features | `fastID`, `tagProtect`, `tagFocus`, `tagQuieting` (exactly one feature object per request) |\n\n## 3. Before You Begin\n\nDecide which Gen2X feature to configure before sending this command. Send **exactly one** of `fastID`, `tagProtect`, `tagFocus`, or `tagQuieting`. An empty body or any combination of two or more features is rejected. To apply the saved configuration during inventory, send `start` with `applyImpinjGen2X: true`.\n\n### Access Password for TagProtect\n\n`set_impinjGen2X` does **not** write a password onto the tag. `tagProtect.password` must be the 32-bit Access Password already stored in the tag's Gen2 `RESERVED` bank (words 2–3).\n\nTo store a password on the tag:\n\n1. `set_mode` — WRITE 8 hex characters to `RESERVED` at `wordPointer: 2`. Add a `filter` for that tag's EPC so other tags are not written.\n2. `start` — inventory must run for the write to take effect.\n3. `set_impinjGen2X` — send the same 8 characters in `tagProtect.password`.\n\nExample — write the Access Password to `RESERVED` words 2–3 for one tag, then start inventory so the write takes effect:\n\n```json\n{\n  \"type\": \"CUSTOM\",\n  \"antennas\": [1],\n  \"transmitPower\": 30,\n  \"filter\": {\n    \"value\": \"e28011b0a5050076c4d7530a\",\n    \"match\": \"prefix\",\n    \"operation\": \"include\"\n  },\n  \"accesses\": [\n    {\n      \"type\": \"WRITE\",\n      \"config\": {\n        \"membank\": \"RESERVED\",\n        \"wordPointer\": 2,\n        \"data\": \"A1B2C3D4\"\n      }\n    }\n  ]\n}\n```\n\nDo not use `00000000` — Gen2 treats that as no password, so Protected Mode cannot apply. A password mismatch still returns `response: \"success\"` and leaves the tag unprotected.\n\n| What You Need | Details |\n|---|---|\n| Feature selection | Exactly one of `fastID`, `tagProtect`, `tagFocus`, or `tagQuieting` per request. An empty body or two features together is rejected. `tagProtect` cannot be combined with the others. |\n| FastID | Decide whether to enable or disable TID embedding. |\n| TagProtect action | Choose one of: `enableTagProtection` (protect a specific tag), `disableTagProtection` (remove protection from a tag), `enableTagVisibility` (allow reading protected tags), `disableTagVisibility` (block reading protected tags). |\n| TagProtect password | Exactly 8 hex characters. Must match the Access Password already on the tag (`RESERVED` words 2–3). Not `00000000`. TagProtect does not create this password — write it first with `set_mode`. A mismatch returns 200 and does not protect the tag. |\n| TagProtect tag EPC | `tagID` (hex EPC) is required for `enableTagProtection` and `disableTagProtection`. It must be omitted for `enableTagVisibility` and `disableTagVisibility`. |\n| TagFocus | Whether to enable or disable the feature. TagFocus targets session S1. |\n| TagQuieting | For basic: provide `action` (`quiet`/`unquiet`) and the `tagIDs` EPC array (maximum 31 tag IDs per request). For advanced: provide the `preSelect` array, `tagQuietMasks`, `target`, and `stateAwareAction`. |\n| Inventory state | Configure Gen2X before starting inventory. Stop any active inventory first with `stop`. |\n| Activation | PUT only saves the configuration. Start with `applyImpinjGen2X: true` to apply it. |\n\n## 4. Choosing a Gen2X Feature\n\nThe Gen2X feature you select determines the reader's behavior during inventory. Choose based on your operational goal.\n\n| Feature | Description | Scope |\n|---|---|---|\n| `fastID` | Returns the EPC and TID together in a single read, eliminating the need for a separate TID read. Best for applications that require chip-level identity (anti-counterfeit, authentication). | Reader-scoped |\n| `tagProtect` | Password-protects individual tags or controls reader visibility of protected tags. Use for securing sensitive items or restricting access. | Tag-scoped |\n| `tagFocus` | Silences already-read tags so the reader focuses only on new tags entering the field. Ideal for portal and conveyor applications. | Reader-scoped |\n| `tagQuieting` (basic) | Silences a specific list of tag EPCs from being reported during inventory. Use when you know exactly which tags to suppress. | Reader-scoped |\n| `tagQuieting` (advanced) | Uses Gen2 select pre-conditions (mask + state-aware action) to silence tags based on memory content or session state. Use for complex filtering in dense environments. | Reader-scoped |\n\n> Mutually exclusive: only one of `fastID`, `tagProtect`, `tagFocus`, or `tagQuieting` per request. Combining any two returns a failure response.\n\n## 5. Choosing TagProtect Actions\n\nTagProtect operations either lock/unlock individual tags or temporarily allow the reader to see already-protected tags. Each action has specific field requirements.\n\n| Action | What It Does | Required Fields | Key Constraints |\n|---|---|---|---|\n| `enableTagProtection` | Permanently protects a tag; the tag becomes invisible to standard reads until unprotected. Protection lives on the tag, not in reader filtering. | `password`, `tagID` | `password` must match the tag Access Password (8 hex, not `00000000`). Optional `enableShortRange` reduces read range during protection. If omitted, the reader stores `false`. A wrong password still returns 200 and the tag stays visible. |\n| `disableTagProtection` | Removes protection from a previously protected tag, restoring normal visibility. | `password`, `tagID` | `password` must match the tag's existing access password exactly. |\n| `enableTagVisibility` | Temporarily allows the reader to read protected tags during this session. Does not change the tag's protection state. | `password` | Reader-scoped; affects all protected tags in field. |\n| `disableTagVisibility` | Restores the default behavior where protected tags are hidden from the reader. | `password` | Reverts the effect of `enableTagVisibility`. |\n\n> Important: `enableTagProtection` and `disableTagProtection` are tag-specific (require `tagID`). `enableTagVisibility` and `disableTagVisibility` are reader-wide visibility toggles.\n\n## 6. Choosing TagQuieting Strategy\n\nTagQuieting silences tags from being reported during inventory. Choose between **basic** (EPC-list based) and **advanced** (Gen2 select mask based) depending on your filtering complexity.\n\n### Basic TagQuieting\n\n| Field | What It Controls |\n|---|---|\n| `action: quiet` | Silences the listed tags from being reported in future inventories. |\n| `action: unquiet` | Intended to restore reporting for listed tags. Quieting is session-scoped; starting without `applyImpinjGen2X` is what makes a quieted tag visible again. |\n| `tagIDs` | Array of EPCs (hex strings) to quiet or unquiet. Maximum **31 EPCs** per request. |\n\n### Advanced TagQuieting\n\nAdvanced quieting uses Gen2 select pre-conditions to silence tags based on memory content and state, instead of explicit EPC lists.\n\nSupported select targets: `S0`, `S1`, `S2`, `S3`, `SL`.\n\nSupported tag quiet masks: `S0A`, `S0B`, `S2A`, `S2B`, `S3A`, `S3B`, `SL_ASSERT`, `SL_DEASSERT`.\n\nSupported Gen2 memory banks for `preSelect[].mask.bank`: `EPC`, `TID`, `USER`, `RESERVED`.\n\n| Field | What It Controls |\n|---|---|\n| `preSelect[]` | Array of Gen2 select operations applied **before** quieting. Each entry contains `target`, `action`, and `mask`. |\n| `preSelect[].target` | The session flag or SL to act upon (`S0`, `S1`, `S2`, `S3`, `SL`). |\n| `preSelect[].action` | The state-aware action to take on match/mismatch. SL targets use ASSERTSL / DEASSERTSL / NEGATESL pairs (e.g., `ASSERTSL_NOTHING`, `NEGATESL_NOTHING`). Session targets use INVA / INVB / FLIPAB pairs (e.g., `INVB_INVA`, `FLIPAB_NOTHING`). |\n| `preSelect[].mask` | The memory mask: `bank` (EPC/TID/USER/RESERVED), `pointer` (bit offset), `length` (bits), `value` (hex). |\n| `tagQuietMasks` | Array of session-flag combinations defining the quieted state (`S0A`, `S2B`, `SL_ASSERT`, `SL_DEASSERT`, etc.). |\n| `target` | The target session/flag used for the actual quieting operation. |\n| `stateAwareAction` | Same enum as `preSelect[].action` (e.g., `ASSERTSL_DEASSERTSL`, `DEASSERTSL_ASSERTSL`, `NEGATESL_NOTHING`, `FLIPAB_NOTHING`). |\n\n> Important: Use `basic` when you have a discrete list of EPCs. Use `advanced` when filtering by memory content, session state, or complex multi-step Gen2 select conditions.\n\n## 7. Choosing FastID and TagFocus\n\n`fastID` and `tagFocus` each use an `enabled` flag. Neither can be sent in the same request as any other Gen2X feature.\n\n### `fastID`\n\n| Field | What It Controls |\n|---|---|\n| `enabled: true` | On Gen2X-capable tags, inventory events use `format: \"fastID\"` and `idHex` is 48 hex characters (24 EPC + 24 TID). There is no separate `tid` field. Non-Gen2X tags stay `format: \"epc\"` with EPC-only `idHex`. |\n| `enabled: false` | Standard EPC-only reads (`format: \"epc\"`). |\n\n**Use FastID when:** Your application needs TID for every tag (e.g., authentication, chip-level traceability) and you want to avoid the extra round-trip of a separate TID read. Parse `idHex` by length, or key off `format == \"fastID\"`. A client that treats `idHex` as always the EPC will read a 48-character value as one long EPC.\n\n### `tagFocus`\n\n| Field | What It Controls |\n|---|---|\n| `enabled: true` | Once a tag is read, it is silenced for the rest of the inventory cycle. The reader focuses only on new tags entering the field. TagFocus targets session S1. |\n| `enabled: false` | Standard inventory behavior; tags can be reported multiple times. |\n\nTo measure TagFocus, set `reportFilter.duration` to `0` on the mode. The reader's default report filter de-duplicates to one event per tag, which hides the repeat-read drop.\n\n**Use TagFocus when:** You operate portals, conveyors, or other scenarios with many duplicate reads of the same tag set and want unique-tag reporting.\n\n## 8. Applying the Configuration\n\nCalling this command only **saves** the configuration on the reader; it is not active until inventory is started with the activation flag.\n\n### MQTT Workflow\n\n```text\nstop               -> stop any active inventory\nset_impinjGen2X    -> save the configuration\nget_impinjGen2X    -> verify the saved configuration\nstart              -> payload: { \"applyImpinjGen2X\": true }\n```\n\n### Request Format\n\nEvery `set_impinjGen2X` request follows this structure:\n\n```json\n{\n  \"command\": \"set_impinjGen2X\",\n  \"command_id\": \"req-set-impinjGen2X\",\n  \"payload\": {\n    // exactly one Gen2X feature object\n  }\n}\n```\n\n### Success Response\n\n```json\n{\n  \"command\": \"set_impinjGen2X\",\n  \"command_id\": \"req-set-impinjGen2X\",\n  \"response\": \"success\",\n  \"payload\": {\n    \"message\": \"Success: Gen2X configured. Use applyImpinjGen2X flag in start command to apply features.\"\n  }\n}\n```\n\n### Failure Response\n\nWhen the reader rejects the request, `response` is `\"failure\"` and `payload` contains an error `code` and `message`:\n\n```json\n{\n  \"command\": \"set_impinjGen2X\",\n  \"command_id\": \"req-set-impinjGen2X\",\n  \"response\": \"failure\",\n  \"payload\": {\n    \"code\": 1,\n    \"message\": \"<description of the error>\"\n  }\n}\n```\n\nA failure is returned when the payload is empty, mutually exclusive features are sent together, an enum value is invalid, a constraint is violated, or the reader cannot save the configuration.\n\n### Activating the Configuration\n\nSend `start` with `applyImpinjGen2X` set to `true` to run inventory with the saved Gen2X configuration:\n\n```json\n{\n  \"command\": \"start\",\n  \"command_id\": \"req-start\",\n  \"payload\": {\n    \"applyImpinjGen2X\": true\n  }\n}\n```\n",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -9744,9 +9741,6 @@
                                     "command": {
                                         "type": "string",
                                         "description": "The value for the key command must be set_importCloudConfig\n",
-                                        "x-stoplight": {
-                                            "id": "rstrf2l3ux7hy"
-                                        },
                                         "enum": [
                                             "set_importCloudConfig"
                                         ]
@@ -9754,10 +9748,7 @@
                                     "command_id": {
                                         "type": "string",
                                         "example": "abcd1324",
-                                        "description": "A unique ID that will be echoed back in the command response by the reader.",
-                                        "x-stoplight": {
-                                            "id": "f1zuf4su6sa28"
-                                        }
+                                        "description": "A unique ID that will be echoed back in the command response by the reader."
                                     },
                                     "payload": {
                                         "type": "object",
@@ -12077,9 +12068,6 @@
                                         "command": {
                                             "type": "string",
                                             "description": "The value for the key command must be set_importCloudConfig",
-                                            "x-stoplight": {
-                                                "id": "xzmoapjq1h1tg"
-                                            },
                                             "enum": [
                                                 "set_importCloudConfig"
                                             ]
@@ -12087,10 +12075,7 @@
                                         "command_id": {
                                             "type": "string",
                                             "example": "abcd1324",
-                                            "description": "A unique ID that will be echoed back in the command response by the reader.",
-                                            "x-stoplight": {
-                                                "id": "547aaopqznyif"
-                                            }
+                                            "description": "A unique ID that will be echoed back in the command response by the reader."
                                         },
                                         "response": {
                                             "type": "string",
@@ -12098,10 +12083,7 @@
                                                 "success",
                                                 "failure"
                                             ],
-                                            "example": "success",
-                                            "x-stoplight": {
-                                                "id": "fguw6tdhjzeh9"
-                                            }
+                                            "example": "success"
                                         },
                                         "payload": {
                                             "oneOf": [
@@ -12109,10 +12091,7 @@
                                                     "title": "Import Cloud Config Response",
                                                     "type": "object",
                                                     "description": "Empty response payload returned after a successful cloud endpoint configuration import.",
-                                                    "example": {},
-                                                    "x-stoplight": {
-                                                        "id": "b8aznc38e0bm3"
-                                                    }
+                                                    "example": {}
                                                 },
                                                 {
                                                     "title": "failure",
@@ -12139,15 +12118,9 @@
                                                     "required": [
                                                         "code",
                                                         "message"
-                                                    ],
-                                                    "x-stoplight": {
-                                                        "id": "g9adwebaiw4rs"
-                                                    }
+                                                    ]
                                                 }
-                                            ],
-                                            "x-stoplight": {
-                                                "id": "pfgcnlevr4r1q"
-                                            }
+                                            ]
                                         }
                                     },
                                     "required": [
@@ -12180,7 +12153,7 @@
                     "System"
                 ],
                 "summary": "Get Readercapabilities",
-                "description": "## 1. Description\n\nThe `get_readerCapabilities` command retrieves the static hardware and software capabilities of the reader.\n\nThis command returns (all fields nested under a top-level `capabilities` object):\n\n- GPIO capacity (number of GPIs and GPOs available)\n- Whether LLRP is supported\n- Supported endpoint types for data and management\n- API versions accepted by the reader\n- Impinj Gen2X features through `capabilities.gen2xFeaturesSupported`\n- Whether a stack LED is present through `capabilities.stackLED`\n\nNo request body is required.\n\n## 2. Command Details\n\n| Property | Value |\n|---|---|\n| MQTT Command | `get_readerCapabilities` |\n| Pattern Name | Reader Capability Query |\n| REST Endpoint | `GET /cloud/readerCapabilities` |\n| Communication Type | Bidirectional (Cloud to Device, Device to Cloud) |\n| Applies To | FXR readers |\n| Supported Operations | Retrieve static reader hardware and software capabilities |\n\n## 3. When to Use This Command\n\nUse `get_readerCapabilities` to:\n\n- Discover how many GPI and GPO pins are available before wiring logic\n- Confirm whether LLRP is supported on this reader model\n- Determine which endpoint types can be configured for data and management\n- Verify which API versions the reader accepts before sending requests\n- Audit hardware capabilities across a mixed fleet\n\nKey fields to check in the response:\n\n| Field | What to Check | Why It Matters |\n|---|---|---|\n| `capabilities.numGPIs` | How many GPI pins are available? | Limits how many external input triggers (sensors, beam breaks) can be wired. |\n| `capabilities.numGPOs` | How many GPO pins are available? | Limits how many external output devices (lights, gates) can be driven. |\n| `capabilities.llrpSupported` | Is LLRP supported? | Determines whether the reader can be managed via LLRP-based tools. |\n| `capabilities.endpointTypesSupported` | Which endpoint types are supported? | Governs which data and management endpoint types can be configured. |\n| `capabilities.apiSupported.versions` | Which API versions are accepted? | Ensures the management application targets a compatible API version. |\n| `capabilities.supportedPowerSource` | Which power sources does this model support? | `DC`, `POE`, `POE+`, `POWERBRICK`, `BATTERY`. |\n| `capabilities.gen2xFeaturesSupported` | Which Impinj Gen2X features does this model support? | `FASTID`, `TAGFOCUS`, `TAGQUIETING`, `PROTECTEDMODE`. |\n| `capabilities.stackLED` | Is a stack LED present? | Readers with a stack LED report `supported: true` and colors. FXR90 reports `supported: false`. |\n",
+                "description": "## 1. Description\n\nThe `get_readerCapabilities` command retrieves the static hardware and software capabilities of the reader.\n\nThis command returns (all fields nested under a top-level `capabilities` object):\n\n- GPIO capacity (number of GPIs and GPOs available)\n- Whether LLRP is supported\n- Supported endpoint types for data and management\n- API versions accepted by the reader\n- Impinj Gen2X features through `capabilities.gen2xFeaturesSupported`\n- Whether a stack LED is present through `capabilities.stackLED`\n\nNo request body is required.\n\n## 2. Command Details\n\n| Property | Value |\n|---|---|\n| MQTT Command | `get_readerCapabilities` |\n| Pattern Name | Reader Capability Query |\n| REST Endpoint | `GET /cloud/readerCapabilities` |\n| Communication Type | Bidirectional (Cloud to Device, Device to Cloud) |\n| Applies To | FXR readers |\n| Supported Operations | Retrieve static reader hardware and software capabilities |\n\n## 3. When to Use This Command\n\nUse `get_readerCapabilities` to:\n\n- Discover how many GPI and GPO pins are available before wiring logic\n- Confirm whether LLRP is supported on this reader model\n- Determine which endpoint types can be configured for data and management\n- Verify which API versions the reader accepts before sending requests\n- Audit hardware capabilities across a mixed fleet\n\nKey fields to check in the response:\n\n| Field | What to Check | Why It Matters |\n|---|---|---|\n| `capabilities.numGPIs` | How many GPI pins are available? | Limits how many external input triggers (sensors, beam breaks) can be wired. |\n| `capabilities.numGPOs` | How many GPO pins are available? | Limits how many external output devices (lights, gates) can be driven. |\n| `capabilities.llrpSupported` | Is LLRP supported? | Determines whether the reader can be managed via LLRP-based tools. |\n| `capabilities.endpointTypesSupported` | Which endpoint types are supported? | Governs which data and management endpoint types can be configured. |\n| `capabilities.apiSupported.versions` | Which API versions are accepted? | Ensures the management application targets a compatible API version. |\n| `capabilities.supportedPowerSource` | Which power sources does this model support? | `DC`, `POE`, `POE+`, `POWERBRICK`, `BATTERY`. |\n| `capabilities.gen2xFeaturesSupported` | Which Impinj Gen2X features does this model support? | `FASTID`, `TAGFOCUS`, `TAGQUIETING`, `PROTECTEDMODE`. |\n| `capabilities.stackLED` | Is a stack LED present? | Readers with a stack LED report `supported: true` and colors. FXR90 reports `supported: false`. |\n| `capabilities.antennas` | Which ports are `internal`? | On integrated-antenna models such as the FXR60, port 5 is the near-field internal antenna and port 6 is the far-field internal antenna. Use `antennas: [5]` in `set_mode` for close-range reads, or `antennas: [6]` for standard range. |\n",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -12203,9 +12176,6 @@
                                     },
                                     "payload": {
                                         "title": "get_readerCapabilities_command",
-                                        "x-stoplight": {
-                                            "id": "xsotw7jkvu6rr"
-                                        },
                                         "type": "object",
                                         "description": "Get Reader Capabilities"
                                     }
@@ -13142,9 +13112,6 @@
                                     },
                                     "payload": {
                                         "title": "get_cableLossCompensation_command",
-                                        "x-stoplight": {
-                                            "id": "a5qra0j2abfbg"
-                                        },
                                         "description": "Gets the Reader Cable Loss Compensation. Includes Cable Length and Cable Loss per Hundred Feet. (Not applicable to ATR7000 readers)",
                                         "type": "object"
                                     }
@@ -13456,9 +13423,6 @@
                                             "oneOf": [
                                                 {
                                                     "title": "success",
-                                                    "x-stoplight": {
-                                                        "id": "hucruhkx8ryof"
-                                                    },
                                                     "type": "object",
                                                     "description": "Sets the Reader Cable Loss Compensation. Includes Cable Length and Cable Loss per Hundred Feet. (Not applicable to ATR7000 readers)"
                                                 },
@@ -14928,7 +14892,7 @@
                     "Display"
                 ],
                 "summary": "Get Input Output Devices",
-                "description": "## 1. Description\n\n> **Applies only to FXR readers with a display.** Display APIs are not available on FXR90.\n\nThe `get_inputOutputDevices` command retrieves the connection status and capabilities of devices attached to the reader.\n\nPeripheral and monitor details are documented in the response schema and in the key fields table below.\n\n## 2. Command Details\n\n| Property | Value |\n|---|---|\n| MQTT Command | `get_inputOutputDevices` |\n| Pattern Name | Input/Output Devices Query |\n| REST Endpoint | `GET /cloud/inputOutputDevices` |\n| Communication Type | Bidirectional (Cloud to Device, Device to Cloud) |\n| Applies To | FXR readers with a display |\n| Supported Operations | Retrieve attached keyboard, mouse, touch, and monitor status |\n\n## 3. When to Use This Command\n\nUse `get_inputOutputDevices` to:\n\n- Confirm which peripherals are connected before changing display settings\n- Read supported monitor resolutions before `set_displayConfig`\n\nKey fields to check in the response:\n\n| Field | What to Check | Why It Matters |\n|---|---|---|\n| `monitor.connected` | Is a monitor attached? | Display APIs apply only when a monitor is present. |\n| `monitor.supportedResolutions` | Which resolutions are supported? | List of resolutions supported by the monitor hardware. Use these values in `set_displayConfig`. |\n| `monitor.currentResolution` | What resolution is active? | Confirms the current `<width>x<height>` string. |\n| `monitor.screenActive` | Is the panel awake? | `true` when the display is on; `false` when sleeping. |\n",
+                "description": "## 1. Description\n\n> **Applies only to FXR readers with a display.** Display APIs are not available on FXR90.\n\nThe `get_inputOutputDevices` command retrieves the connection status and capabilities of devices attached to the reader.\n\nPeripheral and monitor details are documented in the response schema and in the key fields table below.\n\n## 2. Command Details\n\n| Property | Value |\n|---|---|\n| MQTT Command | `get_inputOutputDevices` |\n| Pattern Name | Input/Output Devices Query |\n| REST Endpoint | `GET /cloud/inputOutputDevices` |\n| Communication Type | Bidirectional (Cloud to Device, Device to Cloud) |\n| Applies To | FXR readers with a display |\n| Supported Operations | Retrieve attached keyboard, mouse, touch, and monitor status |\n\n## 3. When to Use This Command\n\nUse `get_inputOutputDevices` to:\n\n- Confirm which peripherals are connected before changing display settings\n- Read supported monitor resolutions before `set_displayConfig`\n\nKey fields to check in the response:\n\n| Field | What to Check | Why It Matters |\n|---|---|---|\n| `monitor.status` | Is a monitor attached (`connected` or `disconnected`)? | Display APIs apply only when a monitor is connected. |\n| `monitor.details[].supportedResolutions` | Which resolutions are supported? | List of resolutions supported by the monitor hardware. Use these values in `set_displayConfig`. |\n| `monitor.details[].currentResolution` | What resolution is active? | Confirms the current `<width>x<height>` string. |\n| `monitor.details[].screenActive` | Is the panel awake? | `true` when the display is on; `false` when sleeping. |\n| `monitor.details[].orientation` | What is the current screen rotation? | `landscape`, `portrait`, `landscape-flipped`, or `portrait-flipped`. |\n| `keyboard.status`, `mouse.status`, `touch.status` | Is each input device attached? | `connected` or `disconnected`. |\n| `keyboard.keyboardLayout` | Which keyboard layout is active? | Matches the `keyboardLayout` set with `set_displayConfig`. |\n",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -15085,7 +15049,7 @@
                                                                             },
                                                                             "model": {
                                                                                 "type": "string",
-                                                                                "description": "Model name of teh monitor.",
+                                                                                "description": "Model name of the monitor.",
                                                                                 "example": "HP Z24n G2"
                                                                             },
                                                                             "currentResolution": {
@@ -16614,9 +16578,6 @@
                                     },
                                     "payload": {
                                         "title": "get_supportedRegionList",
-                                        "x-stoplight": {
-                                            "id": "2rinlo1y5j2g4"
-                                        },
                                         "type": "object",
                                         "description": "Retrieves the region list supported by the reader based on the readertype"
                                     }
@@ -16772,9 +16733,6 @@
                                     },
                                     "payload": {
                                         "description": "Retrieves the standard channel list based on the region name provided",
-                                        "x-stoplight": {
-                                            "id": "rwyhu6g2ecok9"
-                                        },
                                         "type": "object",
                                         "properties": {
                                             "region": {
@@ -17953,9 +17911,6 @@
                                     },
                                     "payload": {
                                         "type": "object",
-                                        "x-stoplight": {
-                                            "id": "hbq0jocdl7547"
-                                        },
                                         "description": "Retrieves reader RC log"
                                     }
                                 },
@@ -18698,9 +18653,6 @@
                                     },
                                     "payload": {
                                         "title": "get_timeZone_command",
-                                        "x-stoplight": {
-                                            "id": "jgpe7yjcv6p3l"
-                                        },
                                         "type": "object",
                                         "description": "Gets Current Reader Time Zone"
                                     }
@@ -19300,9 +19252,6 @@
                                             "oneOf": [
                                                 {
                                                     "title": "success",
-                                                    "x-stoplight": {
-                                                        "id": "enenkx3sb4iw1"
-                                                    },
                                                     "type": "object",
                                                     "description": "Sets Reader Time Zone"
                                                 },
@@ -19387,9 +19336,6 @@
                                     },
                                     "payload": {
                                         "title": "get_ntpServer_command",
-                                        "x-stoplight": {
-                                            "id": "zj2jkbbyq8qwn"
-                                        },
                                         "type": "object",
                                         "description": "Gets the Reader NTP Server"
                                     }
@@ -19665,9 +19611,6 @@
                                             "oneOf": [
                                                 {
                                                     "title": "success",
-                                                    "x-stoplight": {
-                                                        "id": "p7rb20csjsntg"
-                                                    },
                                                     "type": "object",
                                                     "description": "Sets the Reader NTP Server"
                                                 },
@@ -20386,9 +20329,6 @@
                                             "oneOf": [
                                                 {
                                                     "title": "success",
-                                                    "x-stoplight": {
-                                                        "id": "enenkx3sb4iw1"
-                                                    },
                                                     "type": "object",
                                                     "description": "Update the certificate on the reader"
                                                 },
@@ -20803,9 +20743,6 @@
                                 "properties": {
                                     "command": {
                                         "type": "string",
-                                        "x-stoplight": {
-                                            "id": "0c7zf7xokhhsw"
-                                        },
                                         "enum": [
                                             "set_InstallCACertificate"
                                         ],
@@ -20814,9 +20751,6 @@
                                     },
                                     "command_id": {
                                         "type": "string",
-                                        "x-stoplight": {
-                                            "id": "bxe3nh799mqcg"
-                                        },
                                         "description": "A unique ID that will be echoed back in the command response by the reader.",
                                         "example": "abcd1234"
                                     },
@@ -20885,9 +20819,6 @@
                                     "properties": {
                                         "command": {
                                             "type": "string",
-                                            "x-stoplight": {
-                                                "id": "p0am4ixaunpl1"
-                                            },
                                             "enum": [
                                                 "set_InstallCACertificate"
                                             ],
@@ -20896,32 +20827,20 @@
                                         },
                                         "command_id": {
                                             "type": "string",
-                                            "x-stoplight": {
-                                                "id": "z9ieyq8kzpdr7"
-                                            },
                                             "description": "A unique ID that will be echoed back in the command response by the reader.",
                                             "example": "abcd1234"
                                         },
                                         "response": {
                                             "type": "string",
-                                            "x-stoplight": {
-                                                "id": "3cuxc59a0dwhw"
-                                            },
                                             "enum": [
                                                 "success",
                                                 "failure"
                                             ]
                                         },
                                         "payload": {
-                                            "x-stoplight": {
-                                                "id": "l6rrme68fau0t"
-                                            },
                                             "oneOf": [
                                                 {
                                                     "title": "success",
-                                                    "x-stoplight": {
-                                                        "id": "1rakt6s7t9g6f"
-                                                    },
                                                     "type": "object",
                                                     "description": "Install CA Certificate on the reader"
                                                 },
@@ -20950,10 +20869,7 @@
                                                     "required": [
                                                         "code",
                                                         "message"
-                                                    ],
-                                                    "x-stoplight": {
-                                                        "id": "46y46dbyt3j2z"
-                                                    }
+                                                    ]
                                                 }
                                             ]
                                         }
@@ -20996,9 +20912,6 @@
                                 "properties": {
                                     "command": {
                                         "type": "string",
-                                        "x-stoplight": {
-                                            "id": "4yan4r9nrytt1"
-                                        },
                                         "enum": [
                                             "del_CACertificate"
                                         ],
@@ -21007,24 +20920,15 @@
                                     },
                                     "command_id": {
                                         "type": "string",
-                                        "x-stoplight": {
-                                            "id": "6cbikvs1h8fh8"
-                                        },
                                         "description": "A unique ID that will be echoed back in the command response by the reader.",
                                         "example": "abcd1234"
                                     },
                                     "payload": {
                                         "title": "del_CACertificate",
-                                        "x-stoplight": {
-                                            "id": "lwg7q0q7h07km"
-                                        },
                                         "type": "object",
                                         "properties": {
                                             "name": {
                                                 "type": "string",
-                                                "x-stoplight": {
-                                                    "id": "7m444vi2dsnj7"
-                                                },
                                                 "description": "Certificate name as supplied at install time, without the `.crt` suffix that get_CACertificates appends. The key must be `name`.",
                                                 "example": "ZebraExampleRootCA"
                                             }
@@ -21066,9 +20970,6 @@
                                     "properties": {
                                         "command": {
                                             "type": "string",
-                                            "x-stoplight": {
-                                                "id": "xtibx4k35ahzo"
-                                            },
                                             "enum": [
                                                 "del_CACertificate"
                                             ],
@@ -21077,32 +20978,20 @@
                                         },
                                         "command_id": {
                                             "type": "string",
-                                            "x-stoplight": {
-                                                "id": "dw42rwl7u36hp"
-                                            },
                                             "description": "A unique ID that will be echoed back in the command response by the reader.",
                                             "example": "abcd1234"
                                         },
                                         "response": {
                                             "type": "string",
-                                            "x-stoplight": {
-                                                "id": "f8llzegq6wga7"
-                                            },
                                             "enum": [
                                                 "success",
                                                 "failure"
                                             ]
                                         },
                                         "payload": {
-                                            "x-stoplight": {
-                                                "id": "8ez6pir960tly"
-                                            },
                                             "oneOf": [
                                                 {
                                                     "title": "success",
-                                                    "x-stoplight": {
-                                                        "id": "lw0r7lns7izky"
-                                                    },
                                                     "type": "object",
                                                     "description": "Deletes the CA Certificate from the reader"
                                                 },
@@ -21131,10 +21020,7 @@
                                                     "required": [
                                                         "code",
                                                         "message"
-                                                    ],
-                                                    "x-stoplight": {
-                                                        "id": "bjyjicbzbh06t"
-                                                    }
+                                                    ]
                                                 }
                                             ]
                                         }
@@ -21257,9 +21143,6 @@
                                     "properties": {
                                         "command": {
                                             "type": "string",
-                                            "x-stoplight": {
-                                                "id": "39zra4osdjxd3"
-                                            },
                                             "enum": [
                                                 "get_network"
                                             ],
@@ -21268,26 +21151,17 @@
                                         },
                                         "command_id": {
                                             "type": "string",
-                                            "x-stoplight": {
-                                                "id": "0hqhaelyx60nk"
-                                            },
                                             "description": "A unique ID that will be echoed back in the command response by the reader.",
                                             "example": "a12cb345654"
                                         },
                                         "response": {
                                             "type": "string",
-                                            "x-stoplight": {
-                                                "id": "w1nijnw6fddu6"
-                                            },
                                             "enum": [
                                                 "success",
                                                 "failure"
                                             ]
                                         },
                                         "payload": {
-                                            "x-stoplight": {
-                                                "id": "63epxnm3j9nq4"
-                                            },
                                             "oneOf": [
                                                 {
                                                     "type": "object",
@@ -21919,10 +21793,7 @@
                                                     "required": [
                                                         "code",
                                                         "message"
-                                                    ],
-                                                    "x-stoplight": {
-                                                        "id": "fhqhf1pk0va4e"
-                                                    }
+                                                    ]
                                                 }
                                             ]
                                         }
@@ -23302,10 +23173,7 @@
                                         "title": "Get Available Wi-Fi Networks Request Payload",
                                         "type": "object",
                                         "description": "An empty object as no additional parameters are required to execute this command.",
-                                        "additionalProperties": false,
-                                        "x-stoplight": {
-                                            "id": "p7a8y9l0o1a2d"
-                                        }
+                                        "additionalProperties": false
                                     }
                                 },
                                 "required": [
@@ -23346,18 +23214,12 @@
                                                 "get_availableWifiNetworks"
                                             ],
                                             "example": "get_availableWifiNetworks",
-                                            "description": "The type of command being executed or responded to.",
-                                            "x-stoplight": {
-                                                "id": "c1m2m3a4n5d6"
-                                            }
+                                            "description": "The type of command being executed or responded to."
                                         },
                                         "command_id": {
                                             "type": "string",
                                             "example": "a12cb345654",
-                                            "description": "A unique identifier for tracking the request and its corresponding response.",
-                                            "x-stoplight": {
-                                                "id": "i7d8e9n0t1i2"
-                                            }
+                                            "description": "A unique identifier for tracking the request and its corresponding response."
                                         },
                                         "payload": {
                                             "type": "object",
@@ -23450,10 +23312,7 @@
                                         "response": {
                                             "type": "string",
                                             "example": "success",
-                                            "description": "The execution status of the command.",
-                                            "x-stoplight": {
-                                                "id": "s9t0a1t2u3s4"
-                                            }
+                                            "description": "The execution status of the command."
                                         }
                                     },
                                     "required": [
@@ -23695,18 +23554,12 @@
                                                 "get_networkInterfaces"
                                             ],
                                             "example": "get_networkInterfaces",
-                                            "description": "The type of command being executed or responded to.",
-                                            "x-stoplight": {
-                                                "id": "c1m2n3p4q5r6s"
-                                            }
+                                            "description": "The type of command being executed or responded to."
                                         },
                                         "command_id": {
                                             "type": "string",
                                             "example": "a12cb345654",
-                                            "description": "A unique identifier for tracking the request and its corresponding response.",
-                                            "x-stoplight": {
-                                                "id": "x7y8z9a0b1c2d"
-                                            }
+                                            "description": "A unique identifier for tracking the request and its corresponding response."
                                         },
                                         "payload": {
                                             "type": "object",
@@ -23730,10 +23583,7 @@
                                         "response": {
                                             "type": "string",
                                             "example": "success",
-                                            "description": "The execution status of the command.",
-                                            "x-stoplight": {
-                                                "id": "j9k0l1m2n3o4p"
-                                            }
+                                            "description": "The execution status of the command."
                                         }
                                     },
                                     "required": [
@@ -24662,7 +24512,7 @@
                                             },
                                             "authenticationOptions": {
                                                 "type": "object",
-                                                "description": "Credentials object used when `authenticationType` is `BASIC`. The reader accepts this key. Spec 11 still names it `options`; keep `authenticationOptions` until the developer updates.",
+                                                "description": "Credentials object used when `authenticationType` is `BASIC`.",
                                                 "required": [
                                                     "username",
                                                     "password"
@@ -28140,10 +27990,7 @@
                                                         },
                                                         "systemtime": {
                                                             "type": "string",
-                                                            "description": "Reader system clock value. Its format can differ from the envelope timestamp.",
-                                                            "x-stoplight": {
-                                                                "id": "l9tm05nhizwc8"
-                                                            }
+                                                            "description": "Reader system clock value. Its format can differ from the envelope timestamp."
                                                         },
                                                         "macAddress": {
                                                             "type": "string",
@@ -28244,10 +28091,7 @@
                                                         "hostName": {
                                                             "type": "string",
                                                             "description": "Reader hostname. Live field name is hostName, not hostname.",
-                                                            "example": "FX9600AABBCC",
-                                                            "x-stoplight": {
-                                                                "id": "isnrr8w7gbtta"
-                                                            }
+                                                            "example": "FX9600AABBCC"
                                                         }
                                                     }
                                                 },
@@ -30734,14 +30578,8 @@
                                                 },
                                                 "antennaPortNames": {
                                                     "type": "array",
-                                                    "x-stoplight": {
-                                                        "id": "eax7vcj92erv3"
-                                                    },
                                                     "description": "Configured descriptive antenna-port names, ordered by port. The array length matches the number of antenna ports on the reader.",
                                                     "items": {
-                                                        "x-stoplight": {
-                                                            "id": "m01f0hxqpfz5g"
-                                                        },
                                                         "type": "string"
                                                     }
                                                 }
@@ -30957,14 +30795,8 @@
                                                 },
                                                 "antennaPortNames": {
                                                     "type": "array",
-                                                    "x-stoplight": {
-                                                        "id": "eax7vcj92erv3"
-                                                    },
                                                     "description": "Used to give antenna ports descriptive names Length of Array must match the number of antenna ports on the device",
                                                     "items": {
-                                                        "x-stoplight": {
-                                                            "id": "m01f0hxqpfz5g"
-                                                        },
                                                         "type": "string"
                                                     }
                                                 }
@@ -31115,14 +30947,8 @@
                                                 },
                                                 "antennaPortNames": {
                                                     "type": "array",
-                                                    "x-stoplight": {
-                                                        "id": "eax7vcj92erv3"
-                                                    },
                                                     "description": "Used to give antenna ports descriptive names Length of Array must match the number of antenna ports on the device",
                                                     "items": {
-                                                        "x-stoplight": {
-                                                            "id": "m01f0hxqpfz5g"
-                                                        },
                                                         "type": "string"
                                                     }
                                                 }
@@ -31276,14 +31102,8 @@
                                                 },
                                                 "antennaPortNames": {
                                                     "type": "array",
-                                                    "x-stoplight": {
-                                                        "id": "eax7vcj92erv3"
-                                                    },
                                                     "description": "Used to give antenna ports descriptive names Length of Array must match the number of antenna ports on the device",
                                                     "items": {
-                                                        "x-stoplight": {
-                                                            "id": "m01f0hxqpfz5g"
-                                                        },
                                                         "type": "string"
                                                     }
                                                 }
@@ -31435,14 +31255,8 @@
                                                 },
                                                 "antennaPortNames": {
                                                     "type": "array",
-                                                    "x-stoplight": {
-                                                        "id": "eax7vcj92erv3"
-                                                    },
                                                     "description": "Used to give antenna ports descriptive names Length of Array must match the number of antenna ports on the device",
                                                     "items": {
-                                                        "x-stoplight": {
-                                                            "id": "m01f0hxqpfz5g"
-                                                        },
                                                         "type": "string"
                                                     }
                                                 }
@@ -31594,14 +31408,8 @@
                                                 },
                                                 "antennaPortNames": {
                                                     "type": "array",
-                                                    "x-stoplight": {
-                                                        "id": "eax7vcj92erv3"
-                                                    },
                                                     "description": "Used to give antenna ports descriptive names Length of Array must match the number of antenna ports on the device",
                                                     "items": {
-                                                        "x-stoplight": {
-                                                            "id": "m01f0hxqpfz5g"
-                                                        },
                                                         "type": "string"
                                                     }
                                                 }
@@ -31649,7 +31457,7 @@
                     "Ble-data-events"
                 ],
                 "summary": "BLE Data Events",
-                "description": "## BLE Data Events\n\nBLE Data Events report Bluetooth Low Energy devices and beacon advertisements detected by the reader. The reader publishes these events on the configured data event channel while BLE scanning is running.\n\nBLE Data Events use `BLE_DATA` as the event `type`.\n\n### Configure BLE data event publishing\n\nComplete the following three steps before receiving BLE data events.\n\n#### Step 1: Verify the data-event connection\n\nBLE Data Events use the same data-event connection as RFID Tag Data Events. There is no separate destination configuration for BLE events.\n\nIf a data-event connection has not already been configured, use [`set_importCloudConfig`](set_importCloudConfig.md) to add a connection under:\n\n```text\nendpointConfig.data.event\n```\n\nSee [`set_importCloudConfig`](set_importCloudConfig.md) for the supported connection types and configuration examples.\n\n#### Step 2: Configure BLE scanning\n\nUse [`set_bleConfig`](set_bleConfig.md) to configure BLE scanning.\n\nSet:\n\n```text\npayload.ble.enable\n```\n\nto `true`.\n\nThe BLE configuration also determines:\n\n* The scan interval\n* The enabled BLE protocols\n* Protocol-specific filters\n* RSSI and service UUID filters\n\nSupported protocol configurations include:\n\n* iBeacon\n* AltBeacon\n* Eddystone\n* Generic BLE\n\nSee [`set_bleConfig`](set_bleConfig.md) for the complete request schema and configuration examples.\n\n#### Step 3: Start BLE scanning\n\nUse [`start`](start.md) and include `ble` in `payload.scanType`.\n\nTo start only BLE scanning, use:\n\n```json\n\"scanType\": [\n  \"ble\"\n]\n```\n\nTo start BLE scanning and RFID inventory together, use:\n\n```json\n\"scanType\": [\n  \"ble\",\n  \"rfid\"\n]\n```\n\nSee [`start`](start.md) for the complete MQTT command examples.\n\n> **Note:** Starting BLE scanning through `scanType` requires reader build `4.0.11` or later.\n\nAfter BLE scanning starts, the reader publishes detected BLE devices and beacon advertisements through the configured data-event connection.\n\n### Supported BLE beacon formats\n\nThe `data.beaconType` field identifies the detected beacon format.\n\n| `data.beaconType` | Protocol-specific object | Description                                                            |\n| ----------------- | ------------------------ | ---------------------------------------------------------------------- |\n| `GENERIC_BLE`     | None                     | Reports the common BLE device and advertisement fields.                |\n| `IBEACON`         | `data.iBeacon`           | Reports iBeacon fields such as UUID, major, minor, and transmit power. |\n| `ALTBEACON`       | `data.altBeacon`         | Reports AltBeacon identification and signal-reference fields.          |\n| `EDDYSTONE_URL`   | `data.eddystone`         | Reports an Eddystone URL frame.                                        |\n| `EDDYSTONE_UID`   | `data.eddystone`         | Reports an Eddystone UID frame.                                        |\n| `EDDYSTONE_EID`   | `data.eddystone`         | Reports an Eddystone EID frame.                                        |\n| `EDDYSTONE_TLM`   | `data.eddystone`         | Reports an Eddystone telemetry frame.                                  |\n\nA protocol-specific object is included only when it applies to the detected beacon format.\n\n### Published BLE data event\n\nA BLE Data Event contains:\n\n* `type`, with the value `BLE_DATA`\n* `timestamp`, indicating when the reader generated the event\n* `eventNum`, containing the BLE event sequence number\n* `data`, containing the detected device or beacon information\n\nIn a BLE Data Event, `eventNum` is a top-level field. In an RFID Tag Data Event, the sequence number is reported as `data.eventNum`.\n\n#### BLE data event body\n\nUse the **Sample BLE Data Event** tab to view examples for the supported beacon formats. Use the **BLE Data Event Schema** tab to review the complete event structure and field definitions.\n",
+                "description": "## BLE Data Events\n\nBLE Data Events report Bluetooth Low Energy devices and beacon advertisements detected by the reader. The reader publishes these events on the configured data event channel while BLE scanning is running.\n\nBLE Data Events use `BLE_DATA` as the event `type`.\n\n### Configure BLE data event publishing\n\nComplete the following three steps before receiving BLE data events.\n\n#### Step 1: Configure the data-event connections\n\nBLE Data Events and RFID Tag Data Events are published on the data-event connections configured under `endpointConfig.data.event`. BLE and RFID data can be sent to the same connection or to different connections.\n\nIf the required data-event connections have not already been configured, use [`set_importCloudConfig`](set_importCloudConfig.md) to add them under:\n\n```text\nendpointConfig.data.event\n```\n\nGive each connection a unique `name`. The `start` command uses these names to route BLE and RFID data to specific connections.\n\nSee [`set_importCloudConfig`](set_importCloudConfig.md) for the supported connection types and configuration examples.\n\n#### Step 2: Configure BLE scanning\n\nUse [`set_bleConfig`](set_bleConfig.md) to configure BLE scanning.\n\nSet:\n\n```text\npayload.ble.enable\n```\n\nto `true`.\n\nThe BLE configuration also determines:\n\n* The scan interval\n* The enabled BLE protocols\n* Protocol-specific filters\n* RSSI and service UUID filters\n\nSupported protocol configurations include:\n\n* iBeacon\n* AltBeacon\n* Eddystone\n* Generic BLE\n\nSee [`set_bleConfig`](set_bleConfig.md) for the complete request schema and configuration examples.\n\n#### Step 3: Start BLE scanning\n\nUse [`start`](start.md) and include `ble` in `payload.scanType`.\n\nTo start only BLE scanning, use:\n\n```json\n\"scanType\": [\n  \"ble\"\n]\n```\n\nTo start BLE scanning and RFID inventory together, use:\n\n```json\n\"scanType\": [\n  \"ble\",\n  \"rfid\"\n]\n```\n\nA `scanType` array starts the listed scan types on all configured data-event connections.\n\nTo route BLE and RFID data to specific connections, send `scanType` as an object keyed by connection `name`:\n\n```json\n\"scanType\": {\n  \"dataEndpoint1\": [\n    \"ble\"\n  ],\n  \"dataEndpoint2\": [\n    \"rfid\"\n  ]\n}\n```\n\nEach key is a connection `name` from `endpointConfig.data.event.connections`. Each value lists the scan types published to that connection: `ble`, `rfid`, or both.\n\nSee [`start`](start.md) for the complete MQTT command examples.\n\n> **Note:** Starting BLE scanning through `scanType` requires reader build `4.0.11` or later.\n\nAfter BLE scanning starts, the reader publishes detected BLE devices and beacon advertisements to the data-event connections selected by `scanType`.\n\n### Supported BLE beacon formats\n\nThe `data.beaconType` field identifies the detected beacon format.\n\n| `data.beaconType` | Protocol-specific object | Description                                                            |\n| ----------------- | ------------------------ | ---------------------------------------------------------------------- |\n| `GENERIC_BLE`     | None                     | Reports the common BLE device and advertisement fields.                |\n| `IBEACON`         | `data.iBeacon`           | Reports iBeacon fields such as UUID, major, minor, and transmit power. |\n| `ALTBEACON`       | `data.altBeacon`         | Reports AltBeacon identification and signal-reference fields.          |\n| `EDDYSTONE_URL`   | `data.eddystone`         | Reports an Eddystone URL frame.                                        |\n| `EDDYSTONE_UID`   | `data.eddystone`         | Reports an Eddystone UID frame.                                        |\n| `EDDYSTONE_EID`   | `data.eddystone`         | Reports an Eddystone EID frame.                                        |\n| `EDDYSTONE_TLM`   | `data.eddystone`         | Reports an Eddystone telemetry frame.                                  |\n\nA protocol-specific object is included only when it applies to the detected beacon format.\n\n### Published BLE data event\n\nA BLE Data Event contains:\n\n* `type`, with the value `BLE_DATA`\n* `timestamp`, indicating when the reader generated the event\n* `eventNum`, containing the BLE event sequence number\n* `data`, containing the detected device or beacon information\n\nIn a BLE Data Event, `eventNum` is a top-level field. In an RFID Tag Data Event, the sequence number is reported as `data.eventNum`.\n\n#### BLE data event body\n\nUse the **Sample BLE Data Event** tab to view examples for the supported beacon formats. Use the **BLE Data Event Schema** tab to review the complete event structure and field definitions.\n",
                 "responses": {
                     "default": {
                         "description": "BLE data event",
@@ -31925,7 +31733,7 @@
                 "x-event-body-title": "BLE Data Event Body",
                 "x-example-title": "Sample BLE Data Event",
                 "x-schema-title": "BLE Data Event Schema",
-                "x-event-body-position": "## BLE Data Events\n\nBLE Data Events report Bluetooth Low Energy devices and beacon advertisements detected by the reader. The reader publishes these events on the configured data event channel while BLE scanning is running.\n\nBLE Data Events use `BLE_DATA` as the event `type`.\n\n### Configure BLE data event publishing\n\nComplete the following three steps before receiving BLE data events.\n\n#### Step 1: Verify the data-event connection\n\nBLE Data Events use the same data-event connection as RFID Tag Data Events. There is no separate destination configuration for BLE events.\n\nIf a data-event connection has not already been configured, use [`set_importCloudConfig`](set_importCloudConfig.md) to add a connection under:\n\n```text\nendpointConfig.data.event\n```\n\nSee [`set_importCloudConfig`](set_importCloudConfig.md) for the supported connection types and configuration examples.\n\n#### Step 2: Configure BLE scanning\n\nUse [`set_bleConfig`](set_bleConfig.md) to configure BLE scanning.\n\nSet:\n\n```text\npayload.ble.enable\n```\n\nto `true`.\n\nThe BLE configuration also determines:\n\n* The scan interval\n* The enabled BLE protocols\n* Protocol-specific filters\n* RSSI and service UUID filters\n\nSupported protocol configurations include:\n\n* iBeacon\n* AltBeacon\n* Eddystone\n* Generic BLE\n\nSee [`set_bleConfig`](set_bleConfig.md) for the complete request schema and configuration examples.\n\n#### Step 3: Start BLE scanning\n\nUse [`start`](start.md) and include `ble` in `payload.scanType`.\n\nTo start only BLE scanning, use:\n\n```json\n\"scanType\": [\n  \"ble\"\n]\n```\n\nTo start BLE scanning and RFID inventory together, use:\n\n```json\n\"scanType\": [\n  \"ble\",\n  \"rfid\"\n]\n```\n\nSee [`start`](start.md) for the complete MQTT command examples.\n\n> **Note:** Starting BLE scanning through `scanType` requires reader build `4.0.11` or later.\n\nAfter BLE scanning starts, the reader publishes detected BLE devices and beacon advertisements through the configured data-event connection.\n\n### Supported BLE beacon formats\n\nThe `data.beaconType` field identifies the detected beacon format.\n\n| `data.beaconType` | Protocol-specific object | Description                                                            |\n| ----------------- | ------------------------ | ---------------------------------------------------------------------- |\n| `GENERIC_BLE`     | None                     | Reports the common BLE device and advertisement fields.                |\n| `IBEACON`         | `data.iBeacon`           | Reports iBeacon fields such as UUID, major, minor, and transmit power. |\n| `ALTBEACON`       | `data.altBeacon`         | Reports AltBeacon identification and signal-reference fields.          |\n| `EDDYSTONE_URL`   | `data.eddystone`         | Reports an Eddystone URL frame.                                        |\n| `EDDYSTONE_UID`   | `data.eddystone`         | Reports an Eddystone UID frame.                                        |\n| `EDDYSTONE_EID`   | `data.eddystone`         | Reports an Eddystone EID frame.                                        |\n| `EDDYSTONE_TLM`   | `data.eddystone`         | Reports an Eddystone telemetry frame.                                  |\n\nA protocol-specific object is included only when it applies to the detected beacon format.\n\n### Published BLE data event\n\nA BLE Data Event contains:\n\n* `type`, with the value `BLE_DATA`\n* `timestamp`, indicating when the reader generated the event\n* `eventNum`, containing the BLE event sequence number\n* `data`, containing the detected device or beacon information\n\nIn a BLE Data Event, `eventNum` is a top-level field. In an RFID Tag Data Event, the sequence number is reported as `data.eventNum`.\n\n#### BLE data event body\n\nUse the **Sample BLE Data Event** tab to view examples for the supported beacon formats. Use the **BLE Data Event Schema** tab to review the complete event structure and field definitions.\n",
+                "x-event-body-position": "## BLE Data Events\n\nBLE Data Events report Bluetooth Low Energy devices and beacon advertisements detected by the reader. The reader publishes these events on the configured data event channel while BLE scanning is running.\n\nBLE Data Events use `BLE_DATA` as the event `type`.\n\n### Configure BLE data event publishing\n\nComplete the following three steps before receiving BLE data events.\n\n#### Step 1: Configure the data-event connections\n\nBLE Data Events and RFID Tag Data Events are published on the data-event connections configured under `endpointConfig.data.event`. BLE and RFID data can be sent to the same connection or to different connections.\n\nIf the required data-event connections have not already been configured, use [`set_importCloudConfig`](set_importCloudConfig.md) to add them under:\n\n```text\nendpointConfig.data.event\n```\n\nGive each connection a unique `name`. The `start` command uses these names to route BLE and RFID data to specific connections.\n\nSee [`set_importCloudConfig`](set_importCloudConfig.md) for the supported connection types and configuration examples.\n\n#### Step 2: Configure BLE scanning\n\nUse [`set_bleConfig`](set_bleConfig.md) to configure BLE scanning.\n\nSet:\n\n```text\npayload.ble.enable\n```\n\nto `true`.\n\nThe BLE configuration also determines:\n\n* The scan interval\n* The enabled BLE protocols\n* Protocol-specific filters\n* RSSI and service UUID filters\n\nSupported protocol configurations include:\n\n* iBeacon\n* AltBeacon\n* Eddystone\n* Generic BLE\n\nSee [`set_bleConfig`](set_bleConfig.md) for the complete request schema and configuration examples.\n\n#### Step 3: Start BLE scanning\n\nUse [`start`](start.md) and include `ble` in `payload.scanType`.\n\nTo start only BLE scanning, use:\n\n```json\n\"scanType\": [\n  \"ble\"\n]\n```\n\nTo start BLE scanning and RFID inventory together, use:\n\n```json\n\"scanType\": [\n  \"ble\",\n  \"rfid\"\n]\n```\n\nA `scanType` array starts the listed scan types on all configured data-event connections.\n\nTo route BLE and RFID data to specific connections, send `scanType` as an object keyed by connection `name`:\n\n```json\n\"scanType\": {\n  \"dataEndpoint1\": [\n    \"ble\"\n  ],\n  \"dataEndpoint2\": [\n    \"rfid\"\n  ]\n}\n```\n\nEach key is a connection `name` from `endpointConfig.data.event.connections`. Each value lists the scan types published to that connection: `ble`, `rfid`, or both.\n\nSee [`start`](start.md) for the complete MQTT command examples.\n\n> **Note:** Starting BLE scanning through `scanType` requires reader build `4.0.11` or later.\n\nAfter BLE scanning starts, the reader publishes detected BLE devices and beacon advertisements to the data-event connections selected by `scanType`.\n\n### Supported BLE beacon formats\n\nThe `data.beaconType` field identifies the detected beacon format.\n\n| `data.beaconType` | Protocol-specific object | Description                                                            |\n| ----------------- | ------------------------ | ---------------------------------------------------------------------- |\n| `GENERIC_BLE`     | None                     | Reports the common BLE device and advertisement fields.                |\n| `IBEACON`         | `data.iBeacon`           | Reports iBeacon fields such as UUID, major, minor, and transmit power. |\n| `ALTBEACON`       | `data.altBeacon`         | Reports AltBeacon identification and signal-reference fields.          |\n| `EDDYSTONE_URL`   | `data.eddystone`         | Reports an Eddystone URL frame.                                        |\n| `EDDYSTONE_UID`   | `data.eddystone`         | Reports an Eddystone UID frame.                                        |\n| `EDDYSTONE_EID`   | `data.eddystone`         | Reports an Eddystone EID frame.                                        |\n| `EDDYSTONE_TLM`   | `data.eddystone`         | Reports an Eddystone telemetry frame.                                  |\n\nA protocol-specific object is included only when it applies to the detected beacon format.\n\n### Published BLE data event\n\nA BLE Data Event contains:\n\n* `type`, with the value `BLE_DATA`\n* `timestamp`, indicating when the reader generated the event\n* `eventNum`, containing the BLE event sequence number\n* `data`, containing the detected device or beacon information\n\nIn a BLE Data Event, `eventNum` is a top-level field. In an RFID Tag Data Event, the sequence number is reported as `data.eventNum`.\n\n#### BLE data event body\n\nUse the **Sample BLE Data Event** tab to view examples for the supported beacon formats. Use the **BLE Data Event Schema** tab to review the complete event structure and field definitions.\n",
                 "x-event-body-after": ""
             }
         },
@@ -33462,10 +33270,7 @@
                                                         },
                                                         "systemtime": {
                                                             "type": "string",
-                                                            "description": "Reader system clock value. Its format can differ from the envelope timestamp.",
-                                                            "x-stoplight": {
-                                                                "id": "l9tm05nhizwc8"
-                                                            }
+                                                            "description": "Reader system clock value. Its format can differ from the envelope timestamp."
                                                         },
                                                         "macAddress": {
                                                             "type": "string",
@@ -33566,10 +33371,7 @@
                                                         "hostName": {
                                                             "type": "string",
                                                             "description": "Reader hostname. Live field name is hostName, not hostname.",
-                                                            "example": "FX9600AABBCC",
-                                                            "x-stoplight": {
-                                                                "id": "isnrr8w7gbtta"
-                                                            }
+                                                            "example": "FX9600AABBCC"
                                                         }
                                                     }
                                                 }
@@ -34788,9 +34590,6 @@
             },
             "access_cmd_access.v1": {
                 "title": "access",
-                "x-stoplight": {
-                    "id": "q1exintgft9jj"
-                },
                 "type": "object",
                 "properties": {
                     "type": {
@@ -34815,9 +34614,6 @@
             },
             "access_cmd_kill.v1": {
                 "title": "kill",
-                "x-stoplight": {
-                    "id": "vedcpho6hvsy1"
-                },
                 "type": "object",
                 "properties": {
                     "type": {
@@ -34846,9 +34642,6 @@
             },
             "access_cmd_lock.v1": {
                 "title": "lock",
-                "x-stoplight": {
-                    "id": "0zfd32y0jjov5"
-                },
                 "type": "object",
                 "properties": {
                     "type": {
@@ -34894,9 +34687,6 @@
             },
             "access_cmd_read.v1": {
                 "title": "read",
-                "x-stoplight": {
-                    "id": "1apkl27d5ciin"
-                },
                 "type": "object",
                 "properties": {
                     "config": {
@@ -34940,9 +34730,6 @@
             },
             "access_cmd_write.v1": {
                 "title": "write",
-                "x-stoplight": {
-                    "id": "91z911vfjeequ"
-                },
                 "type": "object",
                 "properties": {
                     "type": {
@@ -34992,9 +34779,6 @@
             },
             "access_cmds.v1": {
                 "title": "access_cmds",
-                "x-stoplight": {
-                    "id": "0zcutp2ppyogb"
-                },
                 "type": "array",
                 "items": {
                     "anyOf": [
@@ -35120,9 +34904,6 @@
             },
             "delayBetweenAntennaCycles.v1": {
                 "title": "delayBetweenAntennaCycles",
-                "x-stoplight": {
-                    "id": "991y6rfkb67lh"
-                },
                 "type": "object",
                 "description": "This introduces a delay between antenna cycles if no tags are read or if no unique tags are read. This allows the reader to share the spectrum if there are no tags to be read. \n\nIf absent, \non the ATR7000 and the FX9600, delayBetweenAntennas cycles is set to wait for 75 mS if no unique tags are read during a antenna cycle.  \non the FX7500, delayBetweenAntennas cycles is set to wait for 75 mS if no tags are read during a antenna cycle. ",
                 "properties": {
@@ -35964,7 +35745,7 @@
                     },
                     "antennas": {
                         "type": "array",
-                        "description": "\n\n\n\n\n An array of integers representing the antenna ports to use to read tags.\n\n If absent, all antenna ports are used.",
+                        "description": "\n\n\n\n\n An array of integers representing the antenna ports to use to read tags.\n\n If absent, all antenna ports are used.\n\n On integrated-antenna models such as the FXR60, the internal ports reported by get_readerCapabilities are not identical: port 5 is the near-field antenna (short-range reads close to the reader) and port 6 is the far-field antenna (standard read range). Use antennas: [5] for close-range reads only, or antennas: [6] for standard-range reads.",
                         "items": {
                             "type": "integer"
                         }
@@ -36237,9 +36018,6 @@
             },
             "select.v1": {
                 "title": "select",
-                "x-stoplight": {
-                    "id": "n25fojejbi5ko"
-                },
                 "type": "object",
                 "properties": {
                     "target": {
@@ -37062,10 +36840,7 @@
                                             },
                                             "systemtime": {
                                                 "type": "string",
-                                                "description": "Reader system clock value. Its format can differ from the envelope timestamp.",
-                                                "x-stoplight": {
-                                                    "id": "l9tm05nhizwc8"
-                                                }
+                                                "description": "Reader system clock value. Its format can differ from the envelope timestamp."
                                             },
                                             "macAddress": {
                                                 "type": "string",
@@ -37166,10 +36941,7 @@
                                             "hostName": {
                                                 "type": "string",
                                                 "description": "Reader hostname. Live field name is hostName, not hostname.",
-                                                "example": "FX9600AABBCC",
-                                                "x-stoplight": {
-                                                    "id": "isnrr8w7gbtta"
-                                                }
+                                                "example": "FX9600AABBCC"
                                             }
                                         }
                                     },
@@ -38124,10 +37896,7 @@
                                                             },
                                                             "systemtime": {
                                                                 "type": "string",
-                                                                "description": "Reader system clock value. Its format can differ from the envelope timestamp.",
-                                                                "x-stoplight": {
-                                                                    "id": "l9tm05nhizwc8"
-                                                                }
+                                                                "description": "Reader system clock value. Its format can differ from the envelope timestamp."
                                                             },
                                                             "macAddress": {
                                                                 "type": "string",
@@ -38228,10 +37997,7 @@
                                                             "hostName": {
                                                                 "type": "string",
                                                                 "description": "Reader hostname. Live field name is hostName, not hostname.",
-                                                                "example": "FX9600AABBCC",
-                                                                "x-stoplight": {
-                                                                    "id": "isnrr8w7gbtta"
-                                                                }
+                                                                "example": "FX9600AABBCC"
                                                             }
                                                         }
                                                     },

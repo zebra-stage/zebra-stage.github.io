@@ -1,4 +1,4 @@
-﻿Use this guide to enable, configure, and manage Impinj Gen2X features on Zebra fixed RFID readers using both MQTT and REST APIs. These features are currently supported with Firmware 4.0.8 and above, with additional fixed reader support coming soon.
+﻿Use this guide to enable, configure, and manage Impinj Gen2X features on Zebra fixed RFID readers using both MQTT and REST APIs. These features are currently supported by FXR and FX/ATR fixed readers with Firmware 4.0.8 and above.
 
 ## Overview
 
@@ -30,7 +30,7 @@ Use either interface based on your deployment and integration architecture.
 
 ### Authentication
 
-1. Send `PUT /cloud/localRestLogin`.
+1. Send `GET /cloud/localRestLogin`.
 2. Extract the access token from the login response.
 3. Add the token to all protected requests.
 

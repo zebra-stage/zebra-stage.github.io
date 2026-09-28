@@ -19,7 +19,7 @@ var CATEGORY_LABELS = {
   firmware: 'Firmware',
   userapp: 'User Apps',
   impinjgen2x: 'Impinj Gen2X',
-  ble: 'Bluetooth LE',
+  ble: 'BLE',
   'management-events': 'Management Events',
   'tag-data-events': 'Tag Data Events',
   'ble-data-events': 'BLE Data Events'
