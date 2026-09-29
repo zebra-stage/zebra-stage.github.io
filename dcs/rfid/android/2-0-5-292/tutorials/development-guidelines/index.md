@@ -1,4 +1,5 @@
-# Development Guidelines for TC501, TC701, TC201 & ET4 Tablets
+# Development Guidelines
+## **TC501, TC701, TC201 & ET4 Tablets**
 
 ## Overview
 
@@ -18,9 +19,9 @@ Separate RFID firmware updates are no longer required. RFID enhancements are now
 
 Periodic Start/Stop Triggers have been eliminated. The system now wakes up instantly only when the scan button is pressed, which eliminates background battery waste.
 
-### Focused Customization (CSP)
+### Focused Customization
 
-The new CSP is focused strictly on foundational needs, such as factory reset and region configuration, to provide a more secure and stable platform.
+The new customization is focused strictly on foundational needs, such as factory reset and region configuration, to provide a more secure and stable platform.
 
 ### Unified Data Connectivity
 
