@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkzebra_handheld_rfid_iotc=self.webpackChunkzebra_handheld_rfid_iotc||[]).push([["1668"],{6569(e,r,a){a.r(r),a.d(r,{default:()=>u});var s=a(4848);a(6540);var d=a(4164),c=a(4308),h=a(8287),n=a(2831),t=a(6584);function u(e){return(0,s.jsx)(c.e3,{className:(0,d.A)(h.G.wrapper.docsPages),children:(0,s.jsx)(t.A,{children:(0,n.v)(e.route.routes)})})}}}]);
