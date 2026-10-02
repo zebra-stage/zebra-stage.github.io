@@ -1970,6 +1970,15 @@ public boolean executeCommand(DCSSDKDefs.DCSSDK_COMMAND_OPCODE opCode, String in
 </code>
 </pre>
 
+                                                                                            <p><strong>NOTE:</strong> A USB scanner restart may be required once in the following scenarios:</p>
+
+                                                                                            <ul>
+                                                                                                <li>Upgrading your application's Zebra <code>barcode_scanner_library</code> from version 2.7.2.0 or older to 2.7.3.0 or newer.</li>
+                                                                                                <li>Connecting a USB scanner previously used with an application that uses an older (&le; 2.7.2.0) Zebra SDK library to an application that uses a newer (&ge; 2.7.3.0) Zebra SDK library.</li>
+                                                                                            </ul>
+
+                                                                                            <p>This does not apply to brand new, unused scanners. If you need to automate the scanner reboot, this can be done programmatically - refer to <a href="#reboot-scanner">Reboot Scanner</a>.</p>
+
                                                                                             <h3 id="led-on-off" class="anchor"><a class="heading-anchor" href="#led-on-off"><span></span></a>LED On/Off</h3>
 
                                                                                             <p>The following UI is used to explain the LED ON/OFF states of the scanner. Code snippets for establishing a Bluetooth connection with the scanner are given above.</p>
@@ -2071,6 +2080,51 @@ public boolean executeCommand(DCSSDKDefs.DCSSDK_COMMAND_OPCODE opCode, String in
         }
     }
     return false;
+}
+</code>
+</pre>
+
+                                                                                            <h3 id="reboot-scanner" class="anchor"><a class="heading-anchor" href="#reboot-scanner"><span></span></a>Reboot Scanner: USB (SNAPI) Connection / Bluetooth (SSI) Connection</h3>
+
+                                                                                            <p>This function enables developers to programmatically restart the scanners.</p>
+
+                                        <pre class="prettyprint">
+<code>
+public boolean rebootZebraScanner(int scannerId, SDKHandler sdkHandler) {
+    if (sdkHandler == null) {
+        Log.e("ScannerReboot", "Error: SDKHandler instance is null.");
+        return false;
+    }
+
+    // 1. Construct the XML to trigger Action Attribute 6004 (Device Reboot)
+    String inXML = "&lt;inArgs>" +
+        "&lt;scannerID>" + scannerId + "&lt;/scannerID>" +
+        "&lt;cmdArgs>" +
+        "&lt;arg-xml>" +
+        "&lt;attrib_list>" +
+        "&lt;attribute>" +
+        "&lt;id>6004&lt;/id>" +
+        "&lt;datatype>X&lt;/datatype>" +
+        "&lt;value>&lt;/value>" +
+        "&lt;/attribute>" +
+        "&lt;/attrib_list>" +
+        "&lt;/arg-xml>" +
+        "&lt;/cmdArgs>" +
+        "&lt;/inArgs>";
+
+    StringBuilder outXML = new StringBuilder();
+
+    // 2. Execute the command
+    boolean isSuccess = sdkHandler.executeCommand(DCSSDKDefs.DCSSDK_COMMAND_OPCODE.DCSSDK_RSM_ATTR_SET, inXML, outXML, scannerId);
+
+    // 3. Handle the result
+    if (isSuccess) {
+        Log.d("ScannerReboot", "Reboot command sent successfully to scanner ID: " + scannerId + ". Expect a disconnect event shortly.");
+    } else {
+        Log.e("ScannerReboot", "Failed to send reboot command. Error output: " + outXML.toString());
+    }
+
+    return isSuccess;
 }
 </code>
 </pre>
