@@ -217,6 +217,35 @@ ul#scanners_list {
     padding: 2px 6px;
 }
 
+.alert-important {
+    background-color: #fff3cd;
+    border-left: 5px solid #ff6b6b;
+    border-radius: 4px;
+    padding: 16px 20px;
+    margin: 15px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.alert-important::before {
+    content: "⚠️";
+    font-size: 2.5em;
+    flex-shrink: 0;
+}
+
+.alert-important-text {
+    font-size: 1.4rem;
+    color: #333;
+    margin: 0;
+    line-height: 3;
+}
+
+.alert-important-text strong {
+    color: #d32f2f;
+    font-weight: 600;
+}
+
 /*
     Following section defines the styles for tab controls for multiple code segments.
 */
@@ -382,3 +411,102 @@ ul#scanners_list {
   font-weight: bold;     /* Bold */
   font-style: italic;    /* Italic */
 }
+
+/*
+    Heading-anchor "copy link" icon - MAIN (h1) SECTION HEADERS ONLY.
+
+    Every heading across dcs/scanners carries this markup:
+        <hN class="anchor"><a class="heading-anchor" href="#id"><span></span></a>Heading Text</hN>
+    The link itself stays in the markup on every heading level (h1-h4) for
+    back-compat, but it is only ever made visible on h1 "main section" titles
+    (About, ADF 2.0 Guide, Appendix, etc.) - sub-headings are left untouched so
+    the page doesn't get an icon on every single heading.
+
+    On h1, the icon sits AFTER the heading text (reordered via flexbox, since
+    the <a> itself is first in the markup) and vertically centered with it. No
+    background change on hover - just the icon fading in/out.
+
+    dcs_script.js turns a click into a copy-to-clipboard action (instead of
+    letting the browser navigate) and injects the .heading-anchor-tooltip
+    bubble styled below, so the hover text and "Copied!" confirmation don't
+    rely on the native, unstylable title="" attribute.
+*/
+.heading-anchor {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    opacity: 0;
+    font-size: 0.5em;
+    line-height: 1;
+    color: #999;
+    text-decoration: none;
+    vertical-align: middle;
+    transition: opacity 0.2s ease, color 0.2s ease;
+}
+.heading-anchor::before {
+    font-family: 'FontAwesome';
+    content: "\f0c1";
+}
+.heading-anchor:hover,
+.heading-anchor:focus {
+    color: #005580;
+}
+
+h1.anchor {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+}
+h1.anchor .heading-anchor {
+    order: 2;
+    margin-left: 10px;
+}
+h1.anchor:hover .heading-anchor,
+h1.anchor:focus-within .heading-anchor,
+h1.anchor .heading-anchor:focus {
+    opacity: 1;
+}
+
+/* Tooltip bubble injected by dcs_script.js next to the heading-anchor icon */
+.heading-anchor-tooltip {
+    position: absolute;
+    left: 50%;
+    bottom: 100%;
+    transform: translateX(-50%) translateY(4px) scale(0.9);
+    transform-origin: bottom center;
+    margin-bottom: 8px;
+    background: #333;
+    color: #fff;
+    font-size: 12px;
+    font-weight: normal;
+    text-transform: none;
+    padding: 4px 9px;
+    border-radius: 4px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 10;
+}
+.heading-anchor-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #333;
+}
+.heading-anchor:hover .heading-anchor-tooltip,
+.heading-anchor:focus .heading-anchor-tooltip,
+.heading-anchor-tooltip.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+}
+/* Forces the tooltip closed a few seconds after a copy, even while the
+   mouse is still hovering the icon (otherwise :hover above would keep
+   "Copied!" open indefinitely until the reader moves away). Cleared on
+   mouseleave so the next hover shows the normal tooltip again. */
+.heading-anchor-tooltip.suppressed { opacity: 0 !important; }
+.heading-anchor-tooltip.copied { background: #2e7d32; }
+.heading-anchor-tooltip.copied::after { border-top-color: #2e7d32; }

@@ -3667,20 +3667,52 @@ When unlocking the device (e.g. pressing the power button or swiping to unlock),
 
 <hr>
 
-<h3 id="ssocloudpasscodeauthenticationwithmpin" class="anchor"><a class="heading-anchor" href="#ssocloudpasscodeauthenticationwithmpin"><span></span></a>SSO/Cloud Passcode Authentication (with MPIN)</h3>
+<h3 id="mpinprotectedguardiansafe" class="anchor"><a class="heading-anchor" href="#mpinprotectedguardiansafe"><span></span></a>MPIN-Protected Guardian Safe</h3>
 
-<p>When using <strong>Guardian Safe,</strong> users can authenticate directly via <em>SSO or a Zebra DNA Cloud Passcode, followed by an MPIN entry.</em> This approach removes the dependency on physical tokens (e.g., barcodes or NFC cards) delivering a secure and frictionless login experience. Furthermore, it streamlines administration by eliminating the need to provision physical tokens or perform time-consuming re-enrollments for lost or damaged tokens, ultimately increasing user convenience. For enhanced security, the MPIN follows a zero-knowledge model; it is encrypted, remains device-specific, and is never stored. An active internet connection is required to utilize SSO or Zebra DNA Cloud Passcode authentication.</p>
+<p><a href="#guardiansafe">Guardian Safe</a> securely stores credentials for supported native applications and websites on <em>Shared Devices,</em> protecting them alongside <a href="#personalizeddevicesettings">Personalized Device Settings</a> (if enabled) with a Master Personal Identification Number (MPIN). The user signs in using the administrator-configured authentication method — such as Single Sign-On (SSO), Zebra DNA Cloud Passcode, NFC, or Barcode — and enters the MPIN when Guardian Safe requests access. After setup, the same protected profile remains accessible through any supported sign-in method configured for the device.</p>
+
+<p>Rather than tying data to a single physical sign-in source, enabling the MPIN allows a <em>Shared Device</em> user to access the same protected profile across multiple devices. While the MPIN protects Guardian Safe data, it does not replace the authentication factors configured by the administrator. </p>
+
+<p><strong>Security Principles &amp; Access Control:</strong></p>
+
+<ul>
+<li><strong>Data Encryption, Not Authentication:</strong> The MPIN functions strictly as a data-encryption mechanism to secure credentials and personalized settings. It does not replace Face recognition, Passcodes, SSO, NFC, Barcode, or any other primary login factor configured by the administrator.</li>
+
+<li><strong>Administrative Override:</strong> The administrator-configured authentication flow retains full control over initial device sign-in and Guardian Safe entry.</li>
+
+<li><strong>Biometric Interoperability:</strong> For NFC or Barcode workflows, Guardian Safe's <a href="#savecredentials">Save Credentials</a> and <a href="#autopopulatecredentials">Auto-Fill</a> processes may prompt for Face recognition before requesting the MPIN when Face is configured as the Primary Authentication Factor.</li>
+</ul>
+
+<p><strong>Profile Portability &amp; Data Continuity:</strong></p>
+
+<ul>
+<li><strong>Cross-Method Portability:</strong> After MPIN setup or migration, a Shared Device user accesses a single, unified profile across all supported sign-in workflows. Changing the primary sign-in source does not generate a separate profile.</li>
+
+<li><strong>Dynamic Settings Management:</strong> When enabled, <a href="#personalizeddevicesettings">Personalized Device Settings</a> are dynamically linked to the MPIN-protected profile and applied automatically upon validation. Any modifications made to these settings are updated in real-time.</li>
+
+<li><strong>Session Cleanup:</strong> Upon logout or user change, the device automatically restores its baseline default settings before the next session begins.</li>
+</ul>
+
+<p><strong>Synchronization &amp; Offline Behavior:</strong></p>
+
+<ul>
+<li><strong>Data Synchronization:</strong> When profiles are synchronized across devices, entering the existing MPIN on another supported <em>Shared Device</em> grants access to synchronized Guardian Safe data and settings. Data synchronization and initial retrieval depend on network availability and the deployment configuration.</li>
+
+<li><strong>Offline Operation:</strong> Once a MPIN-protected profile is active, cached profiles can only be unlocked offline via the validated MPIN in accordance with the deployment policy. Switching back to standalone NFC or Barcode sign-in methods will not migrate or recover the MPIN-secured Guardian Safe data. Instead, signing in without the validated MPIN initializes a completely fresh Guardian Safe profile, rendering the previous MPIN-secured data inaccessible during that session. </li>
+</ul>
+
+<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <b><code>IMPORTANT:</code>  Unsupported Configuration:</b> The simultaneous combination of pure SSO (where SSO is the Primary Authentication Factor, no Comparison Source is used, and no Secondary Authentication Factor is configured), enabled MPIN, and enabled Personalized Settings is not supported in this release. Support for this configuration is planned for a future release.</p>
 
 <p><br></p>
 
 <h4 id="adminsetup-22" class="anchor"><a class="heading-anchor" href="#adminsetup-22"><span></span></a>Admin Setup</h4>
 
-<p>Administrators must configure the authentication settings to enable tokenless access for Guardian Safe. These settings are managed via the Shared Device Authentication section within the Enterprise Mobility Management (EMM) console or Zebra DNA Cloud.</p>
+<p>Administrators must configure the user authentication settings and enable Guardian Safe with MPIN. These settings configured through Managed Configurations within the Enterprise Mobility Management (EMM) console or Zebra DNA Cloud.</p>
 
 <p><strong>Configure <a href="../mc">Managed Configurations</a>:</strong></p>
 
 <ol>
-<li>In <a href="../mc/#shareddeviceauthentication">Shared Device Authentication</a>, to indicate that a physical barcode or NFC card is not required for this workflow, under <strong>User Verification Methods</strong> set the following based on the required authentication method:
+<li>In <a href="../mc/#shareddeviceauthentication">Shared Device Authentication</a>, configure the required authentication schemes, including comparison source and verification factors. Under <strong>User Verification Methods,</strong> select a setting below based on the required authentication method: SSO, Cloud Passcode, or NFC/Barcode.
 
 
 <ul>
@@ -3700,6 +3732,17 @@ When unlocking the device (e.g. pressing the power button or swiping to unlock),
 <li><strong>Comparison Source:</strong> CLOUD</li>
 
 <li><strong>Primary Authentication Factor:</strong> CLOUD_PASSCODE</li></ul>
+</li>
+
+<li><strong>For NFC or Barcode:</strong>
+
+
+<ul>
+<li><strong>Comparison Source:</strong> NFC or Barcode (as required)</li>
+
+<li><strong>Primary Authentication Factor:</strong> Configure as needed.</li>
+
+<li><strong>Secondary Authentication Factor:</strong> Configure as needed.     </li></ul>
 </li></ul>
 </li>
 
@@ -3719,15 +3762,25 @@ When unlocking the device (e.g. pressing the power button or swiping to unlock),
 
 <h4 id="usage-21" class="anchor"><a class="heading-anchor" href="#usage-21"><span></span></a>Usage</h4>
 
-<p>The following workflows detail how the end-user can enroll, authenticate, and manage credentials using the tokenless SSO and Zebra DNA Cloud Passcode features within Guardian Safe.</p>
+<p>For users with existing Guardian Safe data secured by an eligible NFC or Barcode source, the system automatically migrates the data during the first login after MPIN setup.</p>
+
+<p>To complete the migration, start the login process using the original eligible NFC or Barcode source, complete the prompted MPIN configuration step, then allow Identity Guardian to successfully transfer and integrate the existing data into the new MPIN-protected profile. The steps are provided below.</p>
+
+<p>The following workflows detail how the end-user can enroll, authenticate, and manage credentials using SSO, Zebra DNA Cloud Passcode, NFC, or Barcode with Guardian Safe and MPIN.</p>
 
 <p><br></p>
 
-<h5 id="ssocloudpasscodemigration" class="anchor"><a class="heading-anchor" href="#ssocloudpasscodemigration"><span></span></a>SSO/Cloud Passcode Migration</h5>
+<h5 id="migrationfirsttimesetup" class="anchor"><a class="heading-anchor" href="#migrationfirsttimesetup"><span></span></a>Migration &amp; First-Time Setup</h5>
 
-<p>Users previously enrolled with a barcode or NFC card must perform a mandatory recovery flow to reset their profile and migrate to the new SSO or Cloud Passcode system.</p>
+<p>For environments where Guardian Safe data is accessed via an eligible NFC or Barcode source, users must perform a mandatory recovery and migration flow.</p>
 
-<p><strong>Migration Steps:</strong></p>
+<ul>
+<li><strong>One-Time Migration:</strong> For users with existing Guardian Safe data secured by an eligible NFC card or Barcode, the system automatically migrates the data during the first login after MPIN setup.</li>
+
+<li><strong>Migration Interruptions:</strong> Canceling or failing the migration process keeps the existing protected data locked until the approved setup or migration flow is successfully completed.</li>
+</ul>
+
+<p><strong>Migration &amp; Setup Steps:</strong></p>
 
 <table class="facelift" style="width:100%" border="1">
   <colgroup>
@@ -3751,7 +3804,7 @@ When unlocking the device (e.g. pressing the power button or swiping to unlock),
   </tr>
     <tr>
         <td style="vertical-align: top; padding: 10px 20px 20px 10px;">
-        2. Authenticate using SSO or Cloud Passcode, depending on the configuration.
+        2. Authenticate using the configured authentication method: SSO, Cloud Passcode, NFC, or Barcode. 
         </td>
         <td style="vertical-align: top; padding: 10px 10px 20px 10px;">
             <div style="display: flex; gap: 5px; align-items: flex-start;">
@@ -3794,7 +3847,7 @@ When unlocking the device (e.g. pressing the power button or swiping to unlock),
 
   <tr>
     <td style="vertical-align: top; padding: 10px 20px 20px 10px;">
-      5. Authenticate again using SSO or Cloud Passcode.
+      5. Authenticate again using the configured authentication scheme: SSO, Cloud Passcode, or NFC/Barcode.
     </td>
     <td style="vertical-align: top; padding: 10px 10px 20px 10px;">
         <div style="display: flex; gap: 5px; align-items: flex-start;">
@@ -3825,7 +3878,7 @@ When unlocking the device (e.g. pressing the power button or swiping to unlock),
 
   <tr>
     <td style="vertical-align: top; padding: 10px 20px 20px 10px;">
-      7. A confirmation message appears. Tap <strong>Yes.</strong> The system deletes the user's previous barcode/NFC data. 
+      7. A confirmation message appears. Tap <strong>Yes.</strong> The system deletes the user's MPIN-protected Guardian Safe data. 
     </td>
     <td style="vertical-align: top; text-align: left; padding: 10px 10px 20px 10px;">
       <img alt="image" style="height: 350px; width: auto; max-width: 100%; object-fit: contain;" src="../../images/3-2/forgot-mpin-confirm.png">
@@ -3834,7 +3887,7 @@ When unlocking the device (e.g. pressing the power button or swiping to unlock),
 
   <tr>
     <td style="vertical-align: top; padding: 10px 20px 20px 10px;">
-      8. Re-authenticate with SSO or Cloud Passcode when prompted. 
+      8. Re-uuthenticate using the configured authentication method when prompted: SSO, Cloud Passcode, NFC, or Barcode.
     </td>
     <td style="vertical-align: top; padding: 10px 10px 20px 10px;">
         <div style="display: flex; gap: 5px; align-items: flex-start;">
@@ -3867,9 +3920,17 @@ When unlocking the device (e.g. pressing the power button or swiping to unlock),
 
 <p><br></p>
 
-<h5 id="firsttimeenrollmentssocloudpasscodeauthentication" class="anchor"><a class="heading-anchor" href="#firsttimeenrollmentssocloudpasscodeauthentication"><span></span></a>First-Time Enrollment (SSO/Cloud Passcode Authentication)</h5>
+<h5 id="firsttimeenrollment" class="anchor"><a class="heading-anchor" href="#firsttimeenrollment"><span></span></a>First-Time Enrollment</h5>
 
-<p>New users without existing barcode or NFC cards follow a streamlined enrollment process.</p>
+<p>New users follow the MPIN enrollment process immediately after authenticating via the configured SSO, Zebra DNA Cloud Passcode, NFC, or Barcode method.</p>
+
+<p>During this initial login:</p>
+
+<ul>
+<li><strong>Existing Profiles:</strong> If an MPIN-protected profile already exists for the user, Identity Guardian prompts to "Enter MPIN."</li>
+
+<li><strong>New Profiles &amp; Migration:</strong> If no profile exists, the system prompts to "Create MPIN" or automatically initiates the approved migration flow.</li>
+</ul>
 
 <p><strong>MPIN Requirements:</strong> When configuring an MPIN, the passcode must meet the following criteria:</p>
 
@@ -3902,7 +3963,7 @@ When unlocking the device (e.g. pressing the power button or swiping to unlock),
   </tr>
   <tr>
       <td style="vertical-align: top; padding: 10px 20px 20px 10px;">
-        2. Authenticate using SSO or Cloud Passcode, depending on the configuration.
+        2. Authenticate using the configured authentication method: SSO, Cloud Passcode, NFC, or Barcode.
         </td>
         <td style="vertical-align: top; padding: 10px 10px 20px 10px;">
             <div style="display: flex; gap: 5px; align-items: flex-start;">
@@ -3935,7 +3996,7 @@ When unlocking the device (e.g. pressing the power button or swiping to unlock),
 
 <h5 id="loginusageflow" class="anchor"><a class="heading-anchor" href="#loginusageflow"><span></span></a>Login &amp; Usage Flow</h5>
 
-<p><strong>Daily Authentication (After Setup):</strong> Once a user has successfully transitioned to or enrolled with a SSO/Cloud Passcode and an MPIN, their subsequent logins are streamlined.</p>
+<p><strong>Daily Authentication (After Setup):</strong> Once a user has successfully completed the administrator-configured authentication (SSO, Cloud Passcode, NFC, or Barcode) and MPIN setup, the user's supported Personalized Device Settings are applied (if enabled) and subsequent logins to Guardian Safe-protected native or web apps are streamlined. Users are not required to enter the MPIN for every device login session; however, a new session prompts for MPIN validation. On logout or user change, the device automatically restores its baseline deployment defaults.</p>
 
 <table class="facelift" style="width:100%" border="1" padding="5px">
   <colgroup>
@@ -3958,7 +4019,7 @@ When unlocking the device (e.g. pressing the power button or swiping to unlock),
   </tr>
   <tr>
         <td style="vertical-align: top; padding: 10px 20px 20px 10px;">
-        2. Authenticate using SSO or Cloud Passcode, depending on the configuration.
+        2. Authenticate using the configured authentication method: SSO, Cloud Passcode, NFC, or Barcode.
         </td>
         <td style="vertical-align: top; padding: 10px 10px 20px 10px;">
             <div style="display: flex; gap: 5px; align-items: flex-start;">
@@ -4032,7 +4093,7 @@ When unlocking the device (e.g. pressing the power button or swiping to unlock),
 
 <h5 id="mpinbehaviorandmanagement" class="anchor"><a class="heading-anchor" href="#mpinbehaviorandmanagement"><span></span></a>MPIN Behavior and Management</h5>
 
-<p><strong>Incomplete MPIN Setup:</strong> If a user bypasses MPIN setup during their initial workflow, the following restrictions apply:</p>
+<p><strong>Incomplete MPIN Setup:</strong> If a user bypasses MPIN setup during the initial workflow, the following restrictions apply:</p>
 
 <ul>
 <li><strong>Continued Usage:</strong> The user can continue using standard Identity Guardian features.</li>
@@ -4058,7 +4119,7 @@ When unlocking the device (e.g. pressing the power button or swiping to unlock),
 
 <p><br></p>
 
-<p><strong>Skipped MPIN Entry (During Daily Login):</strong> If a user authenticates via SSO/Cloud Passcode but fails to enter their MPIN when prompted:</p>
+<p><strong>Skipped MPIN Entry (During Daily Login):</strong> If a user does not enter the MPIN when prompted after the configured sign-in method:</p>
 
 <ul>
 <li>Stored credentials remain hidden.</li>
@@ -4086,7 +4147,7 @@ When unlocking the device (e.g. pressing the power button or swiping to unlock),
 
 <h5 id="mpinresetandrecovery" class="anchor"><a class="heading-anchor" href="#mpinresetandrecovery"><span></span></a>MPIN Reset and Recovery:</h5>
 
-<p><strong>Changing an Existing MPIN:</strong> Users should proactively change their MPIN for periodic security updates or if they suspect their current MPIN is compromised.</p>
+<p><strong>Changing an Existing MPIN:</strong> Changing the MPIN re-encrypts the user's saved credentials and supported Personalized Device Settings. If the current MPIN or the existing protected data cannot be validated, the modification process fails securely to prevent unauthorized access.</p>
 
 <table class="facelift" style="width:100%" border="1">
   <colgroup>
@@ -4109,7 +4170,7 @@ When unlocking the device (e.g. pressing the power button or swiping to unlock),
   </tr>
   <tr>
         <td style="vertical-align: top; padding: 10px 20px 20px 10px;">
-        2. Authenticate using SSO or Cloud Passcode, depending on the configuration.
+        2. Authenticate using the configured authentication method: SSO, Cloud Passcode, NFC, or Barcode.
         </td>
         <td style="vertical-align: top; padding: 10px 10px 20px 10px;">
             <div style="display: flex; gap: 5px; align-items: flex-start;">
@@ -4150,6 +4211,8 @@ When unlocking the device (e.g. pressing the power button or swiping to unlock),
 
 <p><strong>Forgot MPIN:</strong> If an MPIN is forgotten, <em>it cannot be recovered.</em> To regain access, the user must reset the MPIN, which deletes all Identity Guardian stored data (both locally on the device and in the cloud).</p>
 
+<p>An MPIN cannot be recovered. Initiating the "Forgot MPIN" process performs a clean-slate reset, which permanently deletes the MPIN, saved Guardian Safe credentials, and all MPIN-protected Personalized Device Settings. This reset process cannot restore older NFC- or Barcode-secured database copies and cannot be undone.</p>
+
 <table class="facelift" style="width:100%" border="1">
   <colgroup>
     <col style="width: 40%;">
@@ -4171,7 +4234,7 @@ When unlocking the device (e.g. pressing the power button or swiping to unlock),
   </tr>
 <tr>
         <td style="vertical-align: top; padding: 10px 20px 20px 10px;">
-        2. Authenticate using SSO or Cloud Passcode, depending on the configuration.
+        2. Authenticate using the configured authentication method: SSO, Cloud Passcode, NFC, or Barcode.
         </td>
         <td style="vertical-align: top; padding: 10px 10px 20px 10px;">
             <div style="display: flex; gap: 5px; align-items: flex-start;">
@@ -4213,7 +4276,7 @@ When unlocking the device (e.g. pressing the power button or swiping to unlock),
 
   <tr>
     <td style="vertical-align: top; padding: 10px 20px 20px 10px;">
-      5. A confirmation message appears. Tap <strong>Yes.</strong> The system deletes the user's previous barcode/NFC data.
+      5. A confirmation message appears. Tap <strong>Yes.</strong> The system deletes the user's MPIN-protected Guardian Safe data.
     </td>
     <td style="vertical-align: top; text-align: left; padding: 10px 10px 20px 10px;">
       <img alt="image" style="height: 350px; width: auto; max-width: 100%; object-fit: contain;" src="../../images/3-2/forgot-mpin-confirm.png">
