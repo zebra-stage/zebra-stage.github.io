@@ -27,7 +27,7 @@ files in `dcs/rfid/rfd40-90-mqtt/` by hand: change the docs repository or this f
 | `build.sh` | Runs the whole build and replaces `dcs/rfid/rfd40-90-mqtt/` |
 | `docusaurus.stage.config.ts` | Wraps the docs site's configuration: the stage address and path, the MQTT API docs only, the trimmed navigation and footer |
 | `remark-unlink.mjs` | Turns links into unpublished sections into plain text. Points Quick Start links at the summary page, and links to the guides listed in `REWRITES` at the reference page on the same subject, under that page's title |
-| `apply-stage-changes.mjs` | Edits a temporary copy of the docs repository: the sidebar entry, the breadcrumbs, the 404 page and the PDF settings. Each edit stops the build if the text it expects has moved |
+| `apply-stage-changes.mjs` | Edits a temporary copy of the docs repository: the sidebar entry, the breadcrumbs, the 404 page, the PDF settings, and the MQTT API page's pointer to the Reader Capability Matrix in Resources. Each edit stops the build if the text it expects has moved |
 | `pages/quick-start.mdx` | The Quick Start summary page. It exists only on the staging site |
 | `redirects/` | The two redirect pages, `rfd40-90-mqtt/` and `rfd40-90-mqtt/api-reference/`, which open the MQTT API index |
 | `verify.mjs` | Fails the build if any link, image or anchor does not resolve, or if a page points outside the section |

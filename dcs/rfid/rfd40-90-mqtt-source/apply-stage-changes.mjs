@@ -73,3 +73,9 @@ edit('scripts/site/generate-pdfs.mjs', (t) => {
   s = once(file, s, "['docusaurus', 'serve', '--dir',", "['docusaurus', 'serve', '--config', 'docusaurus.stage.config.ts', '--dir',");
   return s;
 });
+
+// 5. MQTT API page: the Reader Capability Matrix is in Resources, which is not published here,
+// so drop the sentence that points to it.
+edit('api/mqtt/reference/index.mdx', (t) =>
+  once('api/mqtt/reference/index.mdx', t, ' See the [Reader Capability Matrix](/resources/supported-readers-and-features#capability-matrix).', ''),
+);
