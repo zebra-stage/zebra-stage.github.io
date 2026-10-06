@@ -1,0 +1,161 @@
+---
+id: quick-start
+title: "Quick Start: Read Your First Tag"
+sidebar_label: "Quick Start"
+draft: false
+description: "The shortest path from a new RFD40 or RFD90 reader to live tag reads over MQTT: six phases, the proof that each one worked, the commands you send, and the three rules that prevent most first-day failures."
+sidebar_custom_props: { emoji: "⏱️", card: "From a new reader to live tag reads, in six phases." }
+doc_type: tutorial
+page_meta:
+  - "Audience: New integrators"
+  - "Use: get a first reply and first tag reads, then know where to go next"
+---
+
+You never talk to the reader directly. The reader and your application are both clients of the same MQTT broker: you publish a command to the reader's command topic, the reader publishes its reply on its response topic, and while it reads tags it publishes them on its data topic. Getting from a new reader to live tag reads means giving the reader a network and a broker, then building that path one checkpoint at a time.
+
+## The Path at a Glance {#at-a-glance}
+
+| Phase | What you do | How you know it worked |
+|---|---|---|
+| 1 · Prepare | Run an MQTT 3.1.1 broker that the reader's network can reach | `nc -vz <broker-host> 1883` connects from that network |
+| 2 · Bootstrap | Use 123RFID Desktop over USB-C to set the region, Wi-Fi and a first `MDM` endpoint | The endpoint shows **Connected** in 123RFID Desktop |
+| 3 · First command | Publish `get_version` on the `MDM` command topic | A reply with code `0` echoes your `requestId` |
+| 4 · Inspect | Publish `get_endpoint_config` | The `MDM` endpoint is listed as active |
+| 5 · Add endpoints | Add an active `CTRL` endpoint for control and an active `DATA1` endpoint for tag data | Both adds return code `0`, and a `CONNECTED` `mqttConnEVT` arrives for `CTRL` |
+| 6 · Inventory | Publish `control_operation` `START`, then `STOP`, on the `CTRL` command topic | `dataEVT` messages arrive, then stop |
+
+Phase 2 is the only one outside MQTT: until the reader has a first endpoint, no command can reach it. Each phase depends on the one before, so stop at the first checkpoint you cannot see and fix it there.
+
+## Three Rules That Prevent Most First-Day Failures {#rules}
+
+1. **You write only the middle of a topic.** Every topic is `<tenantId>/<middle segment>/<serial>`. The reader adds the tenant ID in front and its serial number at the end, so a topic you configure is only the middle, such as `CTRL/clients/cmnd`. Topics are case-sensitive: `zebra` and `ZEBRA` are different tenants. See [Topics and Channels](/api-reference/mqtt/protocol-reference/topic-structure).
+2. **Subscribe before you publish.** Replies, alerts and tag data are not retained, so anything published before your subscription starts is lost. Pair each reply with its request by `requestId`; MQTT does not do it for you.
+3. **A `DATA1` endpoint needs two publish topics.** The reader routes by position, and tag data goes out on the second entry, `publishTopics[1]`. With one entry, the endpoint is created, the command succeeds, and no tag data ever arrives. See [Endpoints and Topic Slots](/api-reference/mqtt/protocol-reference/endpoints-and-topic-slots).
+
+## 1 · Prepare the Network and Broker {#prepare}
+
+Any MQTT 3.1.1 broker works; [Eclipse Mosquitto](https://mosquitto.org) on a laptop is the quickest for an evaluation. From a computer on the network the reader will join, check the path:
+
+```bash
+nc -vz <broker-host> 1883
+```
+
+Give the reader an address it can reach on that network: a host name that resolves there, or the broker's IP address. Never use `localhost`, which means the reader itself.
+
+This page uses plain MQTT on port `1883` to keep the first read short. Plain MQTT sends everything unencrypted, credentials included, so use it only on a network you trust. [TLS and Authentication](/api-reference/mqtt/protocol-reference/tls-and-authentication) covers the move to port `8883`.
+
+## 2 · Bootstrap the Reader {#bootstrap}
+
+Connect the reader with a USB-C cable to a Windows computer running 123RFID Desktop, from `support.zebra.com`. Then:
+
+1. **Set the region** for where the reader will operate. The radio transmits only with a region set, and no MQTT command can change it.
+2. **Join Wi-Fi.** An RFD40 Standard has no Wi-Fi: skip this step, and once its endpoint is active, dock it in a communication cradle on a network that reaches the broker.
+3. **Add an `MDM` endpoint** with the broker's address, port `1883`, protocol `MQTT` and a tenant ID. This page uses the tenant `zebra`.
+4. **Activate the endpoint** and confirm that it reads **Connected**.
+
+Note the reader's serial number: it is the last segment of every topic. [The Connection Path](/api-reference/mqtt/protocol-reference/connection-and-session#connection-path) draws the whole journey as five stages, and this bootstrap stage in detail.
+
+## 3 · Send Your First Command {#first-command}
+
+Subscribe to the `MDM` topics first, and keep the subscriber open:
+
+```bash
+mosquitto_sub -h <broker-host> -p 1883 -t 'zebra/MDM/#' -v
+```
+
+In a second terminal, publish [`get_version`](/api-reference/mqtt/mgmt/get-version) to the command topic:
+
+```bash
+mosquitto_pub -h <broker-host> -p 1883 \
+  -t 'zebra/MDM/clients/cmnd/<serial>' \
+  -m '{"command":"get_version","requestId":"ver-001"}'
+```
+
+The reply arrives on `zebra/MDM/clients/resp/<serial>`. It echoes `ver-001`, carries `response.code` `0`, and reports the model, serial number, SKU and firmware versions in `readerVersion`. That one reply proves the whole loop: the reader receives your topic, answers on its own, and your broker connects the two.
+
+## 4 · Inspect the Reader's Endpoints {#inspect}
+
+Publish [`get_endpoint_config`](/api-reference/mqtt/mgmt/get-endpoint-config) on the same command topic:
+
+```bash
+mosquitto_pub -h <broker-host> -p 1883 \
+  -t 'zebra/MDM/clients/cmnd/<serial>' \
+  -m '{"command":"get_endpoint_config","requestId":"list-001"}'
+```
+
+`endpointResponse.savedEndpoints.epNames[]` names every saved endpoint, and `endpointResponse.activeEndpoints.epConfig[]` holds each active one. Check the names before you add endpoints: adding a name that already exists returns code `10`.
+
+## 5 · Add Control and Data Endpoints {#add-endpoints}
+
+A `CTRL` endpoint carries the RFID control commands and their replies. A `DATA1` endpoint carries tag data. Each endpoint connects when it is activated, without a reboot, so start a subscriber for each one first, in two more terminals:
+
+```bash
+mosquitto_sub -h <broker-host> -p 1883 -t 'zebra/CTRL/#' -v
+```
+
+```bash
+mosquitto_sub -h <broker-host> -p 1883 -t 'zebra/DATA/clients/data1event/+' -v
+```
+
+Then publish two [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) commands on the `MDM` command topic, each with `"operation": "add"`. The contract requires seven configuration fields: `endpointName` and `epType` from the table below, `"protocol": "MQTT"`, `"activate": true`, the broker's `url` and `port`, and `"verificationType": "VERIFY_NONE"` for plain MQTT. Add `"tenantId": "zebra"` so the topics match the ones you subscribed to:
+
+| `endpointName` | `epType` | Topics, as middle segments |
+|---|---|---|
+| `ctrlEP` | `CTRL` | Subscribe to `CTRL/clients/cmnd`. Publish to `CTRL/clients/resp`, `CTRL/clients/event` and `CTRL/clients/rfid`, in that order |
+| `dataEP` | `DATA1` | Publish to `DATA/clients/unused`, then `DATA/clients/data1event` |
+
+For the data endpoint, the order of the publish list is what matters:
+
+```json
+"publishTopics": [
+  { "topic": "DATA/clients/unused", "qos": 0, "retain": false },
+  { "topic": "DATA/clients/data1event", "qos": 1, "retain": false }
+]
+```
+
+The complete requests are the **Add control endpoint** and **Add data endpoint** examples on [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint). Each add returns code `0`. When the control endpoint connects, a `CONNECTED` [`mqttConnEVT`](/api-reference/mqtt/events/mqtt-connection-event) arrives on `zebra/CTRL/clients/rfid/<serial>`, and `get_endpoint_config` then lists both endpoints as active.
+
+## 6 · Run Your First Inventory {#inventory}
+
+The radio reads with the operating mode in force. When none has been configured, the reader uses `BALANCED_PERFORMANCE`, a good starting point; [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode) reads it back. Avoid `FAST_READ`: the contract states that data events are not currently supported with it. If you are unsure of the region, read it with [`get_current_region`](/api-reference/mqtt/mgmt/get-current-region) on the `MDM` command topic.
+
+Place a few tags a short distance from the reader, then publish [`control_operation`](/api-reference/mqtt/ctrl/control-operation) on `zebra/CTRL/clients/cmnd/<serial>`:
+
+```json title="control_operation request (contract example: Start inventory)"
+{
+  "command": "control_operation",
+  "requestId": "abcd1432",
+  "ctrlOprPayload": {
+    "controlType": "RFID",
+    "operation": "START"
+  }
+}
+```
+
+The reply is code `0`, and [`dataEVT`](/api-reference/mqtt/data/tag-data-event) messages start to arrive in the data subscriber, several tag records to a message. Each record identifies a tag by `EPCid`; which other fields appear depends on the operating mode's metadata flags. A `dataEVT` has no `requestId` and no `response`, because it is an event, not a reply.
+
+To stop, send the same command with `"operation": "STOP"`. Code `0` means the inventory stopped, and code `12` means the radio was already idle, which is not a failure.
+
+## If a Checkpoint Fails {#troubleshooting}
+
+| What you see | Likely cause | What to do |
+|---|---|---|
+| No reply to `get_version` | A topic segment is wrong, or the `MDM` endpoint is not active | Check the tenant ID, the middle segment and the serial number one at a time. Topics are case-sensitive, and `zebra/MDM/#` shows the exact form of the serial that the reader uses. Check the endpoint in 123RFID Desktop |
+| Code `3` on `get_endpoint_config`, `get_operating_mode`, `get_current_region` or `get_post_filter` | The reader could not gather the information at that moment | Retry after a short delay |
+| Code `10` on an add | An endpoint with that name exists | Use another name, or delete the existing endpoint first |
+| Code `23`, `25`, `26` or `27` on an add | An invalid enum value, more than 3 publish topics, more than 1 subscribe topic, or a tenant ID that is too long | Check `epType`, `protocol` and `verificationType`, trim the topic lists, and use a tenant ID of at most 48 characters |
+| An endpoint is accepted but never connects | The reader cannot reach the broker at that `url` and `port`, and keeps trying | Check the address and port from the reader's network |
+| Code `11` on `START` or `set_operating_mode` | An inventory is already running | Send `STOP` first |
+| `START` returns `0`, but no tag data arrives | `dataEP` is not active or has only one publish topic, the subscription does not match, or a post-filter excludes every tag | Check the endpoint with `get_endpoint_config`, subscribe to `zebra/DATA/clients/data1event/+`, and read the rules with [`get_post_filter`](/api-reference/mqtt/ctrl/get-post-filter) |
+| The inventory stops by itself | The operating mode has a stop condition, such as a tag count or a timeout | Read it with `get_operating_mode` |
+
+Every code, with its cause and recommended action, is in [Response Codes](/api-reference/mqtt/response-codes).
+
+## What You Built {#what-you-built}
+
+- **123RFID Desktop** gave the reader what MQTT cannot: its region, its network and a first endpoint.
+- **The `MDM` endpoint** carries management commands and their replies, paired by `requestId`.
+- **`config_endpoint`** added a `CTRL` endpoint for control and a `DATA1` endpoint for tag data. Each connected when you activated it, with no reboot.
+- **`control_operation`** started the radio, and the reader streamed tag reads as `dataEVT`, at the QoS you set on the data topic.
+
+**Where to go next:** [Connection and Session](/api-reference/mqtt/protocol-reference/connection-and-session) for how the reader's sessions behave, [Message Envelopes and Correlation](/api-reference/mqtt/protocol-reference/message-envelope) for request and reply design, [Delivery and Retry Semantics](/api-reference/mqtt/protocol-reference/qos-and-delivery-semantics) for loss and duplicates, [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode) to tune what the reader reads and reports, and [TLS and Authentication](/api-reference/mqtt/protocol-reference/tls-and-authentication) before you go to production.
