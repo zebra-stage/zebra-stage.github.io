@@ -278,6 +278,12 @@
   </tr>
 
   <tr>
+       <td><a href="#getdevicestatus">Get Device Status</a></td>
+    <td>Enables applications to query the real-time availability state of a device placed in a cradle.</td>
+    <td>Applicable when Identity Guardian is used for user authentication at either the device or application level.</td>
+  </tr>
+
+  <tr>
        <td><a href="#getlockscreenstatus">Get Lock Screen Status</a> (previously Register for Notifications)</td>
     <td>Enables applications to check the status of the Identity Guardian lock screen.</td>
     <td>Applicable when Identity Guardian is used for user authentication at either the device or application level.</td>
@@ -449,6 +455,164 @@
 
 <hr>
 
+<h2 id="getdevicestatus" class="anchor"><a class="heading-anchor" href="#getdevicestatus"><span></span></a>Get Device Status</h2>
+
+<p><strong>Description:</strong> Enables applications to query the real-time availability state of a device placed in a cradle:</p>
+
+<ul>
+<li><strong>Available:</strong> The device is ready for pickup.</li>
+
+<li><strong>BeingCheckedOut:</strong> A user is attempting to login.</li>
+
+<li><strong>LoginTimedOut:</strong> The device is abandoned without a login</li>
+
+<li><strong>InUse:</strong> The device is actively in use. </li>
+</ul>
+
+<p>Applications can query on-demand and register a <code>ContentObserver</code> to receive push notifications whenever the device status changes. This API is applicable only for <a href="../setup/#shareddevicessd">Shared Devices</a>. </p>
+
+<p><strong>Content URI:</strong> &nbsp;&nbsp;<span style="font-family:'Courier New'">content://com.zebra.mdna.els.provider/devicestatus/state</span></p>
+
+<p><strong>Requirements:</strong> The following Managed Configurations are required:</p>
+
+<ul>
+<li><strong>Shared Device Mode:</strong> The following setting must be set in <a href="../mc/#usagemode">Usage Mode</a>:
+
+
+<ul>
+<li><strong>Application Mode:</strong> AUTHENTICATION</li></ul>
+</li>
+
+<li><strong>Feature Activation:</strong> The device status feature is tightly coupled with the <strong>Audio Configuration</strong> defined within the <a href="../mc/#lockscreenconfiguration">Lock Screen Configuration</a> bundle. Enable the following setting to activate:
+
+
+<ul>
+<li><strong>Alarm for Login Timeout:</strong> ENABLE</li></ul>
+</li>
+</ul>
+
+<p><strong>Response:</strong> Returns a JSON response with the device state, corresponding message, and time stamp.</p>
+
+<table class="facelift" style="width:100%" border="1" padding="5px">
+  <tbody><tr bgcolor="#dce8ef">
+    <th>State</th>
+    <th>Message</th>
+    <th>Description</th>
+    <th>Common Triggers</th>
+  </tr>
+  <tr>
+    <td>Available</td>
+    <td>Device is connected to AC power and is available.</td>
+    <td>The device is cradled (connected to external power) with no active user session, available for use or for the next user to log in.</td>
+    <td>• Device is placed back in the cradle (power connected) while no user is logged in.<br>• User logs out while the device is already cradled.<br>• <strong>Alarm for Login Timeout</strong> is enabled via Managed Configuration while device is cradled.<br>• Application starts or upgrades with audio pre-configured and device already cradled.</td>
+  </tr>
+  <tr>
+    <td>BeingCheckedOut</td>
+    <td>Device has been removed from the cradle (disconnected from AC power).</td>
+    <td>The device has been removed from the cradle and the login countdown timer has started. The system is waiting for a user to authenticate within the configured timeout window.</td>
+    <td>• Device is removed from the cradle (power disconnected).<br>• Login countdown timer begins.</td>
+  </tr>
+  <tr>
+    <td>LoginTimedOut</td>
+    <td>Device login timed out, alarm is active.</td>
+    <td>The countdown timer expired before a user logged in. The audio alarm sounds to alert that an uncradled device remains unauthenticated.</td>
+    <td>• Login countdown timer expires without user authentication.<br>• The audio alarm triggers.</td>
+  </tr>
+  <tr>
+    <td>InUse</td>
+    <td>Device is in use.</td>
+    <td>A user has successfully authenticated and the device is actively in use.</td>
+    <td>• User successfully authenticates via Identity Guardian.<br>• Device is unlocked and the user session becomes active.</td>
+  </tr>
+  <tr>
+    <td>Error</td>
+    <td>Device status is not available in the current mode, or the feature is not enabled in this configuration.</td>
+    <td>The API cannot determine the device availability state.</td>
+    <td>• Application Mode is ENROLLMENT, PROXY, or PERSONALLY_ASSIGNED (the state isonly supported in AUTHENTICATION mode).<br>• <strong>Alarm for Login Timeout</strong>  is not set to ENABLE in Managed Configurations. This setting is required to activate the Device State feature.<br>• Application Mode is unrecognized or not yet configured.</td>
+  </tr>
+</tbody></table>
+
+<h4 id="samplecode" class="anchor"><a class="heading-anchor" href="#samplecode"><span></span></a>Sample Code</h4>
+
+<p>To register for Device state changes (Available, BeingCheckedOut, LoginTimedOut, InUse):</p>
+
+<pre class="prettyprint"><code>    // The ContentObserver mechanism is standard. Register an observer for the URI. 
+    Uri URI_DEVICE_STATUS = Uri.parse("content://com.zebra.mdna.els.provider/devicestatus/state "); 
+
+    getContentResolver().registerContentObserver(URI_DEVICE_STATUS, true, deviceStatusObserver);
+
+    private ContentObserver deviceStatusObserver = new ContentObserver(mainHandler) {
+        @Override
+        public void onChange(boolean selfChange, @Nullable Uri uri) {
+            super.onChange(selfChange, uri);
+            getDeviceStatus();
+        }
+    };
+
+    private static String AUTHORITY = "com.zebra.mdna.els.provider";
+    private static String METHOD = "devicestatus/state";
+    private void getDeviceStatus() {
+        try {
+            Bundle result = getContentResolver().call(AUTHORITY, METHOD, null, null);
+
+            if (result != null) {
+                String json = result.getString("RESULT");
+                JSONObject jsonObject = new JSONObject(json);
+                String deviceStatus = jsonObject.getString("deviceStatus");
+                String message = jsonObject.getString("message");
+            } 
+            else {
+                //Handle the case where the call return null
+            }
+        } 
+        catch (Exception e) {
+            //Handle exceptions appropriately
+        }
+    }
+</code></pre>
+
+<h4 id="sampleresponse" class="anchor"><a class="heading-anchor" href="#sampleresponse"><span></span></a>Sample Response</h4>
+
+<p>Sample responses returned in JSON format.</p>
+
+<p>Status: Available</p>
+
+<pre class="prettyprint"><code>    {
+        "deviceStatus": "Available",
+        "message": "Device is connected to AC power and is available.",
+        "lastchangedtimestamp": "Sep 29,2026 14:52:34.54"
+    }
+</code></pre>
+
+<p>Status: BeingCheckedOut</p>
+
+<pre class="prettyprint"><code>    {
+        "deviceStatus": " BeingCheckedOut",
+        "message": "Device has been removed from the cradle (disconnected from AC power).",
+        "lastchangedtimestamp": "Sep 29,2026 14:52:34.57"
+    }
+</code></pre>
+
+<p>Status: LoginTimedOut</p>
+
+<pre class="prettyprint"><code>    {
+        "deviceStatus": " LoginTimedOut",
+        "message": "Device login timed out, alarm is active.",
+        "lastchangedtimestamp": "Sep 29,2026 14:52:35.02"
+    }
+</code></pre>
+
+<p>Status: InUse</p>
+
+<pre class="prettyprint"><code>    {
+        "deviceStatus": " InUse",
+        "message": " Device is in use.",
+        "lastchangedtimestamp": "Sep 29,2026 14:52:35.06"
+    }
+</code></pre>
+
+<hr>
+
 <h2 id="getlockscreenstatus" class="anchor"><a class="heading-anchor" href="#getlockscreenstatus"><span></span></a>Get Lock Screen Status</h2>
 
 <p>(Previously known as <em>Register for Notifications.</em>)</p>
@@ -527,7 +691,7 @@
   <tr>
 </tr></tbody></table>
 
-<h4 id="samplecode" class="anchor"><a class="heading-anchor" href="#samplecode"><span></span></a>Sample Code</h4>
+<h4 id="samplecode-1" class="anchor"><a class="heading-anchor" href="#samplecode-1"><span></span></a>Sample Code</h4>
 
 <p>To register for lock screen state changes (SHOWN, HIDDEN, or ERROR):</p>
 
@@ -573,7 +737,7 @@
     }
 </code></pre>
 
-<h4 id="sampleresponse" class="anchor"><a class="heading-anchor" href="#sampleresponse"><span></span></a>Sample Response</h4>
+<h4 id="sampleresponse-1" class="anchor"><a class="heading-anchor" href="#sampleresponse-1"><span></span></a>Sample Response</h4>
 
 <p>Sample responses returned in JSON format.</p>
 
@@ -997,7 +1161,7 @@
 
 <p><br></p>
 
-<h4 id="samplecode-1" class="anchor"><a class="heading-anchor" href="#samplecode-1"><span></span></a>Sample Code</h4>
+<h4 id="samplecode-2" class="anchor"><a class="heading-anchor" href="#samplecode-2"><span></span></a>Sample Code</h4>
 
 <p>There are three types of samples available:</p>
 
@@ -2126,7 +2290,7 @@ The Response is received by the caller application in the form of a bundle:
 </code></pre></li>
 </ul>
 
-<h4 id="samplecode-2" class="anchor"><a class="heading-anchor" href="#samplecode-2"><span></span></a>Sample Code</h4>
+<h4 id="samplecode-3" class="anchor"><a class="heading-anchor" href="#samplecode-3"><span></span></a>Sample Code</h4>
 
 <p>There are three types of samples available:</p>
 
@@ -2632,7 +2796,7 @@ The Response is received by the caller application in the form of a bundle:
     }
 </code></pre>
 
-<h4 id="samplecode-3" class="anchor"><a class="heading-anchor" href="#samplecode-3"><span></span></a>Sample Code</h4>
+<h4 id="samplecode-4" class="anchor"><a class="heading-anchor" href="#samplecode-4"><span></span></a>Sample Code</h4>
 
 <p>To retrieve previous user session data, follow the example below:</p>
 
@@ -2911,7 +3075,7 @@ The `cursor` is given in JSON format where each key is accompanied by a series o
 
 <p><strong>Response:</strong> The response returns a Cursor object that contains the required bundle.</p>
 
-<h4 id="samplecode-4" class="anchor"><a class="heading-anchor" href="#samplecode-4"><span></span></a>Sample Code</h4>
+<h4 id="samplecode-5" class="anchor"><a class="heading-anchor" href="#samplecode-5"><span></span></a>Sample Code</h4>
 
 <p>To set the current user session sign-in state:</p>
 
@@ -2938,7 +3102,7 @@ The `cursor` is given in JSON format where each key is accompanied by a series o
     }
 </code></pre>
 
-<h4 id="sampleresponse-1" class="anchor"><a class="heading-anchor" href="#sampleresponse-1"><span></span></a>Sample Response</h4>
+<h4 id="sampleresponse-2" class="anchor"><a class="heading-anchor" href="#sampleresponse-2"><span></span></a>Sample Response</h4>
 
 <pre class="prettyprint"><code>    {
         "status": "SUCCESS",
@@ -2999,7 +3163,7 @@ The `cursor` is given in JSON format where each key is accompanied by a series o
 
 <p><strong>Response:</strong> The response returns a Cursor object that contains the required bundle.</p>
 
-<h4 id="samplecode-5" class="anchor"><a class="heading-anchor" href="#samplecode-5"><span></span></a>Sample Code</h4>
+<h4 id="samplecode-6" class="anchor"><a class="heading-anchor" href="#samplecode-6"><span></span></a>Sample Code</h4>
 
 <p>To set the current user session sign-out state:</p>
 
@@ -3027,7 +3191,7 @@ The `cursor` is given in JSON format where each key is accompanied by a series o
     }
 </code></pre>
 
-<h4 id="sampleresponse-2" class="anchor"><a class="heading-anchor" href="#sampleresponse-2"><span></span></a>Sample Response</h4>
+<h4 id="sampleresponse-3" class="anchor"><a class="heading-anchor" href="#sampleresponse-3"><span></span></a>Sample Response</h4>
 
 <pre class="prettyprint"><code>    {
         "status": "SUCCESS",
@@ -3114,7 +3278,7 @@ The `cursor` is given in JSON format where each key is accompanied by a series o
 
 <p><strong>Response:</strong> None</p>
 
-<h4 id="samplecode-6" class="anchor"><a class="heading-anchor" href="#samplecode-6"><span></span></a>Sample Code</h4>
+<h4 id="samplecode-7" class="anchor"><a class="heading-anchor" href="#samplecode-7"><span></span></a>Sample Code</h4>
 
 <pre class="prettyprint"><code>    String BASE_URI = "content://com.zebra.mdna.els.provider/";
     private final String USER_VERIFICATION = "user_verification";
@@ -3168,7 +3332,7 @@ The `cursor` is given in JSON format where each key is accompanied by a series o
     }
 </code></pre>
 
-<h4 id="samplecode-7" class="anchor"><a class="heading-anchor" href="#samplecode-7"><span></span></a>Sample Code</h4>
+<h4 id="samplecode-8" class="anchor"><a class="heading-anchor" href="#samplecode-8"><span></span></a>Sample Code</h4>
 
 <pre class="prettyprint"><code>    Uri uri = Uri.parse(BASE_URI + "lockscreenaction/authenticationstatus");
     ContentResolver cr = getContentResolver();
@@ -3184,7 +3348,7 @@ The `cursor` is given in JSON format where each key is accompanied by a series o
     }
 </code></pre>
 
-<h4 id="sampleresponse-3" class="anchor"><a class="heading-anchor" href="#sampleresponse-3"><span></span></a>Sample Response</h4>
+<h4 id="sampleresponse-4" class="anchor"><a class="heading-anchor" href="#sampleresponse-4"><span></span></a>Sample Response</h4>
 
 <pre class="prettyprint"><code>    {
         "code":0,
@@ -3220,7 +3384,7 @@ The `cursor` is given in JSON format where each key is accompanied by a series o
 
 <p><strong>Response:</strong> The response returns a Cursor object that contains the required bundle.</p>
 
-<h4 id="samplecode-8" class="anchor"><a class="heading-anchor" href="#samplecode-8"><span></span></a>Sample Code</h4>
+<h4 id="samplecode-9" class="anchor"><a class="heading-anchor" href="#samplecode-9"><span></span></a>Sample Code</h4>
 
 <pre class="prettyprint"><code>    public void userSessionLogout() {
         Uri uri = Uri.parse(BASE_URI); // Content provider URI
@@ -3238,7 +3402,7 @@ The `cursor` is given in JSON format where each key is accompanied by a series o
     }
 </code></pre>
 
-<h4 id="sampleresponse-4" class="anchor"><a class="heading-anchor" href="#sampleresponse-4"><span></span></a>Sample Response</h4>
+<h4 id="sampleresponse-5" class="anchor"><a class="heading-anchor" href="#sampleresponse-5"><span></span></a>Sample Response</h4>
 
 <p>Sample response for a user that successfully logs out:</p>
 
@@ -3312,7 +3476,7 @@ The `cursor` is given in JSON format where each key is accompanied by a series o
 
 <p><strong>Response:</strong> None</p>
 
-<h4 id="samplecode-9" class="anchor"><a class="heading-anchor" href="#samplecode-9"><span></span></a>Sample Code</h4>
+<h4 id="samplecode-10" class="anchor"><a class="heading-anchor" href="#samplecode-10"><span></span></a>Sample Code</h4>
 
 <p>Sample code demonstrating how to display a lock screen message:</p>
 
