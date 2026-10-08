@@ -12,7 +12,9 @@ if (!root || !fs.existsSync(path.join(root, 'docusaurus.config.ts'))) {
   process.exit(2);
 }
 
-const STAGE_URL = 'https://zebra-stage.github.io/dcs/rfid/rfd40-90-mqtt/api-reference/mqtt/';
+// The section is published from here to techdocs.zebra.com at the same path. A PDF is downloaded
+// and kept, so its links and its cover point at the live pages, not at this staging copy.
+const LIVE_URL = 'https://techdocs.zebra.com/dcs/rfid/rfd40-90-mqtt/';
 const STAGE_BASE = '/dcs/rfid/rfd40-90-mqtt/';
 
 function edit(file, change) {
@@ -65,11 +67,11 @@ edit('src/components/NotFoundBody.tsx', (t) => {
   return s;
 });
 
-// 4. PDFs: render from the stage build, under the stage path, with the stage address on the cover.
+// 4. PDFs: render from the stage build, under the stage path, with the live address in links and on the cover.
 edit('scripts/site/generate-pdfs.mjs', (t) => {
   const file = 'scripts/site/generate-pdfs.mjs';
   let s = once(file, t, /const BASE_URL = '[^']*';/, `const BASE_URL = '${STAGE_BASE}';`);
-  s = once(file, s, /https:\/\/[a-z0-9.-]+\/api-reference\/mqtt\//, STAGE_URL);
+  s = once(file, s, /const SITE_URL = '[^']*';/, `const SITE_URL = '${LIVE_URL}';`);
   s = once(file, s, "['docusaurus', 'serve', '--dir',", "['docusaurus', 'serve', '--config', 'docusaurus.stage.config.ts', '--dir',");
   return s;
 });
