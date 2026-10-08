@@ -54,10 +54,14 @@ KEEP=" img/brand/zebra-logo-black-horizontal.svg img/brand/zebra-logo-white-hori
 node "$KIT/verify.mjs" "$OUT"
 
 # A rebuilt PDF differs from the published one even when nothing changed, because its cover carries
-# the build date. Keep the published file when the text is the same apart from that date.
+# the build date. Keep the published file when its text, apart from that date, and its links are
+# the same.
+pdf_text() { pdftotext -layout "$1" - | grep -v 'Generated 20'; }
+pdf_links() { (cd "$SRC" && node "$KIT/pdf-links.mjs" "$1"); }
 if command -v pdftotext >/dev/null && [[ -d "$SECTION/pdf" ]]; then
   (cd "$OUT" && find pdf -name '*.pdf') | while read -r f; do
-    if [[ -f "$SECTION/$f" ]] && cmp -s <(pdftotext -layout "$OUT/$f" - | grep -v 'Generated 20') <(pdftotext -layout "$SECTION/$f" - | grep -v 'Generated 20'); then
+    if [[ -f "$SECTION/$f" ]] && cmp -s <(pdf_text "$OUT/$f") <(pdf_text "$SECTION/$f") \
+      && cmp -s <(pdf_links "$OUT/$f") <(pdf_links "$SECTION/$f"); then
       cp "$SECTION/$f" "$OUT/$f"
     fi
   done

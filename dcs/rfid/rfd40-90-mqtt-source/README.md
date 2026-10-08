@@ -31,6 +31,7 @@ files in `dcs/rfid/rfd40-90-mqtt/` by hand: change the docs repository or this f
 | `pages/quick-start.mdx` | The Quick Start summary page. It exists only on the staging site |
 | `redirects/` | The two redirect pages, `rfd40-90-mqtt/` and `rfd40-90-mqtt/api-reference/`, which open the MQTT API index |
 | `verify.mjs` | Fails the build if any link, image or anchor does not resolve, or if a page points outside the section |
+| `pdf-links.mjs` | Lists a PDF's links, so the build keeps a published PDF only when its links are unchanged too |
 
 ## Prerequisites
 
@@ -38,7 +39,7 @@ files in `dcs/rfid/rfd40-90-mqtt/` by hand: change the docs repository or this f
 - Node.js 22 or later, `git` and `rsync`.
 - D2 0.7.1, the version the docs repository's CI uses, for the diagrams.
 - Playwright's Chromium, for the PDFs: `npx playwright install chromium`.
-- Optional: `pdftotext` (Poppler). With it, the build keeps a published PDF whose text has not changed, instead of replacing it with a copy that differs only in its build date.
+- Optional: `pdftotext` (Poppler). With it, the build keeps a published PDF whose text and links have not changed, instead of replacing it with a copy that differs only in its build date.
 
 ## Rebuild the section
 
