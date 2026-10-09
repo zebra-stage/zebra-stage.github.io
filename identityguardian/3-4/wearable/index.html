@@ -261,15 +261,15 @@
 <p>The following features are supported for the wearable UI:</p>
 
 <ul>
-<li>Admin Bypass authentication</li>
+<li>Admin Bypass Authentication</li>
 
-<li>Barcode authentication</li>
+<li>Barcode Authentication</li>
 
-<li>NFC authentication</li>
+<li>NFC Authentication</li>
 
-<li>Face authentication</li>
+<li>Face Authentication</li>
 
-<li>Passcode authentication</li>
+<li>Passcode Authentication</li>
 
 <li>Alternate Sign-In</li>
 
@@ -278,6 +278,14 @@
 <li>Sign Out</li>
 
 <li>Suppress Camera Preview</li>
+
+<li>Single Sign-On (SSO)</li>
+
+<li>SSO Temporary ID</li>
+
+<li>Guardian Safe</li>
+
+<li>Auto-Fill SSO Login</li>
 </ul>
 
 <p><strong>Out-of-Scope Features</strong></p>
@@ -287,13 +295,16 @@
 <ul>
 <li>Personally Assigned Device mode</li>
 
-<li>Single Sign-On (SSO)</li>
-
-<li>Guardian Safe</li>
-
-<li>Credential autofill</li>
-
 <li>User enrollment</li>
+
+<li><a href="../mc/#shareddeviceauthentication">Managed Configuration</a> values:
+
+
+<ul>
+<li>Comparison Source: CLOUD and LEGACY BARCODE</li>
+
+<li>Primary Authentication Factor: CLOUD_PASSCODE</li></ul>
+</li>
 </ul>
 
 <hr>
@@ -322,18 +333,26 @@
 
 <h2 id="prerequisites" class="anchor"><a class="heading-anchor" href="#prerequisites"><span></span></a>Prerequisites</h2>
 
-<p>Confirm the following requirements prior to deployment:</p>
+<p>Confirm the following requirements for wearable devices prior to deployment:</p>
 
 <ul>
-<li><strong>Identity Guardian Installation &amp; Licensing:</strong> Identity Guardian is installed. An <a href="../licensing">Identity Guardian license</a> is required when deploying facial biometric authentication on supported wearable devices, such as WS301.</li>
-
-<li><strong>Android Screen Lock Configuration:</strong> The device Android screen lock is set to "None." Other screen lock types (e.g., Swipe, PIN) are incompatible.</li>
-
-<li><strong>Pre-Enrolled User Profiles:</strong> Users are already enrolled. Enrollment must be performed on a standard Zebra mobile computer, as on-device enrollment is not supported on wearable devices.</li>
+<li><strong>Identity Guardian Installation &amp; Licensing:</strong> Identity Guardian is installed. An <a href="../licensing">Identity Guardian license</a> is required for facial biometric authentication, SSO authentication, SSO Temporary ID, and for Guardian Safe operation on supported wearable devices.</li>
 
 <li><strong>Device Ownership:</strong> The device is deployed as a <strong><a href="../setup/#shareddevicessd">Shared Device</a></strong>. Personally Assigned Device mode is not supported on wearable devices.</li>
 
-<li><strong>DataWedge Profile Configuration:</strong> For barcode-based authentication, the Identity Guardian <a href="../setup/#sdconfiguredatawedgeprofileconfiguration">DataWedge profile</a> is present and active the device.</li>
+<li><strong>Android Screen Lock Configuration:</strong> The device Android screen lock is set to "None." Other screen lock types (e.g., Swipe, PIN) are incompatible.</li>
+
+<li><strong>Pre-Enrolled User Profiles:</strong> When the Comparison Source is BARCODE or NFC, users must already be enrolled beforehand from a standard Zebra mobile computer. On-device user enrollment is not supported directly on wearable devices. The SSO-only configuration (no Comparison Source) does not use a barcode or NFC card. </li>
+
+<li><strong>SSO Integration:</strong> If using SSO, Identity Guardian must be <a href="../setup/#ssointegration">integrated</a> with the organization's identity provider (IdP). </li>
+
+<li><strong>Network Connectivity:</strong> If using Guardian Safe, internet access is required. If using SSO, the device must maintain network connection to contact the identity provider for SSO sign-in. </li>
+
+<li><strong>User Barcodes:</strong> For Guardian Safe and Auto-Fill SSO Login, user barcodes must be generated with Identity Guardian v1.6 or later.</li>
+
+<li><strong>Zebra DNA Cloud:</strong> For Guardian Safe, the organization must be registered with Zebra DNA Cloud, and the device must be enrolled and connected to Zebra DNA Cloud.</li>
+
+<li><strong>DataWedge Profile Configuration:</strong> For barcode-based authentication, the Identity Guardian <a href="../setup/#sdconfiguredatawedgeprofileconfiguration">DataWedge profile</a> is present and active on the device.</li>
 </ul>
 
 <hr>
@@ -341,6 +360,33 @@
 <h2 id="configuration" class="anchor"><a class="heading-anchor" href="#configuration"><span></span></a>Configuration</h2>
 
 <p>To enable the wearable experience, configure Identity Guardian <a href="../mc/#identityguardian">Managed Configurations</a> using a supported EMM or Zebra DNA Cloud. This section covers only the parameters relevant to wearable devices.</p>
+
+<p><strong>Hardware Constraints:</strong> Since WS501 does not feature a camera, FACE must not be selected for any authentication factor. For SSO Temporary ID on WS501 devices, in <a href="../mc/#ssoauthenticationconfiguration">SSO Authentication Configuration</a> set <strong>Authentication Mode</strong> to PIN.</p>
+
+<h4 id="ssoonlynocomparisonsource" class="anchor"><a class="heading-anchor" href="#ssoonlynocomparisonsource"><span></span></a>SSO-Only (No Comparison Source)</h4>
+
+<p>Standalone SSO operates without a physical Comparison Source, relying entirely on the IdP for user authentication.</p>
+
+<ul>
+<li><strong><a href="../mc/#usagemode">Usage Mode</a>:</strong> Set <strong>Application Mode</strong> to <strong>Authentication</strong>.</li>
+
+<li><strong><a href="../mc/#shareddeviceauthentication">Shared Device Authentication</a>:</strong> Set the authentication factors for each Verification Setup:
+
+
+<ul>
+<li><strong>Comparison Source:</strong> NONE</li>
+
+<li><strong>Primary Authentication Factor:</strong> SSO</li>
+
+<li><strong>Secondary Authentication Factor:</strong> NONE</li>
+
+<li><strong>Fallback Authentication Method:</strong> NONE or ADMIN BYPASS PASSCODE</li></ul>
+</li>
+</ul>
+
+<h4 id="multifactorauthenticationwithacomparisonsource" class="anchor"><a class="heading-anchor" href="#multifactorauthenticationwithacomparisonsource"><span></span></a>Multi-Factor Authentication (with a Comparison Source)</h4>
+
+<p>Multi-factor authentication combines a physical token (barcode or NFC card) with one or more authentication factors (such as FACE, PASSCODE, or SSO) for user authentication.</p>
 
 <ul>
 <li><strong><a href="../mc/#usagemode">Usage Mode</a>:</strong> Set <strong>Application Mode</strong> to <strong>Authentication</strong>.</li>
@@ -351,9 +397,9 @@
 <ul>
 <li><strong>Comparison Source:</strong> BARCODE or NFC</li>
 
-<li><strong>Primary Authentication Factor:</strong> FACE or PASSCODE</li>
+<li><strong>Primary Authentication Factor:</strong> FACE, PASSCODE, or SSO</li>
 
-<li><strong>Secondary Authentication Factor:</strong> FACE, PASSCODE, or NONE</li>
+<li><strong>Secondary Authentication Factor:</strong> FACE, PASSCODE, SSO or NONE</li>
 
 <li><strong>Fallback Authentication Method:</strong> NONE, PASSCODE, FACE, or ADMIN BYPASS PASSCODE</li></ul>
 </li>
@@ -370,6 +416,41 @@
 <h3 id="lockscreenbuttonconfigurations" class="anchor"><a class="heading-anchor" href="#lockscreenbuttonconfigurations"><span></span></a>Lock Screen Button Configurations</h3>
 
 <p>The lock screen dynamically displays action buttons based on the deployed Managed Configuration. The primary (left) button initiates the primary authentication flow, while the secondary (right) button provides an alternative sign-in path or user session switch.</p>
+
+<p><strong>SSO-Only (No Comparison Source):</strong> For standalone SSO deployments, the lock screen displays a direct unlock option, since no physical token scanning is required to initiate the authentication process.</p>
+
+<table class="facelift" style="width: 100%; border-collapse: collapse; border: 1px solid #dce8ef;">
+  <thead style="background-color: #dce8ef;">
+    <tr>
+      <th style="width: 25%; padding: 8px; text-align: center;">Screen Capture</th>
+      <th style="width: 20%; padding: 8px; text-align: left;">Primary (Left) Button</th>
+      <th style="width: 20%; padding: 8px; text-align: left;">Secondary (Right) Button</th>
+      <th style="width: 35%; padding: 8px; text-align: left;">Managed Configuration</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center; vertical-align: middle; padding: 10px;">
+        <img src="../../images/3-4/w-sso-unlock.png" alt="" style="height: 160px;">
+      </td>
+      <td style="padding: 10px; vertical-align: top;">
+        <b>Unlock</b>
+      </td>
+      <td style="padding: 10px; vertical-align: top;">
+        <i>Configurable</i><br>
+        (e.g., <b>Alternative Login</b>)
+      </td>
+      <td style="padding: 10px; vertical-align: top; font-size: 0.9em;">
+        <ul>
+          <li><b><a href="../mc/#comparisonsource">Comparison Source</a>:</b> Set to <code>NONE</code>. No physical token needed. Tap <b>Unlock</b> to sign-in with SSO.</li>
+          <li><b><a href="../mc/#alternatesignin">Alternate Sign-In</a>:</b> Specified with a custom button label (e.g., Alternative Login) defined for <b>Customize Alternative Login Button</b> under <a href="../mc/#lockscreenconfiguration">Lock Screen Configuration</a>.</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Multi-Factor Authentication (with a Comparison Source):</strong> For deployments utilizing a physical token, the lock screen prompts the operator to perform an initial scanning or tapping action to identify the user before proceeding to the configured login step.</p>
 
 <table class="facelift" style="width: 100%; border-collapse: collapse; border: 1px solid #dce8ef;">
   <thead style="background-color: #dce8ef;">
@@ -420,74 +501,205 @@
   </tbody>
 </table>
 
-<!--
-The primary (left) button initiates the main authentication workflow:
-* **Scan to Unlock:** Appears when `Comparison Source` is `BARCODE`. The user must scan their user barcode.
-* **Tap to Unlock:** Appears when `Comparison Source` is `NFC`. The user must tap their NFC card.
-
-
-
-<table class="table" style="width: 80%; text-align: center; border-collapse: collapse;">
-    <tr>
-      <td style="padding: 12px; vertical-align: bottom;">
-        <img src="../../images/3-3/w-scan-to-unlock.png" alt="image" style="height:200px"/>
-      </td>
-      <td style="padding: 12px; vertical-align: bottom;">
-        <img src="../../images/3-3/w-tap-to-unlock.png" alt="image" style="height:200px"/>
-      </td>
-      <td style="padding: 12px; vertical-align: bottom;">
-        <img src="../../images/3-3/w-unlock.png" alt="image" style="height:200px"/>
-      </td>
-    </tr>
-    <tr>
-      <td style="padding: 8px; vertical-align: top; font-weight: bold; font-size: 0.9em;">
-        Scan to Unlock
-      </td>
-      <td style="padding: 8px; vertical-align: top; font-weight: bold; font-size: 0.9em;">
-        Tap to Unlock
-      </td>
-      <td style="padding: 8px; vertical-align: top; font-weight: bold; font-size: 0.9em;">
-        Unlock
-      </td>
-    </tr>
-  </tbody>
-</table>
-
-
-The secondary (right) button appears if an alternative action is available:
-* **Alternative Login:** Appears with the configured label specified for `Customize Alternative Login Button` under [Lock Screen Configuration](../mc/#lockscreenconfiguration).
-* **Switch User:** Appears if a user session is already active on the device.
-
-
-<table class="table" style="width: 80%; text-align: center; border-collapse: collapse;">
-    <tr>
-      <td style="padding: 12px; vertical-align: bottom;">
-        <img src="../../images/3-3/w-alternative-login.png" alt="image" style="height:200px"/>
-      </td>
-      <td style="padding: 12px; vertical-align: bottom;">
-        <img src="../../images/3-3/w-switch-user.png" alt="image" style="height:200px"/>
-      </td>
-    </tr>
-    <tr>
-      <td style="width: 50%; padding: 8px; text-align: center; vertical-align: top; font-weight: bold; font-size: 0.9em;">
-        Alternative Login
-      </td>
-      <td style="width: 50%; padding: 8px; text-align: center; vertical-align: top; font-weight: bold; font-size: 0.9em;">
-        Switch User
-      </td>
-    </tr>
-  </tbody>
-</table>
-
--->
-
 <hr>
 
 <h2 id="usage" class="anchor"><a class="heading-anchor" href="#usage"><span></span></a>Usage</h2>
 
-<h3 id="signin" class="anchor"><a class="heading-anchor" href="#signin"><span></span></a>Sign In</h3>
+<h3 id="signinwithsso" class="anchor"><a class="heading-anchor" href="#signinwithsso"><span></span></a>Sign In (With SSO)</h3>
 
-<p>The login sequence follows the configured authentication factors: Comparison Source, Primary Authentication, and Secondary Authentication.</p>
+<p>The login sequence for sign-in with SSO executes according to the defined authentication factors: Comparison Source (if configured), Primary Authentication, and Secondary Authentication. SSO can function as the sole authentication factor (standalone), or the primary or secondary factor following a physical barcode scan or NFC card tap.</p>
+
+<p><br></p>
+
+<h4 id="scenario1ssoonlyauthentication" class="anchor"><a class="heading-anchor" href="#scenario1ssoonlyauthentication"><span></span></a>Scenario 1: SSO-Only Authentication</h4>
+
+<p><a href="../mc/#shareddeviceauthentication">Shared Device Authentication</a> Configuration:</p>
+
+<ul>
+<li><strong>Comparison Source:</strong> None</li>
+
+<li><strong>Primary Authentication:</strong> SSO</li>
+
+<li><strong>Secondary Authentication:</strong> None</li>
+</ul>
+
+<table class="facelift" style="width:80%" border="1" padding="5">
+  <thead style="background-color:#dce8ef;">
+    <tr>
+      <th style="width: 65%;">Instructions</th>
+      <th style="width: 35%;">Screen Capture</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <p><strong>Step 1:</strong> On the lock screen, tap <b>Unlock</b>.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+        <img src="../../images/3-4/w-sso-only-unlock.png" alt="image" style="height:200px">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 2:</strong> The SSO sign-in screen appears according to the configured identity provider service (Okta in this example). Enter the user name.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-okta-1.png" alt="image" style="height:200px;">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 3:</strong> Scroll down and enter the password, then tap <b>Sign In.</b><br><br>Note: If <b>SSO Temporary ID</b> is enabled, the a prompt appear to create the SSO Temporary ID; see <a href="">SSO Temporary ID</a> for details.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-okta-2.png" alt="image" style="height:200px;">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 4:</strong> The device unlocks and the home screen appears.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-3/w-device-home.png" style="height:200px;">
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<p><br></p>
+
+<h4 id="scenario2barcodepasscodeandssoauthentication" class="anchor"><a class="heading-anchor" href="#scenario2barcodepasscodeandssoauthentication"><span></span></a>Scenario 2: Barcode, Passcode, and SSO Authentication</h4>
+
+<p><a href="../mc/#shareddeviceauthentication">Shared Device Authentication Configuration</a>:</p>
+
+<ul>
+<li><strong>Comparison Source:</strong> Barcode</li>
+
+<li><strong>Primary Authentication:</strong> Passcode</li>
+
+<li><strong>Secondary Authentication:</strong> SSO</li>
+</ul>
+
+<table class="facelift" style="width:80%" border="1" padding="5">
+  <thead style="background-color:#dce8ef;">
+    <tr>
+      <th style="width: 65%;">Instructions</th>
+      <th style="width: 35%;">Screen Capture</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <p><strong>Step 1:</strong> On the lock screen, scan the user barcode.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+        <img src="../../images/3-3/w-scan-to-unlock.png" alt="image" style="height:200px">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 2:</strong> The passcode entry screen appears. Enter the passcode and tap <b>UNLOCK.</b></p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;"><img src="../../images/3-3/w-passcode.png" alt="image" style="height:200px">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 3:</strong> The SSO sign-in screen appears according to the configured identity provider service (Okta in this example). Enter the user name.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-okta-1.png" alt="image" style="height:200px;">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 4:</strong> Scroll down and enter the password, then tap <b>Sign In.</b><br><br>Note: If <b>SSO Temporary ID</b> is enabled, the a prompt appear to create the SSO Temporary ID; see <a href="">SSO Temporary ID</a> for details.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-okta-2.png" alt="image" style="height:200px;">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 5:</strong> The device unlocks and the home screen appears.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-3/w-device-home.png" style="height:200px;">
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<p><br></p>
+
+<h4 id="scenario3nfcandssoauthentication" class="anchor"><a class="heading-anchor" href="#scenario3nfcandssoauthentication"><span></span></a>Scenario 3: NFC and SSO Authentication</h4>
+
+<p><a href="../mc/#shareddeviceauthentication">Shared Device Authentication Configuration</a>:</p>
+
+<ul>
+<li><strong>Comparison Source:</strong> NFC</li>
+
+<li><strong>Primary Authentication:</strong> SSO</li>
+
+<li><strong>Secondary Authentication:</strong> None</li>
+</ul>
+
+<table class="facelift" style="width:80%" border="1" padding="5">
+  <thead style="background-color:#dce8ef;">
+    <tr>
+      <th style="width: 65%;">Instructions</th>
+      <th style="width: 35%;">Screen Capture</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <p><strong>Step 1:</strong> On the lock screen, tap <b>Unlock</b>.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+        <img src="../../images/3-3/w-tap-to-unlock.png" alt="image" style="height:200px">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 2:</strong> Tap the user NFC card against the device.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-3/w-nfc.png" alt="image" style="height:200px;">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 3:</strong> The SSO sign-in screen appears according to the configured identity provider service (Okta in this example). Enter the user name.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-okta-1.png" alt="image" style="height:200px;">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 4:</strong> Scroll down and enter the password, then tap <b>Sign In.</b><br><br>Note: If <b>SSO Temporary ID</b> is enabled, the a prompt appear to create the SSO Temporary ID; see <a href="">SSO Temporary ID</a> for details.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-okta-2.png" alt="image" style="height:200px;">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 5:</strong> The device unlocks and the home screen appears.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-3/w-device-home.png" style="height:200px;">
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<p><br></p>
+
+<h3 id="signinwithoutsso" class="anchor"><a class="heading-anchor" href="#signinwithoutsso"><span></span></a>Sign In (Without SSO)</h3>
+
+<p>The login sequence for sign-in without SSO executes according to the defined authentication factors: Comparison Source, Primary Authentication, and Secondary Authentication. These scenarios rely on local device credentials for authentication.</p>
 
 <p><br></p>
 
@@ -529,7 +741,7 @@ The secondary (right) button appears if an alternative action is available:
     </tr>
     <tr>
       <td>
-        <p><strong>Step 3:</strong> the passcode entry screen appears. Enter the passcode and tap <b>UNLOCK.</b></p>
+        <p><strong>Step 3:</strong> The passcode entry screen appears. Enter the passcode and tap <b>UNLOCK.</b></p>
       </td>
       <td style="text-align: center; vertical-align: middle;">
           <img src="../../images/3-3/w-passcode.png" alt="image" style="height:200px;">
@@ -832,6 +1044,335 @@ The secondary (right) button appears if an alternative action is available:
 
 <hr>
 
+<h3 id="ssotemporaryid" class="anchor"><a class="heading-anchor" href="#ssotemporaryid"><span></span></a>SSO Temporary ID</h3>
+
+<p><strong>SSO Temporary ID</strong> enables sign-in with SSO credentials at the start of a shift, followed by a short PIN for subsequent sign-ins during the shift, eliminating the need to re-enter SSO credentials or use a barcode or NFC card. The Temporary ID clears automatically when the user signs out. For more details, see <a href="../usage/#ssotemporaryid">SSO Temporary ID</a> in the user guide. </p>
+
+<h4 id="configuration-1" class="anchor"><a class="heading-anchor" href="#configuration-1"><span></span></a>Configuration</h4>
+
+<p>Configure the Identity Guardian <a href="../mc/#identityguardian">Managed Configurations</a> below using a supported EMM or Zebra DNA Cloud. </p>
+
+<p><strong><a href="../mc/#shareddeviceauthentication">Shared Device Authentication</a>:</strong> Set the authentication factors for each Verification Setup:</p>
+
+<ul>
+<li><strong>Comparison Source:</strong> NONE</li>
+
+<li><strong>Primary Authentication Factor:</strong> SSO</li>
+
+<li><strong>Secondary Authentication Factor:</strong> NONE</li>
+</ul>
+
+<p><strong><a href="../mc/#ssoauthenticationconfiguration">SSO Authentication Configuration</a>:</strong> Configure the following settings:</p>
+
+<ul>
+<li><strong>TempID:</strong> true</li>
+
+<li><strong>Authentication Mode:</strong> PIN, FACE, or ANY (<strong>Note:</strong> FACE and ANY do not apply to WS501 due to the lack of a front-facing camera).</li>
+
+<li><strong>Temp Id Type:</strong> Numeric or AlphaNumeric</li>
+
+<li><strong>Minimum Length:</strong> 4 to 20 (default: 4)</li>
+
+<li><strong>Minimum Uppercase Letters:</strong> 0 or 1 (Set if <strong>Temp Id Type</strong> is <strong>Alphanumeric</strong>.)</li>
+
+<li><strong>Minimum Lowercase Letters:</strong> 0 or 1 (Set if <strong>Temp Id Type</strong> is <strong>Alphanumeric</strong>.)</li>
+
+<li><strong>Minimum Numbers:</strong> 0 or 1 (Set if <strong>Temp Id Type</strong> is <strong>Alphanumeric</strong>.)</li>
+
+<li><strong>Minimum Special Symbols:</strong> 0 or 1 (Set if <strong>Temp Id Type</strong> is <strong>Alphanumeric</strong>.)</li>
+</ul>
+
+<h4 id="firsttimesignin" class="anchor"><a class="heading-anchor" href="#firsttimesignin"><span></span></a>First-Time Sign-In</h4>
+
+<p>The first SSO sign-in on the device offers the user to create a Temporary ID. </p>
+
+<table class="facelift" style="width:80%" border="1" padding="5">
+  <thead style="background-color:#dce8ef;">
+    <tr>
+      <th style="width: 65%;">Instructions</th>
+      <th style="width: 35%;">Screen Capture</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <p><strong>Step 1:</strong> On the lock screen, tap <b>Unlock</b>.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+        <img src="../../images/3-4/w-sso-only-unlock.png" alt="image" style="height:200px">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 2:</strong> The SSO sign-in screen appears according to the configured identity provider service (Okta in this example). Enter the user name.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-okta-1.png" alt="image" style="height:200px;">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 3:</strong> Scroll down and enter the password, then tap <b>Sign In.</b></p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-okta-2.png" alt="image" style="height:200px;">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 4:</strong> The prompt appears to create a Temporary ID. Tap <b>Continue.</b><br><br>Tapping <b>Skip</b> completes the sign-in without generating a Temporary ID. Choosing this option requires SSO credential entry for each subsequent sign-in, with the Temporary ID prompt appearing after each successful SSO authentication.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-temp-id.png" style="height:200px;">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 5:</strong> Enter a PIN to create; it must meet the requirements (e.g., minimum of 4 digits).</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-pin-id.png" style="height:200px;">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 6:</strong> Confirm the PIN entry and tap <b>Save</b>.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-pin-confirm.png" style="height:200px;">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 7:</strong> The profile setup is complete. Tap <b>Continue.</b></p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-profile-done.png" style="height:200px;">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 8:</strong> The device unlocks. The user logs in successfully.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-login-success.png" style="height:200px;">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 9:</strong> A message displays indicating the Temporary ID Authentication passed.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-temp-id-passed.png" style="height:200px;">
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="signinwithatemporaryid" class="anchor"><a class="heading-anchor" href="#signinwithatemporaryid"><span></span></a>Sign In with a Temporary ID</h4>
+
+<p>After a Temporary ID is created, subsequent sign-ins on the same device use the PIN instead of SSO credentials until the user signs out.</p>
+
+<table class="facelift" style="width:80%" border="1" padding="5">
+  <thead style="background-color:#dce8ef;">
+    <tr>
+      <th style="width: 65%;">Instructions</th>
+      <th style="width: 35%;">Screen Capture</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <p><strong>Step 1:</strong> On the lock screen, tap <b>Unlock</b>.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+        <img src="../../images/3-4/w-sso-only-unlock.png" alt="image" style="height:200px">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 2:</strong> Enter the PIN previously created, then tap <b>Enter.</b><br><br><b>Note:</b>After five consecutive failed PIN attempts, the <b>Temporary ID</b> is cleared and the user must sign in again with their SSO credentials. </p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-enter-pin.png" alt="image" style="height:200px;">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 3:</strong> The device unlocks. The user logs in successfully.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-login-success.png" style="height:200px;">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 4:</strong> A message displays indicating the Temporary ID Authentication passed.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-temp-id-passed.png" style="height:200px;">
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="managethetemporaryid" class="anchor"><a class="heading-anchor" href="#managethetemporaryid"><span></span></a>Manage the Temporary ID</h4>
+
+<p>Users can view, change, or delete their <strong>Temporary ID</strong> from their Identity Guardian user profile.</p>
+
+<p><strong>View Temporary ID Status</strong></p>
+
+<table class="facelift" style="width:80%" border="1" padding="5">
+  <thead style="background-color:#dce8ef;">
+    <tr>
+      <th style="width: 65%;">Instructions</th>
+      <th style="width: 35%;">Screen Capture</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <p><strong>Step 1:</strong> Open Identity Guardian. </p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+        <img src="../../images/3-4/w-ig.png" alt="image" style="height:200px">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 2:</strong> Tap the top right menu and select <b>IG Temporary ID.</b></p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-ig-menu.png" alt="image" style="height:200px;">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 3:</strong> The Pin ID status is displayed. <b>Active</b> indicates that a PIN is set.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-pin-status.png" style="height:200px;">
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Change the PIN</strong></p>
+
+<table class="facelift" style="width:80%" border="1" padding="5">
+  <thead style="background-color:#dce8ef;">
+    <tr>
+      <th style="width: 65%;">Instructions</th>
+      <th style="width: 35%;">Screen Capture</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <p><strong>Step 1:</strong> Open Identity Guardian. </p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+        <img src="../../images/3-4/w-ig.png" alt="image" style="height:200px">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 2:</strong> Tap the top right menu and select <b>IG Temporary ID.</b></p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-ig-menu.png" alt="image" style="height:200px;">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 3:</strong> Enter the existing PIN in the <b>Create PIN</b> field and tap <b>Change PIN.</b></p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-change-pin.png" style="height:200px;">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 4:</strong> Scroll down and enter the new PIN.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-enter-pin.png" style="height:200px;">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 5:</strong> Re-enter the new PIN.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-reenter-pin.png" style="height:200px;">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 6:</strong> Tap <b>Save</b> to replace the existing PIN with the new PIN. Or, tap <b>Cancel</b> to retain the existing PIN.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-save-pin.png" style="height:200px;">
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Delete the PIN</strong></p>
+
+<table class="facelift" style="width:80%" border="1" padding="5">
+  <thead style="background-color:#dce8ef;">
+    <tr>
+      <th style="width: 65%;">Instructions</th>
+      <th style="width: 35%;">Screen Capture</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <p><strong>Step 1:</strong> Open Identity Guardian. </p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+        <img src="../../images/3-4/w-ig.png" alt="image" style="height:200px">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 2:</strong> Tap the top right menu and select <b>IG Temporary ID.</b></p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-ig-menu.png" alt="image" style="height:200px;">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 3:</strong> Tap <b>Delete.</b></p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-pin-status.png" style="height:200px;">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 4:</strong> Tap <b>Confirm</b> to remove the PIN ID. Or, tap <b>Cancel</b> to keep it.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-delete-pin.png" style="height:200px;">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 5:</strong> The PIN is removed successfully and the PIN ID status disappears (previously shown as "Active"). An option appears to create a new PIN.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-delete-pin-success.png" style="height:200px;">
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<hr>
+
 <h3 id="adminbypasslogin" class="anchor"><a class="heading-anchor" href="#adminbypasslogin"><span></span></a>Admin Bypass Login</h3>
 
 <p>Bypass the user login with the defined <strong>ADMIN BYPASS PASSCODE</strong> configured by the administrator. This applies when the <strong>Fallback Authentication Method</strong> in <a href="../mc/#shareddeviceauthentication">Shared Device Authentication</a> is set to <strong>ADMIN BYPASS PASSCODE.</strong></p>
@@ -862,7 +1403,7 @@ The secondary (right) button appears if an alternative action is available:
     </tr>
     <tr>
       <td>
-        <p><strong>Step 4:</strong> The device unlocks and the home screen appears.</p>
+        <p><strong>Step 3:</strong> The device unlocks and the home screen appears.</p>
       </td>
       <td style="text-align: center; vertical-align: middle;">
           <img src="../../images/3-3/w-device-home.png" alt="image" style="height:200px;">
@@ -880,6 +1421,158 @@ The secondary (right) button appears if an alternative action is available:
 <p>The button label displayed on the lock screen and the resulting authentication workflow are defined by the administrator. For configuration and workflow details, see <a href="../usage/#alternatesignin">Alternate Sign-In</a>.</p>
 
 <p><img src="../../images/3-3/w-alternative-login.png" alt="image" style="height:200px;"></p>
+
+<hr>
+
+<h3 id="guardiansafe" class="anchor"><a class="heading-anchor" href="#guardiansafe"><span></span></a>Guardian Safe</h3>
+
+<p>Guardian Safe securely stores a user's app credentials after a single entry and fills them in automatically on later logins, for both native apps and web apps. When Guardian Safe is active, the Guardian Safe floating button appears on app login screens where a password field is detected. For the full feature description, see Guardian Safe in the User Guide.</p>
+
+<h4 id="prerequisites-1" class="anchor"><a class="heading-anchor" href="#prerequisites-1"><span></span></a>Prerequisites</h4>
+
+<ul>
+<li><strong>ZDNA Cloud Registration -</strong> Register with Zebra.com based on the instructions provided in <a href="/zebradna/latest/setup/#iiregisterwithzebracom">ZDNA Cloud Setup</a>.</li>
+
+<li><strong>Device Enrollment -</strong> Ensure the device is enrolled and connected to <a href="../setup/#overview">Zebra DNA Cloud</a>.</li>
+
+<li><strong>User Barcode:</strong> Generated with Identity Guardian v1.6 or later.</li>
+
+<li><strong>Enable Guardian Safe:</strong> Follow <a href="../usage/#enableguardiansafe">instructions</a> to enable Guardian Safe and grant Accessibility Service permission.</li>
+
+<li><strong><a href="../mc/#shareddeviceauthentication">Shared Device Authentication</a> Managed Configuration:</strong> Specify the following:
+
+
+<ul>
+<li><strong>User Verification Method:</strong> 
+
+
+<ul>
+<li><strong>Comparison Source:</strong> Barcode or NFC</li>
+
+<li><strong>Primary Authentication Factor:</strong> FACE or PASSCODE</li></ul>
+</li>
+
+<li><strong>Authentication Data Storage:</strong> 
+
+
+<ul>
+<li><strong>Store Authentication Data:</strong> true</li></ul>
+</li></ul>
+</li>
+</ul>
+
+<h4 id="savecredentials" class="anchor"><a class="heading-anchor" href="#savecredentials"><span></span></a>Save Credentials</h4>
+
+<table class="facelift" style="width:80%" border="1" padding="5">
+  <thead style="background-color:#dce8ef;">
+    <tr>
+      <th style="width: 65%;">Instructions</th>
+      <th style="width: 35%;">Screen Capture</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <p><strong>Step 1:</strong> Open an app with a login screen (containing a user ID and password field). Tap the password field.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+        <img src="../../images/3-4/w-gs-1.png" alt="image" style="height:200px">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 2:</strong> A prompt asks whether to save the credentials. Tap <b>Yes.</b> If <b>No</b> is selected, the app is added to the <a href="../usage/#ignoredapps">Ignored Apps</a> list.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-gs-2.png" alt="image" style="height:200px;">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 3:</strong> In the Guardian Safe screen, enter the credentials.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-gs-3.png" alt="image" style="height:200px;">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 4:</strong> Tap <b>Safe Credentials.</b></p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-gs-4.png" alt="image" style="height:200px;">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 5:</strong> The application login screen appears with the credentials auto-populated. Subsequent login attempts to the app will automatically populate the credentials.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-gs-5.png" alt="image" style="height:200px;">
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="autopopulatecredentials" class="anchor"><a class="heading-anchor" href="#autopopulatecredentials"><span></span></a>Auto-Populate Credentials</h4>
+
+<p>Once credentials are saved in Guardian Safe for an application, subsequent attempts to launch the app result in the credentials auto-populating. </p>
+
+<table class="facelift" style="width:80%" border="1" padding="5">
+  <thead style="background-color:#dce8ef;">
+    <tr>
+      <th style="width: 65%;">Instructions</th>
+      <th style="width: 35%;">Screen Capture</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <p>When opening an app with credentials saved in Guardian Safe, a blue Guardian Safe floating sign-in icon appears and the username and password fields auto-populate. If the fields do not populate automatically, tap the input field to trigger the action. Tap the sign-in button to proceed.<br><br><b>Note:</b> After a device reboot, the initial auto-population of credentials may be delayed.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+        <img src="../../images/3-4/w-auto-populate.jpg" alt="image" style="height:200px">
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="managesavedcredentials" class="anchor"><a class="heading-anchor" href="#managesavedcredentials"><span></span></a>Manage Saved Credentials</h4>
+
+<table class="facelift" style="width:80%" border="1" padding="5">
+  <thead style="background-color:#dce8ef;">
+    <tr>
+      <th style="width: 65%;">Instructions</th>
+      <th style="width: 35%;">Screen Capture</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <p><strong>Step 1:</strong> Open Identity Guardian. </p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+        <img src="../../images/3-4/w-ig.png" alt="image" style="height:200px">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 2:</strong> Tap the top right menu and select <b>Guardian Safe.</b></p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-gs-menu.png" alt="image" style="height:200px;">
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><strong>Step 3:</strong> The Pin ID status is displayed. <b>Active</b> indicates that a PIN is set.</p>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+          <img src="../../images/3-4/w-pin-status.png" style="height:200px;">
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 <hr>
 
