@@ -1,0 +1,2490 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="PowerShell Scripts for Windows: overview, prerequisites, API translation, event handling and full script examples.">
+        <meta name="author" content="Zebra Technologies">
+        <meta name="google-site-verification" content="i4B78BrWnNy8ShJwe5feRW3jO3HE6gfYlYqYbxfl8yY">
+        <meta name="msvalidate.01" content="6B651B00161BCE79B8950AC09D5C4C75">
+        <meta title="PowerShell Scripts for Windows">
+        <title>PowerShell Scripts for Windows - Zebra Technologies</title>
+        <!-- core CSS -->
+        <link rel="stylesheet" href="/home/css/uikit.min.css" />
+        <link rel="stylesheet" href="/home/css/style.css" />
+        <link rel="stylesheet" href="/home/css/bootstrap.min.css" />
+        <link rel="stylesheet" href="/home/css/main.css" >
+        <!-- <link href="/css/bootstrap.min.css" rel="stylesheet"> -->
+        <link href="/css/font-awesome.min.css" rel="stylesheet">
+        <link href="/css/animate.min.css" rel="stylesheet">
+        <link href="/css/owl.carousel.css" rel="stylesheet">
+        <link href="/css/owl.transitions.css" rel="stylesheet">
+        <link href="/css/prettyPhoto.css" rel="stylesheet">
+        <!-- <link href="/css/main.css" rel="stylesheet"> -->
+        <link href="/css/responsive.css" rel="stylesheet">
+        <link href="/css/prettify.css" rel="stylesheet">
+        <link href="/css/bootstrap-treenav.min.css" rel="stylesheet">
+        <link href="../dcs_styles.css" rel="stylesheet">
+        <!--[if lt IE 9]>
+        <script src="js/html5shiv.js"></script>
+        <script src="js/respond.min.js"></script>
+        <![endif]-->
+        <script src="//load.sumome.com/" data-sumo-site-id="699cb66cf4dc59352efb45705526d15cbe314e1cd43f7761b94d96f3cf7338e8" async="async"></script>
+        <link rel="shortcut icon" href="/favicon.ico">
+        <script src="/js/jquery.js"></script>
+    <style>
+        /* Click outline on links.
+
+           bootstrap sets a:focus{outline:5px auto -webkit-focus-ring-color},
+           which Chrome paints near-black: after clicking a link a dark box is
+           left sitting around it. This page <style> comes after the bootstrap
+           <link>, and the selector has the same specificity, so it wins on order.
+
+           Dropping the outline on :focus alone would also remove it for keyboard
+           users, so it is re-added on :focus-visible - which only matches when the
+           browser decides focus should be shown, i.e. keyboard and not pointer. In
+           a browser without :focus-visible the ring is simply absent, the same as
+           before this block existed.
+
+           Deliberately structural rather than class-based: the first attempt at
+           this on the scanners landing page keyed off .tile-tag and friends and so
+           only reached the handful of links that happened to carry the class. The
+           left nav and .sample-link rules further down are more specific and keep
+           their own treatment. */
+        a:focus { outline: none; }
+        a:focus-visible { outline: 2px solid #0074b2; outline-offset: 2px; }
+
+        /* Left nav tree - fixed so it stays visible while scrolling */
+        /* top must match where the content starts: body padding-top (110px) +
+           the content container's margin-top (20px) = 130px, so the left nav and
+           the first content row are top-aligned. */
+        #sidebar { position: fixed; top: 130px; bottom: 0; overflow-y: auto; z-index: 99; }
+        #left-nav { padding-bottom: 20px; }
+        .nav-section-header {
+            display: block;
+            padding: 9px 12px;
+            font-weight: 700;
+            font-size: 0.95em;
+            color: #333;
+            background: #f0f0f0;
+            border-left: 3px solid #005580;
+            border-radius: 2px;
+            margin-bottom: 2px;
+            text-decoration: none;
+            cursor: pointer;
+            /* These headers are toggles, not prose - they preventDefault and
+               never navigate. Stop click-drag from leaving the browser's
+               (light blue) text selection sitting on the label, which looks
+               like a stray highlight competing with the scroll-spy's. */
+            -webkit-user-select: none;
+               -moz-user-select: none;
+                -ms-user-select: none;
+                    user-select: none;
+        }
+        .nav-section-header:hover { color: #005580; text-decoration: none; background: #e4e4e4; }
+
+        /* Clear the lingering focus state from the last-clicked nav link.
+           These are all <a> elements, so bootstrap.min.css applies
+           "a:focus { outline: 5px auto -webkit-focus-ring-color }" - the light
+           blue ring that stayed on a section header after clicking it - plus
+           "a:hover, a:focus { color:#23527c; text-decoration:underline }",
+           which at 0,1,1 outranks the plain .nav-section-header rule at 0,1,0
+           and so recolours the text too. Left alone it reads as a second,
+           competing "you are here" marker fighting the scroll-spy highlight.
+
+           These selectors are 0,2,0 so they win, and they restore the resting
+           appearance rather than just removing the outline. The :hover variants
+           are 0,3,0 because :hover is declared ABOVE this block and would
+           otherwise lose to :focus while the pointer is still on the link. */
+        .nav-section-header:focus {
+            outline: none;
+            color: #333;                 /* the resting colour, as set above */
+            text-decoration: none;
+        }
+        .nav-section-header:focus:hover { color: #005580; }
+        .nav-subsection li a:focus { outline: none; text-decoration: none; }
+
+        /* Keyboard users keep a visible focus ring. Browsers without
+           :focus-visible simply drop these two rules, which is the same
+           behaviour as before this block existed. */
+        .nav-section-header:focus-visible,
+        .nav-subsection li a:focus-visible {
+            outline: 2px solid #005580;
+            outline-offset: -2px;
+        }
+        .nav-section-header .nav-chevron { float: right; transition: transform 0.25s; }
+        .nav-section-header.collapsed .nav-chevron { transform: rotate(-90deg); }
+        .nav-subsection { list-style: none; padding: 0 0 4px 0; margin: 0 0 6px 0; border-left: 3px solid #ddd; }
+        .nav-subsection li a {
+            display: block;
+            padding: 5px 10px 5px 14px;
+            font-size: 0.88em;
+            color: #555;
+            text-decoration: none;
+        }
+        .nav-subsection li a:hover { color: #005580; background: #f7f7f7; }
+        /* "You are here" for the sub-item the scroll-spy has selected. The rule
+           already existed but nothing ever set the class; the inset shadow gives
+           it the same left accent as .nav-section-header without a border
+           nudging the text sideways as the highlight moves. */
+        .nav-subsection li a.active {
+            color: #005580;
+            font-weight: 600;
+            background: #eef5f9;
+            box-shadow: inset 3px 0 0 #005580;
+        }
+        /* Nested subsection items for API Commands and API Events */
+        .nav-subsection-items {
+            list-style: none;
+            padding: 0 0 0 14px;
+            margin: 0;
+            border: none;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s ease;
+        }
+        .nav-subsection-items.in {
+            max-height: 2000px;
+        }
+        .nav-subsection-items li a {
+            display: block;
+            padding: 4px 10px 4px 14px;
+            font-size: 0.82em;
+            color: #777;
+            text-decoration: none;
+        }
+        .nav-subsection-items li a:hover { color: #005580; background: #f7f7f7; }
+        .nav-subsection-items li a.active {
+            color: #005580;
+            font-weight: 600;
+            background: #eef5f9;
+            box-shadow: inset 3px 0 0 #005580;
+        }
+        /* Chevron icon for nested items (API Commands, API Events) */
+        .nav-nested-chevron {
+            display: inline-block;
+            margin-left: 6px;
+            font-size: 0.75em;
+            transition: transform 0.35s;
+        }
+        /* Rotate chevron when nested items are expanded */
+        .nav-subsection-items.in ~ a .nav-nested-chevron,
+        a.nav-nested-expanded .nav-nested-chevron {
+            transform: rotate(90deg);
+        }
+        /* Collapse animation speed — change 0.35s to make it faster or slower */
+        .collapsing { transition-duration: 0.6s; }
+        /* Section dividers in content */
+        .section-divider { border: none; border-top: 3px solid #e8e8e8; margin: 36px 0 28px; }
+        /* NOTE: do NOT set "html { scroll-behavior: smooth }" here. The left-nav
+           scrolling is animated with jQuery .animate({scrollTop}); CSS smooth scroll
+           would fight it frame-by-frame and stop short of the target (misalignment). */
+        /* Keep the top header fixed while scrolling. main.css forces
+           "#main-menu { position: relative }" at >=768px, which cancels Bootstrap's
+           .navbar-fixed-top, so we restore fixed positioning here. The body padding
+           reserves space so page content is not hidden behind the fixed header
+           (tune 110px if the header height changes). */
+        @media (min-width: 768px) {
+            #main-menu { position: fixed; top: 0; left: 0; right: 0; }
+            body.homepage { padding-top: 110px; }
+        }
+
+        /* ------------------------------------------------------------------
+           MOBILE / XS (< 768px)
+           ------------------------------------------------------------------ */
+        /* Bootstrap's .navbar-fixed-top is fixed at every width, but the body
+           padding-top above is only applied from 768px up, so at xs the first
+           heading ends up hidden behind the header. Reserve the space here. */
+        @media (max-width: 767px) {
+            /* 85px, not the 110px used at >=768px: the header's height is the
+               brand's 22px + 21px padding around a logo.png that is only 42px
+               tall (max-height:66px caps it, it does not scale it up). The
+               110px left a 25px gap below the header that content showed
+               through. These are fallbacks only - layoutMobileBars() measures
+               the header at runtime and overrides them, since the real height
+               depends on an image asset and on CSS in shared files. */
+            body.homepage { padding-top: 85px; }
+
+            /* The "Contents" bar stays pinned directly under the fixed header so
+               the tree is reachable at any scroll position, same as the desktop
+               sidebar. Only the bar itself is fixed; the tree it opens is an
+               overlay panel below it (see #left-nav-collapse) rather than part
+               of the page flow, so it never pushes the content around.
+               Heights: 85px header + 50px bar
+               (8px padding + 34px button + 8px padding) = content clears 135px. */
+            #sidebar {
+                position: fixed;
+                top: 85px;
+                left: 0;
+                right: 0;
+                bottom: auto;
+                overflow: visible;
+                padding: 8px 15px !important;
+                margin-bottom: 0;
+                background: #fff;
+                border-bottom: 1px solid #ddd;
+            }
+            /* Opened tree scrolls inside itself, keeping the button reachable.
+               The 220px allows for the header, the bar and the fixed footer. */
+            #left-nav-collapse {
+                margin-top: 8px;
+                max-height: calc(100vh - 220px);
+                overflow-y: auto;
+                background: #fff;
+            }
+            /* Reserve the height of the pinned bar. The container already starts
+               20px below the header, so 38px puts the first heading clear of it. */
+            #page-content { padding-top: 38px; }
+
+            /* Align the plain-text items ("TechDocs", the page title) with the
+               15px text indent Bootstrap gives .navbar-nav > li > a, otherwise
+               they sit hard against the edge of the dropped-down menu. */
+            #main-menu .navbar-nav { margin-top: 0; margin-bottom: 0; }
+            #main-menu .navbar-nav > .navbar-text {
+                margin: 8px 0;
+                padding: 0 15px;
+                float: none;
+            }
+            #main-menu .navbar-nav > li > a { padding-left: 15px; }
+        }
+
+        /* "Contents" button is xs-only; from sm up the tree must stay open, so
+           neutralise Bootstrap's .collapse{display:none} at those widths.
+           No margin-bottom here: the pinned bar's height is part of the offset
+           arithmetic above, and the gap to the open tree comes from
+           #left-nav-collapse's margin-top instead. */
+        #left-nav-toggle { width: 100%; text-align: left; }
+        @media (min-width: 768px) {
+            #left-nav-collapse.collapse {
+                display: block !important;
+                height: auto !important;
+                visibility: visible;
+            }
+        }
+
+        /* ------------------------------------------------------------------
+           FOOTER / "BACK TO TOP"
+           ------------------------------------------------------------------ */
+        /* The button is injected by /js/main.js and styled in home/css/main.css
+           as "position:fixed; bottom:20px; z-index:99". That 99 loses to the
+           1030 that .navbar-fixed-bottom puts on the footer, so the button is
+           painted behind the footer at every width - it merely looked like an
+           overlap on desktop because the footer is only one line there. Both
+           files are outside this folder, so correct it page-locally: raise the
+           button above the footer, and let layoutBackToTop() set the offset. */
+        #back-to-top-btn { z-index: 1031; }
+
+        @media (max-width: 767px) {
+            /* At the footer's 8px font the legal text wraps to roughly five
+               lines on a phone. Pinning that costs ~56px permanently, on top of
+               the ~135px already taken by the header and the Contents bar, so
+               at xs the footer returns to the normal document flow and appears
+               only when the reader reaches the end. The full text is retained -
+               nothing is hidden, it just is not pinned. */
+            #footer.navbar-fixed-bottom {
+                position: static;
+                z-index: auto;
+            }
+        }
+
+        /* ------------------------------------------------------------------
+           CONTENT TYPOGRAPHY
+           ------------------------------------------------------------------ */
+        /* uikit.min.css carries a global "em { color: #f0506e }", which turns
+           every <em> - used here for file names, paths and inline values - a
+           pinkish red. Reset it to the inherited body colour; the italics are
+           kept, and <strong> is unaffected because uikit does not recolour it.
+           Scoped to #page-content and therefore 0,1,1, so it outranks the
+           0,0,1 base rule whatever the stylesheet order, and cannot reach the
+           header, nav or footer. <code> inside .prettyprint is deliberately
+           left alone - those colours are prettify's syntax highlighting. */
+        #page-content em { color: inherit; }
+
+        /* ------------------------------------------------------------------
+           ANCHOR LANDINGS
+           ------------------------------------------------------------------ */
+        /* A browser jumping to a #hash scrolls the target to y=0, which puts it
+           behind the fixed header. scroll-margin-top reserves that space, so the
+           heading lands just below the header instead.
+
+           This only affects NATIVE scrolling - following a #hash typed in the
+           address bar, an external deep link, or one of the redirect stubs in the
+           old sub-folders. The left-nav clicks are unaffected: they
+           preventDefault() and animate with jQuery, already subtracting
+           navOffset() themselves. The 130px matches NAV_TOP so both routes land
+           a heading in the same place.
+
+           Applied to [id] rather than just headings because any element with an
+           id can be a jump target - the figure anchors, for instance. */
+        #page-content [id] { scroll-margin-top: 130px; }
+        @media (max-width: 767px) {
+            /* 85px header + the pinned Contents bar (~50px) + a small gap */
+            #page-content [id] { scroll-margin-top: 145px; }
+        }
+
+        /* ------------------------------------------------------------------
+           END-OF-PAGE SPACING
+           ------------------------------------------------------------------ */
+        /* Breathing room between the last line of content and the copyright bar.
+           The footer is .navbar-fixed-bottom, so from 768px up it is pinned over
+           the bottom of the viewport and the final line of text ends up right
+           against it once you scroll to the end.
+
+           Padding rather than trailing <br/> tags: the gap belongs to the end of
+           the content column, not to whichever element happens to be last, so it
+           survives adding or reordering sections and does not leave stray empty
+           elements behind. 60px clears the footer (one or two lines at its 8px
+           font) with a clear margin. */
+        #page-content { padding-bottom: 60px; }
+        @media (max-width: 767px) {
+            /* At xs the footer is in normal flow (see above), so it only needs a
+               visible gap, not clearance for an overlay. */
+            #page-content { padding-bottom: 40px; }
+        }
+        #page-content .figure-block { overflow-x: auto; }
+    </style>
+</head>
+    <body id="home" class="homepage" data-spy="scroll" data-offset="100" data-target="#toc">
+        <header id="header">
+            <nav id="main-menu" class="navbar navbar-default navbar-fixed-top" role="banner">
+                <div class="container-fluid">
+                    <div class="navbar-header">
+                        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                            <span class="sr-only">Toggle navigation</span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </button>
+                        <a class="navbar-brand" href="/">
+                            <img src="/images/logo.png" alt="logo" style="max-height:66px;float: inherit; padding-right: 3px;">
+                        </a>
+                    </div>
+                    <div class="collapse navbar-collapse navbar-left">
+                        <!-- NOTE: every child of .navbar-nav must be an <li>. A bare
+                             <p class="navbar-text"> is invalid inside a <ul> and
+                             breaks the stacked layout of the collapsed (mobile) menu. -->
+                        <ul class="nav navbar-nav">
+                            <li class="navbar-text"><strong>TechDocs</strong></li>
+                            <li>
+                                <a href="/dcs/scanners">Barcode Scanner Tools</a>
+                            </li>
+                            <li class="navbar-text">PowerShell Scripts for Windows</li>
+                        </ul>
+                    </div>
+                    <!-- The right-hand section links now live in the left nav tree. -->
+                </div><!--/.container-->
+            </nav><!--/nav-->
+        </header><!--/header-->
+        <div class="container-fluid" style="margin-top:20px;">
+            <div class="row">
+                <!-- LEFT NAV SIDEBAR -->
+                <div class="col-sm-3" id="sidebar" style="padding-right:0;">
+                    <button type="button" id="left-nav-toggle" class="btn btn-default visible-xs-block"
+                            data-toggle="collapse" data-target="#left-nav-collapse" aria-expanded="false">
+                        <i class="fa fa-bars"></i> Contents
+                    </button>
+                    <div id="left-nav-collapse" class="collapse">
+                    <nav id="left-nav">
+                        <!-- Section 1: About -->
+                        <a class="nav-section-header" href="#nav-powershell-about" data-section="#powershell-about" aria-expanded="true">
+                            About PowerShell Scripts for Windows <i class="fa fa-chevron-down nav-chevron"></i>
+                        </a>
+                        <ul id="nav-powershell-about" class="nav-subsection collapse in">
+                            <li><a href="#about-overview">Overview</a></li>
+                            <li><a href="#powershell-prerequisites">Prerequisites</a></li>
+                            <li>
+                                <a href="#powershell-common-components" class="nav-nested-toggle">Common Components <i class="fa fa-chevron-right nav-nested-chevron"></i></a>
+                                <ul class="nav-subsection-items">
+                                    <li><a href="#powershell-common-components-load-dll">Loading the DLL</a></li>
+                                    <li><a href="#powershell-common-components-scanner-object">Creating the Scanner Object</a></li>
+                                    <li><a href="#powershell-common-components-initialize-variables">Initializing Variables</a></li>
+                                    <li><a href="#powershell-common-components-open">Opening the Scanner Connection</a></li>
+                                    <li><a href="#powershell-common-components-scanner-data">Retrieving Scanner Data</a></li>
+                                    <li><a href="#powershell-common-components-out-xml">Process-Out-XML Function</a></li>
+                                    <li><a href="#powershell-common-components-logging">Logging</a></li>
+                                </ul>
+                            </li>
+                            <li><a href="#powershell-corescanner-api">Translating API Commands to PowerShell</a></li>
+                            <li><a href="#powershell-references">Reference</a></li>
+                            <li>
+                                <a href="#powershell-event-handling" class="nav-nested-toggle">Event Handling in PowerShell <i class="fa fa-chevron-right nav-nested-chevron"></i></a>
+                                <ul class="nav-subsection-items">
+                                    <li><a href="#powershell-event-registration">Event Registration for Barcode Data</a></li>
+                                    <li><a href="#powershell-event-handling-barcode">Event Handling (Barcode Events)</a></li>
+                                    <li><a href="#powershell-event-key-points">Key Points (Barcode Events)</a></li>
+                                    <li><a href="#powershell-event-registration-pnp">Event Registration for PNP Events</a></li>
+                                    <li><a href="#powershell-event-handling-pnp">Event Handling (PNP Events)</a></li>
+                                    <li><a href="#powershell-event-key-points-pnp">Key Points (PNP Events)</a></li>
+                                    <li><a href="#powershell-event-registration-rmd">Event Registration for RMD Events</a></li>
+                                    <li><a href="#powershell-event-handling-rmd">Event Handling (RMD Events)</a></li>
+                                    <li><a href="#powershell-event-key-points-rmd">Key Points (RMD Events)</a></li>
+                                    <li><a href="#powershell-event-api">API Events</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                        <!-- Section 2: Examples -->
+                        <a class="nav-section-header collapsed" href="#nav-powershell-examples" data-section="#powershell-examples" aria-expanded="false">
+                            Examples <i class="fa fa-chevron-down nav-chevron"></i>
+                        </a>
+                        <ul id="nav-powershell-examples" class="nav-subsection collapse">
+                            <li><a href="#examples-overview">Overview</a></li>
+                            <li>
+                                <a href="#list-of-powershell-scripts" class="nav-nested-toggle">Full Script Examples <i class="fa fa-chevron-right nav-nested-chevron"></i></a>
+                                <ul class="nav-subsection-items">
+                                    <li><a href="#powershell-scripts-asset-info">Retrieve Asset Information</a></li>
+                                    <li><a href="#powershell-scripts-barcode-data">Retrieve Barcode Data Scan Events</a></li>
+                                    <li><a href="#powershell-scripts-config-load">Scanner Configuration Load</a></li>
+                                    <li><a href="#powershell-scripts-firmware-download">Firmware Download</a></li>
+                                    <li><a href="#powershell-scripts-attribute-get">Get Attributes from the Scanner</a></li>
+                                    <li><a href="#powershell-scripts-attribute-set">Set Attributes in the Scanner</a></li>
+                                    <li><a href="#powershell-scripts-switch-host-mode">Scanner Host Mode Switching</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </nav>
+                    </div><!-- /left-nav-collapse -->
+                </div><!-- /sidebar -->
+
+                <!-- RIGHT CONTENT -->
+                <div class="col-sm-9 col-sm-offset-3" id="page-content">
+                    <div class="row">
+                        <div class="col-sm-12">
+                                        <section id="cta" class="wow fadeIn">
+                                            <div class="">
+                                                <h1 id="powershell-about" class="anchor">
+                                                    <a class="heading-anchor" href="#powershell-about"><span></span></a>Comprehensive Zebra Scanner PowerShell Interaction Documentation
+                                                </h1>
+                                            </div>
+                                        </section>                    
+                                <div id="mainContent-about" class="row">
+                                    <div class="col-sm-12">
+                                        <div class="blog-post blog-large wow fadeInLeft" data-wow-duration="300ms" data-wow-delay="0ms">
+                                            <!-- Start of guide -->
+                                            <div class="service-box wow fadeInRight">
+                                                <div class="">
+                                                    <h2 id="about-overview" class="anchor"><a class="heading-anchor" href="#about-overview"><span></span></a>Overview</h2>
+
+                                                    <p>This documentation provides a detailed guide on using PowerShell scripts to interact with Zebra scanners via the <strong>Interop.CoreScanner.dll</strong>. It covers how to retrieve scanner information, handle various events like barcode data events, and translate C# and C++ API calls into PowerShell commands. It also includes the full scripts you provided, along with explanations of their components.</p>
+
+                                                    <hr>
+
+                                                    <h2 id="powershell-prerequisites" class="anchor"><a class="heading-anchor" href="#powershell-prerequisites"><span></span></a>Prerequisites</h2>
+
+                                                    <ul>
+                                                        <li>PowerShell Version: Ensure PowerShell version 5 or higher is installed on your system.</li>
+                                                        <li>Zebra SDK: The Zebra Scanner SDK must be installed, and the <strong>Interop.CoreScanner.dll</strong> should be located at <strong>C:\Program Files\Zebra Technologies\Barcode Scanners\Common\</strong>.</li>
+                                                        <li>Permissions: Run PowerShell with administrative privileges to ensure all commands execute successfully.</li>
+                                                    </ul>
+
+                                                    <hr>
+
+                                                    <h2 id="powershell-common-components" class="anchor"><a class="heading-anchor" href="#powershell-common-components"><span></span></a>Common Components</h2>
+
+                                                    <h3 id="powershell-common-components-load-dll" class="anchor"><a class="heading-anchor" href="#powershell-common-components-load-dll"><span></span></a>Loading the DLL</h3>
+
+                                                    <p>Each script begins by loading the <strong>Interop.CoreScanner.dll</strong>, which provides methods and properties necessary for interacting with the scanner hardware.</p>
+
+<pre class="prettyprint">
+<code>
+[System.Reflection.Assembly]::LoadFile("C:\Program Files\Zebra Technologies\Barcode Scanners\Common\Interop.CoreScanner.dll") | Out-Null
+</code>
+</pre>
+
+                                                    <h3 id="powershell-common-components-scanner-object" class="anchor"><a class="heading-anchor" href="#powershell-common-components-scanner-object"><span></span></a>Creating the Scanner Object</h3>
+
+                                                    <p>The scripts create an instance of <strong>CCoreScannerClass</strong>, the primary class for scanner interactions.</p>
+
+<pre class="prettyprint">
+<code>
+$ScannerObject = New-Object Interop.CoreScanner.CCoreScannerClass
+</code>
+</pre>
+
+                                                    <h3 id="powershell-common-components-initialize-variables" class="anchor"><a class="heading-anchor" href="#powershell-common-components-initialize-variables"><span></span></a>Initializing Variables</h3>
+
+                                                    <p>Several variables are initialized to manage scanner operations and store results.</p>
+
+<pre class="prettyprint">
+<code>
+$Status = 0
+$AppHandle = 0
+$OutXML = ""
+$ScannerCount = 0
+</code>
+</pre>
+
+                                                    <h3 id="powershell-common-components-open" class="anchor"><a class="heading-anchor" href="#powershell-common-components-open"><span></span></a>Opening the Scanner Connection</h3>
+
+                                                    <p>The <strong>Open</strong> method is used to establish a connection with the scanner, taking parameters such as application handle and scanner types.</p>
+
+<pre class="prettyprint">
+<code>
+$ScannerTypes = New-Object int16[] 11
+$ScannerTypes[0] = 1
+$NumberOfScannerTypes = [int16] 1
+$ScannerObject.Open($AppHandle, $ScannerTypes, $NumberOfScannerTypes, [ref] $Status)
+</code>
+</pre>
+
+                                                    <h3 id="powershell-common-components-scanner-data" class="anchor"><a class="heading-anchor" href="#powershell-common-components-scanner-data"><span></span></a>Retrieving Scanner Data</h3>
+
+                                                    <p><strong>GetScanners</strong> retrieves information about the connected scanners and stores it in an XML format.</p>
+
+<pre class="prettyprint">
+<code>
+$ScannerObject.GetScanners([ref] $ScannerCount, $ScannerIDList, [ref] $OutXML, [ref] $Status)
+</code>
+</pre>
+
+                                                    <h3 id="powershell-common-components-out-xml" class="anchor"><a class="heading-anchor" href="#powershell-common-components-out-xml"><span></span></a>Process-Out-XML Function</h3>
+
+                                                    <p>The <strong>Process-Out-XML</strong> function is designed to parse and format the XML data returned from the scanner. This function extracts useful information about the scanners and formats it for display.</p>
+
+                                                    <p>Key Points:</p>
+
+                                                    <ol>
+                                                        <li>
+                                                            XML Parsing:
+                                                            <ul>
+                                                                <li>The function begins by creating an instance of <strong>System.Xml.XmlDocument</strong>. This class allows for easy manipulation and querying of XML data.</li>
+                                                            </ul>
+<pre class="prettyprint">
+<code>
+$XmlContent = New-Object -TypeName System.Xml.XmlDocument
+$XmlContent.LoadXml($XML)
+</code>
+</pre>
+                                                        </li>
+                                                        <li>
+                                                            Extracting Scanner Information:
+                                                            <ul>
+                                                                <li>The function uses the scanners and scanner nodes from the XML to extract details about each connected scanner.</li>
+                                                                <li>It pipes the extracted data to Format-Table, which organizes the data into a readable table format.</li>
+                                                            </ul>
+<pre class="prettyprint">
+<code>
+$XmlContent.scanners.scanner | Format-Table -AutoSize @{Name = 'Scanner ID'; Expression = {$_.scannerID}}, @{Name = 'Host Mode'; Expression = {$_.type}}, @{Name = 'Model Number'; Expression = {$_.modelnumber}}, @{Name = 'Serial Number'; Expression = {$_.serialnumber}}, @{Name = 'Date of Manufacture'; Expression = {$_.DoM}}, @{Name = 'Scanner Firmware Version'; Expression = {$_.firmware}}, @{Name = 'Config Name'; Expression = {$_.configname}}
+</code>
+</pre>
+                                                        </li>
+                                                        <li>
+                                                            Processing and Formatting Output:
+                                                            <ul>
+                                                                <li>The main purpose of this function is to transform the raw XML data into a human-readable format, making it easy to review scanner attributes like ID, model number, serial number, and firmware version.</li>
+                                                                <li>The scripts use <strong>Format-Table</strong> to neatly display the processed output data, making it easier to read and interpret.</li>
+                                                            </ul>
+                                                        </li>
+                                                    </ol>
+
+                                                    <h3 id="powershell-common-components-logging" class="anchor"><a class="heading-anchor" href="#powershell-common-components-logging"><span></span></a>Logging</h3>
+
+                                                    <p><strong>Start-Transcript</strong> is used to log script execution details, which is helpful for troubleshooting and auditing.</p>
+
+<pre class="prettyprint">
+<code>
+Start-Transcript -Append -Path "$PSScriptRoot\YourLogFile.log.txt"
+</code>
+</pre>
+
+                                                    <hr>
+
+                                                    <h2 id="powershell-corescanner-api" class="anchor"><a class="heading-anchor" href="#powershell-corescanner-api"><span></span></a>Translating API Commands to PowerShell</h2>
+
+                                                    <P>C# and C++ API calls references are available <a href="../sdk-windows/#sdk-windows-api" target="_blank">here</a>.</P>
+
+                                                    <p>The Zebra scanner API provides several commands that can be used to control and interact with scanners. Here’s how these commands translate into PowerShell:</p>
+
+                                                    <p><strong>Scanner ID</strong></p>
+
+                                                    <p>In the SDK context, scanner ID uniquely identifies a scanner device connected to the CoreScanner driver, and is required to communicate programmatically with the device. Developers need to call the GetScanners method of the CoreScanner API in order to retrieve the scanner IDs of connected devices. For example, to switch on a scanner's red LED, the scanner ID of that particular scanner must be obtained to provide that value in the &lt;scannerID> element of inXML of the ExecCommand method call.</p>
+
+                                                    <p>During each CoreScanner driver instance, scanner IDs are sequentially assigned to each connected device. When the CoreScanner driver is restarted, the array of connected scanners is reinitialized and previous scanner IDs may no longer be valid. In this case, the GetScanners method must be executed to obtain the new scanner IDs.</p>
+
+                                                    <p>During a single CoreScanner driver instance, an RSM (Remote Scanner Management) supported scanner that is unplugged, and reconnected retain its unique scanner ID. However, a non-RSM device is assigned a different scanner ID each time it is reconnected.</p>
+
+                                                    <ol>
+                                                        <li>
+                                                            Open command:
+                                                            <ul>
+                                                                <li>
+                                                                    C# Syntax:
+<pre class="prettyprint">
+<code>
+void Open(int reserved, System.Array sfTypes, short lengthOfTypes, out int status);
+</code>
+</pre>
+                                                                </li>
+                                                                <li>
+                                                                    PowerShell Translation:
+<pre class="prettyprint">
+<code>
+$ScannerTypes = New-Object int16[] 11
+$ScannerTypes[0] = 1
+$ScannerObject.Open($AppHandle, $ScannerTypes, $NumberOfScannerTypes, [ref] $Status)
+</code>
+</pre>
+                                                                </li>
+                                                            </ul>
+                                                        </li>
+                                                        <li>
+                                                            GetScanners command:
+                                                            <ul>
+                                                                <li>
+                                                                    C# Syntax:
+<pre class="prettyprint">
+<code>
+void GetScanners(out short numberOfScanners, System.Array sfScannerIDList, out string outXML, out int status);
+</code>
+</pre>
+                                                                </li>
+                                                                <li>
+                                                                    PowerShell Translation:
+<pre class="prettyprint">
+<code>
+$ScannerObject.GetScanners([ref] $ScannerCount, $ScannerIDList, [ref] $OutXML, [ref] $Status)
+</code>
+</pre>
+                                                                </li>
+                                                            </ul>
+                                                        </li>
+                                                        <li>
+                                                            ExecCommand:
+                                                            <ul>
+                                                                <li>
+                                                                    C# Syntax:
+<pre class="prettyprint">
+<code>
+void ExecCommand(int opcode, ref string inXML, out string outXML, out int status);
+</code>
+</pre>
+                                                                </li>
+                                                                <li>
+                                                                    PowerShell Translation:
+<pre class="prettyprint">
+<code>
+$ScannerObject.ExecCommand($OpCode, [ref] $InXML, [ref] $OutXML, [ref] $Status)
+</code>
+</pre>
+                                                                </li>
+                                                            </ul>
+                                                        </li>
+                                                        <li>
+                                                            Close command:
+                                                            <ul>
+                                                                <li>
+                                                                    C# Syntax:
+<pre class="prettyprint">
+<code>
+void Close(int reserved, out int status);
+</code>
+</pre>
+                                                                </li>
+                                                                <li>
+                                                                    PowerShell Translation:
+<pre class="prettyprint">
+<code>
+$ScannerObject.Close($AppHandle, [ref] $Status)
+</code>
+</pre>
+                                                                </li>
+                                                            </ul>
+                                                        </li>
+                                                    </ol>
+
+                                                    <hr>
+
+                                                    <h2 id="powershell-references" class="anchor"><a class="heading-anchor" href="#powershell-references"><span></span></a>Reference</h2>
+
+                                                    <p>Refer to the <a href="../sdk-windows/#sdk-windows-appendix" target="_blank">Appendix of Barcode Scanner SDK for Windows</a> for more details. It covers the followings.</p>
+
+                                                    <ul>
+                                                        <li>Error/Status Codes.</li>
+                                                        <li>Methods Invoked Through ExecCommand Or ExecCommandAsync.</li>
+                                                        <li>Action Attributes and Values</li>
+                                                    </ul>
+
+                                                    <p><strong>NOTE:</strong> For a list of a scanner's supported attribute (parameter) numbers and definitions, refer to the Product Reference Guide for that model scanner, available from the Zebra Support website at <a href="http://www.zebra.com/support" target="_blank">http://www.zebra.com/support</a>. Attributes include configuration parameters, monitored data, and asset tracking information.</p>
+
+                                                    <p>References:</p>
+
+                                                    <ul>
+                                                        <li><a href="https://supportcommunity.zebra.com/s/article/000026278?language=en_US" target="_blank">Find or Search for Scanner Parameters in 123Scan Config File</a></li>
+                                                        <li><a href="https://supportcommunity.zebra.com/s/article/List-of-programmable-RSM-scanner-parameters-dictionary-table-definition?language=en_US" target="_blank">List of Programmable RSM Scanner Parameters Dictionary Table Definition</a></li>
+                                                    </ul>
+
+                                                    <hr>
+
+                                                    <h2 id="powershell-event-handling" class="anchor"><a class="heading-anchor" href="#powershell-event-handling"><span></span></a>Event Handling in PowerShell</h2>
+
+                                                    <p>To handle events in PowerShell, you must use the <strong>RegisterForEvents</strong> method in your C# code block, specifying the event types you wish to subscribe to. Once events are registered, they can be handled using PowerShell's <strong>Register-ObjectEvent</strong>.</p>
+
+                                                    <h3 id="powershell-event-registration" class="anchor"><a class="heading-anchor" href="#powershell-event-registration"><span></span></a>Event Registration for Barcode Data</h3>
+
+                                                    <p>In the script for handling barcode data scan events, a process is set up to register for barcode events and handle them as they occur.</p>
+
+                                                    <h3 id="powershell-event-handling-barcode" class="anchor"><a class="heading-anchor" href="#powershell-event-handling-barcode"><span></span></a>Event Handling (Barcode Events)</h3>
+
+                                                    <p>C# Syntax:</p>
+
+<pre class="prettyprint">
+<code>
+void OnBarcodeEvent(short eventType, ref string pscanData);
+</code>
+</pre>
+
+                                                    <p>PowerShell Integration:</p>
+
+                                                    <p>The event handling is set up in PowerShell by integrating C# code using <strong>Add-Type</strong> to define and handle events.</p>
+
+                                                    <h3 id="powershell-event-key-points" class="anchor"><a class="heading-anchor" href="#powershell-event-key-points"><span></span></a>Key Points</h3>
+
+                                                    <ul>
+                                                        <li>
+                                                            <strong>Define a Delegate:</strong>
+
+                                                            <p>A delegate <strong>BarcodeEventHandler</strong> is defined in C#. This delegate specifies the signature for methods that can handle barcode events.</p>
+
+<pre class="prettyprint">
+<code>
+public delegate void BarcodeEventHandler(int dataType, string pscanData);
+</code>
+</pre>
+                                                        </li>
+                                                        <li>
+                                                            <strong>Event Handling Class:</strong>
+
+                                                            <p>The <strong>CoreScannerWrapper</strong> class encapsulates the logic for handling barcode events. It includes an event OnBarcode which is triggered whenever a barcode is scanned.</p>
+
+<pre class="prettyprint">
+<code>
+public static event BarcodeEventHandler OnBarcode;
+</code>
+</pre>
+                                                        </li>
+                                                        <li>
+                                                            <strong>Registering for Events:</strong>
+
+                                                            <p>The <strong>RegisterForEvents</strong> method configures the scanner to listen for specific events (in this case, barcode events). It constructs an XML string to specify which events to register.</p>
+
+<pre class="prettyprint">
+<code>
+string inXml = "&lt;inArgs>&lt;cmdArgs>&lt;arg-int>1&lt;/arg-int>&lt;arg-int>1&lt;/arg-int>&lt;/cmdArgs>&lt;/inArgs>";
+
+coreScannerObject.GetType().InvokeMember("ExecCommand", BindingFlags.InvokeMethod, null, coreScannerObject, new object[] { 1001, inXml, out outXml, status });
+</code>
+</pre>
+
+                                                        </li>
+                                                        <li>
+                                                            <strong>Event Callback:</strong>
+
+                                                            <p>The <strong>BarcodeEvent</strong> method serves as the callback that processes barcode data when an event is received. It uses the OnBarcode event to notify subscribers of new barcode data.</p>
+
+<pre class="prettyprint">
+<code>
+public void BarcodeEvent(int dataType, string pscanData) {
+    if (OnBarcode != null) {
+        OnBarcode(dataType, pscanData);
+    }
+}
+</code>
+</pre>
+                                                        </li>
+                                                        <li>
+                                                            <strong>PowerShell Integration:</strong>
+
+                                                            <p>In PowerShell, <strong>Register-ObjectEvent</strong> is used to bind the event handler to a PowerShell action, allowing barcode data to be processed in real-time within the script.</p>
+
+<pre class="prettyprint">
+<code>
+$ActionBarcodeEvent = { Write-Host $event.SourceArgs }
+Register-ObjectEvent -InputObject $ScannerWrapperObject -SourceIdentifier "BarcodeEvents" -EventName "OnBarcode" -Action $ActionBarcodeEvent
+</code>
+</pre>
+                                                        </li>
+                                                    </ul>
+
+                                                    <h3 id="powershell-event-registration-pnp" class="anchor"><a class="heading-anchor" href="#powershell-event-registration-pnp"><span></span></a>Event Registration for PNP Events</h3>
+
+                                                    <p>PNP (Plug and Play) events notify the script when a scanner is physically or logically attached to or detached from the host. In the script for handling firmware updates, a process is set up to register for PNP events and handle them as they occur.</p>
+
+                                                    <h3 id="powershell-event-handling-pnp" class="anchor"><a class="heading-anchor" href="#powershell-event-handling-pnp"><span></span></a>Event Handling (PNP Events)</h3>
+
+                                                    <p><strong>C# Syntax:</strong></p>
+
+<pre class="prettyprint">
+<code>
+void OnPNPEvent(SHORT eventType, BSTR *ppnpData)
+</code>
+</pre>
+
+                                                    <p><strong>PowerShell Integration:</strong></p>
+
+                                                    <p>The event handling is set up in PowerShell by integrating C# code using <strong>Add-Type</strong> to define and handle events.</p>
+
+                                                    <h3 id="powershell-event-key-points-pnp" class="anchor"><a class="heading-anchor" href="#powershell-event-key-points-pnp"><span></span></a>Key Points</h3>
+
+                                                    <ul>
+                                                        <li>
+                                                            <strong>Define a Delegate:</strong>
+
+                                                            <p>A delegate <strong>CoreScannerEventHandler</strong> is defined in C#. This delegate specifies the signature for methods that can handle PNP and RMD events.</p>
+
+<pre class="prettyprint">
+<code>
+public delegate void CoreScannerEventHandler(int eventType, string pscanData);
+</code>
+</pre>
+                                                        </li>
+                                                        <li>
+                                                            <strong>Event Handling Class:</strong>
+
+                                                            <p>The <strong>CoreScannerWrapper</strong> class encapsulates the logic for handling plug and play events. It includes an <strong>OnPNPEvent</strong> which is triggered whenever an attach or detach event is received.</p>
+
+<pre class="prettyprint">
+<code>
+public static event CoreScannerEventHandler OnPNPEvent;
+</code>
+</pre>
+                                                        </li>
+                                                        <li>
+                                                            <strong>Registering for Events:</strong>
+
+                                                            <p>The <strong>RegisterForEvents</strong> method configures the scanner to listen to specific events (in this case, PNP events). It constructs an XML string to specify which events to register.</p>
+
+<pre class="prettyprint">
+<code>
+string inXml = "&lt;inArgs>&lt;cmdArgs>&lt;arg-int>1&lt;/arg-int>&lt;arg-int>16&lt;/arg-int>&lt;/cmdArgs>&lt;/inArgs>";
+
+coreScannerObject.GetType().InvokeMember("ExecCommand", BindingFlags.InvokeMethod, null, coreScannerObject, new object[] { 1001, inXml, out outXml, status });
+</code>
+</pre>
+
+                                                        </li>
+                                                        <li>
+                                                            <strong>Event Callback:</strong>
+
+                                                            <p>The <strong>PNPEvent</strong> method serves as the callback that processes PNP data when an event is received. It uses the <strong>OnPNPEvent</strong> to notify subscribers of new PNP data.</p>
+
+<pre class="prettyprint">
+<code>
+private void PNPEvent(int eventType, string data)
+{
+    if (OnPNPEvent != null)
+    {
+        OnPNPEvent(eventType, data);
+    }
+}
+</code>
+</pre>
+                                                        </li>
+                                                        <li>
+                                                            <strong>PowerShell Integration:</strong>
+
+                                                            <p>In PowerShell, <strong>Register-ObjectEvent</strong> is used to bind the event handler to a PowerShell action, allowing PNP data to be processed in real-time within the script.</p>
+
+<pre class="prettyprint">
+<code>
+$ActionPNPEvent = { Write-Host $event.SourceArgs }
+Register-ObjectEvent -InputObject $ScannerEventWatcher -SourceIdentifier "PNPEvents" -EventName "OnPNPEvent" -Action $ActionPNPEvent
+</code>
+</pre>
+                                                        </li>
+                                                    </ul>
+
+                                                    <h3 id="powershell-event-registration-rmd" class="anchor"><a class="heading-anchor" href="#powershell-event-registration-rmd"><span></span></a>Event Registration for RMD Events</h3>
+
+                                                    <p>In the script for handling firmware updates and configuration uploads, a process is set up to register for RMD events and handle them as they occur.</p>
+
+                                                    <h3 id="powershell-event-handling-rmd" class="anchor"><a class="heading-anchor" href="#powershell-event-handling-rmd"><span></span></a>Event Handling (RMD Events)</h3>
+
+                                                    <p><strong>C# Syntax:</strong></p>
+
+<pre class="prettyprint">
+<code>
+void OnScanRMDEvent(SHORT eventType, BSTR *prmdData)
+</code>
+</pre>
+
+                                                    <p><strong>PowerShell Integration:</strong></p>
+
+                                                    <p>The event handling is set up in PowerShell by integrating C# code using <strong>Add-Type</strong> to define and handle events.</p>
+
+                                                    <h3 id="powershell-event-key-points-rmd" class="anchor"><a class="heading-anchor" href="#powershell-event-key-points-rmd"><span></span></a>Key Points</h3>
+
+                                                    <ul>
+                                                        <li>
+                                                            <strong>Define a Delegate:</strong>
+
+                                                            <p>A delegate <strong>CoreScannerEventHandler</strong> is defined in C#. This delegate specifies the signature for methods that can handle PNP and RMD events.</p>
+
+<pre class="prettyprint">
+<code>
+public delegate void CoreScannerEventHandler(int eventType, string pscanData);
+</code>
+</pre>
+                                                        </li>
+                                                        <li>
+                                                            <strong>Event Handling Class:</strong>
+
+                                                            <p>The <strong>CoreScannerWrapper</strong> class encapsulates the logic for handling RMD events. It includes an <strong>OnScanRMDEvent</strong> which is triggered whenever an RMD event is received.</p>
+
+<pre class="prettyprint">
+<code>
+public static event CoreScannerEventHandler OnScanRMDEvent;
+</code>
+</pre>
+                                                        </li>
+                                                        <li>
+                                                            <strong>Registering for Events:</strong>
+
+                                                            <p>The <strong>RegisterForEvents</strong> method configures the scanner to listen to specific events (in this case, RMD events). It constructs an XML string to specify which events to register.</p>
+
+<pre class="prettyprint">
+<code>
+string inXml = "&lt;inArgs>&lt;cmdArgs>&lt;arg-int>1&lt;/arg-int>&lt;arg-int>8&lt;/arg-int>&lt;/cmdArgs>&lt;/inArgs>";
+
+coreScannerObject.GetType().InvokeMember("ExecCommand", BindingFlags.InvokeMethod, null, coreScannerObject, new object[] { 1001, inXml, out outXml, status });
+</code>
+</pre>
+
+                                                        </li>
+                                                        <li>
+                                                            <strong>Event Callback:</strong>
+
+                                                            <p>The <strong>ScanRMDEvent</strong> method serves as the callback that processes RMD data when an event is received. It uses the <strong>OnScanRMDEvent</strong> to notify subscribers of new RMD data.</p>
+
+<pre class="prettyprint">
+<code>
+private void ScanRMDEvent(int eventType, string data)
+{
+    if (OnScanRMDEvent != null)
+    {
+        OnScanRMDEvent(eventType, data);
+    }
+}
+</code>
+</pre>
+                                                        </li>
+                                                        <li>
+                                                            <strong>PowerShell Integration:</strong>
+
+                                                            <p>In PowerShell, <strong>Register-ObjectEvent</strong> is used to bind the event handler to a PowerShell action, allowing RMD data to be processed in real-time within the script.</p>
+
+<pre class="prettyprint">
+<code>
+$ActionRMDEvent = { Write-Host $event.SourceArgs }
+Register-ObjectEvent -InputObject $ScannerEventWatcher -SourceIdentifier "RMDEvents" -EventName "OnScanRMDEvent" -Action $ActionRMDEvent
+</code>
+</pre>
+                                                        </li>
+                                                    </ul>
+
+                                                    <h3 id="powershell-event-api" class="anchor"><a class="heading-anchor" href="#powershell-event-api"><span></span></a>API Events</h3>
+
+                                                    <p>The following events are supported and can be registered using the Zebra API:</p>
+
+                                                    <ol>
+                                                        <li>ImageEvent: Triggered when an imaging scanner captures images in image mode.</li>
+                                                        <li>VideoEvent: Triggered when an imaging scanner captures video in video mode.</li>
+                                                        <li>BarcodeEvent: Triggered when a scanner captures barcodes.</li>
+                                                        <li>PNPEvent: Triggered when a scanner is attached or detached.</li>
+                                                        <li>ScanRMDEvent: Receives RMD Events when updating firmware of the scanner.</li>
+                                                        <li>CommandResponseEvent: Received after an asynchronous command execution.</li>
+                                                        <li>IOEvent: Received when an exclusively claimed device is accessed by another client application.</li>
+                                                        <li>ScannerNotificationEvent: Received when a SNAPI scanner changes its operational mode.</li>
+                                                        <li>BinaryDataEvent: Triggered when an IDC-supported imaging scanner captures an image in Intelligent Document Capture (IDC) or Signature Capture mode.</li>
+                                                    </ol>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                        </div>
+                    </div>
+
+                    <hr class="section-divider">
+
+                    <div class="row">
+                        <div class="col-sm-12">
+                                        <section id="cta" class="wow fadeIn">
+                                            <div class="">
+                                                <h1 id="powershell-examples" class="anchor">
+                                                    <a class="heading-anchor" href="#powershell-examples"><span></span></a>PowerShell Scripts: Examples and Use Cases
+                                                </h1>
+                                            </div>
+                                        </section>                    
+                                <div id="mainContent-examples" class="row">
+                                    <div class="col-sm-12">
+                                        <div class="blog-post blog-large wow fadeInLeft" data-wow-duration="300ms" data-wow-delay="0ms">
+                                            <!-- Start of guide -->
+                                            <div class="service-box wow fadeInRight">
+                                                <div class="">
+                                                    <h2 id="examples-overview" class="anchor"><a class="heading-anchor" href="#examples-overview"><span></span></a>Overview</h2>
+
+                                                    <p>This section provides full examples of PowerShell scripts to demonstrate their usage and functionality.</p>
+
+                                                    <p>As with C++ and C# development, a CoreScanner instance must first be opened, followed by the GetScanners method call to discover connected scanner devices. Clear <a href="#powershell-about">here</a> to learn more about the documentation.</p>
+
+                                                    <h2 id="list-of-powershell-scripts" class="anchor"><a class="heading-anchor" href="#list-of-powershell-scripts"><span></span></a>Full Script Examples</h2>
+
+                                                    <h3 id="powershell-scripts-asset-info" class="anchor"><a class="heading-anchor" href="#powershell-scripts-asset-info"><span></span></a>Retrieve Asset Information</h3>
+
+                                                    <p>This script queries and logs the asset information of connected scanners.</p>
+
+                                                    <div class="code-container">
+                                                        <button class="button copy-button" onclick="copyCode(this)">Copy</button>
+                                                        <button class="button download-button" onclick="downloadFile('CoreScanner_AssetInfo.ps1')">
+                                                            <img src="../images/common/download.png">
+                                                        </button>                                     
+<pre class="prettyprint">
+<code id="code-snippet">
+# Description : Following script query the asset information of the connected scanners timely. Support PSVersion 5+.
+# Copyright : ©2026 Zebra Technologies Corp. and/or its affiliates.
+
+# Log everything, file will create in the script execution folder.
+# Comment the following line if logging is not required.
+Start-Transcript -Append -Path $PSScriptRoot"\CoreScanner_AssetInfo.log.txt"
+
+# Process GetScanners out XML and list the asset information
+Function Process-Out-XML ($XML)
+{
+    $XmlContent = New-Object -TypeName System.Xml.XmlDocument
+    $XmlContent.LoadXml($XML)
+
+    # Pipe asset information
+    $XmlContent.scanners.scanner | Format-Table -AutoSize @{Name = 'Scanner ID'; Expression = {$_.scannerID}},
+                                                            @{Name = 'Host Mode'; Expression = {$_.type}}, 
+                                                            @{Name = 'Model Number'; Expression = {$_.modelnumber}},
+                                                            @{Name = 'Serial Number'; Expression = {$_.serialnumber}},
+                                                            @{Name = 'Date of Manufacture'; Expression = {$_.DoM}},
+                                                            @{Name = 'Scanner Firmware Version'; Expression = {$_.firmware}}
+}
+
+# Main script to execute
+Invoke-Command -ScriptBlock {
+    # Initialize CoreScanner
+    Write-Output "$(Get-Date) Loading Interop.CoreScanner.dll";		
+	[System.Reflection.Assembly]::LoadFile("C:\Program Files\Zebra Technologies\Barcode Scanners\Common\Interop.CoreScanner.dll")|Out-Null;		
+	$ScannerObject = New-Object Interop.CoreScanner.CCoreScannerClass;
+
+    # Initialize
+	$Status = 0;
+	$AppHandle = 0;
+    $OutXML = "";
+    $ScannerCount = 0;
+    
+    # For all scanners, set to 1
+	$ScannerTypes = New-Object int16[] 11;
+	$ScannerTypes[0] = 1;
+	
+    # For all scanner types, set to 1
+	$NumberOfScannerTypes = [int16] 1;
+
+    $ScannerIDList = New-Object int16[] 255;
+	
+    # Invoke Open API		
+	$ScannerObject.Open($AppHandle, $ScannerTypes, $NumberOfScannerTypes, [ref] $Status);
+	Write-Output "$(Get-Date) Scanner.Open() Status: $Status";
+
+    # Invoke GetScanners API, process XML to query scanners
+    $ScannerObject.GetScanners([ref] $ScannerCount, $ScannerIDList, [ref] $OutXML, [ref] $Status)
+    Write-Output "$(Get-Date) GetScanners API Invoke Status: $Status";
+    Write-Output "$(Get-Date) Number of Connected Scanner(s) to the Host: $ScannerCount";
+    
+    Process-Out-XML -XML $OutXML;
+}
+</code>
+</pre>
+                                                    </div>
+
+                                                    <h3 id="powershell-scripts-barcode-data" class="anchor"><a class="heading-anchor" href="#powershell-scripts-barcode-data"><span></span></a>Retrieve Barcode Data Scan Events</h3>
+
+                                                    <p>This script sets up and handles barcode scan events using a C# wrapper.</p>
+
+                                                    <div class="code-container">
+                                                        <button class="button copy-button" onclick="copyCode(this)">Copy</button>
+                                                        <button class="button download-button" onclick="downloadFile('CoreScanner_BarcodeData.ps1')">
+                                                            <img src="../images/common/download.png">
+                                                        </button>                                     
+<pre class="prettyprint">
+<code id="code-snippet">
+# Description : Following script query the scanner barcode events. Support PSVersion 5+.
+# Copyright : ©2026 Zebra Technologies Corp. and/or its affiliates.
+
+# Main script to execute
+Invoke-Command -ScriptBlock {
+
+add-Type -typedef @"
+using System;
+using System.Reflection;
+using System.Runtime.InteropServices;
+
+namespace CoreScannerWrapperLib
+{
+    public delegate void BarcodeEventHandler(int dataType, string pscanData);
+    
+    /// &lt;summary>
+    /// CoreScanner Wrapper for barcode events
+    /// &lt;/summary>
+    public class CoreScannerWrapper
+    {
+        public static event BarcodeEventHandler OnBarcode;
+
+        private const int EventTypeBarcode = 1;
+        private const short NumberOfScannerTypes = 1;
+        private const int StatusFalse = -1;
+
+        private Type objType;
+        private object coreScannerObject = null;
+        private int appHandle = 0;
+        private short[] scannerTypes = new short[NumberOfScannerTypes];
+
+        // Initialize CoreScanner COM object
+        public CoreScannerWrapper()
+        {
+            string progId = "CoreScanner.CoreScanner";
+            objType = Type.GetTypeFromProgID(progId);
+            coreScannerObject = Activator.CreateInstance(objType);
+        }
+
+        public int Open()
+        {
+            int status = StatusFalse;
+            short numberOfTypes = 1;
+            short[] scannerTypes = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            scannerTypes[0] = 1;
+
+            coreScannerObject.GetType().InvokeMember("Open", BindingFlags.InvokeMethod, null,
+                coreScannerObject, new object[]
+                {
+                    appHandle,scannerTypes, numberOfTypes, status
+                });
+            RegisterForEvents();
+            return status;
+        }
+
+        public void RegisterForEvents()
+        {
+            string inXml = "";
+            string outXml = "";
+            long status = -1;
+            int opCodeRegisterForEvents = 1001;
+            int eventIdCount = 1; // Number of events to register (only barcode events)
+            int[] eventIdList = new int[eventIdCount];
+            // Register for barcode events only
+            eventIdList[0] = EventTypeBarcode;
+
+            string eventIds = String.Join(",", eventIdList);
+            inXml = "&lt;inArgs>" +
+                    "&lt;cmdArgs>" +
+                    "&lt;arg-int>" + eventIdCount + "&lt;/arg-int>" + // Number of events to register
+                    "&lt;arg-int>" + eventIds + "&lt;/arg-int>" + // Event id list of events to register for
+                    "&lt;/cmdArgs>" +
+                    "&lt;/inArgs>";
+           
+            // Call register for events
+            status=ExecCommand(opCodeRegisterForEvents, // Opcode: Register for events
+                inXml, // Input XML
+                out outXml // Output XML 
+                ); // Command execution success/failure return status  
+           
+            MethodInfo method =
+                this.GetType().GetMethod("BarcodeEvent",
+                    BindingFlags.NonPublic | BindingFlags.Instance);
+
+            MethodInfo barcodeEventCallbackMethod = this.GetType().GetMethod("BarcodeEvent", BindingFlags.Public| BindingFlags.Instance);
+            BarcodeEventHandler callback  = (BarcodeEventHandler) Delegate.CreateDelegate(typeof(BarcodeEventHandler), this, barcodeEventCallbackMethod, false);
+
+            Guid sourceId = new Guid("981E3D8B-C756-4195-A702-F198965031C6");   // CoreScanner events GUID
+            int dispId = 3;  // Barcode data disp id
+            ComEventsHelper.Combine(coreScannerObject, sourceId, dispId, callback);
+        }
+
+        public void BarcodeEvent(int dataType,  string pscanData)
+        {
+            if (OnBarcode != null)
+            { 
+                OnBarcode(dataType, pscanData);
+            }
+        }
+
+        public int ExecCommand(int opCode, string inXml, out string outXml)
+        {
+            int status = StatusFalse;
+            outXml = "";
+
+            ParameterModifier[] mods = new ParameterModifier[] { new ParameterModifier(4) };
+            mods[0][2] = true;
+            mods[0][3] = true;
+
+            object[] parameters = new object[4];
+            parameters[0] = opCode;
+            parameters[1] = inXml;
+            parameters[2] = "";
+            parameters[3] = StatusFalse;
+
+            coreScannerObject.GetType().InvokeMember("ExecCommand", BindingFlags.InvokeMethod, null, coreScannerObject, parameters, mods, null, null);
+            outXml = (string)parameters[2];
+            status = (int)parameters[3];
+            return status;
+        }
+
+        public int Close()
+        {
+            int status = StatusFalse;
+            coreScannerObject.GetType().InvokeMember("Close", BindingFlags.InvokeMethod, null,
+                coreScannerObject, new object[]
+                {
+                    appHandle, status
+                });
+            return status;
+        }
+    }
+}
+"@
+
+	# Add-Type -TypeDefinition $Source -Language CSharp 
+	$ScanneWrapperObject = New-Object CoreScannerWrapperLib.CoreScannerWrapper;
+
+    Write-Output "Starting --------------------"
+
+    $Action = {   
+       Write-Host $event.SourceArgs
+    }
+
+    Register-ObjectEvent -InputObject $ScanneWrapperObject -SourceIdentifier "BarcodeEvents" -EventName "OnBarcode"  -Action  $Action
+
+    $stat= $ScanneWrapperObject.Open();
+
+    Write-Output "Scan barcodes now --------------------"
+    for (($i = 0); $i -lt 10; $i++) {
+        Start-Sleep -Seconds 1
+    }
+    $stat= $ScanneWrapperObject.Close();
+    Write-Output "Closing CoreScanner";
+    Unregister-Event -SourceIdentifier "BarcodeEvents"
+}
+</code>
+</pre>
+                                                    </div>
+
+                                                    <h3 id="powershell-scripts-config-load" class="anchor"><a class="heading-anchor" href="#powershell-scripts-config-load"><span></span></a>Scanner Configuration Load</h3>
+
+                                                    <p>This script loads the configurations into the scanner.</p>
+
+                                                    <div class="code-container">
+                                                        <button class="button copy-button" onclick="copyCode(this)">Copy</button>
+                                                        <button class="button download-button" onclick="downloadFile('CoreScanner_ConfigurationLoad.ps1')">
+                                                            <img src="../images/common/download.png">
+                                                        </button>                                     
+<pre class="prettyprint">
+<code id="code-snippet">
+# Description : Following script loading the configuration into the scanner. Support PSVersion 5+.
+# Copyright : ©2026 Zebra Technologies Corp. and/or its affiliates.
+
+# Initialize CoreScanner
+[System.Reflection.Assembly]::LoadFile("C:\Program Files\Zebra Technologies\Barcode Scanners\Common\Interop.CoreScanner.dll")|Out-Null;		
+$global:ScannerObject = New-Object Interop.CoreScanner.CCoreScannerClass;
+
+# Command return status codes
+$global:StatusSuccess = 0
+$global:StatusFailed = -1
+$global:MultiScannerLoading = 0;
+$global:SelectScannerID = 0;
+
+
+# Display scanner information
+# param  $XML : scanner list xml to display
+Function Process-Out-XML ($XML)
+{
+    $XmlContent = New-Object -TypeName System.Xml.XmlDocument
+    $XmlContent.LoadXml($XML)
+
+    # Pipe asset information
+    $XmlContent.scanners.scanner | Format-Table -AutoSize @{Name = 'ID'; Expression = {$_.scannerID}},
+                                                            @{Name = 'Host Mode '; Expression = {$_.type}}, 
+                                                            @{Name = 'Model Number '; Expression = {$_.modelnumber}},
+                                                            @{Name = 'Serial Number '; Expression = {$_.serialnumber}},
+                                                            @{Name = 'Date of Manufacture '; Expression = {$_.DoM}},
+                                                            @{Name = 'Firmware Version '; Expression = {$_.firmware}}
+}
+
+# Open CoreScanner
+# param  $CurrentHandle : Current application handle
+# param  $CommandStatus : Command success/fail return status
+Function OpenScanner([ref] [int] $CurrentHandle,[ref][int] $CommandStatus) {
+
+    $hApp = 0;
+    $StatusValue = $StatusFailed
+    # For all scanners, set to 1
+	$ScannerTypes = New-Object int16[] 11
+	$ScannerTypes[0] = 1;
+	
+    # For all scanner types, set to 1
+	$NumberOfScannerTypes = [int16] 1
+
+    # Open CoreScanner
+    $ScannerObject.Open($hApp, $ScannerTypes, $NumberOfScannerTypes, [ref] $StatusValue)
+
+     if ($StatusValue -eq $StatusSuccess) {
+           Write-Output "Open Success"
+           $CurrentHandle.Value=$hApp
+     } else  {
+           Write-Output "Open Failed : error code :$StatusValue"
+     } 
+     $CommandStatus.Value= $StatusValue
+}
+
+
+# Close CoreScanner
+# param  $CurrentHandle : Current application handle
+# param  $CommandStatus : Command success/fail return status
+Function CloseScanner([int]$CurrentHandle,[ref] [int] $CommandStatus) {
+
+    $StatusValue = $StatusFailed;
+    # Close CoreScanner
+    $ScannerObject.Close($CurrentHandle, [ref] $StatusValue)
+
+    if ($StatusValue -eq $StatusSuccess) {
+          Write-Output "Close Success"
+    } else  {
+          Write-Output "Close Failed : error code :$StatusValue"
+    } 
+    $CommandStatus.Value= $StatusValue
+}
+
+# Process GetScanners out XML and list the asset information
+# param  $OutputXml : Output scanner list xml
+# param  $NumScanners : Connected scanner count
+# param  $CommandStatus : Command success/fail return status
+Function GetScanners([ref] [string] $OutputXML, [ref] [int] $NumScanners, [ref] [int] $CommandStatus) {
+
+    $StatusValue = $StatusFailed
+
+    # GetScanners - scanner id list
+    $ScannerIDList = New-Object int16[] 255
+
+    # GetScanners - total scanner count
+    $CurrentScannerCount = 0
+
+    $CommandOutputXML=""
+    
+    # Get List of scanners
+    $ScannerObject.GetScanners([ref] $CurrentScannerCount,$ScannerIDList, [ref] $CommandOutputXML, [ref] $StatusValue)
+     if ($StatusValue -eq $StatusSuccess) {
+       $OutputXML.Value = $CommandOutputXML
+       $NumScanners.Value =  $CurrentScannerCount
+       Write-Output "GetScanners Success"
+    } else  {
+        Write-Output "GetScanners Failed : error code :$StatusValue"
+    } 
+    $CommandStatus.Value= $StatusValue
+    Write-Output "Number of Connected Scanner(s) to the Host: $ScannerCount"
+    Process-Out-XML -XML $CommandOutputXML
+
+}
+
+#Load Configuration to specified scanner 
+#param $inXml: Input xml with configuration file path
+#param $CommandStatus : Command success/fail return status
+Function LoadConfiguration($inXml,[ref] [int] $CommandStatus) {
+    Write-Output "Loading Configuration Started"
+    $StatusValue = $StatusFailed
+
+    $CommandOutputXML=""
+    $OpcodeLoadConfig = 5020  # load configuration opcode
+    $ScannerObject.ExecCommand($OpcodeLoadConfig, [ref] $inXml, [ref] $CommandOutputXML, [ref]$StatusValue)
+    $CommandStatus.Value= $StatusValue
+}
+
+if ($args.Count -eq 0) {
+    Write-Output "No configuration file specified : Usage : LoadScannerConfig.ps1 &lt;scanner config file path> &lt;specified scanner id (optional)>"
+    return
+}
+
+$ConfigFileName = $args[0]
+
+if ($args.Count -eq 2) {
+    if ($args[1] -match '^\d+$') {
+        $SelectScannerID = [int]$args[1]
+        $MultiScannerLoading = 0
+    } else {
+        Write-Output "Invalid scanner ID specified. It must be a number."
+        return
+    }
+} else {
+    $MultiScannerLoading = 1
+}
+
+$AppHandle = 0
+$Status = $StatusFailed
+$OutXML = ""
+$ScannerCount = 0
+$ConfigFileInvalid = 601
+$DeviceIncompatible = 602
+$ConfigFileFormatInvalid = 603
+
+# Validate configuration file path
+if (-not (Test-Path $ConfigFileName)) {
+    Write-Output "Config File not valid"
+    return
+}
+
+# Open CoreScanner
+OpenScanner ([ref]$AppHandle) ([ref]$Status)
+if ($Status -ne $StatusSuccess) {
+    Write-Output "CoreScanner Open Failed"
+    return 
+}
+
+# Get connected scanners
+GetScanners ([ref]$OutXML) ([ref]$ScannerCount) ([ref]$Status)
+if ($Status -ne $StatusSuccess) {
+    Write-Output "GetScanners Failed : error code :$Status"
+    CloseScanner $AppHandle ([ref]$Status)
+    return
+}
+
+if ($ScannerCount -le 0) {
+    Write-Output "No scanners found"
+    CloseScanner $AppHandle ([ref]$Status)
+    return
+}
+
+$XmlScannerList = New-Object -TypeName System.Xml.XmlDocument
+$XmlScannerList.LoadXml($OutXML)
+
+Function Load-Config-To-Scanner {
+    param (
+        [int]$ScannerId,
+        [string]$ConfigFileName
+    )
+    $ConfigInXml = "&lt;inArgs>&lt;scannerID>$ScannerId&lt;/scannerID>&lt;cmdArgs>&lt;arg-string>$ConfigFileName&lt;/arg-string>&lt;/cmdArgs>&lt;/inArgs>"
+    $Status = $StatusFailed
+
+    LoadConfiguration $ConfigInXml ([ref]$Status)
+    switch ($Status) {
+        $StatusSuccess         { Write-Output "Configuration Load for Scanner : $ScannerId  - Success" }
+        $ConfigFileInvalid     { Write-Output "Configuration Load for Scanner : $ScannerId  - Failed : Config File Invalid" }
+        $DeviceIncompatible    { Write-Output "Configuration Load for Scanner : $ScannerId  - Failed : Device Incompatible with Config File" }
+        $ConfigFileFormatInvalid { Write-Output "Configuration Load for Scanner : $ScannerId  - Failed : Config File Format Invalid" }
+        default               { Write-Output "Configuration Load for Scanner : $ScannerId  - Failed : error code :$Status" }
+    }
+}
+
+if ($MultiScannerLoading -eq 0) {
+    # Single scanner loading: use selected scanner ID
+    Load-Config-To-Scanner -ScannerId $SelectScannerID -ConfigFileName $ConfigFileName
+} else {
+    # Multi scanner loading: iterate all scanners
+    foreach ($scanner in $XmlScannerList.scanners.scanner) {
+        $CurrentScannerId = [int]$scanner.scannerID
+        Load-Config-To-Scanner -ScannerId $CurrentScannerId -ConfigFileName $ConfigFileName
+    }
+}
+
+# Close CoreScanner
+CloseScanner $AppHandle ([ref]$Status)
+</code>
+</pre>
+                                                    </div>
+
+                                                    <h3 id="powershell-scripts-firmware-download" class="anchor"><a class="heading-anchor" href="#powershell-scripts-firmware-download"><span></span></a>Firmware Download</h3>
+
+                                                    <p>This script download the firmware into the scanner.</p>
+
+                                                    <div class="code-container">
+                                                        <button class="button copy-button" onclick="copyCode(this)">Copy</button>
+                                                        <button class="button download-button" onclick="downloadFile('CoreScanner_FirmwareDownload.ps1')">
+                                                            <img src="../images/common/download.png">
+                                                        </button>                                     
+<pre class="prettyprint">
+<code id="code-snippet">
+# Description : Following script download the firmware (Plug-in/DAT) into the scanner. Support PSVersion 5+.
+# Copyright : ©2026 Zebra Technologies Corp. and/or its affiliates.
+
+# Log everything, file will create in the script execution folder.
+Start-Transcript -Append -Path $PSScriptRoot"\CoreScanner_GetAttributes.log.txt"
+
+Function Get-Scanner-Attribute-Values($XML)
+{
+    $XmlContent = New-Object -TypeName System.Xml.XmlDocument
+    $XmlContent.LoadXml($XML)
+
+    # Pipe attribute list
+    $ScannerID = $XmlContent.outArgs.scannerID
+    Write-Output "Scanner ID : $ScannerID" 
+
+    $XmlContent.outArgs.('arg-xml').response.attrib_list.attribute | Format-Table -AutoSize @{Name = 'Attribute ID'; Expression = {$_.id}},
+                                                                                            @{Name = 'Name'; Expression = {$_.name}},
+                                                                                            @{Name = 'Data Tyoe'; Expression = {$_.datatype}},
+                                                                                            @{Name = 'Permission'; Expression = {$_.permission}},
+                                                                                            @{Name = 'Value'; Expression = {$_.value}}
+}
+
+Function Sample()
+{
+    Write-Output "RMD Events"
+}
+
+# Main script to execute
+Invoke-Command -ScriptBlock {
+    # Initialize CoreScanner
+    Write-Output "$(Get-Date) Loading Interop.CoreScanner.dll";		
+	[System.Reflection.Assembly]::LoadFile("C:\Program Files\Zebra Technologies\Barcode Scanners\Common\Interop.CoreScanner.dll")|Out-Null;		
+	$ScannerObject = New-Object Interop.CoreScanner.CCoreScannerClass;
+
+    # Initialize
+	$Status = 0;
+	$AppHandle = 0;
+    $OutXML = "";
+    
+    # For all scanners, set to 1
+	$ScannerTypes = New-Object int16[] 11;
+	$ScannerTypes[0] = 1;
+	
+    # For all scanner types, set to 1
+	$NumberOfScannerTypes = [int16] 1;
+			
+	Write-Output "$(Get-Date) Scanner.Open() Invoke";
+	$ScannerObject.Open($AppHandle, $ScannerTypes, $NumberOfScannerTypes, [ref] $Status);
+	Write-Output "$(Get-Date) Scanner.Open() Status: $Status";
+
+    # Register for RMD events
+    $InXML = "";
+    $InXML += "&lt;inArgs>";
+    $InXML += "&lt;cmdArgs>";
+    $InXML += "&lt;arg-int>1&lt;/arg-int>"; # Number of event types to register. In this case only the RMD event type.
+    $InXML += "&lt;arg-int>8&lt;/arg-int>"; # Event type.
+    $InXML += "&lt;/cmdArgs>";
+    $InXML += "&lt;/inArgs>";
+
+    # Opcode for register for events
+    $REGISTER_FOR_EVENTS = 1001;
+
+    Write-Output "$(Get-Date) Invoke ExecCommand - Register for Events.";
+    $ScannerObject.ExecCommand($REGISTER_FOR_EVENTS, [ref] $InXML, [ref] $OutXML, [ref] $Status)
+
+    Write-Output $Status;
+
+    # Register event handler.....
+
+    #Register-ObjectEvent -InputObject $ScannerObject -EventName ScanRMDEvent -Action {Write-Host "EMD Event Recieved"}
+    
+    $ScannerObject.add_ScanRMDEvent("Sample");
+
+    #.................................
+
+    # Opcode for firmware download.
+    $UPDATE_FIRMWARE_DAT = 5016;
+    $UPDATE_FIRMWARE_PLUGIN = 5017;
+
+    # Firmware DAT/Plug-in file path. Choose the correct opcode based on the file type.
+    # Following is the 123Scan default Plug-ins folder path.
+    $FIRMWARE_FILE_PATH = "C:\ProgramData\123Scan2\Plug-ins\DS9208\DS9208-COMMON DL MODELS-S\022\DS9208-COMMON DL MODELS-S-022.SCNPLG";
+
+    # Scanner ID. For the multiple scanner write a loop statement accoringly.
+    $SCANNER_ID = 1;
+
+    $InXML = "";
+    $InXML += "&lt;inArgs>";
+    $InXML += "&lt;scannerID>";
+    $InXML += $SCANNER_ID
+    $InXML += "&lt;/scannerID>";
+    $InXML += "&lt;cmdArgs>";
+    $InXML += "&lt;arg-string>";
+    $InXML += $FIRMWARE_FILE_PATH;
+    $InXML += "&lt;/arg-string>";
+    $InXML += "&lt;arg-int>2&lt;/arg-int>";
+    $InXML += "&lt;/cmdArgs>";
+    $InXML += "&lt;/inArgs>";
+
+    Write-Output "$(Get-Date) Invoke ExecCommand - Firmware Download.";
+    $ScannerObject.ExecCommand($UPDATE_FIRMWARE_PLUGIN, [ref] $InXML, [ref] $OutXML, [ref] $Status)
+
+    Write-Output $Status;
+        
+    <#foreach($ScannerID in $ScannerIDList)
+    {
+        if($ScannerID -ne 0)
+        {
+            $InXML = ""
+            $InXML += "&lt;inArgs>"
+            $InXML += "&lt;scannerID>"
+            $InXML += $ScannerID
+            $InXML += "&lt;/scannerID>"
+            $InXML += "&lt;cmdArgs>&lt;arg-xml>&lt;attrib_list>"
+            $InXML += $AttributeList -join ","
+            $InXML += "&lt;/attrib_list>&lt;/arg-xml>&lt;/cmdArgs>"
+            $InXML += "&lt;/inArgs>"
+
+            Write-Output "$(Get-Date) Invoke ExecCommand.";
+            $ScannerObject.ExecCommand(5001, [ref] $InXML, [ref] $OutXML, [ref] $Status)
+
+            Get-Scanner-Attribute-Values($OutXML)
+        }
+    }#>
+}
+</code>
+</pre>
+                                                    </div>
+
+                                                    <h3 id="powershell-scripts-attribute-get" class="anchor"><a class="heading-anchor" href="#powershell-scripts-attribute-get"><span></span></a>Get Attributes from the Scanner</h3>
+
+                                                    <p>This script query the attribute values of the given attributes on all the connected scanners.</p>
+
+                                                    <div class="code-container">
+                                                        <button class="button copy-button" onclick="copyCode(this)">Copy</button>
+                                                        <button class="button download-button" onclick="downloadFile('CoreScanner_GetAttributes.ps1')">
+                                                            <img src="../images/common/download.png">
+                                                        </button>                                     
+<pre class="prettyprint">
+<code id="code-snippet">
+# Description : Following script query the attribute values of the given attributes on all the connected scanners. Support PSVersion 5+.
+# Copyright : ©2026 Zebra Technologies Corp. and/or its affiliates.
+
+# Log everything, file will create in the script execution folder.
+Start-Transcript -Append -Path $PSScriptRoot"\CoreScanner_GetAttributes.log.txt"
+
+Function Get-Scanner-Attribute-Values($XML)
+{
+    $XmlContent = New-Object -TypeName System.Xml.XmlDocument
+    $XmlContent.LoadXml($XML)
+
+    # Pipe attribute list
+    $ScannerID = $XmlContent.outArgs.scannerID
+    Write-Output "Scanner ID : $ScannerID" 
+
+    $XmlContent.outArgs.('arg-xml').response.attrib_list.attribute | Format-Table -AutoSize @{Name = 'Attribute ID'; Expression = {$_.id}},
+                                                                                            @{Name = 'Name'; Expression = {$_.name}},
+                                                                                            @{Name = 'Data Type'; Expression = {$_.datatype}},
+                                                                                            @{Name = 'Permission'; Expression = {$_.permission}},
+                                                                                            @{Name = 'Value'; Expression = {$_.value}}
+}
+
+# Main script to execute
+Invoke-Command -ScriptBlock {
+    # Initialize CoreScanner
+    Write-Output "$(Get-Date) Loading Interop.CoreScanner.dll";		
+	[System.Reflection.Assembly]::LoadFile("C:\Program Files\Zebra Technologies\Barcode Scanners\Common\Interop.CoreScanner.dll")|Out-Null;		
+	$ScannerObject = New-Object Interop.CoreScanner.CCoreScannerClass;
+
+    # Initialize
+	$Status = 0;
+	$AppHandle = 0;
+    $OutXML = "";
+    
+    # For all scanners, set to 1
+	$ScannerTypes = New-Object int16[] 11;
+	$ScannerTypes[0] = 1;
+	
+    # For all scanner types, set to 1
+	$NumberOfScannerTypes = [int16] 1;
+
+    # Attribute list, comma separated
+    [int[]]$AttributeList = 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+
+    # Scanner IDs list, comma separated
+    [int[]]$ScannerIDList = 1
+			
+	Write-Output "$(Get-Date) Scanner.Open() Invoke";
+	$ScannerObject.Open($AppHandle, $ScannerTypes, $NumberOfScannerTypes, [ref] $Status);
+	Write-Output "$(Get-Date) Scanner.Open() Status: $Status";
+        
+    foreach($ScannerID in $ScannerIDList)
+    {
+        if($ScannerID -ne 0)
+        {
+            $InXML = ""
+            $InXML += "&lt;inArgs>"
+            $InXML += "&lt;scannerID>"
+            $InXML += $ScannerID
+            $InXML += "&lt;/scannerID>"
+            $InXML += "&lt;cmdArgs>&lt;arg-xml>&lt;attrib_list>"
+            $InXML += $AttributeList -join ","
+            $InXML += "&lt;/attrib_list>&lt;/arg-xml>&lt;/cmdArgs>"
+            $InXML += "&lt;/inArgs>"
+
+            Write-Output "$(Get-Date) Invoke ExecCommand.";
+            $ScannerObject.ExecCommand(5001, [ref] $InXML, [ref] $OutXML, [ref] $Status)
+
+            Get-Scanner-Attribute-Values($OutXML)
+        }
+    }
+}
+</code>
+</pre>
+                                                    </div>
+
+                                                    <h3 id="powershell-scripts-attribute-set" class="anchor"><a class="heading-anchor" href="#powershell-scripts-attribute-set"><span></span></a>Set Attributes in the Scanner</h3>
+
+                                                    <p>This script set the attribute values of the given scanner.</p>
+
+                                                    <div class="code-container">
+                                                        <button class="button copy-button" onclick="copyCode(this)">Copy</button>
+                                                        <button class="button download-button" onclick="downloadFile('CoreScanner_SetAttributes.ps1')">
+                                                            <img src="../images/common/download.png">
+                                                        </button>                                     
+<pre class="prettyprint">
+<code id="code-snippet">
+# Description : Following script set the attribute values of the given scanner. Support PSVersion 5+.
+# Copyright : ©2026 Zebra Technologies Corp. and/or its affiliates.
+
+# Log everything, file will create in the script execution folder.
+Start-Transcript -Append -Path $PSScriptRoot"\CoreScanner_SetAttributes.log.txt"
+
+
+Function Get-Scanner-Attribute-Values($XML)
+{
+    $XmlContent = New-Object -TypeName System.Xml.XmlDocument
+    $XmlContent.LoadXml($XML)
+
+    # Pipe attribute list
+    $ScannerID = $XmlContent.outArgs.scannerID
+    Write-Output "Scanner ID : $ScannerID" 
+
+    $XmlContent.outArgs.('arg-xml').response.attrib_list.attribute | Format-Table -AutoSize @{Name = 'Attribute ID'; Expression = {$_.id}},
+                                                                                            @{Name = 'Name'; Expression = {$_.name}},
+                                                                                            @{Name = 'Data Type'; Expression = {$_.datatype}},
+                                                                                            @{Name = 'Permission'; Expression = {$_.permission}},
+                                                                                            @{Name = 'Value'; Expression = {$_.value}}
+}
+
+# Main script to execute
+Invoke-Command -ScriptBlock {
+    # Initialize CoreScanner
+    Write-Output "$(Get-Date) Loading Interop.CoreScanner.dll";		
+	[System.Reflection.Assembly]::LoadFile("C:\Program Files\Zebra Technologies\Barcode Scanners\Common\Interop.CoreScanner.dll")|Out-Null;		
+	$ScannerObject = New-Object Interop.CoreScanner.CCoreScannerClass;
+
+    # Initialize
+	$Status = 0;
+	$AppHandle = 0;
+    $OutXML = "";
+    
+    # For all scanners, set to 1
+	$ScannerTypes = New-Object int16[] 11;
+	$ScannerTypes[0] = 1;
+	
+    # For all scanner types, set to 1
+	$NumberOfScannerTypes = [int16] 1;
+
+    # Attribute list, comma separated
+    $AttributeList = @(("0", "F", "True"), ("1", "F", "True"), ("2", "F", "True"))
+
+    # Scanner IDs list, comma separated
+    [int[]]$ScannerIDList = 1
+			
+	Write-Output "$(Get-Date) Scanner.Open() Invoke";
+	$ScannerObject.Open($AppHandle, $ScannerTypes, $NumberOfScannerTypes, [ref] $Status);
+	Write-Output "$(Get-Date) Scanner.Open() Status: $Status";
+        
+    foreach($ScannerID in $ScannerIDList)
+    {
+        if($ScannerID -ne 0)
+        {
+            $InXML = "&lt;inArgs>"
+            $InXML += "&lt;scannerID>"
+            $InXML += $ScannerID
+            $InXML += "&lt;/scannerID>"
+            $InXML += "&lt;cmdArgs>&lt;arg-xml>&lt;attrib_list>"
+
+            #$InXML += $AttributeList -join ","
+            foreach($AttributeValue in $AttributeList)
+            {
+                $InXML += "&lt;attribute>"
+                $InXML += "&lt;id>"
+                $InXML += $AttributeValue[0]
+                $InXML += "&lt;/id>"
+                $InXML += "&lt;datatype>"
+                $InXML += $AttributeValue[1]
+                $InXML += "&lt;/datatype>"
+                $InXML += "&lt;value>"
+                $InXML += $AttributeValue[2]
+                $InXML += "&lt;/value>"
+                $InXML += "&lt;/attribute>"
+            }
+
+            $InXML += "&lt;/attrib_list>&lt;/arg-xml>&lt;/cmdArgs>"
+            $InXML += "&lt;/inArgs>"
+
+            Write-Output "$(Get-Date) Invoke ExecCommand.";
+            $ScannerObject.ExecCommand(5004, [ref] $InXML, [ref] $OutXML, [ref] $Status)
+            Write-Output "$(Get-Date) SetAttribute command status : $Status";
+        }
+    }
+}
+</code>
+</pre>
+                                                    </div>
+
+                                                    <h3 id="powershell-scripts-switch-host-mode" class="anchor"><a class="heading-anchor" href="#powershell-scripts-switch-host-mode"><span></span></a>Scanner Host Mode Switching</h3>
+
+                                                    <p>This script switch all the connected scanners into the given host mode.</p>
+
+                                                    <div class="code-container">
+                                                        <button class="button copy-button" onclick="copyCode(this)">Copy</button>
+                                                        <button class="button download-button" onclick="downloadFile('CoreScanner_SwitchHostMode.ps1')">
+                                                            <img src="../images/common/download.png">
+                                                        </button>                                     
+<pre class="prettyprint">
+<code id="code-snippet">
+# Description : Following script switch all the connected scanners into the given host mode. Support PSVersion 5+.
+# Copyright : ©2026 Zebra Technologies Corp. and/or its affiliates.
+
+# Log everything, file will create in the script execution folder.
+# Comment the following line if logging is not required.
+Start-Transcript -Append -Path $PSScriptRoot"\CoreScanner_SwitchHostMode.log.txt"
+
+# Main script to execute
+Invoke-Command -ScriptBlock {
+    # Initialize CoreScanner
+    Write-Output "$(Get-Date) Loading Interop.CoreScanner.dll";		
+	[System.Reflection.Assembly]::LoadFile("C:\Program Files\Zebra Technologies\Barcode Scanners\Common\Interop.CoreScanner.dll")|Out-Null;		
+	$ScannerObject = New-Object Interop.CoreScanner.CCoreScannerClass;
+
+    # Initialize
+	$Status = 0;
+	$AppHandle = 0;
+    $OutXML = "";
+    $InXML = "";
+    $ScannerCount = 0;
+    
+    # For all scanners, set to 1
+	$ScannerTypes = New-Object int16[] 11;
+	$ScannerTypes[0] = 1;
+	
+    # For all scanner types, set to 1
+	$NumberOfScannerTypes = [int16] 1;
+
+    # Scanner IDs list, comma separated
+    [int[]]$ScannerIDList = 1
+
+    # Host modes
+    $HOST_MODE_USB_IBMHID = "XUA-45001-1"
+    $HOST_MODE_USB_IBMTT = "XUA-45001-2"
+    $HOST_MODE_USB_HIDKB = "XUA-45001-3"
+    $HOST_MODE_USB_OPOS = "XUA-45001-8"
+    $HOST_MODE_USB_SNAPI_WITH_IMAGING = "XUA-45001-9"
+    $HOST_MODE_USB_SNAPI_WITHOUT_IMAGING = "XUA-45001-10"
+    $HOST_MODE_USB_CDC = "XUA-45001-11"
+	
+    # Invoke Open API		
+	$ScannerObject.Open($AppHandle, $ScannerTypes, $NumberOfScannerTypes, [ref] $Status);
+	Write-Output "$(Get-Date) Scanner.Open() Status: $Status";
+
+    foreach($ScannerID in $ScannerIDList)
+    {
+        if($ScannerID -ne 0)
+        {
+            $InXML += "&lt;inArgs>"
+	        $InXML += "&lt;scannerID>"
+            $InXML += $ScannerID
+            $InXML += "&lt;/scannerID>"
+	        $InXML += "&lt;cmdArgs>"
+		    $InXML += "&lt;arg-string>"
+            $InXML += $HOST_MODE_USB_IBMHID # Host mode to switch
+            $InXML += "&lt;/arg-string>"
+		    $InXML += "&lt;arg-bool>FALSE&lt;/arg-bool>" # Silent switch, True - enable, False - disable
+    		$InXML += "&lt;arg-bool>FALSE&lt;/arg-bool>" # Permanent change, True - enable, False - disable
+	        $InXML += "&lt;/cmdArgs>"
+            $InXML += "&lt;/inArgs>"
+        }
+    }
+
+    # Switch scanner host mode
+    $ScannerObject.ExecCommand(6200, [ref] $InXML, [ref] $OutXML, [ref] $Status)
+    Write-Output "$(Get-Date) Switched to SNAPI status : $Status";
+}
+</code>
+</pre>
+                                                    </div>
+
+                                                    <!--<h3 id="powershell-scripts-firmware-download" class="anchor"><a class="heading-anchor" href="#powershell-scripts-firmware-download"><span></span></a>Firmware Download</h3>
+
+                                                    <p>This script download the firmware into .</p>
+
+                                                    <div class="code-container">
+                                                        <button class="button copy-button" onclick="copyCode(this)">Copy</button>
+                                                        <button class="button download-button" onclick="downloadFile('CoreScanner_BarcodeData.ps1')">
+                                                            <img src="../images/common/download.png">
+                                                        </button>                                     
+<pre class="prettyprint">
+<code id="code-snippet">
+
+</code>
+</pre>
+                                                    </div>
+
+                                                    <p></p> -->
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                        </div>
+                    </div>
+
+                </div><!-- /page-content col-sm-9 -->
+            </div><!-- /row -->
+        </div><!-- /container-fluid -->
+
+        <div class="modal fade" id="basicModal" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true" data-backdrop="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">X</button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="modalImg"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <footer id="footer" class="navbar-fixed-bottom">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-sm-10">
+                        ZEBRA and the stylized Zebra head are trademarks of Zebra Technologies Corp., registered in many jurisdictions worldwide. All other trademarks are the property of their respective owners. Some content or images may have been created with the assistance of AI. &copy;2026 Zebra Technologies Corp. and/or its affiliates.
+                    </div>
+                    <!--<div class="col-sm-2">
+                        <ul class="social-icons">
+                            <li><a href="http://www.facebook.com/pages/Zebra-Technologies/107703715989073"><i class="fa fa-facebook"></i></a></li>
+                            <li><a href="https://twitter.com/ZebraDevs"><i class="fa fa-twitter"></i></a></li>
+                            <li><a href="http://www.youtube.com/zebratechnologies/"><i class="fa fa-youtube"></i></a></li>
+                            <li><a href="https://www.linkedin.com/groups?home=&amp;gid=3220074&amp;trk=anet_ug_hm&amp;goback=%2Egmr_3220074"><i class="fa fa-linkedin"></i></a></li>
+                            <li><a href="https://github.com/zebra-technologies"><i class="fa fa-github"></i></a></li>
+                        </ul>
+                    </div>-->
+                </div>
+            </div>
+        </footer><!--/#footer-->
+        <script src="/js/bootstrap.min.js"></script>
+        <script src="/js/owl.carousel.min.js"></script>
+        <script src="/js/mousescroll.js"></script>
+        <script src="/js/smoothscroll.js"></script>
+        <script src="/js/jquery.prettyPhoto.js"></script>
+        <script src="/js/jquery.isotope.min.js"></script>
+        <script src="/js/jquery.inview.min.js"></script>
+        <script src="/js/wow.min.js"></script>
+        <script src="/js/bootstrap-treenav.min.js"></script>
+        <script src="/js/prettify.js"></script>
+        <script src="/js/zepto.js"></script>
+        <script src="/js/jquery.waterfall.js"></script>
+        <script src="/js/main.js"></script>
+        <script src="../dcs_script.js"></script>
+        <script type="text/javascript">
+            (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+                (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+                e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+            })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+            _st('install','zRzEsAUhWTTkrdEN2YfA','2.0.0');
+        </script>
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+                (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+                m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+            ga('create', 'UA-72584442-1', 'auto');
+            ga('send', 'pageview');
+        </script>
+        <script>
+            ChatraID = 'QDvZ76min4DhLW5vJ';
+            (function(d, w, c) {
+                var n = d.getElementsByTagName('script')[0],
+                    s = d.createElement('script');
+                w[c] = w[c] || function() {
+                    (w[c].q = w[c].q || []).push(arguments);
+                };
+                s.async = true;
+                s.src = (d.location.protocol === 'https:' ? 'https:': 'http:')
+                    + '//call.chatra.io/chatra.js';
+                n.parentNode.insertBefore(s, n);
+            })(document, window, 'Chatra');
+        </script>
+        <script>
+            // Self-contained accordion for the left nav.
+            // The section headers no longer use Bootstrap's data-toggle="collapse"
+            // (calling .collapse() from a collapse event recurses in this build), so
+            // we drive open/close entirely with jQuery slide animations here. This
+            // guarantees a smooth open/close and never touches the page scroll.
+            var ANIM = 400;       // open/close speed in ms — increase to slow it down further
+            var NAV_TOP = 130;    // px from top where a target section should land,
+                                  // matching the top of #left-nav (fixed header 110px
+                                  // + content margin 20px) so nav and section top-align
+
+            // At xs the tree lives in a collapsible panel above the content, so
+            // pick a destination -> close the panel -> scroll. The scroll target
+            // is measured only AFTER the panel has collapsed, because collapsing
+            // it shortens the page and moves every section up.
+            // Pin the "Contents" bar flush to the bottom of the header at xs.
+            // The header's height is set by logo.png's intrinsic size and by
+            // CSS in shared files this page cannot edit, so it is measured
+            // rather than hard-coded - a stale constant is exactly what left a
+            // gap under the header for content to scroll through.
+            //
+            // .navbar-header, not #main-menu: at xs the collapsible top menu
+            // lives inside #main-menu, so opening the hamburger would inflate
+            // that measurement and shove the whole page down. .navbar-header
+            // holds only the brand and the toggle, so its height is stable.
+            function layoutMobileBars() {
+                var $sidebar = $('#sidebar'), $content = $('#page-content');
+
+                // Above xs, drop the inline styles and let the CSS rules apply.
+                if (!$('#left-nav-toggle').is(':visible')) {
+                    $('body').css('padding-top', '');
+                    $sidebar.css('top', '');
+                    $content.css('padding-top', '');
+                    return;
+                }
+
+                var headerH = $('#main-menu .navbar-header').outerHeight();
+                $('body').css('padding-top', headerH);
+                $sidebar.css('top', headerH);
+
+                // Closed height of the bar: the button plus the bar's own
+                // padding. Read from the DOM so retuning the padding in CSS
+                // does not silently break this arithmetic.
+                var pad = parseFloat($sidebar.css('padding-top'))
+                        + parseFloat($sidebar.css('padding-bottom'));
+                var barH = $('#left-nav-toggle').outerHeight(true) + pad;
+
+                // The content container already starts 20px below the header
+                // (its inline margin-top), so only reserve the remainder of the
+                // bar, plus an 8px gap.
+                $content.css('padding-top', Math.max(0, barH + 8 - 20));
+            }
+
+            layoutMobileBars();
+            // Re-measure on load as well: logo.png carries no width/height
+            // attributes, so before it decodes the brand reports a short height
+            // and the first measurement would come out too small.
+            $(window).on('load resize orientationchange', layoutMobileBars);
+
+            // Keep "Back to Top" clear of the footer.
+            //   >=768px: the footer is fixed, so park the button just above it.
+            //   <768px:  the footer is static (see CSS), so the button floats
+            //            near the bottom of the viewport and lifts only once
+            //            the footer has actually scrolled into view.
+            var BTN_GAP = 10;
+            var TO_TOP  = 500;    // "Back to Top" scroll duration in ms. A little
+                                  // longer than the nav's ANIM because it usually
+                                  // covers the whole page.
+            function layoutBackToTop() {
+                var $btn = $('#back-to-top-btn');
+                if (!$btn.length) { return; }   // injected by /js/main.js
+                var $footer = $('#footer');
+
+                if (!$('#left-nav-toggle').is(':visible')) {
+                    $btn.css('bottom', $footer.outerHeight() + BTN_GAP);
+                    return;
+                }
+
+                // How much of the static footer is on screen right now. This is
+                // negative while the footer is still below the fold, in which
+                // case the button keeps main.css's 20px resting offset.
+                var onScreen = $(window).height()
+                             - $footer[0].getBoundingClientRect().top;
+                $btn.css('bottom', Math.max(20, onScreen + BTN_GAP));
+            }
+
+            // Animate "Back to Top" instead of letting it snap to the top.
+            //
+            // main.js binds its own click handler that assigns
+            // "document.documentElement.scrollTop = 0" - instant by definition.
+            // Detaching it with .off() does not work reliably: main.js injects
+            // the button from inside its own ready callback, so depending on
+            // callback order the selector here can still be empty, in which
+            // case .off().on() silently does nothing and main.js's handler
+            // survives - it then fires first and has already snapped to the top
+            // before any animation could start.
+            //
+            // So intercept on the way DOWN instead. A capture-phase listener on
+            // the document runs before any listener bound on the button itself,
+            // and stopPropagation() keeps the event from ever reaching them -
+            // regardless of when the button appeared or what bound the handler.
+            // This is registered at top level, not in a ready callback, so it is
+            // in place before main.js can inject the button at all.
+            //
+            // (CSS "scroll-behavior: smooth" would be the simple answer but is
+            // ruled out - see the note in the <style> block: it fights the left
+            // nav's own .animate({scrollTop}) calls and lands short.)
+            document.addEventListener('click', function(e) {
+                // Manual walk rather than .closest(), to match the browser
+                // vintage the rest of this page targets.
+                var el = e.target;
+                while (el && el.id !== 'back-to-top-btn') { el = el.parentElement; }
+                if (!el) { return; }
+
+                e.stopPropagation();
+                e.preventDefault();
+                $('html, body').stop(true).animate({ scrollTop: 0 }, TO_TOP);
+                // Parity with main.js: the MX Feature Matrix pages scroll an
+                // inner div. A no-op on this page, where it does not exist.
+                $('.fixed-column-right').stop(true)
+                    .animate({ scrollTop: 0 }, TO_TOP);
+            }, true);   // true = capture phase; the whole point of this
+
+            $(function() {
+                layoutBackToTop();
+                updateSpy();
+                $(window).on('load resize orientationchange', function() {
+                    layoutBackToTop();
+                    updateSpy();
+                });
+
+                // One throttled scroll listener drives both the button offset
+                // and the nav highlight, so there is a single measure pass per
+                // frame rather than two competing ones.
+                //
+                // NB: bind with jQuery, never "window.onscroll = ...". main.js
+                // assigns window.onscroll directly to show/hide this button, so
+                // assigning it here would silently clobber that handler.
+                var pending = false;
+                $(window).on('scroll', function() {
+                    if (pending) { return; }
+                    pending = true;
+                    var run = function() {
+                        pending = false;
+                        layoutBackToTop();
+                        updateSpy();
+                    };
+                    if (window.requestAnimationFrame) {
+                        window.requestAnimationFrame(run);
+                    } else {
+                        setTimeout(run, 16);
+                    }
+                });
+            });
+
+            // Distance from the top of the viewport at which a target section
+            // should land. On desktop that is just below the fixed header
+            // (NAV_TOP). At xs the pinned "Contents" bar sits below the header
+            // too, so measure its actual bottom edge instead of hard-coding a
+            // second constant that would drift if the bar's padding changes.
+            function navOffset() {
+                var bar = document.getElementById('sidebar');
+                if (bar && $('#left-nav-toggle').is(':visible')) {
+                    return bar.getBoundingClientRect().bottom + 6;
+                }
+                return NAV_TOP;
+            }
+
+            function scrollToSection(selector, duration) {
+                var $panel = $('#left-nav-collapse');
+                var go = function() {
+                    // Hold the scroll-spy off for the duration of the animation.
+                    // Mid-flight the section under the top of the viewport is
+                    // still the one we are leaving, so an active spy would
+                    // immediately collapse the panel this click just opened.
+                    spyOff = true;
+                    // Measured here, not before the collapse, so the bar is back
+                    // to its closed height when navOffset() reads it.
+                    $('html, body').stop(true).animate(
+                        { scrollTop: $(selector).offset().top - navOffset() },
+                        duration,
+                        function() { spyOff = false; updateSpy(); });
+                };
+                // The toggle button is only visible at xs, so it doubles as the
+                // "are we on a phone?" test without hard-coding a breakpoint.
+                if ($('#left-nav-toggle').is(':visible') && $panel.hasClass('in')) {
+                    $panel.one('hidden.bs.collapse', go).collapse('hide');
+                } else {
+                    go();
+                }
+            }
+
+            // Swap the open accordion panel. Shared by the header clicks and by
+            // the scroll-spy below, so a section opened by scrolling animates
+            // exactly like one opened by clicking.
+            //
+            // IMPORTANT: animate first, then toggle the 'in' class. Bootstrap's
+            // ".collapse.in { display:block }" rule makes a panel visible/hidden
+            // instantly, so if the class is changed before the slide, jQuery sees the
+            // element as already shown/hidden and skips the animation (a snap open).
+            var switching = false;   // an accordion swap is mid-animation
+            function openSection($header, $panel) {
+                // The 'in' class is only added when the slide FINISHES, so
+                // without this guard the spy would re-trigger slideDown on
+                // every scroll event for the whole 400ms of the animation.
+                if (!$panel || !$panel.length || $panel.hasClass('in') || switching) {
+                    return;
+                }
+                switching = true;
+
+                // Close any other open section (animated)...
+                $('#left-nav .nav-subsection.in').each(function() {
+                    var $open = $(this);
+                    $open.stop(true, false).slideUp(ANIM, function() {
+                        $open.removeClass('in');
+                    });
+                });
+                $('#left-nav .nav-section-header')
+                    .addClass('collapsed').attr('aria-expanded', 'false');
+
+                // ...and open the requested one (animated).
+                $header.removeClass('collapsed').attr('aria-expanded', 'true');
+                $panel.stop(true, false).slideDown(ANIM, function() {
+                    $panel.addClass('in');
+                    switching = false;
+                    // Re-check once the swap is done. A fast scroll can cross a
+                    // second boundary while this animation is running, and those
+                    // scroll events were ignored by the guard above - without
+                    // this the nav would be left showing the section the reader
+                    // has already passed through. Terminates: each pass opens
+                    // whatever matches the (now static) scroll position, and the
+                    // next pass then returns early on the hasClass('in') check.
+                    updateSpy();
+                });
+            }
+
+            $('#left-nav .nav-section-header').on('click', function(e) {
+                e.preventDefault();
+                var $header = $(this);
+                var $panel  = $($header.attr('href')); // e.g. #nav-sdk-linux-api
+                if (!$panel.length) { return; }
+
+                openSection($header, $panel);
+
+                // In addition to opening the sub-menu, navigate to the matching
+                // content section, aligning its top with the top of the left nav.
+                var section = $header.attr('data-section');
+                if (section && $(section).length) {
+                    scrollToSection(section, ANIM);
+                }
+            });
+
+            // Toggle nested subsection items (API Commands, API Events) on click.
+            //
+            // Every click - open OR close - also scrolls to the matching content
+            // heading, same as clicking a plain sub-item (e.g. Scanner ID). That
+            // means the scroll's completion callback runs updateSpy() right as
+            // the reader lands back on the heading they just closed, which would
+            // normally auto-expand it again (or, if the resolved heading happens
+            // to be a child sitting immediately below, re-open it as "current").
+            // manualGroupState pins the click's own decision so updateNestedItems()
+            // honours it for as long as the reader stays anywhere inside this same
+            // group (its own heading or any of its children), and only lets go
+            // once they scroll to a heading outside the group entirely.
+            $('#left-nav a.nav-nested-toggle').on('click', function(e) {
+                e.preventDefault();
+                var $link = $(this);
+                var $nestedList = $link.next('.nav-subsection-items');
+                if (!$nestedList.length) { return; }
+
+                var wasExpanded = $nestedList.hasClass('in');
+
+                // Collapse all nested items except those marked as always-expanded
+                $('#left-nav .nav-subsection-items').not('.always-expanded').removeClass('in');
+                $('#left-nav a.nav-nested-expanded').removeClass('nav-nested-expanded');
+
+                if (!wasExpanded) {
+                    $nestedList.addClass('in');
+                    $link.addClass('nav-nested-expanded');
+                }
+                manualGroupState = { $list: $nestedList, expanded: !wasExpanded };
+
+                scrollToSection($link.attr('href'), 350);
+            });
+
+            // Smooth scroll to anchor ONLY for the sub-item links, never the section
+            // headers. The headers are also <a href="#..."> elements, so restrict the
+            // selector to links inside .nav-subsection; otherwise clicking a main item
+            // (About / Setup / API / ...) would scroll the page instead of just toggling.
+            //
+            // .nav-nested-toggle is excluded too: API Commands / API Events
+            // are ALSO <a href="#..."> inside .nav-subsection, so without this exclusion this
+            // handler fires in addition to the dedicated toggle handler above, calling
+            // scrollToSection() on every click. Its 350ms completion callback then
+            // calls updateSpy() -> updateNestedItems(), which re-decides which nested
+            // list should be open from scroll position and immediately closes the one
+            // the toggle handler just opened.
+            $('#left-nav .nav-subsection a[href^="#"]').not('.nav-nested-toggle').on('click', function(e) {
+                var target = $(this).attr('href');
+                if ($(target).length) {
+                    e.preventDefault();
+                    scrollToSection(target, 350);
+                }
+            });
+
+            // ---- Scroll-spy for the left nav -----------------------------------
+            // Highlights the sub-item whose heading is currently at the top of
+            // the reading area, and swaps the open accordion panel when the
+            // reader crosses from one top-level section into the next.
+            //
+            // Not Bootstrap's scrollspy: the body carries data-spy="scroll"
+            // data-target="#toc", but there is no #toc on this page, so that
+            // plugin matches nothing and does nothing. It also cannot drive the
+            // accordion, which is the part actually being asked for here.
+
+            // Built once: every sub-item link paired with the heading it points
+            // at, plus the panel and header that own it.
+            var spyItems = [];
+            $('#left-nav .nav-subsection').each(function() {
+                var $panel  = $(this);
+                var $header = $('#left-nav .nav-section-header[href="#'
+                                + $panel.attr('id') + '"]');
+                $panel.find('a[href^="#"]').each(function() {
+                    var $link = $(this);
+                    var el    = document.getElementById($link.attr('href').slice(1));
+                    if (el && $header.length) {
+                        spyItems.push({ $link: $link, $panel: $panel,
+                                        $header: $header, el: el });
+                    }
+                });
+            });
+
+            // Also register each section's own top anchor (the header's
+            // data-section), mapped to that section's FIRST sub-item.
+            //
+            // Without these the section tops are invisible to the spy, and
+            // clicking a section header misfires: the click parks the section's
+            // top anchor on the spy line, but that section's first sub-heading
+            // sits a little below it and so does not qualify yet - leaving the
+            // nearest match as the LAST sub-item of the section ABOVE. The
+            // header would expand the section it was told to, while the
+            // highlight sat on the previous section's last item.
+            $('#left-nav .nav-section-header').each(function() {
+                var $header = $(this);
+                var $panel  = $($header.attr('href'));
+                var sel     = $header.attr('data-section');
+                var el      = sel ? document.getElementById(sel.slice(1)) : null;
+                var $first  = $panel.find('a[href^="#"]').first();
+                if (el && $panel.length && $first.length) {
+                    spyItems.push({ $link: $first, $panel: $panel,
+                                    $header: $header, el: el });
+                }
+            });
+
+            var spyOff = false;      // set while a programmatic scroll is running
+            var $spyActive = null;   // currently highlighted link
+            // Set by a manual click on a group header (API Commands / API Events)
+            // to pin its open/closed state against the scroll-spy until the reader
+            // scrolls to a heading outside that group.
+            // { $list: <the .nav-subsection-items>, expanded: bool } or null.
+            var manualGroupState = null;
+
+            // The heading nearest the top of the reading area without having
+            // gone past it. Document order is irrelevant - this just keeps the
+            // greatest rect.top that is still above the line - so the nav does
+            // not have to be ordered to match the content.
+            // Last heading in document order. rect.top is viewport-relative but
+            // measured in one pass, so the greatest value is furthest down the page.
+            function lastSpyItem() {
+                var best = spyItems[0], bestTop = -Infinity;
+                for (var i = 0; i < spyItems.length; i++) {
+                    var top = spyItems[i].el.getBoundingClientRect().top;
+                    if (top > bestTop) { bestTop = top; best = spyItems[i]; }
+                }
+                return best;
+            }
+
+            function currentSpyItem() {
+                // The page can run out of scroll before the final section's heading
+                // ever reaches the spy line, so that heading would never qualify
+                // below and the nearest match would be a heading from the section
+                // ABOVE it - clicking the last nav section scrolled correctly and
+                // then immediately collapsed itself again. Once scrolling has
+                // bottomed out, the last heading in the document IS the current one.
+                if ($(window).scrollTop() + $(window).height()
+                        >= $(document).height() - 2) {   // 2px: fractional DPR/zoom
+                    return lastSpyItem();
+                }
+
+                // +5 so a heading parked exactly at the scroll target by
+                // scrollToSection() counts as current rather than just missing.
+                var limit = navOffset() + 5, best = null, bestTop = 0;
+                for (var i = 0; i < spyItems.length; i++) {
+                    var top = spyItems[i].el.getBoundingClientRect().top;
+                    if (top <= limit && (!best || top > bestTop)) {
+                        best = spyItems[i];
+                        bestTop = top;
+                    }
+                }
+                // Above the first heading, treat the first as current.
+                return best || spyItems[0];
+            }
+
+            // Manage nested subsection items (API Commands and API Events)
+            function updateNestedItems(item) {
+                // A group header (API Commands / API Events) is a
+                // SIBLING of its own <ul>, not a descendant of it -
+                // closest('.nav-subsection-items') finds nothing for it, which
+                // would wrongly collapse the group while its own heading is the
+                // one currently in view (e.g. right after the click handler
+                // above scrolls to it). Route that case to next() instead so
+                // scrolling to the group's own heading maps to its list.
+                var $nestedContainer = item.$link.hasClass('nav-nested-toggle')
+                    ? item.$link.next('.nav-subsection-items')
+                    : item.$link.closest('.nav-subsection-items');
+
+                // A manual click pins its group's state against the spy for as
+                // long as the reader stays inside that same group (its own
+                // heading or any of its children) - otherwise landing back on
+                // the heading just closed (or on a child sitting right next to
+                // it) would spring it back open the instant the click's own
+                // scroll finishes. Reaching a heading outside the group clears
+                // the pin below so normal auto expand/collapse resumes there.
+                if (manualGroupState && $nestedContainer.length &&
+                        manualGroupState.$list[0] === $nestedContainer[0]) {
+                    var $ownerLink = $nestedContainer.prev('a');
+                    // Collapse all nested items except the active one and always-expanded ones
+                    $('#left-nav .nav-subsection-items').not($nestedContainer).not('.always-expanded').removeClass('in');
+                    $('#left-nav a.nav-nested-expanded').not($ownerLink).removeClass('nav-nested-expanded');
+                    $nestedContainer.toggleClass('in', manualGroupState.expanded);
+                    $ownerLink.toggleClass('nav-nested-expanded', manualGroupState.expanded);
+                    // Ensure always-expanded items stay expanded even during manual state
+                    $('#left-nav .nav-subsection-items.always-expanded').addClass('in');
+                    return;
+                }
+                manualGroupState = null;
+
+                // Collapse all nested items except those marked as always-expanded
+                // Remove expanded class from their parent links
+                $('#left-nav .nav-subsection-items').not('.always-expanded').removeClass('in');
+                $('#left-nav a.nav-nested-expanded').removeClass('nav-nested-expanded');
+
+                // If the active link is inside a nested container, expand it
+                if ($nestedContainer.length) {
+                    var $parentLink = $nestedContainer.prev('a');
+                    $nestedContainer.addClass('in');
+                    // Add class to the parent link to rotate the chevron
+                    if ($parentLink.length) {
+                        $parentLink.addClass('nav-nested-expanded');
+                    }
+                }
+
+                // Ensure always-expanded items stay expanded
+                $('#left-nav .nav-subsection-items.always-expanded').addClass('in');
+            }
+
+            function updateSpy() {
+                if (spyOff || !spyItems.length) { return; }
+                // At xs the tree is a drop-down menu the reader opens on
+                // demand; rearranging it underneath them while they scroll
+                // would be disorienting, and it is not visible anyway.
+                if ($('#left-nav-toggle').is(':visible')) { return; }
+
+                var item = currentSpyItem();
+                if (!item) { return; }
+
+                if (!$spyActive || $spyActive[0] !== item.$link[0]) {
+                    $('#left-nav .nav-subsection a.active').removeClass('active');
+                    item.$link.addClass('active');   // styled in the <style> block
+                    $spyActive = item.$link;
+
+                    // Expand/collapse nested items based on active link
+                    updateNestedItems(item);
+                }
+
+                // Crossed into a different top-level section: expand it and let
+                // openSection() collapse whichever one was open.
+                openSection(item.$header, item.$panel);
+            }
+        </script>
+    </body>
+</html>
