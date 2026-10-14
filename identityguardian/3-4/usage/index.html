@@ -3676,7 +3676,7 @@ When unlocking the device (e.g. pressing the power button or swiping to unlock),
 
 <h3 id="mpinprotectedguardiansafe" class="anchor"><a class="heading-anchor" href="#mpinprotectedguardiansafe"><span></span></a>MPIN-Protected Guardian Safe</h3>
 
-<p><a href="#guardiansafe">Guardian Safe</a> securely stores credentials for supported native applications and websites on <em>Shared Devices,</em> protecting them alongside <a href="#personalizeddevicesettings">Personalized Device Settings</a> (if enabled) with a Master Personal Identification Number (MPIN). The user signs in using the administrator-configured authentication method — such as Single Sign-On (SSO), Zebra DNA Cloud Passcode, NFC, or Barcode — and enters the MPIN when Guardian Safe requests access. After setup, the same protected profile remains accessible through any supported sign-in method configured for the device.</p>
+<p><a href="#guardiansafe">Guardian Safe</a> can securely store credentials for supported native applications and websites on <em>Shared Devices,</em> protecting them alongside <a href="#personalizeddevicesettings">Personalized Device Settings</a> (if enabled) with a Master Personal Identification Number (MPIN). The user signs in using the administrator-configured authentication method — such as Single Sign-On (SSO), Zebra DNA Cloud Passcode, NFC, or Barcode — and enters the MPIN when Guardian Safe requests access. After setup, the same protected profile remains accessible through any supported sign-in method configured for the device.</p>
 
 <p>Rather than tying data to a single physical sign-in source, enabling the MPIN allows a <em>Shared Device</em> user to access the same protected profile across multiple devices. While the MPIN protects Guardian Safe data, it does not replace the authentication factors configured by the administrator. </p>
 
@@ -4322,6 +4322,119 @@ When unlocking the device (e.g. pressing the power button or swiping to unlock),
 
 <hr>
 
+<h3 id="credentialstorage" class="anchor"><a class="heading-anchor" href="#credentialstorage"><span></span></a>Credential Storage</h3>
+
+<p>Administrators can select the storage location for <strong>Guardian Safe</strong> credentials on <em>personally assigned devices</em> via a managed configuration setting. This provides organizations with greater control over credential data handling with the following options:</p>
+
+<ul>
+<li><strong>Cloud Storage (Default):</strong> The authoritative credentials are stored in the ZDNA Cloud. This is the default behavior.</li>
+
+<li><strong>Device Storage:</strong> Credentials are kept exclusively on the device. No credential data is sent to or synchronized with the cloud.</li>
+</ul>
+
+<p>When the storage location is changed by an administrator, existing credentials migrate automatically in the background between the ZDNA Cloud and the device.</p>
+
+<ul>
+<li><strong>Offline Migration:</strong> If a device is offline during migration, the process pauses and resumes automatically once network connectivity is restored. A pending migration also survives an application restart or a device reboot while offline. </li>
+
+<li><strong>Decryption and Read Failures:</strong> If a credential cannot be read during migration (e.g., the retrieved copy cannot be decrypted with the current enrolment), the migration stops without deleting anything from the cloud, and the user is prompted to save the affected credentials again. </li>
+</ul>
+
+<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>Usage Note:</strong> Users sign in, save, or auto-populate credentials normally. This feature is transparent to the user, and credential migrations occur silently in the background.</p>
+
+<p><strong>Prerequisites:</strong></p>
+
+<ul>
+<li><strong>Licensing:</strong> An <strong><a href="../licensing">Identity Guardian license</a></strong> is required </li>
+
+<li><strong>Managed Configurations:</strong> The following configurations must be deployed to the devices.
+
+
+<ul>
+<li>Under <a href="../mc/#usagemode">Usage Mode</a>, set <strong>Application Mode</strong> to <strong>PERSONALLY_ASSIGNED.</strong></li>
+
+<li>Under <a href="../mc/#guardiansafeconfiguration">Guardian Safe Configuration</a>, set both <strong>Application Username and Password Safe</strong> and <strong>Automatically Grant Accessibility Permission</strong> to <strong>ENABLE.</strong></li></ul>
+</li>
+</ul>
+
+<p><br></p>
+
+<h4 id="adminsetup-23" class="anchor"><a class="heading-anchor" href="#adminsetup-23"><span></span></a>Admin Setup</h4>
+
+<p>Administrators must configure the credential storage location through Managed Configurations within the Enterprise Mobility Management (EMM) console or Zebra DNA Cloud.</p>
+
+<ol>
+<li>In <a href="../mc/#guardiansafeconfiguration">Guardian Safe Configuration</a>, select the desired storage location for <strong>Guardian Safe Storage for Personally Assigned Device:</strong>
+
+
+<ul>
+<li><strong>DEVICE</strong></li>
+
+<li><strong>CLOUD</strong></li></ul>
+</li>
+
+<li>Save this change and deploy it to the devices.</li>
+</ol>
+
+<p><br></p>
+
+<h4 id="credentialsecurityandpersistence" class="anchor"><a class="heading-anchor" href="#credentialsecurityandpersistence"><span></span></a>Credential Security and Persistence</h4>
+
+<p>Saved credentials are encrypted with a key generated during user enrollment. This key does not leave the device, which has the following security implications:</p>
+
+<ul>
+<li><strong>Device-Locked Credentials:</strong> Saved credentials for either storage method cannot be moved or transferred to a different device. </li>
+
+<li><strong>Reset Behavior:</strong> Saved credentials persist through a Identity Guardian restart or device reboot for both cloud and device storage methods.</li>
+
+<li><strong>Re-enrollment on a Different Device:</strong> If the user re-enrolls on a different device, a new key is generated and any previously stored copy becomes unreadable. Identity Guardian notifies the user and prompts for the credentials to be saved again.</li>
+
+<li><strong>Data Removal:</strong> If an Enterprise reset is performed or the app storage is cleared followed by a new user enrollment: 
+
+
+<ul>
+<li><strong>Cloud Storage:</strong> The credentials are retained but cannot be decrypted by the new enrollment. The user is prompted to save the credentials again. </li>
+
+<li><strong>Local device Storage:</strong> Credentials are permanently removed. The user must save the credentials again.</li></ul>
+</li>
+</ul>
+
+<p><br></p>
+
+<h4 id="troubleshootingguide" class="anchor"><a class="heading-anchor" href="#troubleshootingguide"><span></span></a>Troubleshooting Guide</h4>
+
+<p>Refer to the table below to resolve issues encountered.</p>
+
+<table class="facelift" style="width:100%" border="1" padding="5px">
+    <tbody><tr bgcolor="#dce8ef">
+        <th>Symptom</th>
+        <th>Possible Cause</th>
+        <th>Recommended Action</th>
+    </tr>
+    <tr>
+        <td>Credentials read error. User is prompted to save credentials again.</td>
+        <td>A stored credential could not be read with the current enrollment. The stored cloud copy is not deleted. The user may have re-enrolled on a different device.</td>
+        <td>Enter and save the credential again.</td>
+    </tr>
+    <tr>
+        <td>Local device storage appears to have no effect</td>
+        <td>The configuration may not be fully applied, or prerequisites are not met.</td>
+        <td>Verify the following:<br>&nbsp;&nbsp;&nbsp;• The device is in personally assigned mode.<br>&nbsp;&nbsp;&nbsp;• Guardian Safe is enabled.<br>&nbsp;&nbsp;&nbsp;• The Identity Guardian license is valid.</td>
+    </tr>
+    <tr>
+        <td>A credential migration does not complete</td>
+        <td>The migration process is interrupted, typically by connectivity issues.</td>
+        <td>Confirm the device has active network connectivity. <br><b>Note:</b> A pending migration retries automatically and resumes after an application or device restart.</td>
+    </tr>
+    <tr>
+        <td>Credentials were lost after a device reset</td>
+        <td>The device enrollment was recreated, which rotates the decryption key.</td>
+        <td>Neither the Cloud nor Local Storage provides credential recovery once the device enrollment is recreated.</td>
+    </tr>
+</tbody></table>
+
+<hr>
+
 <h3 id="savecredentials" class="anchor"><a class="heading-anchor" href="#savecredentials"><span></span></a>Save Credentials</h3>
 
 <p>To save user app login credentials:</p>
@@ -4345,29 +4458,6 @@ When unlocking the device (e.g. pressing the power button or swiping to unlock),
 
 <li>The user login credentials are now saved and will automatically populate in future login attempts when tapping the user name or password field.</li>
 </ol>
-
-<!--
-To save passwords in launcher app:
-1.    In the Identity Guardian lock screen, unlock the device by tapping “Unlock”.
-2.    Scan the user barcode, then perform facial scan.  If user authentication is successful, the login screen for the launcher app appears.
-3.    When focus is placed in the password field, the user is prompted with the question whether they want to save the password. Select one of the following:
-    - **Yes -** the subsequent logins will have the user name (if entered) and password prepopulated.
-    - **Ignore -** the user name and password are not saved and the user is prompted to enter their credentials for every login.
-        - **Ignore Permanently –** If selected, the user is no longer prompted to save the password for all subsequent login attempts.
-4.    The user is prompted to enter their login credentials. Enter the user name and password, then tap Save Credentials.
-5.    The user gains device access.
-
-To save passwords in native and web apps:
-1.    In the app login screen, when the user taps the password field a popup message appears inquiring whether the user would like to save their password. Select one of the following:
-    - **Yes -** the subsequent logins will have the user name (if entered) and password prepopulated.
-    - **Ignore -** the user name and password are not saved and the user is prompted to enter their credentials for every login.
-2.    The login screen appears for the user to enter their login credentials. Enter the user name and password, then ap Save Credentials.
-    - If Yes was selected in the previous step, subsequent login attempts will have the user name and password prepopulated.
-    - If Ignore was selected, the user name and password are not saved and the user is prompted to enter their credentials for every login.
-
-To change a saved password:
-1.    In the app login screen, tap the arrow icon in the password field.
-2.    The user is prompted to enter the original password and new password. -->
 
 <hr>
 
@@ -4597,7 +4687,7 @@ To edit the login credentials for an app through Guardian Safe:</p>
 
 <p>The <strong>Device Alarm</strong> is an audible alert activated when a user is not logged into the device or it is not returned to the powered cradle within the specified timeout period. These conditions can be configured and managed by the administrator via Managed Configurations. This feature is designed to prevent devices from remaining idle in unauthorized locations and to ensure they are returned to their cradle after use.</p>
 
-<h3 id="adminsetup-23" class="anchor"><a class="heading-anchor" href="#adminsetup-23"><span></span></a>Admin Setup</h3>
+<h3 id="adminsetup-24" class="anchor"><a class="heading-anchor" href="#adminsetup-24"><span></span></a>Admin Setup</h3>
 
 <p>Configure <a href="../mc">Managed Configurations</a>:</p>
 
@@ -4673,7 +4763,7 @@ To edit the login credentials for an app through Guardian Safe:</p>
 <li><strong>Dynamic Install/Uninstall Synchronization:</strong> Applications installed or removed during an active launcher session update their launch state upon returning to the lock screen and relaunching <strong>Quick Access.</strong></li>
 </ul>
 
-<h3 id="adminsetup-24" class="anchor"><a class="heading-anchor" href="#adminsetup-24"><span></span></a>Admin Setup</h3>
+<h3 id="adminsetup-25" class="anchor"><a class="heading-anchor" href="#adminsetup-25"><span></span></a>Admin Setup</h3>
 
 <p>Administrators configure Quick Access through EMM Managed Configurations to designated applications accessible from the lock screen.</p>
 
@@ -4847,7 +4937,7 @@ To edit the login credentials for an app through Guardian Safe:</p>
 
 <p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>Note:</strong> This feature is designed to work in WSC Mirror Mode only. Desktop Mode is not supported.</p>
 
-<h3 id="adminsetup-25" class="anchor"><a class="heading-anchor" href="#adminsetup-25"><span></span></a>Admin Setup</h3>
+<h3 id="adminsetup-26" class="anchor"><a class="heading-anchor" href="#adminsetup-26"><span></span></a>Admin Setup</h3>
 
 <p>Configure the following <a href="../mc/#lockscreenconfiguration">Managed Configurations</a>:</p>
 
@@ -4951,7 +5041,7 @@ To edit the login credentials for an app through Guardian Safe:</p>
 <li>Cloud Passcode login</li>
 </ul>
 
-<h3 id="adminsetup-26" class="anchor"><a class="heading-anchor" href="#adminsetup-26"><span></span></a>Admin Setup</h3>
+<h3 id="adminsetup-27" class="anchor"><a class="heading-anchor" href="#adminsetup-27"><span></span></a>Admin Setup</h3>
 
 <p>To allow users to access Personalized Device Settings, an administrator must first enable the feature at the account level within the <a href="/zebradna">Zebra DNA Cloud</a> console.</p>
 
