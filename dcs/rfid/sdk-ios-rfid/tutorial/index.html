@@ -4443,21 +4443,33 @@ Parameters:</p>
 
 <pre class="prettyprint"><code>		
 
--(SRFID_RESULT)getCradleStatus:(SRFID_CRADLE_STATUS*)cradelStatus aStatusMessage:(NSString**)statusMessage {
-    
+- (SRFID_RESULT)getReaderLog:(NSString**)statusMessage
+{
     SRFID_RESULT srfid_result = SRFID_RESULT_FAILURE;
-    srfid_result = [m_RfidSdkApi srfidGetCradleStatus:[m_ActiveReader getReaderID] aCradleStatus:cradelStatus aStatusMessage:statusMessage];
-   
-   
-    if (srfid_result == SRFID_RESULT_SUCCESS) {
-        NSLog(@"Get Cradle Status Success");
-       
-    }else {
-        NSLog(@" Get Cradle Status Failure");
+    
+    // 1. Check if we have an active, connected reader [4]
+    if (m_ActiveReader == nil || ![self isReaderConnected])
+    {
+        srfid_result = SRFID_RESULT_READER_NOT_AVAILABLE;
+    }
+    else
+    {
+        int readerID = [m_ActiveReader getReaderID];
+        
+        // 2. Call the public SDK API (srfidGetReaderLog:logState:aStatusMessage:) [4]
+        // This is 100% clean and targets the public SDK facade.
+        srfid_result = [m_RfidSdkApi srfidGetReaderLog:readerID
+                                              logState:SRFID_LOGSTATE_INTERNALRAMANDFLASHLOGSTATE
+                                        aStatusMessage:statusMessage];
+        
+        // 3. Handle failure state using the standard AppEngine safety routine [4]
+        if (srfid_result == SRFID_RESULT_FAILURE || srfid_result == SRFID_RESULT_RESPONSE_TIMEOUT)
+        {
+             NSLog(@"Failure");
+        }
     }
     
     return srfid_result;
-    
 }
 		
 </code></pre>
@@ -4467,22 +4479,34 @@ Parameters:</p>
 
 <pre class="prettyprint"><code>		
 
--(SRFID_RESULT)getCradleStatus:(SRFID_CRADLE_STATUS*)cradelStatus aStatusMessage:(NSString**)statusMessage {
-    
+
+- (SRFID_RESULT)setRealTimeReaderLog:(SRFID_REALTIMELOGSTYPE)logType withStatusMessage:(NSString**)statusMessage
+{
     SRFID_RESULT srfid_result = SRFID_RESULT_FAILURE;
-    srfid_result = [m_RfidSdkApi srfidGetCradleStatus:[m_ActiveReader getReaderID] aCradleStatus:cradelStatus aStatusMessage:statusMessage];
-   
-   
-    if (srfid_result == SRFID_RESULT_SUCCESS) {
-        NSLog(@"Get Cradle Status Success");
-       
-    }else {
-        NSLog(@" Get Cradle Status Failure");
+    
+    if (m_ActiveReader == nil || ![self isReaderConnected])
+    {
+        srfid_result = SRFID_RESULT_READER_NOT_AVAILABLE;
+    }
+    else
+    {
+        int readerID = [m_ActiveReader getReaderID];
+        
+        // Call the public SDK API
+        srfid_result = [m_RfidSdkApi srfidSetRealTimeReaderLog:readerID
+                                                       logType:logType
+                                                aStatusMessage:statusMessage];
+        
+        // Handle failure state
+        if (srfid_result == SRFID_RESULT_FAILURE || srfid_result == SRFID_RESULT_RESPONSE_TIMEOUT)
+        {
+             NSLog(@"Failure");
+        }
     }
     
     return srfid_result;
-    
 }
+
 		
 </code></pre>
             
