@@ -65,7 +65,7 @@
 
 
                         <li>
-                            <a href="../about/index.html">
+                            <a href="/dcs/rfid/sdk-ios-rfid/about/">
                                 About
                             </a>
                         </li>
@@ -2468,6 +2468,211 @@ memoryBank:(SRFID_MEMORYBANK)memoryBank offset:(int)offset length:(int)length pa
 
 }
 </code></pre>
+
+<h3 id="access-sequence-apis" class="anchor sub-topic"><a class="heading-anchor" href="#access-sequence-apis"><span></span></a>Access Sequence APIs</h3>
+
+<h4>Overview</h4>
+
+<p>An access sequence lets you queue several tag operations (read, write, and so on) and run them together. The workflow has three steps:</p>
+
+<ol>
+  <li>Buffer Management: build the list of operations to run.</li>
+  <li>Execution and Control: start and stop the sequence.</li>
+  <li>Monitoring and Tag Retrieval: get the results and the tag data.</li>
+</ol>
+
+<p>In the samples, <code>rfidSdkApi</code> is your SDK instance and <code>readerID</code> is the ID of the connected reader.</p>
+
+<h4>Buffer Management</h4>
+
+<p>Build the list of operations to run.</p>
+
+<h5>Creating operations</h5>
+
+<pre class="prettyprint"><code>
+srfidAccessParameters *readOp = [[srfidAccessParameters alloc] init];
+readOp.accessOperationCode = SRFID_ACCESSOPERATIONCODE_READ;
+readOp.memoryBank = SRFID_MEMORYBANK_USER;
+readOp.offset     = 0;      // start word
+readOp.length     = 4;      // number of words
+readOp.password   = 0;      // access password (0 if none)
+</code></pre>
+
+<pre class="prettyprint"><code>
+srfidAccessParameters *writeOp = [[srfidAccessParameters alloc] init];
+writeOp.accessOperationCode = SRFID_ACCESSOPERATIONCODE_WRITE;
+writeOp.memoryBank  = SRFID_MEMORYBANK_USER;
+writeOp.offset      = 0;
+writeOp.dataToWrite = @"AABB0011";   // hex string
+writeOp.password    = 0;
+</code></pre>
+
+<h5>srfidAccessSequenceDeleteAll</h5>
+
+<p>Clears all queued operations. Call it before building a new sequence.</p>
+
+<pre class="prettyprint"><code>
+NSString *statusMessage = nil;
+SRFID_RESULT result = [rfidSdkApi srfidAccessSequenceDeleteAll:readerID
+                                                aStatusMessage:&amp;statusMessage];
+</code></pre>
+
+<h5>srfidAccessSequenceAdd</h5>
+
+<p>Adds one operation to the queue.</p>
+
+<pre class="prettyprint"><code>
+[rfidSdkApi srfidAccessSequenceAdd:readerID aAccessParameters:readOp  aStatusMessage:&amp;statusMessage];
+[rfidSdkApi srfidAccessSequenceAdd:readerID aAccessParameters:writeOp aStatusMessage:&amp;statusMessage];
+</code></pre>
+
+<h5>srfidAccessSequenceGetLength</h5>
+
+<p>Returns the number of operations currently queued.</p>
+
+<pre class="prettyprint"><code>
+int count = [rfidSdkApi srfidAccessSequenceGetLength:readerID];
+</code></pre>
+
+<h5>srfidAccessSequenceGetOperation</h5>
+
+<p>Returns the operation at a given index, or nil if the index is out of range.</p>
+
+<pre class="prettyprint"><code>
+srfidAccessParameters *op = [rfidSdkApi srfidAccessSequenceGetOperation:readerID atIndex:0];
+if (op == nil) {
+    // Index out of range
+}
+</code></pre>
+
+<h5>srfidAccessSequenceDelete</h5>
+
+<p>Removes a specific operation. Pass the same object you added; a different object with identical values won't match.</p>
+
+<pre class="prettyprint"><code>
+SRFID_RESULT result = [rfidSdkApi srfidAccessSequenceDelete:readerID
+                                          aAccessParameters:writeOp
+                                             aStatusMessage:&amp;statusMessage];
+</code></pre>
+
+<h5>srfidGetMaxNumOperationsInAccessSequence</h5>
+
+<p>Returns the maximum number of operations the reader supports in one sequence.</p>
+
+<pre class="prettyprint"><code>
+int maxOps = [rfidSdkApi srfidGetMaxNumOperationsInAccessSequence:readerID];
+if ([rfidSdkApi srfidAccessSequenceGetLength:readerID] &gt;= maxOps) {
+    // Sequence is full; don't add more operations
+}
+</code></pre>
+
+<h4>Execution and Control</h4>
+
+<p>Start and stop the queued sequence.</p>
+
+<h5>srfidAccessSequencePerform</h5>
+
+<p>Runs the queued operations on tags that match a filter. The call starts the sequence and returns; call <code>srfidAccessSequenceStop</code> when you want it to end.</p>
+
+<pre class="prettyprint"><code>
+srfidTagFilter *filter = [[srfidTagFilter alloc] init];
+[filter setFilterMaskBank:SRFID_MEMORYBANK_EPC];
+[filter setFilterMaskStartPos:32];       // bit position (32 = start of the EPC)
+[filter setFilterData:@"E2801160"];      // hex pattern to match
+[filter setFilterMatchLength:32];        // bits
+[filter setFilterDoMatch:YES];
+
+srfidAccessCriteria *criteria = [[srfidAccessCriteria alloc] init];
+criteria.tagFilter1 = filter;
+
+NSString *statusMessage = nil;
+SRFID_RESULT result = [rfidSdkApi srfidAccessSequencePerform:readerID
+                                             aAccessCriteria:criteria
+                                              aStatusMessage:&amp;statusMessage];
+if (result != SRFID_RESULT_SUCCESS) {
+    NSLog(@"Could not start sequence: %@", statusMessage);
+}
+</code></pre>
+
+<h5>srfidAccessSequencePerformNoFilter</h5>
+
+<p>Runs the queued operations on all tags in range.</p>
+
+<pre class="prettyprint"><code>
+SRFID_RESULT result = [rfidSdkApi srfidAccessSequencePerformNoFilter:readerID
+                                                      aStatusMessage:&amp;statusMessage];
+</code></pre>
+
+<h5>srfidAccessSequenceStop</h5>
+
+<p>Stops a running sequence.</p>
+
+<pre class="prettyprint"><code>
+SRFID_RESULT result = [rfidSdkApi srfidAccessSequenceStop:readerID
+                                           aStatusMessage:&amp;statusMessage];
+</code></pre>
+
+<h4>Monitoring and Tag Retrieval</h4>
+
+<p>Get the results and the tag data of the last sequence.</p>
+
+<h5>srfidGetLastAccessResult</h5>
+
+<p>Returns how many unique tags succeeded and failed in the last sequence. Call it after <code>srfidAccessSequenceStop</code>.</p>
+
+<pre class="prettyprint"><code>
+int successCount = 0, failureCount = 0;
+SRFID_RESULT result = [rfidSdkApi srfidGetLastAccessResult:readerID
+                                             aSuccessCount:&amp;successCount
+                                             aFailureCount:&amp;failureCount];
+NSLog(@"Succeeded: %d, Failed: %d", successCount, failureCount);
+</code></pre>
+
+<h5>srfidGetReadTags</h5>
+
+<p>Retrieves up to <code>aMaxTags</code> tags read during the sequence, including their memory bank data. Tags that are returned are removed from the SDK's buffer, so call it again to get any remaining tags.</p>
+
+<pre class="prettyprint"><code>
+NSArray *tags = nil;
+SRFID_RESULT result = [rfidSdkApi srfidGetReadTags:readerID aTagData:&amp;tags aMaxTags:50];
+if (result == SRFID_RESULT_SUCCESS) {
+    for (srfidTagData *tag in tags) {
+        NSLog(@"Tag: %@  Data: %@  Succeeded: %d",
+              [tag getTagId], [tag getMemoryBankData], [tag getOperationSucceed]);
+    }
+}
+</code></pre>
+
+<h4>Complete Example</h4>
+
+<pre class="prettyprint"><code>
+NSString *statusMessage = nil;
+
+// 1. Build the sequence
+[rfidSdkApi srfidAccessSequenceDeleteAll:readerID aStatusMessage:&amp;statusMessage];
+[rfidSdkApi srfidAccessSequenceAdd:readerID aAccessParameters:readOp aStatusMessage:&amp;statusMessage];
+
+// 2. Run it
+if ([rfidSdkApi srfidAccessSequencePerformNoFilter:readerID aStatusMessage:&amp;statusMessage] == SRFID_RESULT_SUCCESS) {
+
+    // ... let the sequence run, then stop it ...
+    [rfidSdkApi srfidAccessSequenceStop:readerID aStatusMessage:&amp;statusMessage];
+
+    // 3. Collect results
+    int ok = 0, failed = 0;
+    [rfidSdkApi srfidGetLastAccessResult:readerID aSuccessCount:&amp;ok aFailureCount:&amp;failed];
+
+    NSArray *tags = nil;
+    [rfidSdkApi srfidGetReadTags:readerID aTagData:&amp;tags aMaxTags:100];
+}
+</code></pre>
+
+<h4>Notes</h4>
+
+<ul>
+  <li>Add at least one operation before starting a sequence, and keep the count within the limit returned by <code>srfidGetMaxNumOperationsInAccessSequence</code>. Otherwise the start call returns a failure result, with details in <code>aStatusMessage</code>.</li>
+  <li>Always check the returned <code>SRFID_RESULT</code> and read <code>aStatusMessage</code> when a call fails.</li>
+</ul>
 
 <h2 id="batch-mode" class="anchor main-topic"><a class="heading-anchor" href="#batch-mode"><span></span></a>Batch Mode</h2>
 
