@@ -90,7 +90,9 @@ def parse_monolith(src: str):
     m = START_RE.search(src)
     e = src.find(END_MARK)
     region = src[m.start(): e]
-    head = src[: src.find('<div class="container-fluid">')]
+    hdr_end = src.find("<!--/header-->")  # the nav itself contains a div.container-fluid, so cut after the header
+    assert hdr_end > 0, "monolith lost its <!--/header--> marker"
+    head = src[: hdr_end + len("<!--/header-->")] + "\n"
     tail = src[e:]
     intro = re.search(r'<div class="row">\s*<div class="col-sm-12" id="guides">\s*<h1 id="Tutorials".*?</div>\s*</div>', src, re.S)
     content, pres, _ = extract_pres(region)
