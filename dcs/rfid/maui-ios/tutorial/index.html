@@ -226,6 +226,119 @@ public void getNativeRfidSdkReaderList()
 </code></pre>
 
 
+<h2>Pre-filters</h2>
+
+<h3>Delete All Pre-filters</h3>
+<p>The <code>DeleteAllPreFilters</code> method clears all active pre-filters on the active RFID reader.</p>
+<pre class="prettyprint"><code>
+public SrfidResult DeleteAllPrefilters_VersionTwo()
+{
+    SrfidResult result = SrfidResult.Failure;
+    string statusMsg = null;
+
+    try
+    {
+        result = apiInstance.DeleteAllPreFilters(connectedReaderID, ref statusMsg);
+        if (result == SrfidResult.Success)
+        {
+            System.Diagnostics.Debug.WriteLine("DeleteAllPreFilters Success");
+            logsString = "DeleteAllPreFilters Success";
+
+        }
+        else if (result == SrfidResult.ResponseError)
+        {
+            System.Diagnostics.Debug.WriteLine("DeleteAllPreFilters ResponseError");
+            logsString = "DeleteAllPreFilters Response Error";
+
+        }
+        else if (result == SrfidResult.Failure || result == SrfidResult.ResponseTimeout)
+        {
+            System.Diagnostics.Debug.WriteLine("DeleteAllPreFilters Failure");
+            logsString = "DeleteAllPreFilters Failure";
+        }
+
+    }
+    catch (Exception e)
+    {
+        System.Diagnostics.Debug.WriteLine("SrfidDeleteAllPreFilters Exception " + e);
+    }
+
+    return result;
+}
+</code></pre>
+
+<h3>Delete Pre-filter</h3>
+<p>The <code>DeletePreFilter</code> method deletes a specific pre-filter object (<code>srfidPreFilter</code>) from the active RFID reader.</p>
+<pre class="prettyprint"><code>
+public SrfidResult DeletePreFilter(srfidPreFilter preFilter)
+{
+    SrfidResult result = SrfidResult.Failure;
+    string statusMsg = null;
+
+    try
+    {
+        result = apiInstance.DeletePreFilter(connectedReaderID, preFilter, ref statusMsg);
+        if (result == SrfidResult.Success)
+        {
+            System.Diagnostics.Debug.WriteLine("DeletePreFilter Success");
+            logsString = "DeletePreFilter Success";
+        }
+        else if (result == SrfidResult.ResponseError)
+        {
+            System.Diagnostics.Debug.WriteLine("DeletePreFilter ResponseError");
+            logsString = "DeletePreFilter Response Error";
+        }
+        else if (result == SrfidResult.Failure || result == SrfidResult.ResponseTimeout)
+        {
+            System.Diagnostics.Debug.WriteLine("DeletePreFilter Failure");
+            logsString = "DeletePreFilter Failure";
+        }
+    }
+    catch (Exception e)
+    {
+        System.Diagnostics.Debug.WriteLine("DeletePreFilter Exception " + e);
+    }
+
+    return result;
+}
+</code></pre>
+
+<h3>Add Pre-filters (Array)</h3>
+<p>The <code>AddPreFilter</code> method applies a batch of pre-filter configurations (an <code>NSMutableArray</code> of <code>srfidPreFilter</code>) to the active RFID reader at once.</p>
+<pre class="prettyprint"><code>
+public SrfidResult AddPreFilter(NSMutableArray filtersList)
+{
+    SrfidResult result = SrfidResult.Failure;
+    string statusMsg = null;
+
+    try
+    {
+        result = apiInstance.AddPreFilter(connectedReaderID, filtersList, ref statusMsg);
+        if (result == SrfidResult.Success)
+        {
+            System.Diagnostics.Debug.WriteLine("AddPreFilter Success");
+            logsString = "AddPreFilter Success";
+        }
+        else if (result == SrfidResult.ResponseError)
+        {
+            System.Diagnostics.Debug.WriteLine("AddPreFilter ResponseError");
+            logsString = "AddPreFilter Response Error";
+        }
+        else if (result == SrfidResult.Failure || result == SrfidResult.ResponseTimeout)
+        {
+            System.Diagnostics.Debug.WriteLine("AddPreFilter Failure");
+            logsString = "AddPreFilter Failure";
+        }
+    }
+    catch (Exception e)
+    {
+        System.Diagnostics.Debug.WriteLine("AddPreFilter Exception " + e);
+    }
+
+    return result;
+}
+</code></pre>
+
 <h2>RFID Operation</h2>		
 <h3>Inventory</h3>		
 <ul>
@@ -774,6 +887,245 @@ public bool AccessOperationTagWrite(string tagId, SrfidMemorybank memoryBank, sh
 </code>
 </pre>
 	
+<h3><strong>Tag Read (Wait)</strong></h3>
+<p>
+    The <code>SrfidReadWait</code> method performs a synchronous read: the call returns only after the reader responds, and the tag data is returned through the <code>accessTagData</code> handle. Set <code>bPrefilter</code> to true to apply the configured pre-filters to the operation.
+</p>
+<pre class="prettyprint"><code>
+public SrfidResult ReadTagWait(string tagId, zt_ReadAccessParams readParams, bool prefilter, out srfidTagData tagData)
+{
+    SrfidResult result = SrfidResult.Failure;
+    string statusMsg = null;
+    tagData = null;
+
+    try
+    {
+        IntPtr tagDataHandle = IntPtr.Zero;
+        result = apiInstance.SrfidReadWait(connectedReaderID, tagId, readParams, prefilter, ref tagDataHandle, ref statusMsg);
+
+        if (tagDataHandle != IntPtr.Zero)
+        {
+            tagData = ObjCRuntime.Runtime.GetNSObject&lt;srfidTagData&gt;(tagDataHandle);
+        }
+        if (result == SrfidResult.Success &amp;&amp; tagData != null)
+        {
+            SetTagDataAccesOperation(tagData);
+            System.Diagnostics.Debug.WriteLine("SrfidReadWait Memory Bank Data :" + tagData.MemoryBankData);
+        }
+        if (result == SrfidResult.Success)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidReadWait Success");
+            logsString = "SrfidReadWait Success";
+        }
+        else if (result == SrfidResult.ResponseError)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidReadWait ResponseError");
+            logsString = "SrfidReadWait Response Error";
+        }
+        else if (result == SrfidResult.Failure || result == SrfidResult.ResponseTimeout)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidReadWait Failure");
+            logsString = "SrfidReadWait Failure";
+        }
+    }
+    catch (Exception e)
+    {
+        System.Diagnostics.Debug.WriteLine("SrfidReadWait Exception " + e);
+    }
+
+    return result;
+}
+
+// Usage
+zt_ReadAccessParams readParams = new zt_ReadAccessParams();
+readParams.MemoryBank = SrfidMemorybank.User;
+readParams.Offset = 0;
+readParams.Count = 0;
+readParams.AccessPassword = 0;
+SrfidResult readResult = ReadTagWait(tagId, readParams, false, out srfidTagData readData);
+</code></pre>
+
+<h3><strong>Tag Write (Wait)</strong></h3>
+<p>
+    The <code>SrfidWriteWait</code> method performs a synchronous write. <code>bPrefilter</code> applies the configured pre-filters, and <code>bTIDPrefilter</code> applies the TID pre-filter to the operation.
+</p>
+<pre class="prettyprint"><code>
+public SrfidResult WriteTagWait(string tagId, zt_WriteAccessParams writeParams, bool prefilter, bool tidPrefilter, out srfidTagData tagData)
+{
+    SrfidResult result = SrfidResult.Failure;
+    string statusMsg = null;
+    tagData = null;
+
+    try
+    {
+        IntPtr tagDataHandle = IntPtr.Zero;
+        result = apiInstance.SrfidWriteWait(connectedReaderID, tagId, writeParams, prefilter, tidPrefilter, ref tagDataHandle, ref statusMsg);
+
+        if (tagDataHandle != IntPtr.Zero)
+        {
+            tagData = ObjCRuntime.Runtime.GetNSObject&lt;srfidTagData&gt;(tagDataHandle);
+        }
+        if (result == SrfidResult.Success &amp;&amp; tagData != null)
+        {
+            SetTagDataAccesOperation(tagData);
+        }
+        if (result == SrfidResult.Success)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidWriteWait Success");
+            logsString = "SrfidWriteWait Success";
+        }
+        else if (result == SrfidResult.ResponseError)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidWriteWait ResponseError");
+            logsString = "SrfidWriteWait Response Error";
+        }
+        else if (result == SrfidResult.Failure || result == SrfidResult.ResponseTimeout)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidWriteWait Failure");
+            logsString = "SrfidWriteWait Failure";
+        }
+    }
+    catch (Exception e)
+    {
+        System.Diagnostics.Debug.WriteLine("SrfidWriteWait Exception " + e);
+    }
+
+    return result;
+}
+
+// Usage
+zt_WriteAccessParams writeParams = new zt_WriteAccessParams();
+writeParams.MemoryBank = SrfidMemorybank.User;
+writeParams.Offset = 0;
+writeParams.Data = "1234";
+writeParams.AccessPassword = 0;
+writeParams.DoBlockWrite = false;
+writeParams.WriteRetries = 1;
+SrfidResult writeResult = WriteTagWait(tagId, writeParams, false, false, out srfidTagData writeData);
+</code></pre>
+
+<h3><strong>Tag Lock (Wait)</strong></h3>
+<p>
+    The <code>SrfidLockWait</code> method performs a synchronous lock operation. The lock privileges are set per data field on a <code>zt_LockAccessParams</code> object using <code>SetLockPrivilege</code>.
+</p>
+<pre class="prettyprint"><code>
+public SrfidResult LockTagWait(string tagId, zt_LockAccessParams lockParams, bool prefilter, out srfidTagData tagData)
+{
+    SrfidResult result = SrfidResult.Failure;
+    string statusMsg = null;
+    tagData = null;
+
+    try
+    {
+        IntPtr tagDataHandle = IntPtr.Zero;
+        result = apiInstance.SrfidLockWait(connectedReaderID, tagId, lockParams, prefilter, ref tagDataHandle, ref statusMsg);
+
+        if (tagDataHandle != IntPtr.Zero)
+        {
+            tagData = ObjCRuntime.Runtime.GetNSObject&lt;srfidTagData&gt;(tagDataHandle);
+        }
+        if (result == SrfidResult.Success &amp;&amp; tagData != null)
+        {
+            SetTagDataAccesOperation(tagData);
+        }
+        if (result == SrfidResult.Success)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidLockWait Success");
+            logsString = "SrfidLockWait Success";
+        }
+        else if (result == SrfidResult.ResponseError)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidLockWait ResponseError");
+            logsString = "SrfidLockWait Response Error";
+        }
+        else if (result == SrfidResult.Failure || result == SrfidResult.ResponseTimeout)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidLockWait Failure");
+            logsString = "SrfidLockWait Failure";
+        }
+    }
+    catch (Exception e)
+    {
+        System.Diagnostics.Debug.WriteLine("SrfidLockWait Exception " + e);
+    }
+
+    return result;
+}
+
+// Usage
+zt_LockAccessParams lockParams = new zt_LockAccessParams();
+lockParams.SetLockPrivilege(LOCKDATAFIELD.ZtLockDataFieldEpcMemory, SrfidAccesspermission.CcessiblePerm);
+SrfidResult lockResult = LockTagWait(tagId, lockParams, false, out srfidTagData lockData);
+</code></pre>
+
+<h3><strong>Tag Block Erase (Wait)</strong></h3>
+<p>
+    The <code>SrfidBlockEraseWait</code> method performs a synchronous block erase. The tag ID must be a non-empty, even-length hex string and the erase word count must be greater than 0.
+</p>
+<pre class="prettyprint"><code>
+public SrfidResult BlockEraseTagWait(string tagId, zt_BlockEraseAccessParams eraseParams, bool prefilter, out srfidTagData tagData)
+{
+    SrfidResult result = SrfidResult.Failure;
+    string statusMsg = null;
+    tagData = null;
+
+    try
+    {
+        if (string.IsNullOrEmpty(tagId) || (tagId.Length % 2) != 0)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidBlockEraseWait Invalid Tag ID (Empty or odd hex length)");
+            return SrfidResult.InvalidParams;
+        }
+        if (eraseParams == null || eraseParams.Count &lt;= 0)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidBlockEraseWait Erase parameters are invalid");
+            return SrfidResult.InvalidParams;
+        }
+
+        IntPtr tagDataHandle = IntPtr.Zero;
+        result = apiInstance.SrfidBlockEraseWait(connectedReaderID, tagId, eraseParams, prefilter, ref tagDataHandle, ref statusMsg);
+
+        if (tagDataHandle != IntPtr.Zero)
+        {
+            tagData = ObjCRuntime.Runtime.GetNSObject&lt;srfidTagData&gt;(tagDataHandle);
+        }
+        if (result == SrfidResult.Success &amp;&amp; tagData != null)
+        {
+            SetTagDataAccesOperation(tagData);
+        }
+        if (result == SrfidResult.Success)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidBlockEraseWait Success");
+            logsString = "SrfidBlockEraseWait Success";
+        }
+        else if (result == SrfidResult.ResponseError)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidBlockEraseWait ResponseError");
+            logsString = "SrfidBlockEraseWait Response Error";
+        }
+        else if (result == SrfidResult.Failure || result == SrfidResult.ResponseTimeout)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidBlockEraseWait Failure");
+            logsString = "SrfidBlockEraseWait Failure";
+        }
+    }
+    catch (Exception e)
+    {
+        System.Diagnostics.Debug.WriteLine("SrfidBlockEraseWait Exception " + e);
+    }
+
+    return result;
+}
+
+// Usage
+zt_BlockEraseAccessParams eraseParams = new zt_BlockEraseAccessParams();
+eraseParams.MemoryBank = SrfidMemorybank.User;
+eraseParams.Offset = 0;
+eraseParams.Count = 2;
+eraseParams.AccessPassword = 0;
+SrfidResult eraseResult = BlockEraseTagWait(tagId, eraseParams, false, out srfidTagData eraseData);
+</code></pre>
+
 <h2>Access Sequence</h2>	
 <p>This API is used to execute multiple access operations (Read, Write, etc) at the sametime</p>
 <pre class="prettyprint"><code>
@@ -1598,6 +1950,50 @@ public SrfidResult DisconnectWlanProfile()
 </code>
 </pre>
 </li>
+
+<h3>Enable Channel List</h3>
+<p>The <code>EnableWifiChannelBand</code> method configures the Wi-Fi operation of the active RFID reader by applying a channel band mask. The bands can be enabled individually or in combination.</p>
+<pre class="prettyprint"><code>
+// Channel band values
+// WIFI_WPA2_4GZ     = 1  (2.4 GHz)
+// WIFI_WPA5GZ_NODFS = 2  (5 GHz non-DFS)
+// WIFI_WPA5GZ_DFS   = 4  (5 GHz DFS)
+
+public SrfidResult EnableWifiChannelBand(int channelValue)
+{
+    SrfidResult result = SrfidResult.Failure;
+    string statusMsg = null;
+
+    try
+    {
+        result = apiInstance.EnableWifiChannelBand(connectedReaderID, channelValue, ref statusMsg);
+        if (result == SrfidResult.Success)
+        {
+            System.Diagnostics.Debug.WriteLine("EnableWifiChannelBand Success");
+            logsString = "EnableWifiChannelBand Success";
+        }
+        else if (result == SrfidResult.ResponseError)
+        {
+            System.Diagnostics.Debug.WriteLine("EnableWifiChannelBand ResponseError");
+            logsString = "EnableWifiChannelBand Response Error";
+        }
+        else if (result == SrfidResult.Failure || result == SrfidResult.ResponseTimeout)
+        {
+            System.Diagnostics.Debug.WriteLine("EnableWifiChannelBand Failure");
+            logsString = "EnableWifiChannelBand Failure";
+        }
+    }
+    catch (Exception e)
+    {
+        System.Diagnostics.Debug.WriteLine("EnableWifiChannelBand Exception " + e);
+    }
+
+    return result;
+}
+
+// Example: enable 2.4 GHz and 5 GHz non-DFS
+EnableWifiChannelBand(1 + 2);
+</code></pre>
 
 <h2>Endpoint Configuration</h2>	
 <h3>Add Endpoint Configuration</h3>		
@@ -2876,6 +3272,268 @@ public SrfidResult SaveCertificate()
     </code>
     </pre>
     </li>
+
+<h2>General</h2>
+
+<h3>Set Friendly Name</h3>
+<p>The <code>SetFriendlyName</code> method assigns a custom, human-readable "friendly name" to the active RFID reader.</p>
+<pre class="prettyprint"><code>
+public SrfidResult SetFriendlyName(string friendlyName)
+{
+    SrfidResult result = SrfidResult.Failure;
+    string statusMsg = null;
+
+    try
+    {
+        result = apiInstance.SetFriendlyName(connectedReaderID, friendlyName, ref statusMsg);
+        if (result == SrfidResult.Success)
+        {
+            System.Diagnostics.Debug.WriteLine("SetFriendlyName Success");
+            logsString = "SetFriendlyName Success";
+        }
+        else if (result == SrfidResult.ResponseError)
+        {
+            System.Diagnostics.Debug.WriteLine("SetFriendlyName ResponseError");
+            logsString = "SetFriendlyName Response Error";
+        }
+        else if (result == SrfidResult.Failure || result == SrfidResult.ResponseTimeout)
+        {
+            System.Diagnostics.Debug.WriteLine("SetFriendlyName Failure");
+            logsString = "SetFriendlyName Failure";
+        }
+    }
+    catch (Exception e)
+    {
+        System.Diagnostics.Debug.WriteLine("SetFriendlyName Exception " + e);
+    }
+
+    return result;
+}
+</code></pre>
+
+<h3>Get Friendly Name</h3>
+<p>The <code>GetFriendlyName</code> method retrieves the friendly name of the active RFID reader. The name is returned as an <code>NSString</code> handle.</p>
+<pre class="prettyprint"><code>
+public SrfidResult GetFriendlyName(out string friendlyName)
+{
+    SrfidResult result = SrfidResult.Failure;
+    string statusMsg = null;
+    friendlyName = null;
+
+    try
+    {
+        IntPtr friendlyNameHandle = IntPtr.Zero;
+        result = apiInstance.GetFriendlyName(connectedReaderID, ref friendlyNameHandle, ref statusMsg);
+
+        if (result == SrfidResult.Success &amp;&amp; friendlyNameHandle != IntPtr.Zero)
+        {
+            friendlyName = ObjCRuntime.Runtime.GetNSObject&lt;NSString&gt;(friendlyNameHandle)?.ToString();
+            System.Diagnostics.Debug.WriteLine("GetFriendlyName : " + friendlyName);
+        }
+        if (result == SrfidResult.Success)
+        {
+            System.Diagnostics.Debug.WriteLine("GetFriendlyName Success");
+            logsString = "GetFriendlyName Success";
+        }
+        else if (result == SrfidResult.ResponseError)
+        {
+            System.Diagnostics.Debug.WriteLine("GetFriendlyName ResponseError");
+            logsString = "GetFriendlyName Response Error";
+        }
+        else if (result == SrfidResult.Failure || result == SrfidResult.ResponseTimeout)
+        {
+            System.Diagnostics.Debug.WriteLine("GetFriendlyName Failure");
+            logsString = "GetFriendlyName Failure";
+        }
+    }
+    catch (Exception e)
+    {
+        System.Diagnostics.Debug.WriteLine("GetFriendlyName Exception " + e);
+    }
+
+    return result;
+}
+</code></pre>
+
+<h3>Cradle Status</h3>
+<p>The <code>SrfidGetCradleStatus</code> method retrieves whether the active RFID reader is currently docked on its charging or communication cradle.</p>
+<pre class="prettyprint"><code>
+public SrfidResult GetCradleStatus(out SRFID_CRADLE_STATUS cradleStatus)
+{
+    SrfidResult result = SrfidResult.Failure;
+    string statusMsg = null;
+    cradleStatus = SRFID_CRADLE_STATUS.SRFID_CRADLE_STATUS_OFF;
+
+    try
+    {
+        SRFID_CRADLE_STATUS status = SRFID_CRADLE_STATUS.SRFID_CRADLE_STATUS_OFF;
+        result = apiInstance.SrfidGetCradleStatus(connectedReaderID, ref status, ref statusMsg);
+        cradleStatus = status;
+
+        if (result == SrfidResult.Success)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidGetCradleStatus : " + cradleStatus);
+        }
+        if (result == SrfidResult.Success)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidGetCradleStatus Success");
+            logsString = "SrfidGetCradleStatus Success";
+        }
+        else if (result == SrfidResult.ResponseError)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidGetCradleStatus ResponseError");
+            logsString = "SrfidGetCradleStatus Response Error";
+        }
+        else if (result == SrfidResult.Failure || result == SrfidResult.ResponseTimeout)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidGetCradleStatus Failure");
+            logsString = "SrfidGetCradleStatus Failure";
+        }
+    }
+    catch (Exception e)
+    {
+        System.Diagnostics.Debug.WriteLine("SrfidGetCradleStatus Exception " + e);
+    }
+
+    return result;
+}
+
+public enum SRFID_CRADLE_STATUS
+{
+    SRFID_CRADLE_STATUS_OFF = 0, // Device is NOT on the cradle
+    SRFID_CRADLE_STATUS_ON  = 1  // Device IS on the cradle
+}
+</code></pre>
+
+<h3>Get Last Error Info</h3>
+<p>The <code>GetLastErrorInfo</code> method retrieves details of the last error reported by the active RFID reader (status description, vendor message and status codes) as an <code>srfidErrorInfo</code> object.</p>
+<pre class="prettyprint"><code>
+public SrfidResult GetLastErrorInfo(out srfidErrorInfo errorInfo)
+{
+    SrfidResult result = SrfidResult.Failure;
+    errorInfo = null;
+
+    try
+    {
+        IntPtr errorInfoHandle = IntPtr.Zero;
+        result = apiInstance.GetLastErrorInfo(connectedReaderID, ref errorInfoHandle);
+
+        if (result == SrfidResult.Success &amp;&amp; errorInfoHandle != IntPtr.Zero)
+        {
+            errorInfo = ObjCRuntime.Runtime.GetNSObject&lt;srfidErrorInfo&gt;(errorInfoHandle);
+            if (errorInfo != null)
+            {
+                System.Diagnostics.Debug.WriteLine("GetLastErrorInfo StatusDesc : " + errorInfo.StatusDesc + ", VendorMessage : " + errorInfo.VendorMessage);
+            }
+        }
+        if (result == SrfidResult.Success)
+        {
+            System.Diagnostics.Debug.WriteLine("GetLastErrorInfo Success");
+            logsString = "GetLastErrorInfo Success";
+        }
+        else if (result == SrfidResult.ResponseError)
+        {
+            System.Diagnostics.Debug.WriteLine("GetLastErrorInfo ResponseError");
+            logsString = "GetLastErrorInfo Response Error";
+        }
+        else if (result == SrfidResult.Failure || result == SrfidResult.ResponseTimeout)
+        {
+            System.Diagnostics.Debug.WriteLine("GetLastErrorInfo Failure");
+            logsString = "GetLastErrorInfo Failure";
+        }
+    }
+    catch (Exception e)
+    {
+        System.Diagnostics.Debug.WriteLine("GetLastErrorInfo Exception " + e);
+    }
+
+    return result;
+}
+</code></pre>
+
+<h2>Reader Logging</h2>
+
+<h3>Get Reader Log</h3>
+<p>The <code>SrfidGetReaderLog</code> method starts retrieval of the log data stored on the RFID reader (RAM and FLASH log files) in one operation. It helps support and engineering diagnose reader behaviour in the field.</p>
+<pre class="prettyprint"><code>
+public SrfidResult GetReaderLog(SRFID_LOGSTATE logState = SRFID_LOGSTATE.SRFID_LOGSTATE_INTERNALRAMANDFLASHLOGSTATE)
+{
+    SrfidResult result = SrfidResult.Failure;
+    string statusMsg = null;
+
+    try
+    {
+        result = apiInstance.SrfidGetReaderLog(connectedReaderID, logState, ref statusMsg);
+        if (result == SrfidResult.Success)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidGetReaderLog Success");
+            logsString = "SrfidGetReaderLog Success";
+        }
+        else if (result == SrfidResult.ResponseError)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidGetReaderLog ResponseError");
+            logsString = "SrfidGetReaderLog Response Error";
+        }
+        else if (result == SrfidResult.Failure || result == SrfidResult.ResponseTimeout)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidGetReaderLog Failure");
+            logsString = "SrfidGetReaderLog Failure";
+        }
+    }
+    catch (Exception e)
+    {
+        System.Diagnostics.Debug.WriteLine("SrfidGetReaderLog Exception " + e);
+    }
+
+    return result;
+}
+</code></pre>
+
+<h3>Set Real Time Reader Log</h3>
+<p>The <code>SrfidSetRealTimeReaderLog</code> method configures the live diagnostic stream from the reader, that is how much detail is emitted in real time while the reader operates.</p>
+<pre class="prettyprint"><code>
+public enum SRFID_REALTIMELOGSTYPE
+{
+    SRFID_REALTIMELOGSTYPE_NONE = 0,
+    SRFID_REALTIMELOGSTYPE_ERROR = 1,
+    SRFID_REALTIMELOGSTYPE_WARNING = 2,
+    SRFID_REALTIMELOGSTYPE_VERBOSE = 3
+}
+
+public SrfidResult SetRealTimeReaderLog(SRFID_REALTIMELOGSTYPE logType)
+{
+    SrfidResult result = SrfidResult.Failure;
+    string statusMsg = null;
+
+    try
+    {
+        result = apiInstance.SrfidSetRealTimeReaderLog(connectedReaderID, logType, ref statusMsg);
+        if (result == SrfidResult.Success)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidSetRealTimeReaderLog Success");
+            logsString = "SrfidSetRealTimeReaderLog Success";
+        }
+        else if (result == SrfidResult.ResponseError)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidSetRealTimeReaderLog ResponseError");
+            logsString = "SrfidSetRealTimeReaderLog Response Error";
+        }
+        else if (result == SrfidResult.Failure || result == SrfidResult.ResponseTimeout)
+        {
+            System.Diagnostics.Debug.WriteLine("SrfidSetRealTimeReaderLog Failure");
+            logsString = "SrfidSetRealTimeReaderLog Failure";
+        }
+    }
+    catch (Exception e)
+    {
+        System.Diagnostics.Debug.WriteLine("SrfidSetRealTimeReaderLog Exception " + e);
+    }
+
+    return result;
+}
+</code></pre>
+
+
     
     
                                     </div>
