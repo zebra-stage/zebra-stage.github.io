@@ -261,15 +261,17 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p><strong>This guide describes a method of programmatically removing a Google account from a device when the device user logs out</strong>. It is intended as guidance for creating a new (or modifying an existing) line-of-business app that supports shared-device log-in. Triggered when a user logs out, an API can perform the task autonomously, reducing the manual interventions required for scrubbing personal data from a shared Zebra device when a shift has ended. </p>
+<p><strong>This guide describes a method of programmatically removing a Google account from a device when the device user logs out</strong>. It is intended as guidance for creating a line-of-business app that supports shared-device log-in. Triggered when a user logs out, an API can perform the task autonomously, reducing the manual interventions required for scrubbing personal data from a shared Zebra device when a shift has ended. </p>
 
 <h3 id="requirements" class="anchor"><a class="heading-anchor" href="#requirements"><span></span></a>Requirements</h3>
 
-<p><strong>Removing a Google account programmatically involves two primary steps</strong>. The first is to grant permission to an app for managing Google accounts on a device. This is required just one time for each device, and can be performed by scanning a barcode on the device or by pushing XML to devices via EMM system. The barcode and the XML can both be created in a single process using <a href="/stagenow">Zebra StageNow</a>. </p>
+<p><strong>Removing a Google account programmatically involves two primary steps</strong>: </p>
 
-<p><strong>The second step is to create the app that removes the Google account</strong>, the primary function of which can be triggered each time a user logs out. <u><strong>This app must be created using <a href="/emdk-for-android">EMDK for Android</a> and its Profile Manager</strong></u>, which generates the code needed to instruct Zebra's DevAdmin service to remove the account. The processes for both steps are explained below.</p>
+<p><strong><u>Step 1</u> is to grant permission to an app for managing Google accounts on a device</strong>, and is <u>required just one time for each device</u>. This is performed by scanning a barcode on the device or by pushing XML to devices via EMM system. The barcode and the XML can both be created in a single process using <a href="/stagenow">Zebra StageNow</a>. </p>
 
-<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>Zebra strongly recommends testing any developed solution on multiple devices before general deployment</strong>.</p>
+<p><strong><u>Step 2</u> is to create the app that removes the Google account</strong>, the primary function of which can be triggered each time a user logs out. <u><strong>The app must be created using <a href="/emdk-for-android">EMDK for Android</a> and its Profile Manager</strong></u>, which generates the code needed to instruct Zebra's DevAdmin service to remove the account. </p>
+
+<p><strong>The processes for both steps are explained below</strong>.</p>
 
 <hr>
 
@@ -331,7 +333,7 @@ Once the `.der` file is created using these instructions, it can be securely con
 <li>After a successful test, the barcode can be distributed and/or XML exported for deployment using an EMM system. </li>
 </ol>
 
-<p><i>‡</i> <i><font size="1" color="DimGrey">Permission settings can be deployed to devices ahead of installation of the app. This essentially "pre-approves" the app on such device(s) prior to its installation. </font></i> </p>
+<p><i>‡</i> <i><font size="1" color="DimGrey">Permission settings can be deployed to devices before installation of the app, which essentially "pre-approves" the app prior to installation. </font></i> </p>
 
 <!-- 
 Note: If this step is not completed correctly, any attempt to remove an account will fail, and the application will receive an "App is not Delegated to perform current operation" error. 
@@ -344,7 +346,7 @@ Note: If this step is not completed correctly, any attempt to remove an account 
 
 <h3 id="iiimplementgoogleremovalapp" class="anchor"><a class="heading-anchor" href="#iiimplementgoogleremovalapp"><span></span></a>II. Implement Google Removal App</h3>
 
-<p>This section briefly describes the requirements for creating (or updating) an app to submit XML to the DevAdmin service to remove a Google account. Details for using Profile Manager to generate XML can be found in the <i class="fa fa-hand-o-right" style="color:#27AE60;"></i> <strong><a href="/emdk-for-android/15-1/guide/xmlresponseguide/">Profile Manager Programmer's Guide</a></strong>. </p>
+<p>This section briefly describes the requirements for creating an app to submit XML to the DevAdmin service to remove a Google account. Details for using Profile Manager to generate XML can be found in the <i class="fa fa-hand-o-right" style="color:#27AE60;"></i> <strong><a href="/emdk-for-android/15-1/guide/xmlresponseguide/">Profile Manager Programmer's Guide</a></strong>. </p>
 
 <h4 id="integratewithemdkforandroid" class="anchor"><a class="heading-anchor" href="#integratewithemdkforandroid"><span></span></a>Integrate with EMDK for Android</h4>
 
@@ -376,11 +378,13 @@ Note: If this step is not completed correctly, any attempt to remove an account 
 &lt;?xml version="1.0" encoding="utf-8"?&gt; 
 &lt;characteristic type="Profile"&gt; 
     &lt;parm name="ProfileName" value="AccountRemovalProfile"/&gt; 
-    &lt;characteristic type="DevAdmin" version="11.3"&gt; 
+    &lt;characteristic type="DevAdmin" version="15.4"&gt; 
         &lt;parm name="RemoveAccountName" value="user-account-to-remove@example.com"/&gt; 
     &lt;/characteristic&gt; 
 &lt;/characteristic&gt; 
 </code></pre>
+
+<p><i class="fa fa-exclamation-circle" style="color:#FF0000;"></i> <strong>MX 15.4 is required</strong> for access to this DevAdmin API. </p>
 
 <h4 id="submitxmlhandleresponse" class="anchor"><a class="heading-anchor" href="#submitxmlhandleresponse"><span></span></a>Submit XML, Handle Response</h4>
 
@@ -392,6 +396,8 @@ Note: If this step is not completed correctly, any attempt to remove an account 
 <li><strong>Present success/failure responses to user and/or write to a log file</strong> accessible by <a href="/rxlogger">Zebra RxLogger</a>. </li>
 </ol>
 
+<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>Zebra strongly recommends testing any developed solution on multiple devices before general deployment</strong>.</p>
+
 <hr>
 
 <h3 id="alsosee" class="anchor"><a class="heading-anchor" href="#alsosee"><span></span></a>Also See</h3>
@@ -400,6 +406,8 @@ Note: If this step is not completed correctly, any attempt to remove an account 
 <li><strong><a href="/emdk-for-android/15-1/guide/xmlresponseguide/">EMDK - Profile Manager Programmer's Guide</a></strong></li>
 
 <li><strong><a href="/stagenow/latest/stagingprofiles/#icreateaprofile">StageNow - Creating a Profile</a></strong></li>
+
+<li><strong><a href="/mx/accessmgr/#service-access-action">Access Manager - Service Access Action parameter</a></strong></li>
 </ul>
 
 <!-- 
