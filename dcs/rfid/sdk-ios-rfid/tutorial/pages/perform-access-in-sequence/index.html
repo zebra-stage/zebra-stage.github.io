@@ -146,7 +146,7 @@ RFID SDK for iOS
 1.2.46
 </p>
 <p>
-Applicable Devices : RFD 40, RFD 90 and 8500 devices
+Applicable Devices : RFD40, RFD90, RFD8500
 </p>
 <p>
 Compatible with iOS 17 and above
@@ -162,51 +162,71 @@ Compatible with iOS 17 and above
                                         <div class="service-box wow fadeInRight">
                                             <div class="">
 
-<h2 id="create-access-params-for-write" class="anchor"><a class="heading-anchor" href="#create-access-params-for-write"><span></span></a>Create access params for write</h2>
+<h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
+
+<p>Runs several access operations, one after the other, on the tags selected by access criteria, using <code>srfidPerformAccessInSequence</code>.</p>
+
+<h2 id="details" class="anchor"><a class="heading-anchor" href="#details"><span></span></a>Details</h2>
+
+<p>Perform Access in Sequence runs several access operations, one after the other, on the tags selected by access criteria. The helper methods below build the <code>srfidAccessParameters</code> object for each operation.</p>
+
+<h2 id="create-access-params-for-write" class="anchor"><a class="heading-anchor" href="#create-access-params-for-write"><span></span></a>Create Access Params for Write</h2>
 
 <pre class="prettyprint"><code>
 -(srfidAccessParameters*)setAccessParamsForWrite:(SRFID_ACCESSOPERATIONCODE)opCode memoryBank:(SRFID_MEMORYBANK)memoryBank offset:(int)offset
  password:(int)password doBlockWrite:(BOOL)doBlockWrite dataToWrite:(NSString*)dataToWrite {
 
-    srfidAccessParameters *accesParams = [[srfidAccessParameters alloc] init];
-    accesParams.accessOperationCode = opCode;
-    accesParams.memoryBank = memoryBank;
-    accesParams.offset = offset;
-    accesParams.password = password;
-    accesParams.doBlockWrite = doBlockWrite;
-    accesParams.dataToWrite = dataToWrite;
-    return accesParams;
+    srfidAccessParameters *accessParams = [[srfidAccessParameters alloc] init];
+    accessParams.accessOperationCode = opCode;
+    accessParams.memoryBank = memoryBank;
+    accessParams.offset = offset;
+    accessParams.password = password;
+    accessParams.doBlockWrite = doBlockWrite;
+    accessParams.dataToWrite = dataToWrite;
+    return accessParams;
 
 }
 </code></pre>
 
-<h2 id="create-access-params-for-lock" class="anchor"><a class="heading-anchor" href="#create-access-params-for-lock"><span></span></a>Create access params for Lock</h2>
+<h2 id="create-access-params-for-lock" class="anchor"><a class="heading-anchor" href="#create-access-params-for-lock"><span></span></a>Create Access Params for Lock</h2>
 
 <pre class="prettyprint"><code>
 -(srfidAccessParameters*)setAccessParamsForLock:(SRFID_ACCESSOPERATIONCODE)opCode memoryBank:(SRFID_MEMORYBANK)memoryBank password:(int)password accPermission:(SRFID_ACCESSPERMISSION)accPermission
 {
-    srfidAccessParameters *accesParams = [[srfidAccessParameters alloc] init];
-    accesParams.accessOperationCode = opCode;
-    accesParams.memoryBank = memoryBank;
-    accesParams.accessPermissions = accPermission;
-    return accesParams;
+    srfidAccessParameters *accessParams = [[srfidAccessParameters alloc] init];
+    accessParams.accessOperationCode = opCode;
+    accessParams.memoryBank = memoryBank;
+    accessParams.password = password;
+    accessParams.accessPermissions = accPermission;
+    return accessParams;
 }
 </code></pre>
 
-<h2 id="create-access-params-for-read" class="anchor"><a class="heading-anchor" href="#create-access-params-for-read"><span></span></a>Create access params for Read</h2>
+<h2 id="create-access-params-for-read" class="anchor"><a class="heading-anchor" href="#create-access-params-for-read"><span></span></a>Create Access Params for Read</h2>
 
 <pre class="prettyprint"><code>
--(srfidAccessParameters*)setAccessCriteriaPramForRead:(SRFID_ACCESSOPERATIONCODE)opCode
+-(srfidAccessParameters*)setAccessParamsForRead:(SRFID_ACCESSOPERATIONCODE)opCode
 memoryBank:(SRFID_MEMORYBANK)memoryBank offset:(int)offset length:(int)length password:(int)password {
 
-    srfidAccessParameters *accesParams = [[srfidAccessParameters alloc] init];
-    accesParams.accessOperationCode = opCode;
-    accesParams.memoryBank = memoryBank;
-    accesParams.offset = offset;
-    accesParams.length = length;
-    accesParams.password = password;
-    return accesParams;
+    srfidAccessParameters *accessParams = [[srfidAccessParameters alloc] init];
+    accessParams.accessOperationCode = opCode;
+    accessParams.memoryBank = memoryBank;
+    accessParams.offset = offset;
+    accessParams.length = length;
+    accessParams.password = password;
+    return accessParams;
 }
+</code></pre>
+
+<h2 id="perform-access-in-sequence-2" class="anchor"><a class="heading-anchor" href="#perform-access-in-sequence-2"><span></span></a>Perform Access in Sequence</h2>
+
+<p>The <code>accessSequence</code> method sets up the access criteria and parameters and starts the sequence with <code>srfidPerformAccessInSequence</code>.</p>
+
+<p>The call only arms the reader. The sequence runs while the start trigger is active, for example the hand-held trigger, and keeps running until it is stopped with <code>srfidAccessSequenceStop</code> or by the stop trigger. Starting a sequence while another is armed fails with the message "Operation In Progress-Command Not Allowed". The result of each operation is delivered in <code>srfidEventReadNotify:</code>, not returned by the call.</p>
+
+<p>The write operation changes the tag. The example writes the tag's own EPC at word 2, so the EPC stays the same. Use a tag you can afford to change if you write any other data. Put an operation that can fail, such as reading the USER memory bank of a tag without user memory, last: the operations after a failed operation do not report a result.</p>
+
+<pre class="prettyprint"><code>
 -(void)accessSequence{
 
     // initialize access criteria
@@ -222,14 +242,16 @@ memoryBank:(SRFID_MEMORYBANK)memoryBank offset:(int)offset length:(int)length pa
     [accessCriteria setTagFilter1:tagFilter1];
 
     NSMutableArray *accessParamsArray = [[NSMutableArray alloc]init];
-    [accessParamsArray addObject:[self setAccessCriteriaPramForRead:SRFID_ACCESSOPERATIONCODE_READ memoryBank:SRFID_MEMORYBANK_EPC offset:0 length:8 password:0]];
-    [accessParamsArray addObject:[self setAccessCriteriaPramForRead:SRFID_ACCESSOPERATIONCODE_READ memoryBank:SRFID_MEMORYBANK_TID offset:0 length:2 password:0]];
-    [accessParamsArray addObject:[self setAccessCriteriaPramForRead:SRFID_ACCESSOPERATIONCODE_READ memoryBank:SRFID_MEMORYBANK_USER offset:0 length:0 password:0]];
-    [accessParamsArray addObject:[self setAccessCriteriaPramForRead:SRFID_ACCESSOPERATIONCODE_READ memoryBank:SRFID_MEMORYBANK_RESV offset:0 length:4 password:0]];
-    [accessParamsArray addObject:[self setAccessParamsForWrite:SRFID_ACCESSOPERATIONCODE_WRITE memoryBank:SRFID_MEMORYBANK_EPC offset:3  password:00 doBlockWrite:false dataToWrite:@"11112222333344445555"]];
+    [accessParamsArray addObject:[self setAccessParamsForRead:SRFID_ACCESSOPERATIONCODE_READ memoryBank:SRFID_MEMORYBANK_EPC offset:0 length:8 password:0]];
+    [accessParamsArray addObject:[self setAccessParamsForRead:SRFID_ACCESSOPERATIONCODE_READ memoryBank:SRFID_MEMORYBANK_TID offset:0 length:2 password:0]];
+    [accessParamsArray addObject:[self setAccessParamsForRead:SRFID_ACCESSOPERATIONCODE_READ memoryBank:SRFID_MEMORYBANK_RESV offset:0 length:4 password:0]];
+    /* write the tag's own EPC back at word 2 (the EPC starts at word 2), so the tag keeps its EPC */
+    [accessParamsArray addObject:[self setAccessParamsForWrite:SRFID_ACCESSOPERATIONCODE_WRITE memoryBank:SRFID_MEMORYBANK_EPC offset:2 password:0 doBlockWrite:NO dataToWrite:@"E2806894000040065071E164"]];
+    /* read the USER memory bank last: on a tag without user memory this read fails */
+    [accessParamsArray addObject:[self setAccessParamsForRead:SRFID_ACCESSOPERATIONCODE_READ memoryBank:SRFID_MEMORYBANK_USER offset:0 length:0 password:0]];
 
     SRFID_RESULT result;
-    result = [self-&gt;apiInstance srfidPerformAccessInSequence:self-&gt;_connectedReaderID aAccessCriteria:accessCriteria aAccessParameters:accessParamsArray aStatusMessage:nil];
+    result = [apiInstance srfidPerformAccessInSequence:self-&gt;readerID aAccessCriteria:accessCriteria aAccessParameters:accessParamsArray aStatusMessage:nil];
     NSLog(@"Result Perform Access In Sequence %u",result);
 
 }

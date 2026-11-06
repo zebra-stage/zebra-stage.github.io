@@ -146,7 +146,7 @@ RFID SDK for iOS
 1.2.46
 </p>
 <p>
-Applicable Devices : RFD 40, RFD 90 and 8500 devices
+Applicable Devices : RFD40, RFD90, RFD8500
 </p>
 <p>
 Compatible with iOS 17 and above
@@ -168,33 +168,33 @@ Compatible with iOS 17 and above
 
 <h2 id="details" class="anchor"><a class="heading-anchor" href="#details"><span></span></a>Details</h2>
 
-<p>Configure the live diagnostic stream from the reader, how much detail is emitted in real time while the reader operates.</p>
+<p>Configure the live diagnostic stream from the reader: how much detail the reader sends in real time while it operates. Choose one of four log types with the <code>logType</code> parameter:</p>
+
+<ul>
+  <li><code>SRFID_REALTIMELOGSTYPE_NONE</code>: no real-time log. Use it to stop the stream.</li>
+  <li><code>SRFID_REALTIMELOGSTYPE_ERROR</code>: error messages.</li>
+  <li><code>SRFID_REALTIMELOGSTYPE_WARNING</code>: warning messages.</li>
+  <li><code>SRFID_REALTIMELOGSTYPE_VERBOSE</code>: the most detailed log.</li>
+</ul>
+
+<p>The stream stays on until you set it back to <code>SRFID_REALTIMELOGSTYPE_NONE</code>.</p>
+
+<p>The log lines arrive as debug events, in the same way as for Get Reader Log: subscribe to <code>SRFID_EVENT_MASK_DEBUG_INFO</code> and read <code>getMessage</code> and <code>getLevel</code> from the <code>srfidNotificationDebugEvent</code> in <code>srfidEventStatusNotify:aEvent:aNotification:</code> (see Get Reader Log).</p>
 
 <pre class="prettyprint"><code>
 - (SRFID_RESULT)setRealTimeReaderLog:(SRFID_REALTIMELOGSTYPE)logType withStatusMessage:(NSString**)statusMessage
 {
-    SRFID_RESULT srfid_result = SRFID_RESULT_FAILURE;
+    // Subscribe to the reader's log lines
+    [apiInstance srfidSubsribeForEvents:SRFID_EVENT_MASK_DEBUG_INFO];
 
-    if (m_ActiveReader == nil || ![self isReaderConnected])
+    SRFID_RESULT srfid_result = [apiInstance srfidSetRealTimeReaderLog:readerID
+                                                               logType:logType
+                                                        aStatusMessage:statusMessage];
+
+    if (srfid_result == SRFID_RESULT_FAILURE || srfid_result == SRFID_RESULT_RESPONSE_TIMEOUT)
     {
-        srfid_result = SRFID_RESULT_READER_NOT_AVAILABLE;
+        NSLog(@"Failure");
     }
-    else
-    {
-        int readerID = [m_ActiveReader getReaderID];
-
-        // Call the public SDK API
-        srfid_result = [m_RfidSdkApi srfidSetRealTimeReaderLog:readerID
-                                                       logType:logType
-                                                aStatusMessage:statusMessage];
-
-        // Handle failure state
-        if (srfid_result == SRFID_RESULT_FAILURE || srfid_result == SRFID_RESULT_RESPONSE_TIMEOUT)
-        {
-             NSLog(@"Failure");
-        }
-    }
-
     return srfid_result;
 }
 </code></pre>

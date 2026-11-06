@@ -146,7 +146,7 @@ RFID SDK for iOS
 1.2.46
 </p>
 <p>
-Applicable Devices : RFD 40, RFD 90 and 8500 devices
+Applicable Devices : RFD40, RFD90, RFD8500
 </p>
 <p>
 Compatible with iOS 17 and above
@@ -174,10 +174,14 @@ Compatible with iOS 17 and above
   <li>Session: session number to use for inventory operation</li>
   <li>Tag population: an estimate of the tag population in view of the RF field of the antenna</li>
   <li>Select (SL Flag)</li>
-  <li>Target (inventory state).</li>
+  <li>Target (inventory state)</li>
 </ul>
 
-<p>Singulation control settings could be retrieved and set via accordingly<code>srfidGetSingulationConfiguration</code> and <code>srfidSetSingulationConfiguration </code> API functions as demonstrated in the following example.</p>
+<p>Singulation control settings could be retrieved and set via <code>srfidGetSingulationConfiguration</code> and <code>srfidSetSingulationConfiguration</code> API functions accordingly, as demonstrated in the following examples.</p>
+
+<h2 id="get-singulation-configuration" class="anchor"><a class="heading-anchor" href="#get-singulation-configuration"><span></span></a>Get Singulation Configuration</h2>
+
+<p>The <code>getSingulationConfig</code> method retrieves the current singulation settings and prints them.</p>
 
 <pre class="prettyprint"><code>
 -(void)getSingulationConfig {
@@ -188,7 +192,7 @@ Compatible with iOS 17 and above
     NSString *error_response = nil;
 
     /* retrieve singulation configuration */
-    SRFID_RESULT result = [apiInstance srfidGetSingulationConfiguration:_connectedReaderID aSingulationConfig:&amp;singulation_cfg aStatusMessage:&amp;error_response];
+    SRFID_RESULT result = [apiInstance srfidGetSingulationConfiguration:readerID aSingulationConfig:&amp;singulation_cfg aStatusMessage:&amp;error_response];
     if (SRFID_RESULT_SUCCESS == result) {
         /* singulation configuration received */
         NSLog(@"Tag population: %d\n", [singulation_cfg getTagPopulation]);
@@ -228,32 +232,54 @@ Compatible with iOS 17 and above
         SRFID_INVENTORYSTATE state = [singulation_cfg getInventoryState];
         switch (state) {
             case SRFID_INVENTORYSTATE_A:
-            NSLog(@"Inventory State: State A\n");
-            break;
-        case SRFID_INVENTORYSTATE_B:
-            NSLog(@"Inventory State: State B\n");
-            break;
-        case SRFID_INVENTORYSTATE_AB_FLIP:
-            NSLog(@"Inventory State: AB flip\n");
-            break;
+                NSLog(@"Inventory State: State A\n");
+                break;
+            case SRFID_INVENTORYSTATE_B:
+                NSLog(@"Inventory State: State B\n");
+                break;
+            case SRFID_INVENTORYSTATE_AB_FLIP:
+                NSLog(@"Inventory State: AB flip\n");
+                break;
         }
     }
+    else if (SRFID_RESULT_RESPONSE_ERROR == result)
+    {
+        NSLog(@"Error response from RFID reader: %@\n", error_response);
+    }
+    else if (SRFID_RESULT_RESPONSE_TIMEOUT == result)
+    {
+        NSLog(@"Timeout occurs during communication with RFID reader\n");
+    }
+    else if (SRFID_RESULT_READER_NOT_AVAILABLE == result)
+    {
+        NSLog(@"RFID reader with id = %d is not available\n", readerID);
+    }
+    else
+    {
+        NSLog(@"Request failed\n");
+    }
 }
+</code></pre>
 
+<h2 id="set-singulation-configuration" class="anchor"><a class="heading-anchor" href="#set-singulation-configuration"><span></span></a>Set Singulation Configuration</h2>
+
+<p>The <code>setSingulationConfig</code> method applies new singulation settings: tag population 30, session S0, SL flag asserted and inventory state A.</p>
+
+<pre class="prettyprint"><code>
 -(void)setSingulationConfig {
 
     /* allocate object for storage of singulation settings */
     srfidSingulationConfig *singulation_cfg = [[srfidSingulationConfig alloc] init];
     /* an object for storage of error response received from RFID reader */
     NSString *error_response = nil;
-    /* change the received singulation configuration */
+    /* prepare the singulation configuration to be set */
     [singulation_cfg setTagPopulation:30];
     [singulation_cfg setSession:SRFID_SESSION_S0];
     [singulation_cfg setSlFlag:SRFID_SLFLAG_ASSERTED];
     [singulation_cfg setInventoryState:SRFID_INVENTORYSTATE_A];
     error_response = nil;
     /* set updated singulation configuration */
-    SRFID_RESULT result = [apiInstance srfidSetSingulationConfiguration:_connectedReaderID aSingulationConfig:singulation_cfg aStatusMessage:&amp;error_response];
+    SRFID_RESULT result = [apiInstance srfidSetSingulationConfiguration:readerID aSingulationConfig:singulation_cfg aStatusMessage:&amp;error_response];
     if (SRFID_RESULT_SUCCESS == result)
     {
         /* singulation configuration applied successfully */
@@ -269,7 +295,7 @@ Compatible with iOS 17 and above
     }
     else if (SRFID_RESULT_READER_NOT_AVAILABLE == result)
     {
-         NSLog(@"RFID reader with id = %d is not available\n", _connectedReaderID);
+         NSLog(@"RFID reader with id = %d is not available\n", readerID);
     }
     else
     {

@@ -146,7 +146,7 @@ RFID SDK for iOS
 1.2.46
 </p>
 <p>
-Applicable Devices : RFD 40, RFD 90 and 8500 devices
+Applicable Devices : RFD40, RFD90, RFD8500
 </p>
 <p>
 Compatible with iOS 17 and above
@@ -170,36 +170,36 @@ Compatible with iOS 17 and above
 
 <h2 id="details" class="anchor"><a class="heading-anchor" href="#details"><span></span></a>Details</h2>
 
-<p>Start retrieval of internally stored log data from the reader RAM and FLASH log files in one operation. Parameters:</p>
+<p>Start retrieval of the log data stored in the reader RAM and FLASH log files in one operation. The call needs an administrator login first (see Login Support for E8 Devices). Without it the call fails with the message "User has not logged as an admin".</p>
+
+<p>The log text is not returned by the call. The reader sends it as debug events, first the RAM log and then the FLASH log. To receive them, subscribe to <code>SRFID_EVENT_MASK_DEBUG_INFO</code> and handle <code>SRFID_EVENT_STATUS_DEBUG_INFO</code> in <code>srfidEventStatusNotify:aEvent:aNotification:</code>. The event data is an <code>srfidNotificationDebugEvent</code>: read the text with <code>getMessage</code> and the level with <code>getLevel</code>.</p>
 
 <pre class="prettyprint"><code>
 - (SRFID_RESULT)getReaderLog:(NSString**)statusMessage
 {
-    SRFID_RESULT srfid_result = SRFID_RESULT_FAILURE;
+    // Subscribe to the reader's log lines
+    [apiInstance srfidSubsribeForEvents:SRFID_EVENT_MASK_DEBUG_INFO];
 
-    // 1. Check if we have an active, connected reader [4]
-    if (m_ActiveReader == nil || ![self isReaderConnected])
+    SRFID_RESULT srfid_result = [apiInstance srfidGetReaderLog:readerID
+                                                      logState:SRFID_LOGSTATE_INTERNALRAMANDFLASHLOGSTATE
+                                                aStatusMessage:statusMessage];
+
+    if (srfid_result == SRFID_RESULT_FAILURE || srfid_result == SRFID_RESULT_RESPONSE_TIMEOUT)
     {
-        srfid_result = SRFID_RESULT_READER_NOT_AVAILABLE;
+        NSLog(@"Failure");
     }
-    else
-    {
-        int readerID = [m_ActiveReader getReaderID];
-
-        // 2. Call the public SDK API (srfidGetReaderLog:logState:aStatusMessage:) [4]
-        // This is 100% clean and targets the public SDK facade.
-        srfid_result = [m_RfidSdkApi srfidGetReaderLog:readerID
-                                              logState:SRFID_LOGSTATE_INTERNALRAMANDFLASHLOGSTATE
-                                        aStatusMessage:statusMessage];
-
-        // 3. Handle failure state using the standard AppEngine safety routine [4]
-        if (srfid_result == SRFID_RESULT_FAILURE || srfid_result == SRFID_RESULT_RESPONSE_TIMEOUT)
-        {
-             NSLog(@"Failure");
-        }
-    }
-
     return srfid_result;
+}
+</code></pre>
+
+<p>Add this to your <code>srfidEventStatusNotify:aEvent:aNotification:</code> to receive the log lines:</p>
+
+<pre class="prettyprint"><code>
+- (void)srfidEventStatusNotify:(int)readerID aEvent:(SRFID_EVENT_STATUS)event aNotification:(id)notificationData {
+    if (SRFID_EVENT_STATUS_DEBUG_INFO == event) {
+        srfidNotificationDebugEvent *logEvent = (srfidNotificationDebugEvent *)notificationData;
+        NSLog(@"Reader log [level %d]: %@", [logEvent getLevel], [logEvent getMessage]);
+    }
 }
 </code></pre>
 

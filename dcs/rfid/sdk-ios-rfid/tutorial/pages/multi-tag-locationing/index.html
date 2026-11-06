@@ -146,7 +146,7 @@ RFID SDK for iOS
 1.2.46
 </p>
 <p>
-Applicable Devices : RFD 40, RFD 90 and 8500 devices
+Applicable Devices : RFD40, RFD90, RFD8500
 </p>
 <p>
 Compatible with iOS 17 and above
@@ -168,25 +168,40 @@ Compatible with iOS 17 and above
 
 <h2 id="details" class="anchor"><a class="heading-anchor" href="#details"><span></span></a>Details</h2>
 
-<p>By using this API, users can do multi-tag locationing.</p>
+<p>Multi tag locationing looks for several tags at the same time. Give the SDK a list of tag IDs, each with an RSSI limit in dBm, and the reader reports a tag only when its signal is stronger than its limit. For example, with a limit of -40 dBm a tag at -45 dBm is not reported.</p>
+
+<p>Each tag ID must be the tag's EPC as a hexadecimal string, for example one read by an inventory. Subscribe to <code>SRFID_EVENT_MASK_MULTI_PROXIMITY</code> to receive the results; without the subscription the SDK never calls <code>srfidEventMultiProximityNotify:</code>.</p>
+
+<p>Keep the <code>srfidReportConfig</code> object in an instance variable or property, and create it before you add the tags. The SDK keeps using it after the start method returns, so a local variable is not enough.</p>
+
+<h2 id="start-multi-tag-locationing" class="anchor"><a class="heading-anchor" href="#start-multi-tag-locationing"><span></span></a>Start Multi Tag Locationing</h2>
+
+<p>The <code>startMultiTagLocationing</code> method subscribes to multi proximity events, adds three tags with an RSSI limit of -40 dBm each and starts the operation.</p>
 
 <pre class="prettyprint"><code>
+// In your view controller (instance variable)
+srfidReportConfig *multipleTagsReportConfig;
+
 /// Start multi tag locationing
 -(void)startMultiTagLocationing {
 
+    // Receive the results in srfidEventMultiProximityNotify:
+    [apiInstance srfidSubsribeForEvents:SRFID_EVENT_MASK_MULTI_PROXIMITY];
+
     NSString *error_response = nil;
 
-    srfidReportConfig *multipleTagsReportConfig;
+    multipleTagsReportConfig = [[srfidReportConfig alloc] init];
 
-    NSString *tag_id_1 = @"36420124102N012610R98V91";
-    NSString *tag_id_2 = @"211241451351513251351324";
-    NSString *tag_id_3 = @"434563463462345623456346";
+    // EPCs of the tags to look for, as hexadecimal strings
+    NSString *tag_id_1 = @"E28011B0A506007D3DD17A37";
+    NSString *tag_id_2 = @"E28011B0A506007D3DD17A36";
+    NSString *tag_id_3 = @"E28011B0A506007D3DD17A35";
 
     [multipleTagsReportConfig addItem:tag_id_1 aRSSIValueLimit:-(40)];
     [multipleTagsReportConfig addItem:tag_id_2 aRSSIValueLimit:-(40)];
     [multipleTagsReportConfig addItem:tag_id_3 aRSSIValueLimit:-(40)];
 
-    SRFID_RESULT result = [apiInstance srfidStartMultiTagsLocationing:_connectedReaderID aReportConfig:multipleTagsReportConfig aAccessConfig:nil aStatusMessage:&amp;error_response];
+    SRFID_RESULT result = [apiInstance srfidStartMultiTagsLocationing:readerID aReportConfig:multipleTagsReportConfig aAccessConfig:nil aStatusMessage:&amp;error_response];
 
     if (SRFID_RESULT_SUCCESS == result) {
         NSLog(@"Request succeed\n");
@@ -194,23 +209,33 @@ Compatible with iOS 17 and above
         NSLog(@"Request failed\n");
     }
 }
+</code></pre>
 
+<h2 id="stop-multi-tag-locationing" class="anchor"><a class="heading-anchor" href="#stop-multi-tag-locationing"><span></span></a>Stop Multi Tag Locationing</h2>
 
+<p>The <code>stopMultiTagLocationing</code> method stops the operation.</p>
 
-
-
+<pre class="prettyprint"><code>
 /// Stop multi tag locationing
 -(void)stopMultiTagLocationing{
 
     NSString *error_response = nil;
 
-    SRFID_RESULT result = [apiInstance srfidStopMultiTagsLocationing:_connectedReaderID aStatusMessage:&amp;error_response];
+    SRFID_RESULT result = [apiInstance srfidStopMultiTagsLocationing:readerID aStatusMessage:&amp;error_response];
 
     if (SRFID_RESULT_SUCCESS == result) {
         NSLog(@"Request succeed\n");
     }else{
         NSLog(@"Request failed\n");
     }
+}
+</code></pre>
+
+<p>The SDK calls this delegate method each time a listed tag is reported:</p>
+
+<pre class="prettyprint"><code>
+- (void)srfidEventMultiProximityNotify:(int)readerID aTagData:(srfidTagData *)tagData {
+    NSLog(@"Multi proximity: tag %@", [tagData getTagId]);
 }
 </code></pre>
 

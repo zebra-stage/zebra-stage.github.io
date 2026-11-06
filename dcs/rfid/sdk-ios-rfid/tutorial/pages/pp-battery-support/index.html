@@ -146,7 +146,7 @@ RFID SDK for iOS
 1.2.46
 </p>
 <p>
-Applicable Devices : RFD 40, RFD 90 and 8500 devices
+Applicable Devices : RFD40, RFD90
 </p>
 <p>
 Compatible with iOS 17 and above
@@ -164,11 +164,23 @@ Compatible with iOS 17 and above
 
 <h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>Gets the battery status of the RFID reader, using <code>srfidGetBatteryStatus</code>.</p>
+<p>Gets detailed battery information from a reader that uses a PowerPrecision+ (PP+) battery, using <code>srfidGetBatteryStatus</code>. For the charge level and charging state only, use the battery event described in Knowing Battery Status.</p>
 
 <h2 id="details" class="anchor"><a class="heading-anchor" href="#details"><span></span></a>Details</h2>
 
-<p>Performing a factory reset will clear any saved settings and restart the reader. The region needs to be set again.</p>
+<p>The <code>srfidGetBatteryStatus:batteryStatusArray:aStatusMessage:</code> method returns the battery information as an array of <code>srfidRfidBatteryStatusInformation</code> objects. Each object holds one item: call <code>getBatteryStatusTittle</code> to get its name and <code>getBatterStatusValue</code> to get its value, both as strings. The array contains items such as the following:</p>
+
+<ul>
+  <li><code>GIFTED_BATTERY_PERCENTAGE</code>: charge level</li>
+  <li><code>GIFTED_BATTERY_STATE_OF_HEALTH</code>: battery health</li>
+  <li><code>GIFTED_BATTERY_CYCLE_COUNT</code>: number of charge cycles</li>
+  <li><code>GIFTED_BATTERY_VOLTAGE</code>, <code>GIFTED_BATTERY_CURRENT</code> and <code>GIFTED_BATTERY_PACK_TEMPERATURE</code></li>
+  <li><code>GIFTED_BATTERY_DESIGN_CAPACITY</code>, <code>GIFTED_BATTERY_FULL_CHARGE_CAPACITY</code> and <code>GIFTED_BATTERY_REMAINING_CAPACITY</code></li>
+  <li><code>GIFTED_BATTERY_CHARGING_Y_N</code>, <code>GIFTED_BATTERY_CHARGE_STATUS</code> and <code>GIFTED_BATTERY_TIME_TO_FULL_CHARGE</code></li>
+  <li><code>GIFTED_BATTERY_MODEL_NUMBER</code>, <code>GIFTED_BATTERY_MANUFACTURE_DATE</code>, <code>GIFTED_BATTERY_SERIAL_NUMBER</code> and <code>GIFTED_BATTERY_ID</code></li>
+</ul>
+
+<p>The <code>statusMessage</code> parameter returns a status message from the reader when the call does not succeed.</p>
 
 <pre class="prettyprint"><code>
 /// Get battery status
@@ -176,10 +188,10 @@ Compatible with iOS 17 and above
 /// @param statusMessage The status message
 -(SRFID_RESULT)getBatteryStatus:(int)readerID  aStatusMessage:(NSString**)statusMessage {
 
-    NSMutableArray *batteryStatusValueList = [[[NSMutableArray alloc] init] autorelease];
+    NSMutableArray *batteryStatusValueList = [[NSMutableArray alloc] init];
     SRFID_RESULT srfid_result = SRFID_RESULT_FAILURE;
 
-    for(int i = 0; i &lt; ZT_MAX_RETRY; i++)
+    for(int i = 0; i &lt; 3; i++)
     {
         srfid_result = [apiInstance srfidGetBatteryStatus:readerID batteryStatusArray:&amp;batteryStatusValueList aStatusMessage:statusMessage];
 
@@ -191,22 +203,19 @@ Compatible with iOS 17 and above
 
     if (srfid_result == SRFID_RESULT_SUCCESS)
     {
-
-        [[[zt_RfidAppEngine sharedAppEngine] appConfiguration] setBatteryStatusArray:batteryStatusValueList];
-
-
+        for (srfidRfidBatteryStatusInformation *info in batteryStatusValueList) {
+            NSLog(@"%@: %@", [info getBatteryStatusTittle], [info getBatterStatusValue]);
+        }
     }
     else if(srfid_result == SRFID_RESULT_RESPONSE_ERROR)
     {
-        // do nothing
+        NSLog(@"Get battery status: response error");
     }
     else if(srfid_result == SRFID_RESULT_FAILURE || srfid_result == SRFID_RESULT_RESPONSE_TIMEOUT)
     {
-        [self readerProblem];
+        NSLog(@"Get battery status: failure or timeout");
     }
     return srfid_result;
-
-
 }
 </code></pre>
 

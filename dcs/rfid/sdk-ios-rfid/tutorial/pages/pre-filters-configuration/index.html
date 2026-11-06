@@ -146,7 +146,7 @@ RFID SDK for iOS
 1.2.46
 </p>
 <p>
-Applicable Devices : RFD 40, RFD 90 and 8500 devices
+Applicable Devices : RFD40, RFD90, RFD8500 (RFD8500: up to 4 pre-filters; RFD40 and RFD90: up to 32)
 </p>
 <p>
 Compatible with iOS 17 and above
@@ -176,20 +176,23 @@ Compatible with iOS 17 and above
   <li>Target (Session S0, Session S1, Session S2, Session S3, Select Flag)</li>
   <li>Action</li>
   <li>Memory bank (epc, tid, user)</li>
-  <li>Mask start position (in words): indicates start position from beginning of memory bank from were match pattern is checked</li>
-  <li>Match pattern</li>
+  <li>Mask start position (in words): indicates start position from beginning of memory bank from where match pattern is checked</li>
+  <li>Match pattern (hexadecimal)</li>
+  <li>Match length (in bits): how many bits of the match pattern are compared. The mask start position is in words, the match length is in bits. For example, the 24 hexadecimal characters of an EPC are 96 bits.</li>
 </ul>
 
-<p>Configured pre-filters could be retrieved from a particular active RFID reader via <code>srfidGetPreFilters</code> API function. The <code>srfidSetPreFilters</code> API function is used to configure a new set of pre-filters. The following example demonstrates pre-filters management supported by the SDK.</p>
+<h2 id="get-pre-filters" class="anchor"><a class="heading-anchor" href="#get-pre-filters"><span></span></a>Get Pre-filters</h2>
+
+<p>Configured pre-filters could be retrieved from a particular active RFID reader via <code>srfidGetPreFilters</code> API function. The <code>getPrefilterConfig</code> method retrieves the pre-filters and logs the settings of each one.</p>
 
 <pre class="prettyprint"><code>
--(void)getSetPrefilterConfig{
+-(void)getPrefilterConfig{
     /* allocate object for storage of pre filters */
     NSMutableArray *prefilters = [[NSMutableArray alloc] init];
     /* an object for storage of error response received from RFID reader */
     NSString *error_response = nil;
     /* retrieve pre-filters */
-    SRFID_RESULT result = [apiInstance srfidGetPreFilters:_connectedReaderID aPreFilters:&amp;prefilters aStatusMessage:&amp;error_response];
+    SRFID_RESULT result = [apiInstance srfidGetPreFilters:readerID aPreFilters:&amp;prefilters aStatusMessage:&amp;error_response];
     if (SRFID_RESULT_SUCCESS == result)
     {
         /* pre-filters received */
@@ -231,7 +234,7 @@ Compatible with iOS 17 and above
             SRFID_SELECTTARGET target = [filter getTarget];
             switch (target) {
                 case SRFID_SELECTTARGET_S0:
-                    NSLog(@"Target: Session SO\n");
+                    NSLog(@"Target: Session S0\n");
                     break;
                 case SRFID_SELECTTARGET_S1:
                     NSLog(@"Target: Session S1\n");
@@ -279,21 +282,33 @@ Compatible with iOS 17 and above
     else {
         NSLog(@"Failed to receive pre-filters\n");
     }
-    [prefilters removeAllObjects];
+}
+</code></pre>
+
+<h2 id="set-pre-filters" class="anchor"><a class="heading-anchor" href="#set-pre-filters"><span></span></a>Set Pre-filters</h2>
+
+<p>The <code>srfidSetPreFilters</code> API function is used to configure a new set of pre-filters. The <code>setPrefilterConfig</code> method creates one pre-filter and sets it, which replaces all pre-filters that were set before.</p>
+
+<pre class="prettyprint"><code>
+-(void)setPrefilterConfig{
+    /* allocate object for storage of pre filters */
+    NSMutableArray *prefilters = [[NSMutableArray alloc] init];
+    /* an object for storage of error response received from RFID reader */
+    NSString *error_response = nil;
 
     /* create one pre-filter */
     srfidPreFilter *filter = [[srfidPreFilter alloc] init];
-    [filter setMatchPattern:@"N20122014R1010364989126V"];
+    [filter setMatchPattern:@"E28011B0A506007D3DD17A34"];
+    [filter setMatchLength:96];
     [filter setMaskStartPos:2];
     [filter setMemoryBank:SRFID_MEMORYBANK_EPC];
     [filter setAction:SRFID_SELECTACTION_INV_A__OR__ASRT_SL];
     [filter setTarget:SRFID_SELECTTARGET_SL];
 
     [prefilters addObject:filter];
-    error_response = nil;
 
     /* set pre-filters */
-    result = [apiInstance srfidSetPreFilters:_connectedReaderID aPreFilters:prefilters aStatusMessage:&amp;error_response];
+    SRFID_RESULT result = [apiInstance srfidSetPreFilters:readerID aPreFilters:prefilters aStatusMessage:&amp;error_response];
     if (SRFID_RESULT_SUCCESS == result) {
         /* pre-filters have been set */
         NSLog(@"Pre-filters has been set\n");
@@ -302,7 +317,7 @@ Compatible with iOS 17 and above
         NSLog(@"Error response from RFID reader: %@\n", error_response);
     }
     else {
-        NSLog(@"Failed to set tag report parameters\n");
+        NSLog(@"Failed to set pre-filters\n");
     }
 }
 </code></pre>

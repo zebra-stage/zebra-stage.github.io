@@ -146,7 +146,7 @@ RFID SDK for iOS
 1.2.46
 </p>
 <p>
-Applicable Devices : RFD 40, RFD 90 and 8500 devices
+Applicable Devices : RFD40 Premium, RFD40 Premium Plus, RFD90
 </p>
 <p>
 Compatible with iOS 17 and above
@@ -168,13 +168,12 @@ Compatible with iOS 17 and above
 
 <h2 id="add-wlan-profile" class="anchor"><a class="heading-anchor" href="#add-wlan-profile"><span></span></a>Add WLAN Profile</h2>
 
-<p>The addWlanProfile method adds a WLAN profile to an RFID reader using the Zebra RFID SDK. It logs success, handles response errors, and calls readerProblem for failures or timeouts. It returns the result of the operation</p>
+<p>The <code>addWlanProfile</code> method adds a WLAN profile to an RFID reader using the Zebra RFID SDK. It logs success, handles response errors, and logs failures or timeouts. It returns the result of the operation.</p>
 
 <pre class="prettyprint"><code>
 /// Add wlan profile
 /// @param readerID The reader id
-/// @param ssidWlan The ssid
-/// @param wlanPassword The password
+/// @param profileConfig The WLAN profile configuration
 /// @param statusMessage The status message
 -(SRFID_RESULT)addWlanProfile:(int)readerID srfidProfileConfig:(sRfidAddProfileConfig*)profileConfig aStatusMessage:(NSString**)statusMessage {
 
@@ -183,7 +182,7 @@ Compatible with iOS 17 and above
     srfid_result = [apiInstance srfidAddWlanProfile:readerID srfidProfileConfig:profileConfig aStatusMessage:statusMessage];
 
     if (srfid_result == SRFID_RESULT_SUCCESS){
-        NSLog(@"Add profile sucees");
+        NSLog(@"Add profile success");
     }
     else if(srfid_result == SRFID_RESULT_RESPONSE_ERROR){
 
@@ -192,7 +191,7 @@ Compatible with iOS 17 and above
     }
     else if(srfid_result == SRFID_RESULT_FAILURE || srfid_result == SRFID_RESULT_RESPONSE_TIMEOUT){
 
-        [self readerProblem];
+        NSLog(@"Timeout or Failure");
     }
 
     return srfid_result;
@@ -200,9 +199,9 @@ Compatible with iOS 17 and above
 }
 </code></pre>
 
-<h2 id="remove-wlan-profile" class="anchor"><a class="heading-anchor" href="#remove-wlan-profile"><span></span></a>Remove WLAN profile</h2>
+<h2 id="remove-wlan-profile" class="anchor"><a class="heading-anchor" href="#remove-wlan-profile"><span></span></a>Remove WLAN Profile</h2>
 
-<p>This method, removeWlanProfile, removes a WLAN profile from an RFID reader using the Zebra RFID SDK. The method logs success handles response errors, and calls readerProblem for failures or timeouts. It returns the result of the operation.</p>
+<p>The <code>removeWlanProfile</code> method removes a WLAN profile from an RFID reader using the Zebra RFID SDK. The method logs success, handles response errors, and logs failures or timeouts. It returns the result of the operation.</p>
 
 <pre class="prettyprint"><code>
 /// Remove wlan profile
@@ -214,7 +213,7 @@ Compatible with iOS 17 and above
     SRFID_RESULT srfid_result = SRFID_RESULT_FAILURE;
 
 
-    for(int i = 0; i &lt; ZT_MAX_RETRY; i++)
+    for(int i = 0; i &lt; 3; i++)
     {
         srfid_result = [apiInstance srfidRemoveWlanProfile:readerID ssidWlan:ssidWlan aStatusMessage:statusMessage];
         if ((srfid_result != SRFID_RESULT_RESPONSE_TIMEOUT) &amp;&amp; (srfid_result != SRFID_RESULT_FAILURE))
@@ -225,7 +224,7 @@ Compatible with iOS 17 and above
 
     if (srfid_result == SRFID_RESULT_SUCCESS)
     {
-        NSLog(@"Remove profile sucees");
+        NSLog(@"Remove profile success");
     }
     else if(srfid_result == SRFID_RESULT_RESPONSE_ERROR)
     {
@@ -236,7 +235,7 @@ Compatible with iOS 17 and above
     else if(srfid_result == SRFID_RESULT_FAILURE || srfid_result == SRFID_RESULT_RESPONSE_TIMEOUT)
     {
 
-        [self readerProblem];
+        NSLog(@"Timeout or Failure");
 
     }
     return srfid_result;
@@ -246,7 +245,7 @@ Compatible with iOS 17 and above
 
 <h2 id="save-wlan-profile" class="anchor"><a class="heading-anchor" href="#save-wlan-profile"><span></span></a>Save WLAN Profile</h2>
 
-<p>The saveWlanProfile method saves a WLAN profile for a specified RFID reader. As of now we can save maximum 10 profiles in reader.The method interacts with an RFID SDK API to perform the save action and returns a result indicating success or specific failure types. It logs messages based on the outcome and calls a problem handler if necessary.</p>
+<p>The <code>saveWlanProfile</code> method saves a WLAN profile for a specified RFID reader. As of now we can save maximum 10 profiles in reader. The method interacts with an RFID SDK API to perform the save action and returns a result indicating success or specific failure types. It logs messages based on the outcome.</p>
 
 <pre class="prettyprint"><code>
 /// Save wlan profile
@@ -255,34 +254,30 @@ Compatible with iOS 17 and above
 -(SRFID_RESULT)saveWlanProfile:(int)readerID aStatusMessage:(NSString**)statusMessage {
 
     SRFID_RESULT srfid_result = SRFID_RESULT_FAILURE;
-    if (YES == [wlanProfileListGuard lockBeforeDate:[NSDate distantFuture]]){
 
-        srfid_result = [apiInstance srfidWlanSaveProfile:readerID aStatusMessage:statusMessage];
+    srfid_result = [apiInstance srfidWlanSaveProfile:readerID aStatusMessage:statusMessage];
 
-        if (srfid_result == SRFID_RESULT_SUCCESS){
-            NSLog(@"Save profile sucees");
-        }
-        else if(srfid_result == SRFID_RESULT_RESPONSE_ERROR){
-
-            NSLog(@"Save profile SRFID_RESULT_RESPONSE_ERROR");
-
-        }
-        else if(srfid_result == SRFID_RESULT_FAILURE || srfid_result == SRFID_RESULT_RESPONSE_TIMEOUT){
-
-            [self readerProblem];
-        }
-        [wlanProfileListGuard unlock];
+    if (srfid_result == SRFID_RESULT_SUCCESS){
+        NSLog(@"Save profile success");
     }
+    else if(srfid_result == SRFID_RESULT_RESPONSE_ERROR){
 
+        NSLog(@"Save profile SRFID_RESULT_RESPONSE_ERROR");
+
+    }
+    else if(srfid_result == SRFID_RESULT_FAILURE || srfid_result == SRFID_RESULT_RESPONSE_TIMEOUT){
+
+        NSLog(@"Timeout or Failure");
+    }
 
     return srfid_result;
 
 }
 </code></pre>
 
-<h2 id="connect-wlan-profile" class="anchor"><a class="heading-anchor" href="#connect-wlan-profile"><span></span></a>Connect WLAN profile</h2>
+<h2 id="connect-wlan-profile" class="anchor"><a class="heading-anchor" href="#connect-wlan-profile"><span></span></a>Connect WLAN Profile</h2>
 
-<p>The connectWlanProfile method connects an RFID reader to a WLAN profile using the Zebra RFID SDK. It returns the operation’s result, indicating success or failure.</p>
+<p>The <code>connectWlanProfile</code> method connects an RFID reader to a WLAN profile using the Zebra RFID SDK. It returns the operation’s result, indicating success or failure.</p>
 
 <pre class="prettyprint"><code>
 /// Connect to the wlan profile.
@@ -292,7 +287,7 @@ Compatible with iOS 17 and above
 -(SRFID_RESULT)connectWlanProfile:(int)readerID ssidWlan:(NSString*)ssidWlan  aStatusMessage:(NSString**)statusMessage
 {
     SRFID_RESULT srfid_result = SRFID_RESULT_FAILURE;
-    for(int i = 0; i &lt; ZT_MAX_RETRY; i++)
+    for(int i = 0; i &lt; 3; i++)
     {
         srfid_result = [apiInstance srfidConnectWlanProfile:readerID ssidWlan:ssidWlan aStatusMessage:statusMessage];
 
@@ -304,7 +299,7 @@ Compatible with iOS 17 and above
 
     if (srfid_result == SRFID_RESULT_SUCCESS)
     {
-        NSLog(@"Connect profile sucees");
+        NSLog(@"Connect profile success");
     }
     else if(srfid_result == SRFID_RESULT_RESPONSE_ERROR)
     {
@@ -313,25 +308,25 @@ Compatible with iOS 17 and above
     else if(srfid_result == SRFID_RESULT_FAILURE || srfid_result == SRFID_RESULT_RESPONSE_TIMEOUT)
     {
 
-        [self readerProblem];
+        NSLog(@"Timeout or Failure");
 
     }
     return srfid_result;
 }
 </code></pre>
 
-<h2 id="disconnect-wlan-profile" class="anchor"><a class="heading-anchor" href="#disconnect-wlan-profile"><span></span></a>Disconnect WLAN profile</h2>
+<h2 id="disconnect-wlan-profile" class="anchor"><a class="heading-anchor" href="#disconnect-wlan-profile"><span></span></a>Disconnect WLAN Profile</h2>
 
-<p>The disconnectWlanProfile method disconnects an RFID reader from a WLAN profile using the Zebra RFID SDK. It returns the operation’s result, indicating success or failure.</p>
+<p>The <code>disconnectWlanProfile</code> method disconnects an RFID reader from a WLAN profile using the Zebra RFID SDK. It returns the operation’s result, indicating success or failure.</p>
 
 <pre class="prettyprint"><code>
-/// Disconnect waln profile.
+/// Disconnect WLAN profile.
 /// @param readerID The reader id.
 /// @param statusMessage The status message.
 -(SRFID_RESULT)disconnectWlanProfile:(int)readerID aStatusMessage:(NSString**)statusMessage
 {
     SRFID_RESULT srfid_result = SRFID_RESULT_FAILURE;
-    for(int i = 0; i &lt; ZT_MAX_RETRY; i++)
+    for(int i = 0; i &lt; 3; i++)
     {
         srfid_result = [apiInstance srfidWlanDisConnectProfile:readerID aStatusMessage:statusMessage];
 
@@ -343,15 +338,15 @@ Compatible with iOS 17 and above
 
     if (srfid_result == SRFID_RESULT_SUCCESS)
     {
-        NSLog(@"Connect profile sucees");
+        NSLog(@"Disconnect profile success");
     }
     else if(srfid_result == SRFID_RESULT_RESPONSE_ERROR)
     {
-        NSLog(@"Connect profile SRFID_RESULT_RESPONSE_ERROR");
+        NSLog(@"Disconnect profile SRFID_RESULT_RESPONSE_ERROR");
     }
     else if(srfid_result == SRFID_RESULT_FAILURE || srfid_result == SRFID_RESULT_RESPONSE_TIMEOUT)
     {
-        [self readerProblem];
+        NSLog(@"Timeout or Failure");
     }
     return srfid_result;
 
@@ -360,13 +355,13 @@ Compatible with iOS 17 and above
 
 <h2 id="enable-channel-list" class="anchor"><a class="heading-anchor" href="#enable-channel-list"><span></span></a>Enable Channel List</h2>
 
-<p>The <code>enableWifiChannelBand</code> method configures the active RFID reader's Wi-Fi operation by applying a channel band mask defined by ENUM_WIFI_CHANNELBAND_TYPE (e.g., enabling 2.4GHz, 5GHz non-DFS, or 5GHz DFS bands individually or in combination).</p>
+<p>The <code>enableWifiChannelBand</code> method configures the active RFID reader's Wi-Fi operation by applying a channel band mask defined by <code>ENUM_WIFI_CHANNELBAND_TYPE</code> (e.g., enabling 2.4GHz, 5GHz non-DFS, or 5GHz DFS bands individually or in combination).</p>
 
 <pre class="prettyprint"><code>
 -(SRFID_RESULT)enableChannelListMask:(ENUM_WIFI_CHANNELBAND_TYPE)wifiChannel aStatusMessage:(NSString**)statusMessage {
 
     SRFID_RESULT srfid_result = SRFID_RESULT_FAILURE;
-    srfid_result = [m_RfidSdkApi enableWifiChannelBand:[m_ActiveReader getReaderID] channelValue:wifiChannel aStatusMessage:statusMessage];
+    srfid_result = [apiInstance enableWifiChannelBand:readerID channelValue:wifiChannel aStatusMessage:statusMessage];
 
     if (srfid_result == SRFID_RESULT_SUCCESS) {
         NSLog(@"[WiFi Status] Enable Channel List Mask Success");
@@ -378,13 +373,15 @@ Compatible with iOS 17 and above
     return srfid_result;
 
 }
-
-typedef enum {
-    WIFI_WPA2_4GZ                  = 1,
-    WIFI_WPA5GZ_NODFS              = 2,
-    WIFI_WPA5GZ_DFS                = 4,
-}ENUM_WIFI_CHANNELBAND_TYPE;
 </code></pre>
+
+<p>The channel band is passed as a value of the <code>ENUM_WIFI_CHANNELBAND_TYPE</code> type, which the SDK defines. The values are:</p>
+
+<ul>
+  <li><code>WIFI_WPA2_4GZ</code> (1): 2.4 GHz</li>
+  <li><code>WIFI_WPA5GZ_NODFS</code> (2): 5 GHz, non-DFS channels</li>
+  <li><code>WIFI_WPA5GZ_DFS</code> (4): 5 GHz, DFS channels</li>
+</ul>
 
                                             </div>
                                         </div>

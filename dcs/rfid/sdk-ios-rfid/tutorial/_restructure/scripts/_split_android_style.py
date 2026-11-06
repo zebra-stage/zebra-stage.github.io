@@ -132,7 +132,7 @@ def fix_links(s: str) -> str:
 
 def page_body(p: Page, pres: list[str]) -> str:
     out: list[str] = []
-    used: set[str] = set()
+    used: set[str] = {p.slug}  # the page h1 owns the slug; sections must not reuse it
     seen_section = False
     intro: list[Node] = []
     sections: list[str] = []
@@ -166,8 +166,9 @@ def build_page(head: str, tail: str, cfg: dict, p: Page, pres: list[str]) -> str
     label = " ".join(x for x in (cfg.get("sdk_label", ""), cfg.get("sdk_version", "")) if x)
     if label:
         cta.append(f"<p>\n{cfg['sdk_label']}\n{cfg.get('sdk_version', '')}\n</p>")
-    if cfg.get("applicable_devices"):
-        cta.append(f"<p>\nApplicable Devices : {esc(cfg['applicable_devices'])}\n</p>")
+    devices = cfg.get("page_devices", {}).get(p.slug) or cfg.get("applicable_devices")
+    if devices:
+        cta.append(f"<p>\nApplicable Devices : {esc(devices)}\n</p>")
     if cfg.get("compatibility"):
         cta.append(f"<p>\n{esc(cfg['compatibility'])}\n</p>")
     body = page_body(p, pres)
@@ -262,6 +263,9 @@ def main() -> int:
         print("ERROR: monolith does not validate; fix it (or run _normalize_monolith.py) first")
         return 1
     cfg = json.loads(CONFIG.read_text())
+    per_page = CONFIG.with_name("applicable-devices.json")
+    if per_page.exists():
+        cfg["page_devices"] = json.loads(per_page.read_text())["pages"]
     src = MONO.read_text(encoding="utf-8")
     head, tail, intro, columns, pres = parse_monolith(src)
 
@@ -289,8 +293,10 @@ def main() -> int:
         written.append(rel)
 
     pages = [p for c in columns for g in c["groups"] for p in g["pages"]]
+    barcode_slugs = {p.slug for c in columns if c["id"] == "barcode-sdk-api-calls" for g in c["groups"] for p in g["pages"]}
+    bcfg = {**cfg, "sdk_label": cfg.get("barcode_sdk_label", ""), "sdk_version": cfg.get("barcode_sdk_version", "")}
     for p in pages:
-        write(f"{PAGES}/{p.slug}/index.html", build_page(head, tail, cfg, p, pres))
+        write(f"{PAGES}/{p.slug}/index.html", build_page(head, tail, bcfg if p.slug in barcode_slugs else cfg, p, pres))
     hub_head = re.sub(r"<title>.*?</title>", f"<title>{esc(cfg.get('hub_title', 'Tutorials'))} - Zebra Technologies Techdocs</title>", head, flags=re.S)
     write("index.html", build_hub(hub_head, tail, intro, cfg, columns))
     MANIFEST.write_text(json.dumps(sorted(written), indent=1))

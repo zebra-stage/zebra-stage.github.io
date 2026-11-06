@@ -146,7 +146,7 @@ RFID SDK for iOS
 1.2.46
 </p>
 <p>
-Applicable Devices : RFD 40, RFD 90 and 8500 devices
+Applicable Devices : RFD40, RFD90
 </p>
 <p>
 Compatible with iOS 17 and above
@@ -180,7 +180,7 @@ Compatible with iOS 17 and above
     if (apiInstance != nil)
     {
 
-        return [apiInstance srfidProtectTag:readerID aTagID:tagID aAccessTagData:tagData aPassword:password aStatusMessage:statusMessage];
+        return [apiInstance enableTagProtection:readerID tagID:tagID tagData:tagData password:password statusMessage:statusMessage];
     }
 
     return SRFID_RESULT_FAILURE;
@@ -189,7 +189,7 @@ Compatible with iOS 17 and above
 
 <h2 id="unprotected-mode" class="anchor"><a class="heading-anchor" href="#unprotected-mode"><span></span></a>Unprotected Mode</h2>
 
-<p>Disable Impinj Protected Mode.</p>
+<p>This method takes a specified RFID tag out of its protected mode, so that the tag is visible to a reader again. Provide the password that is set on the tag.</p>
 
 <pre class="prettyprint"><code>
  - (SRFID_RESULT)unprotectTag:(NSString*)tagID withTagData:(srfidTagData **)tagData withPassword:(NSString*)password aStatusMessage:(NSString**)statusMessage
@@ -198,11 +198,7 @@ Compatible with iOS 17 and above
     if (apiInstance != nil)
     {
 
-        return [apiInstance srfidUnprotectTag:readerID
-                             aTagID:tagID
-                     aAccessTagData:tagData
-                          aPassword:password
-                     aStatusMessage:statusMessage];
+        return [apiInstance disableTagProtection:readerID tagID:tagID tagData:tagData password:password statusMessage:statusMessage];
     }
 
     return SRFID_RESULT_FAILURE;
@@ -211,7 +207,7 @@ Compatible with iOS 17 and above
 
 <h2 id="enable-visibility" class="anchor"><a class="heading-anchor" href="#enable-visibility"><span></span></a>Enable Visibility</h2>
 
-<p>Enable Impinj Protected Mode.</p>
+<p>Makes tags in protected mode visible to the reader. The method sets a pre-filter that contains the tag password, so that an inventory includes the protected tags that use this password.</p>
 
 <pre class="prettyprint"><code>
 - (SRFID_RESULT)enableVisibilityTag:(NSString*)password aStatusMessage:(NSString**)statusMessage
@@ -220,7 +216,7 @@ Compatible with iOS 17 and above
     if (apiInstance != nil)
     {
 
-        return [apiInstance srfidEnableTagVisibility:readerID aPassword:password aStatusMessage:statusMessage];
+        return [apiInstance enableTagVisibility:readerID password:password statusMessage:statusMessage];
 
     }
 
@@ -230,7 +226,7 @@ Compatible with iOS 17 and above
 
 <h2 id="disable-visibility" class="anchor"><a class="heading-anchor" href="#disable-visibility"><span></span></a>Disable Visibility</h2>
 
-<p>Disable Impinj Protected Mode.</p>
+<p>Makes protected tags invisible to the reader again. The method clears the pre-filters of the reader, including the one that Enable Visibility set.</p>
 
 <pre class="prettyprint"><code>
 - (SRFID_RESULT)disableVisibilityTag:(NSString*)password aStatusMessage:(NSString**)statusMessage
@@ -239,7 +235,7 @@ Compatible with iOS 17 and above
     if (apiInstance != nil)
     {
 
-    return [apiInstance srfidDisableTagVisibility:readerID aPassword:password aStatusMessage:statusMessage];
+    return [apiInstance disableTagVisibility:readerID aPassword:password statusMessage:statusMessage];
 
     }
 
@@ -249,14 +245,14 @@ Compatible with iOS 17 and above
 
 <h2 id="tag-focus" class="anchor"><a class="heading-anchor" href="#tag-focus"><span></span></a>Tag Focus</h2>
 
-<p>TagFocus allows readers to silence already-inventoried tags to reduce redundant reads, allowing a reader to focus on weak tags that are typically the last to be found. Set the boolean value to true to enable tag focus mode and false to disable it. if you try to disable the tag focus filter when it was not set. Tag focus mode targets tags inventoried in SESSION S1.</p>
+<p>TagFocus allows readers to silence already-inventoried tags to reduce redundant reads, allowing a reader to focus on weak tags that are typically the last to be found. Set the boolean value to true to enable tag focus mode and false to disable it. Tag focus mode targets tags inventoried in SESSION S1.</p>
 
 <pre class="prettyprint"><code>
 - (SRFID_RESULT)enableTagFocus:(BOOL)enableTagFocus aStatusMessage:(NSString**)statusMessage {
 
     if (apiInstance != nil)
     {
-        return [apiInstance srfidSetTagFocus:readerID isTagFocusEnable:enableTagFocus aStatusMessage:statusMessage];
+        return [apiInstance setTagFocus:readerID enable:enableTagFocus statusMessage:statusMessage];
 
     }
 
@@ -266,23 +262,24 @@ Compatible with iOS 17 and above
 
 <p>Set the below singulation settings before running inventory when tag focus is enabled</p>
 
+<h2 id="set-singulation-for-tag-focus" class="anchor"><a class="heading-anchor" href="#set-singulation-for-tag-focus"><span></span></a>Set Singulation for Tag Focus</h2>
+
 <pre class="prettyprint"><code>
--(void)setSigulationForTagFocus {
+-(void)setSingulationForTagFocus {
 
 
-    RFID_SLFLAG sl_flag = SRFID_SLFLAG_ALL;
+    SRFID_SLFLAG sl_flag = SRFID_SLFLAG_ALL;
     SRFID_SESSION session = SRFID_SESSION_S1;
     SRFID_INVENTORYSTATE inv_state = SRFID_INVENTORYSTATE_A;
 
-    srfidSingulationConfig *config = [[[srfidSingulationConfig alloc] init] autorelease];
+    srfidSingulationConfig *config = [[srfidSingulationConfig alloc] init];
     [config setSlFlag:sl_flag];
     [config setSession:session];
     [config setTagPopulation:200];
     [config setInventoryState:inv_state];
 
-     SRFID_RESULT resultSingulation = SRFID_RESULT_FAILURE;
-     NSString *response = @"";
-    resultSingulation = [[zt_RfidAppEngine sharedAppEngine] setSingulationConfigurationTagFocus:config status:&amp;response];
+    NSString *response = @"";
+    SRFID_RESULT resultSingulation = [self setSingulationConfigurationTagFocus:config status:&amp;response];
     if (resultSingulation == SRFID_RESULT_SUCCESS)
     {
         NSLog(@"SRFID_RESULT_SUCCESS");
@@ -291,9 +288,13 @@ Compatible with iOS 17 and above
     }
 
 }
+</code></pre>
 
+<h2 id="set-singulation-configuration-for-tag-focus" class="anchor"><a class="heading-anchor" href="#set-singulation-configuration-for-tag-focus"><span></span></a>Set Singulation Configuration for Tag Focus</h2>
 
+<p>The <code>setSingulationConfigurationTagFocus:status:</code> method applies a singulation configuration and tries again once if the request times out or fails.</p>
 
+<pre class="prettyprint"><code>
 - (SRFID_RESULT)setSingulationConfigurationTagFocus: (srfidSingulationConfig*)singulationConfiguration status:(NSString **)statusMessage
 {
 
@@ -308,19 +309,6 @@ Compatible with iOS 17 and above
         }
     }
 
-    if (srfid_result == SRFID_RESULT_SUCCESS)
-    {
-
-    }
-    else if(srfid_result == SRFID_RESULT_RESPONSE_ERROR)
-    {
-
-    }
-
-    else if(srfid_result == SRFID_RESULT_FAILURE || srfid_result == SRFID_RESULT_RESPONSE_TIMEOUT)
-    {
-        [
-    }
     return srfid_result;
 }
 </code></pre>
@@ -347,39 +335,39 @@ typedef NS_ENUM(NSInteger, SRFID_ENUM_TAGQUIET_MASK) {
 };
 </code></pre>
 
-<p>The user can provide up to three valid combinations. Providing more than three combinations.For valid combination user cannot add enums with same session to SRFID_ENUM_TAGQUIET_MASK array.</p>
+<p>The user can provide up to three valid combinations. A valid combination cannot contain two enums that use the same session.</p>
 
 <pre class="prettyprint"><code>
 NSMutableArray&lt;NSNumber *&gt; *tagQuietMaskArrayType1 = [NSMutableArray array];
-[tagQuietMaskArray addObject:@(ENUM_TAGQUIET_MASK_S0B)];
-[tagQuietMaskArray addObject:@(ENUM_TAGQUIET_MASK_S2B)];
-[tagQuietMaskArray addObject:@(ENUM_TAGQUIET_MASK_S3B)];
+[tagQuietMaskArrayType1 addObject:@(ENUM_TAGQUIET_MASK_S0B)];
+[tagQuietMaskArrayType1 addObject:@(ENUM_TAGQUIET_MASK_S2B)];
+[tagQuietMaskArrayType1 addObject:@(ENUM_TAGQUIET_MASK_S3B)];
 
 NSMutableArray&lt;NSNumber *&gt; *tagQuietMaskArrayType2 = [NSMutableArray array];
-[tagQuietMaskArray addObject:@(ENUM_TAGQUIET_MASK_S2B)];
-[tagQuietMaskArray addObject:@(ENUM_TAGQUIET_MASK_SL_ASSERT)];
+[tagQuietMaskArrayType2 addObject:@(ENUM_TAGQUIET_MASK_S2B)];
+[tagQuietMaskArrayType2 addObject:@(ENUM_TAGQUIET_MASK_SL_ASSERT)];
 
 NSMutableArray&lt;NSNumber *&gt; *tagQuietMaskArrayType3 = [NSMutableArray array];
-[tagQuietMaskArray addObject:@(ENUM_TAGQUIET_MASK_S2B)];
-[tagQuietMaskArray addObject:@(ENUM_TAGQUIET_MASK_S3B)];
+[tagQuietMaskArrayType3 addObject:@(ENUM_TAGQUIET_MASK_S2B)];
+[tagQuietMaskArrayType3 addObject:@(ENUM_TAGQUIET_MASK_S3B)];
 </code></pre>
 
 <p>Enable Tag Quiet</p>
 
 <pre class="prettyprint"><code>
--(SRFID_RESULT)enableTagQuiet:(BOOL)status meesage:(NSString**)statusMessage {
+-(SRFID_RESULT)enableTagQuiet:(BOOL)status message:(NSString**)statusMessage {
 
     if (apiInstance != nil)
     {
         NSMutableArray&lt;NSNumber *&gt; *tagQuietMaskArray = [NSMutableArray array];
         [tagQuietMaskArray addObject:@(ENUM_TAGQUIET_MASK_S3B)];
         SRFID_RESULT resultTagQuiet = SRFID_RESULT_FAILURE;
-        srfidSingulationConfig *singulationConfig = [[[srfidSingulationConfig alloc] init] autorelease];
 
         if (status){
 
-            resultTagQuiet = [apiInstance srfidConfigureTagQuiet:readerID enumTagquietMasks:tagQuietMaskArray enumTarget:SRFID_SELECTTARGET_SL stateAwareAction:SRFID_SELECTACTION_INV_A__OR__ASRT_SL aStatusMessage:statusMessage];
+            resultTagQuiet = [apiInstance setTagQuiet:readerID masks:tagQuietMaskArray enumTarget:SRFID_SELECTTARGET_SL action:SRFID_SELECTACTION_INV_A__OR__ASRT_SL statusMessage:statusMessage];
 
+            srfidSingulationConfig *singulationConfig = [[srfidSingulationConfig alloc] init];
             SRFID_SLFLAG sl_flag = SRFID_SLFLAG_DEASSERTED;
             SRFID_SESSION session = SRFID_SESSION_S2;
             SRFID_INVENTORYSTATE inv_state = SRFID_INVENTORYSTATE_AB_FLIP;
@@ -388,9 +376,8 @@ NSMutableArray&lt;NSNumber *&gt; *tagQuietMaskArrayType3 = [NSMutableArray array
             [singulationConfig setSession:session];
             [singulationConfig setInventoryState:inv_state];
 
-            SRFID_RESULT resultSingulation = SRFID_RESULT_FAILURE;
             NSString *response2 = @"";
-            resultSingulation = [[zt_RfidAppEngine sharedAppEngine] setSingulationConfigurationTagFocus:singulationConfig status:&amp;response2];
+            SRFID_RESULT resultSingulation = [self setSingulationConfigurationTagFocus:singulationConfig status:&amp;response2];
             if (resultSingulation == SRFID_RESULT_SUCCESS)
             {
                 NSLog(@"SRFID_RESULT_SUCCESS SingulationConfig");
@@ -400,19 +387,15 @@ NSMutableArray&lt;NSNumber *&gt; *tagQuietMaskArrayType3 = [NSMutableArray array
         }
         else
          {
-            resultTagQuiet = [apiInstance srfidConfigureTagQuiet:readerID
-                                                   enumTagquietMasks:tagQuietMaskArray
-                                                          enumTarget:SRFID_SELECTTARGET_SL
-                                                    stateAwareAction:SRFID_SELECTACTION_INV_B__OR__DSRT_SL
-                                                      aStatusMessage:statusMessage];
+            resultTagQuiet = [apiInstance setTagQuiet:readerID masks:tagQuietMaskArray enumTarget:SRFID_SELECTTARGET_SL action:SRFID_SELECTACTION_INV_B__OR__DSRT_SL statusMessage:statusMessage];
 
-         }
-
-            return resultTagQuiet;
         }
 
-        return SRFID_RESULT_FAILURE;
-     }
+        return resultTagQuiet;
+    }
+
+    return SRFID_RESULT_FAILURE;
+}
 </code></pre>
 
 <h2 id="fast-id" class="anchor"><a class="heading-anchor" href="#fast-id"><span></span></a>Fast ID</h2>

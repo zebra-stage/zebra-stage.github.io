@@ -18,6 +18,18 @@ KEEP_ATTRS = HEADINGS | {"a", "span"}  # every other tag is serialized without a
 PRE_RE = re.compile(r"<pre\b[^>]*>\s*<code>(.*?)</code>\s*</pre>", re.S | re.I)
 
 
+_ENTITY_RE = re.compile(r"&(?:#[0-9]+|#[xX][0-9a-fA-F]+|[A-Za-z][A-Za-z0-9]*);")
+
+
+def unescape_strict(s: str) -> str:
+    """Like html.unescape, but only decodes entities that end with ';'.
+
+    html.unescape also decodes legacy entities without a semicolon, so C code such as
+    `&regions` became `®ions` (and `&regulatory_cfg` became `®ulatory_cfg`).
+    """
+    return _ENTITY_RE.sub(lambda m: html.unescape(m.group(0)), s)
+
+
 class Node:
     def __init__(self, tag: str, attrs: list[tuple[str, str | None]] | None = None) -> None:
         self.tag = tag
@@ -37,7 +49,7 @@ class Node:
         out = ""
         for k in self.kids:
             out += k if isinstance(k, str) else (k.text() if k.tag != "br" else " ")
-        return html.unescape(re.sub(r"\s+", " ", out)).strip()
+        return unescape_strict(re.sub(r"\s+", " ", out)).strip()
 
 
 class Builder(HTMLParser):
@@ -99,7 +111,7 @@ class Builder(HTMLParser):
 def norm_code(raw: str) -> str:
     """Canonical <pre> for a raw code block: text only, no <br>, tabs->4 spaces, trimmed."""
     s = re.sub(r"<br\s*/?>", "", raw, flags=re.I)
-    s = html.unescape(s).replace("\r\n", "\n").replace("\r", "\n").expandtabs(4)
+    s = unescape_strict(s).replace("\r\n", "\n").replace("\r", "\n").expandtabs(4)
     lines = [l.rstrip() for l in s.split("\n")]
     while lines and not lines[0].strip():
         lines.pop(0)
@@ -156,4 +168,7 @@ def ser_block(n: Node, pres: list[str]) -> str:
     if n.tag in ("ul", "ol"):
         items = "\n".join(f"  <li>{ser_inline(li.kids)}</li>" for li in n.kids if isinstance(li, Node) and li.tag == "li")
         return f"<{n.tag}>\n{items}\n</{n.tag}>"
+    if n.tag == "blockquote":
+        ps = "\n".join(f"  <p>{ser_inline(p.kids)}</p>" for p in n.kids if isinstance(p, Node) and p.tag == "p")
+        return f"<blockquote>\n{ps}\n</blockquote>"
     return f"<{n.tag}{_attrs(n)}>{ser_inline(n.kids)}</{n.tag}>"

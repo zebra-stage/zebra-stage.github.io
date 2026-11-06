@@ -146,7 +146,7 @@ RFID SDK for iOS
 1.2.46
 </p>
 <p>
-Applicable Devices : RFD 40, RFD 90 and 8500 devices
+Applicable Devices : RFD40, RFD90, RFD8500
 </p>
 <p>
 Compatible with iOS 17 and above
@@ -164,40 +164,50 @@ Compatible with iOS 17 and above
 
 <h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>To do a firmware update in the 123RFID mobile app, you needed a firmware file in “.dat”/.SCNPLG” format</p>
+<p>A firmware update needs a firmware file in “.dat” or “.SCNPLG” format.</p>
+
+<p>The update runs through the barcode SDK: the <code>sdkApi</code> object created in Initialize Barcode SDK runs the update commands, and its delegate receives <code>sbtEventFirmwareUpdate:</code>.</p>
 
 <p>The example starts the update with the command type that matches the file: <code>SBT_UPDATE_FIRMWARE</code> for a “.dat” file and <code>SBT_UPDATE_FIRMWARE_FROM_PLUGIN</code> for a plugin file.</p>
 
 <h2 id="details" class="anchor"><a class="heading-anchor" href="#details"><span></span></a>Details</h2>
 
+<h2 id="start-firmware-update" class="anchor"><a class="heading-anchor" href="#start-firmware-update"><span></span></a>Start Firmware Update</h2>
+
 <pre class="prettyprint"><code>
 - (IBAction)btnFirmwareUpdate:(id)sender
 {
-    NSString *inputXML = [NSString stringWithFormat:@"&lt;inArgs&gt;&lt;scannerID&gt;%d&lt;/scannerID&gt;&lt;cmdArgs&gt;&lt;arg-string&gt;%@&lt;/arg-string&gt;&lt;/cmdArgs&gt;&lt;/inArgs&gt;", _connectedReaderID, @"FIRMWARE_FILE_PATH"];
+    NSString *inputXML = [NSString stringWithFormat:@"&lt;inArgs&gt;&lt;scannerID&gt;%d&lt;/scannerID&gt;&lt;cmdArgs&gt;&lt;arg-string&gt;%@&lt;/arg-string&gt;&lt;/cmdArgs&gt;&lt;/inArgs&gt;", readerID, @"FIRMWARE_FILE_PATH"];
     int firmwareFileTypeCommand = 0;
 
-    //If firmware file is “.Dat” then command type is “SBT_UPDATE_FIRMWARE”.
-    //If firmware file is plugin then command type is “SBT_UPDATE_FIRMWARE_FROM_PLUGIN”.
+    // If the firmware file is a ".dat" file then the command type is SBT_UPDATE_FIRMWARE.
+    // If the firmware file is a plugin then the command type is SBT_UPDATE_FIRMWARE_FROM_PLUGIN.
     firmwareFileTypeCommand = SBT_UPDATE_FIRMWARE;
     SBT_RESULT result = [self executeCommand:firmwareFileTypeCommand aInXML:inputXML];
 
-    if (result) {
+    if (SBT_RESULT_SUCCESS == result) {
 
-        NSString *in_xml = [NSString stringWithFormat:@"&lt;inArgs&gt;&lt;scannerID&gt;%d&lt;/scannerID&gt;&lt;/inArgs&gt;", _connectedReaderID];
+        NSString *in_xml = [NSString stringWithFormat:@"&lt;inArgs&gt;&lt;scannerID&gt;%d&lt;/scannerID&gt;&lt;/inArgs&gt;", readerID];
         [self performStartNewFirmware:in_xml];
 
     }else{
-        NSLog(@"Firmwareupdate failed !");
+        NSLog(@"Firmware update failed");
     }
 
 }
+</code></pre>
 
+<h2 id="perform-start-new-firmware" class="anchor"><a class="heading-anchor" href="#perform-start-new-firmware"><span></span></a>Perform Start New Firmware</h2>
+
+<p>The <code>performStartNewFirmware:</code> method starts the new firmware with the given input XML.</p>
+
+<pre class="prettyprint"><code>
 /// Perform start new firmware
 /// @param param The inXML value
 - (void)performStartNewFirmware:(NSString*)param
 {
 
-    SBT_RESULT result = [self executeCommand:SBT_START_NEW_FIRMWARE aInXML:param aOutXML:nil forScanner:_connectedReaderID];
+    SBT_RESULT result = [self executeCommand:SBT_START_NEW_FIRMWARE aInXML:param];
     if (result != SBT_RESULT_SUCCESS)
     {
         NSLog(@"Firmware Update Failed.");
@@ -207,18 +217,30 @@ Compatible with iOS 17 and above
     }
 
 }
+</code></pre>
 
+<h2 id="firmware-update-event" class="anchor"><a class="heading-anchor" href="#firmware-update-event"><span></span></a>Firmware Update Event</h2>
+
+<p>The SDK calls <code>sbtEventFirmwareUpdate:</code> with the progress of the update.</p>
+
+<pre class="prettyprint"><code>
 // Firmware update event
 /// @param fwUpdateEventObj SDK's firmware update event object
 - (void)sbtEventFirmwareUpdate:(FirmwareUpdateEvent *)event{
 
      NSLog(@"Current Record : %f",(float)event.currentRecord);
      NSLog(@"Max Record : %f",(float)event.maxRecords);
-     int currentProgressInPrecentage = (int)((float)event.currentRecord/event.maxRecords*100);
-     NSLog(@"Current Progress In Precentage %d",currentProgressInPrecentage);
+     int currentProgressInPercentage = (int)((float)event.currentRecord/event.maxRecords*100);
+     NSLog(@"Current Progress In Percentage %d",currentProgressInPercentage);
 
 }
+</code></pre>
 
+<h2 id="execute-command" class="anchor"><a class="heading-anchor" href="#execute-command"><span></span></a>Execute Command</h2>
+
+<p>The <code>executeCommand:aInXML:</code> method runs an SDK command with the given input XML.</p>
+
+<pre class="prettyprint"><code>
 /// Execute command inXML only
 /// @param opCode Command code
 /// @param inXML Input XML
@@ -226,7 +248,7 @@ Compatible with iOS 17 and above
 - (SBT_RESULT)executeCommand:(int)opCode aInXML:(NSString*)inXML{
     if (sdkApi != nil){
 
-        SBT_RESULT resultExecuteCommand = [sdkApi sbtExecuteCommand:opCode aInXML:inXML aOutXML:NULL forScanner:_connectedReaderID];
+        SBT_RESULT resultExecuteCommand = [sdkApi sbtExecuteCommand:opCode aInXML:inXML aOutXML:NULL forScanner:readerID];
         return resultExecuteCommand;
     }
     return SBT_RESULT_FAILURE;

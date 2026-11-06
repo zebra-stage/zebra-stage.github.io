@@ -146,7 +146,7 @@ RFID SDK for iOS
 1.2.46
 </p>
 <p>
-Applicable Devices : RFD 40, RFD 90 and 8500 devices
+Applicable Devices : RFD40, RFD90, RFD8500
 </p>
 <p>
 Compatible with iOS 17 and above
@@ -168,9 +168,13 @@ Compatible with iOS 17 and above
 
 <h2 id="details" class="anchor"><a class="heading-anchor" href="#details"><span></span></a>Details</h2>
 
-<p>The SDK provides an ability to perform tag locationing operation. The <code>srfidStartTagLocationing</code> API function is used to request performing of tag locationing operation. Aborting of tag locationing operation is requested via <code>srfidStopTagLocationing</code> API function. The actual operation is started and stopped based on configured start and stop triggers parameters. The SDK informs the application about starting and stopping of the actual operation via delivery of asynchronous notifications if the application has subscribed for events of this type. During an on-going operation the SDK will deliver asynchronous notifications to inform the application about current tag proximity value (in percents).</p>
+<p>The SDK provides an ability to perform tag locationing operation. The <code>srfidStartTagLocationing</code> API function is used to request performing of tag locationing operation. Aborting of tag locationing operation is requested via <code>srfidStopTagLocationing</code> API function. The actual operation is started and stopped based on configured start and stop triggers parameters. The SDK informs the application about starting and stopping of the actual operation via delivery of asynchronous notifications if the application has subscribed for events of this type. During an on-going operation the SDK will deliver asynchronous notifications to inform the application about current tag proximity value (as a percentage).</p>
 
-<p>The following example demonstrates performing of tag locationing operation.</p>
+<p>The following examples demonstrate performing of tag locationing operation and receiving the proximity value.</p>
+
+<h2 id="start-and-stop-tag-locationing" class="anchor"><a class="heading-anchor" href="#start-and-stop-tag-locationing"><span></span></a>Start and Stop Tag Locationing</h2>
+
+<p>The <code>tagLocationing</code> method subscribes to proximity and operation status events, starts locationing for one tag and requests an abort after 1 minute.</p>
 
 <pre class="prettyprint"><code>
 -(void)tagLocationing{
@@ -179,9 +183,9 @@ Compatible with iOS 17 and above
     [apiInstance srfidSubsribeForEvents:SRFID_EVENT_MASK_PROXIMITY];
     /* subscribe for operation start/stop related events */
     [apiInstance srfidSubsribeForEvents:SRFID_EVENT_MASK_STATUS];
-    /* identifier of one of active RFID readers is supposed to be stored in m_ReaderId variable */
+    /* identifier of one of active RFID readers is supposed to be stored in readerID variable */
     /* id of tag to be located */
-    NSString *tag_id = @"V6219894630101R41022102N";
+    NSString *tag_id = @"E28011B0A506007D3DD17A34";
     /* an object for storage of error response received from RFID reader */
     NSString *error_response = nil;
     SRFID_RESULT result = [apiInstance srfidStartTagLocationing:readerID aTagEpcId:tag_id aStatusMessage:&amp;error_response];
@@ -189,7 +193,7 @@ Compatible with iOS 17 and above
         NSLog(@"Request succeed\n");
         /* request abort of an operation after 1 minute */
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(60 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            [self-&gt;apiInstance srfidStopTagLocationing:self-&gt;readerID aStatusMessage:nil];
+            [apiInstance srfidStopTagLocationing:self-&gt;readerID aStatusMessage:nil];
         });
     }
     else if (SRFID_RESULT_RESPONSE_ERROR == result) {
@@ -198,6 +202,16 @@ Compatible with iOS 17 and above
     else {
         NSLog(@"Request failed\n");
     }
+}
+</code></pre>
+
+<h2 id="proximity-event" class="anchor"><a class="heading-anchor" href="#proximity-event"><span></span></a>Proximity Event</h2>
+
+<p>The SDK calls <code>srfidEventProximityNotify:</code> with the current proximity value of the tag, as a percentage.</p>
+
+<pre class="prettyprint"><code>
+- (void)srfidEventProximityNotify:(int)readerID aProximityPercent:(int)proximityPercent {
+    NSLog(@"Tag proximity: %d%%", proximityPercent);
 }
 </code></pre>
 

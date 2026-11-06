@@ -223,6 +223,13 @@ def block(n: "Node | str", out: list[Node]) -> None:
             elif isinstance(li, str) and li.strip():
                 review.append(f"text directly inside <{t}>: {li.strip()[:50]!r}")
         out.append(u)
+    elif t == "blockquote":
+        bq = Node("blockquote")
+        for p in n.kids:
+            if isinstance(p, Node) and p.tag == "p":
+                for g in split_on_br(inline(p.kids)):
+                    bq.kids.append(para(g))
+        out.append(bq)
     elif t == "p":
         if "align" in dict(n.attrs):
             bump('p align="..." removed')

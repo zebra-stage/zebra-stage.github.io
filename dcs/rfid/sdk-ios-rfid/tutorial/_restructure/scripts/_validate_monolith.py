@@ -18,7 +18,7 @@ MONO = ROOT / "index.monolithic.html"
 
 START_RE = re.compile(r"<h1\b[^>]*top-group", re.I)
 END_MARK = '<footer id="footer"'
-BLOCK_TAGS = HEADINGS | {"p", "ul", "ol", "pre", "!comment"}
+BLOCK_TAGS = HEADINGS | {"p", "blockquote", "ul", "ol", "pre", "!comment"}
 INLINE_OK = {"code", "strong", "a", "em"}
 
 errors: list[str] = []
@@ -172,6 +172,10 @@ def main() -> int:
             if not n.text().strip():
                 err("empty <p>")
             check_inline(n, "<p>", 0)
+        elif t == "blockquote":
+            for p in n.kids:
+                if isinstance(p, Node) and p.tag == "p":
+                    check_inline(p, "<blockquote><p>", 0)
         elif t in ("ul", "ol"):
             for li in n.kids:
                 if isinstance(li, Node) and li.tag == "li":

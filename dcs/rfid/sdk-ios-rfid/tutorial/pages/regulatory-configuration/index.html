@@ -146,7 +146,7 @@ RFID SDK for iOS
 1.2.46
 </p>
 <p>
-Applicable Devices : RFD 40, RFD 90 and 8500 devices
+Applicable Devices : RFD40, RFD90, RFD8500
 </p>
 <p>
 Compatible with iOS 17 and above
@@ -176,12 +176,16 @@ Compatible with iOS 17 and above
   <li>Set of enabled channels</li>
 </ul>
 
-<p>A set of enabled channels shall include only such channels that are supported in the selected region. If hopping configuration is not allowed for the selected regions a set of enabled channels shall not be specified.</p>
+<p>A set of enabled channels shall include only such channels that are supported in the selected region. If hopping configuration is not allowed for the selected region a set of enabled channels shall not be specified.</p>
 
-<p>Regulatory parameters could be retrieved and set via <code>srfidGetRegulatoryConfig</code> and <code>srfidSetRegulatoryConfig</code> API functions accordingly. The following example demonstrates retrieving of current regulatory settings and configuring the RFID reader to operate in one of supported regions.</p>
+<p>Regulatory parameters could be retrieved and set via <code>srfidGetRegulatoryConfig</code> and <code>srfidSetRegulatoryConfig</code> API functions accordingly. The following examples demonstrate retrieving of current regulatory settings and configuring the RFID reader to operate in one of supported regions.</p>
+
+<h2 id="get-regulatory-configuration" class="anchor"><a class="heading-anchor" href="#get-regulatory-configuration"><span></span></a>Get Regulatory Configuration</h2>
+
+<p>The <code>getRegulatoryConfig</code> method retrieves the current regulatory settings and prints them.</p>
 
 <pre class="prettyprint"><code>
--(void)getSetRegulatoryConfig {
+-(void)getRegulatoryConfig {
 
     /* allocate object for storage of regulatory settings */
     srfidRegulatoryConfig *regulatory_cfg = [[srfidRegulatoryConfig alloc] init];
@@ -190,7 +194,7 @@ Compatible with iOS 17 and above
     NSString *error_response = nil;
 
     /* retrieve regulatory parameters */
-    SRFID_RESULT result = [apiInstance srfidGetRegulatoryConfig:_connectedReaderID aRegulatoryConfig:®ulatory_cfg aStatusMessage:&amp;error_response];
+    SRFID_RESULT result = [apiInstance srfidGetRegulatoryConfig:readerID aRegulatoryConfig:&amp;regulatory_cfg aStatusMessage:&amp;error_response];
     if (SRFID_RESULT_SUCCESS == result)
     {
         /* regulatory configuration received */
@@ -214,24 +218,37 @@ Compatible with iOS 17 and above
     {
         NSLog(@"Failed to receive regulatory parameters\n");
     }
+}
+</code></pre>
+
+<h2 id="set-regulatory-configuration" class="anchor"><a class="heading-anchor" href="#set-regulatory-configuration"><span></span></a>Set Regulatory Configuration</h2>
+
+<p>The <code>setRegulatoryConfig</code> method selects the last supported region, enables hopping and channels where the region allows it, and applies the settings.</p>
+
+<pre class="prettyprint"><code>
+-(void)setRegulatoryConfig {
+    /* an object for storage of error response received from RFID reader */
+    NSString *error_response = nil;
+    SRFID_RESULT result = SRFID_RESULT_FAILURE;
+
     /* code of region to be set as current one */
     NSString *region_code = @"USA";
     /* an array of enabled channels to be set */
     NSMutableArray *enabled_channels = [[NSMutableArray alloc] init];
-    /* a hopping to be set  */
+    /* hopping to be set */
     SRFID_HOPPINGCONFIG hopping_on = SRFID_HOPPINGCONFIG_DISABLED;
 
     /* allocate object for storage of region information */
     NSMutableArray *regions = [[NSMutableArray alloc] init];
 
     /* retrieve supported regions */
-    result = [apiInstance srfidGetSupportedRegions:_connectedReaderID aSupportedRegions:®ions aStatusMessage:&amp;error_response];
+    result = [apiInstance srfidGetSupportedRegions:readerID aSupportedRegions:&amp;regions aStatusMessage:&amp;error_response];
 
     if (SRFID_RESULT_SUCCESS == result)
     {
 
         /* supported regions information received */
-        /* select the last supported regions to be set as current one */
+        /* select the last supported region to be set as current one */
         region_code = [NSString stringWithFormat:@"%@", [(srfidRegionInfo*)[regions lastObject] getRegionCode]];
 
     }
@@ -241,7 +258,7 @@ Compatible with iOS 17 and above
     BOOL hopping_configurable = NO;
 
     /* retrieve detailed information about region specified by region code */
-    result = [apiInstance srfidGetRegionInfo:_connectedReaderID aRegionCode:region_code aSupportedChannels:&amp;supported_channels aHoppingConfigurable:&amp;hopping_configurable aStatusMessage:&amp;error_response];
+    result = [apiInstance srfidGetRegionInfo:readerID aRegionCode:region_code aSupportedChannels:&amp;supported_channels aHoppingConfigurable:&amp;hopping_configurable aStatusMessage:&amp;error_response];
 
     if (SRFID_RESULT_SUCCESS == result)
     {
@@ -266,17 +283,17 @@ Compatible with iOS 17 and above
     }
     error_response = nil;
     /* configure regulatory parameters to be set */
-    regulatory_cfg = [[srfidRegulatoryConfig alloc] init];
+    srfidRegulatoryConfig *regulatory_cfg = [[srfidRegulatoryConfig alloc] init];
     [regulatory_cfg setRegionCode:region_code];
     [regulatory_cfg setEnabledChannelsList:enabled_channels];
     [regulatory_cfg setHoppingConfig:hopping_on];
 
     /* set regulatory parameters */
-    result = [apiInstance srfidSetRegulatoryConfig:_connectedReaderID aRegulatoryConfig:regulatory_cfg aStatusMessage:&amp;error_response];
+    result = [apiInstance srfidSetRegulatoryConfig:readerID aRegulatoryConfig:regulatory_cfg aStatusMessage:&amp;error_response];
     if (SRFID_RESULT_SUCCESS == result)
     {
         /* regulatory configuration applied */
-        NSLog(@"Tag report configuration has been set\n");
+        NSLog(@"Regulatory configuration has been set\n");
     }
     else if (SRFID_RESULT_RESPONSE_ERROR == result)
     {

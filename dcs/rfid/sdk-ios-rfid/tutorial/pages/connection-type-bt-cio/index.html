@@ -146,7 +146,7 @@ RFID SDK for iOS
 1.2.46
 </p>
 <p>
-Applicable Devices : RFD 40, RFD 90 and 8500 devices
+Applicable Devices : RFD40, RFD90
 </p>
 <p>
 Compatible with iOS 17 and above
@@ -162,87 +162,53 @@ Compatible with iOS 17 and above
                                         <div class="service-box wow fadeInRight">
                                             <div class="">
 
-<h2 id="get-connected-interface-notification" class="anchor"><a class="heading-anchor" href="#get-connected-interface-notification"><span></span></a>Get connected interface notification</h2>
+<h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>The requestChargeTerminalStatus function retrieves the charge terminal status of an RFID reader. It attempts the operation once, updating statusOfChargeTerminal on success</p>
+<p>The reader can report which interface it is connected through. An application receives this information as an event. Subscribe to the connected interface event with <code>srfidSubsribeForEvents:</code> and the <code>SRFID_EVENT_MASK_CONNECTED_INTERFACE</code> mask, then read the interface type in the <code>srfidEventConnectedInterfaceNotity:</code> delegate method.</p>
 
-<pre class="prettyprint"><code>
- - (SRFID_RESULT)requestChargeTerminalStatus
-{
-    SRFID_RESULT srfid_result = SRFID_RESULT_FAILURE;
-    BOOL chargeTerminalStatus = NO;
-    for(int i = 0; i &lt; 1; i++)
-    {
+<h2 id="subscribe-to-connected-interface-events" class="anchor"><a class="heading-anchor" href="#subscribe-to-connected-interface-events"><span></span></a>Subscribe to connected interface events</h2>
 
-        srfid_result = [apiInstance srfidGetChargeTerminalStatus:readerID chargeTerminalStatus:&amp;chargeTerminalStatus];
-        if ((srfid_result != SRFID_RESULT_RESPONSE_TIMEOUT) &amp;&amp; (srfid_result != SRFID_RESULT_FAILURE)) {
-            break;
-        }
-    }
-
-    if (srfid_result == SRFID_RESULT_SUCCESS)
-    {
-        // do nothing
-        self.statusOfChargeTerminal = chargeTerminalStatus;
-
-    }
-    else if(srfid_result == SRFID_RESULT_RESPONSE_ERROR)
-    {
-        // RESPONSE_ERROR
-
-    }
-    else if(srfid_result == SRFID_RESULT_FAILURE || srfid_result == SRFID_RESULT_RESPONSE_TIMEOUT)
-    {
-        //RESULT_FAILURE
-    }
-    return srfid_result;
-}
-</code></pre>
-
-<p>The code <code>[apiInstance srfidSubsribeForEvents:(SRFID_EVENT_MASK_CONNECTED_INTERFACE)];</code> subscribes the application to events related to the connected interface using the RFID SDK, allowing it to receive updates when such events occur.</p>
+<p>The <code>srfidSubsribeForEvents:</code> method with the <code>SRFID_EVENT_MASK_CONNECTED_INTERFACE</code> mask subscribes the application to connected interface events.</p>
 
 <pre class="prettyprint"><code>
-//Event subcribe:
+//Event subscribe:
 [apiInstance srfidSubsribeForEvents:(SRFID_EVENT_MASK_CONNECTED_INTERFACE)];
 </code></pre>
 
-<p>The <code>srfidEventConnectedInterfaceNotity</code>: method logs the type of connection interface for an RFID reader and updates _connectedUserInterfaceType accordingly. It distinguishes between Bluetooth, USB, No Interface, Ethernet, and Terminal connections.</p>
+<h2 id="handle-the-connected-interface-event" class="anchor"><a class="heading-anchor" href="#handle-the-connected-interface-event"><span></span></a>Handle the connected interface event</h2>
+
+<p>The <code>srfidEventConnectedInterfaceNotity:aConnectedInterfaceEvent:</code> delegate method receives an <code>sfidConnectedInterfaceEvent</code> object. Call <code>getConneted_Interface_Type</code> on it to get the interface type. The type is one of the following <code>SRFID_CONNECTED_INTERFACE_TYPE</code> values:</p>
+
+<ul>
+  <li><code>SRFID_CONNECTION_TYPE_NO_INTERFACE</code></li>
+  <li><code>SRFID_CONNECTION_TYPE_TERMINAL</code></li>
+  <li><code>SRFID_CONNECTION_TYPE_USB</code></li>
+  <li><code>SRFID_CONNECTION_TYPE_ETHERNET</code></li>
+  <li><code>SRFID_CONNECTION_TYPE_BLUETOOTH</code></li>
+</ul>
 
 <pre class="prettyprint"><code>
 //Event:
 
-- (void)srfidEventIOTSatusNotity:(int)readerID aIOTStatusEvent:(srfidIOTStatusEvent*)iotStatusEvent
-Event:
-
--(void)srfidEventConnectedInterfaceNotity:(int)readerID aConnectedInterfaceEvent:(sfidConnectedInterfaceEvent*)connectedInterfaceEvent;
+- (void)srfidEventConnectedInterfaceNotity:(int)readerID aConnectedInterfaceEvent:(sfidConnectedInterfaceEvent*)connectedInterfaceEvent
 {
+    SRFID_CONNECTED_INTERFACE_TYPE interfaceType = [connectedInterfaceEvent getConneted_Interface_Type];
+    NSLog(@"\nUserInterFace for Connection:(%u)\n", interfaceType);
 
-    NSLog(@"\nUserInterFace for Connection:(%u)\n", [connectedInterfaceEvent getConneted_Interface_Type]);
-    if (SRFID_CONNECTION_TYPE_BLUETOOTH  == [connectedInterfaceEvent getConneted_Interface_Type]) {
-
+    if (SRFID_CONNECTION_TYPE_BLUETOOTH == interfaceType) {
         NSLog(@" Bluetooth Connection");
-        _connectedUserInterfaceType = SRFID_CONNECTION_TYPE_BLUETOOTH;
-      Dc
     }
-    else if (SRFID_CONNECTION_TYPE_USB  == [connectedInterfaceEvent getConneted_Interface_Type]) {
-
+    else if (SRFID_CONNECTION_TYPE_USB == interfaceType) {
         NSLog(@" USB Connection");
-        _connectedUserInterfaceType = SRFID_CONNECTION_TYPE_USB;
     }
-    else if (SRFID_CONNECTION_TYPE_NO_INTERFACE  == [connectedInterfaceEvent getConneted_Interface_Type]){
+    else if (SRFID_CONNECTION_TYPE_NO_INTERFACE == interfaceType) {
         NSLog(@" NO_INTERFACE Connection");
-        _connectedUserInterfaceType = SRFID_CONNECTION_TYPE_NO_INTERFACE;
     }
-    else if (SRFID_CONNECTION_TYPE_ETHERNET  == [connectedInterfaceEvent getConneted_Interface_Type]){
-
-        NSLog(@" SRFID_ETHERNET Connection");
-
-        _connectedUserInterfaceType = SRFID_CONNECTION_TYPE_ETHERNET;
-
-    } else if (SRFID_CONNECTION_TYPE_TERMINAL  == [connectedInterfaceEvent getConneted_Interface_Type]){
-
-        NSLog(@" SRFID_CONNECTION_TYPE_TERMINAL Connection");
-        _connectedUserInterfaceType = SRFID_CONNECTION_TYPE_TERMINAL;
+    else if (SRFID_CONNECTION_TYPE_ETHERNET == interfaceType) {
+        NSLog(@" Ethernet Connection");
+    }
+    else if (SRFID_CONNECTION_TYPE_TERMINAL == interfaceType) {
+        NSLog(@" Terminal Connection");
     }
 }
 </code></pre>

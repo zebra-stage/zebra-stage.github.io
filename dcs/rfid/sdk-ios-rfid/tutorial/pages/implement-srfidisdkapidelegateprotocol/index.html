@@ -8,8 +8,8 @@
     <meta name="author" content="Zebra Technologies">
     <meta name="google-site-verification" content="i4B78BrWnNy8ShJwe5feRW3jO3HE6gfYlYqYbxfl8yY">
     <meta name="msvalidate.01" content="6B651B00161BCE79B8950AC09D5C4C75">
-    <meta title="Implement srfidISdkApiDelegateProtocol">
-    <title>Implement srfidISdkApiDelegateProtocol - Zebra Technologies Techdocs</title>
+    <meta title="Implement srfidISdkApiDelegate">
+    <title>Implement srfidISdkApiDelegate - Zebra Technologies Techdocs</title>
     <!-- core CSS -->
     <link href="/css/bootstrap.min.css" rel="stylesheet">
     <link href="/css/font-awesome.min.css" rel="stylesheet">
@@ -128,7 +128,7 @@
                             <nav id="toc" data-toggle="toc" data-spy="affix" style="max-width: 225px; overflow-y: auto; ">
 
                                 <ul class="nav">
-                                    <li><strong>Implement srfidISdkApiDelegateProtocol</strong></li>
+                                    <li><strong>Implement srfidISdkApiDelegate</strong></li>
                                 </ul>
                             </nav>
 
@@ -140,13 +140,13 @@
                                 <div class="col-sm-12">
                                     <section id="cta" class="wow fadeIn">
                                         <div class="">
-                                            <h1 id="implement-srfidisdkapidelegateprotocol" class="anchor"><a class="heading-anchor" href="#implement-srfidisdkapidelegateprotocol"><span></span></a>Implement srfidISdkApiDelegateProtocol</h1>
+                                            <h1 id="implement-srfidisdkapidelegateprotocol" class="anchor"><a class="heading-anchor" href="#implement-srfidisdkapidelegateprotocol"><span></span></a>Implement srfidISdkApiDelegate</h1>
 <p>
 RFID SDK for iOS
 1.2.46
 </p>
 <p>
-Applicable Devices : RFD 40, RFD 90 and 8500 devices
+Applicable Devices : RFD40, RFD90, RFD8500
 </p>
 <p>
 Compatible with iOS 17 and above
@@ -162,22 +162,32 @@ Compatible with iOS 17 and above
                                         <div class="service-box wow fadeInRight">
                                             <div class="">
 
+<blockquote>
+  <p>Note: <strong>The code on this page is for tutorial purposes only</strong>. It shows how to call the SDK and is not production-ready: it leaves out error handling, threading and app lifecycle management. Review and adapt it before you use it in your app.</p>
+</blockquote>
+
+<h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
+
+<p>Sets up the object that receives the SDK's asynchronous notifications, using <code>srfidSetDelegate</code> and <code>srfidSubsribeForEvents</code>.</p>
+
+<h2 id="details" class="anchor"><a class="heading-anchor" href="#details"><span></span></a>Details</h2>
+
 <p>The SDK supports a set of asynchronous notifications to inform the application about RFID reader related events (e.g. reception of tag data, starting of radio operation etc.) and connectivity related events (e.g. appearance of RFID reader). All supported callbacks are defined by <code>srfidISdkApiDelegate</code> Objective C protocol. In order to receive asynchronous notifications from the SDK the application shall perform the following steps.</p>
 
-<p>Step 1: create an object that implements <code>srfidISdkApiDelegateProtocol</code></p>
+<p>Step 1: create an object that implements <code>srfidISdkApiDelegate</code></p>
 
 <p>The ViewController.h class</p>
 
 <pre class="prettyprint"><code>
 #import &lt;UIKit/UIKit.h&gt;
-#import "RfidSdkApiDelegate.h"
+#import &lt;ZebraRfidSdkFramework/ZebraRfidSdkFramework.h&gt;
 
 @interface ViewController : UIViewController&lt;srfidISdkApiDelegate&gt; {
 }
 @end
 </code></pre>
 
-<p>The Event ViewController.m class</p>
+<p>The Event ViewController.m class. The methods are empty stubs. The page of each feature that uses an event shows its implementation; a class can implement a method only once, so use that implementation in place of the stub.</p>
 
 <pre class="prettyprint"><code>
 #import "ViewController.h"
@@ -189,6 +199,10 @@ Compatible with iOS 17 and above
 
 - (void)srfidEventCommunicationSessionEstablished:(srfidReaderInfo *)activeReader {
     NSLog(@"Reader Connected");
+    /* commands to the reader (software version, capabilities, ...) work only after the ASCII connection is established */
+    readerID = [activeReader getReaderID];
+    SRFID_RESULT ascii_result = [apiInstance srfidEstablishAsciiConnection:readerID];
+    NSLog(@"ASCII connection result: %d", ascii_result);
 }
 
 
@@ -224,6 +238,18 @@ Compatible with iOS 17 and above
    // Add implementation here.
 }
 
+- (void)srfidEventWifiScan:(int)readerID wlanSCanObject:(srfidWlanScanList *)wlanScanObject {
+    // Add implementation here.
+}
+
+- (void)srfidEventIOTSatusNotity:(int)readerID aIOTStatusEvent:(srfidIOTStatusEvent *)iotStatusEvent {
+    // Add implementation here.
+}
+
+- (void)srfidEventConnectedInterfaceNotity:(int)readerID aConnectedInterfaceEvent:(sfidConnectedInterfaceEvent *)connectedInterfaceEvent {
+    // Add implementation here.
+}
+
 @end
 </code></pre>
 
@@ -236,7 +262,7 @@ Compatible with iOS 17 and above
 }
 </code></pre>
 
-<p>Step 3: subscribe for asynchronous event of particular types via <code>srfidSubscribeForEvents</code> API function.</p>
+<p>Step 3: subscribe for asynchronous event of particular types via <code>srfidSubsribeForEvents</code> API function.</p>
 
 <p>If a particular object is registered as a notification receiver the SDK will call the corresponding method of the registered object when a particular event occurs if the application is subscribed for events of this type. The SDK may deliver asynchronous events on a main thread or on one of SDK helper threads so the object that implements <code>srfidISdkApiDelegate</code> protocol shall be thread-safe.</p>
 
@@ -251,11 +277,11 @@ Compatible with iOS 17 and above
     [apiInstance srfidSubsribeForEvents:(SRFID_EVENT_MASK_READ | SRFID_EVENT_MASK_STATUS | SRFID_EVENT_MASK_STATUS_OPERENDSUMMARY)];
     [apiInstance srfidSubsribeForEvents:(SRFID_EVENT_MASK_TEMPERATURE | SRFID_EVENT_MASK_POWER | SRFID_EVENT_MASK_DATABASE)];
     [apiInstance srfidSubsribeForEvents:(SRFID_EVENT_MASK_PROXIMITY)];
-    [apiInstance srfidSubsribeForEvents:(SRFID_EVENT_MASK_TRIGGER)];
-    [apiInstance srfidSubsribeForEvents:(SRFID_EVENT_MASK_BATTERY)];
     [apiInstance srfidSubsribeForEvents:(SRFID_EVENT_MASK_MULTI_PROXIMITY)];
 }
 </code></pre>
+
+<p>Next, open a session with a reader: see <a href="../connect-to-an-rfid-reader/index.html">Connect</a>.</p>
 
                                             </div>
                                         </div>

@@ -146,7 +146,7 @@ RFID SDK for iOS
 1.2.46
 </p>
 <p>
-Applicable Devices : RFD 40, RFD 90 and 8500 devices
+Applicable Devices : RFD40, RFD90 (EU RED devices)
 </p>
 <p>
 Compatible with iOS 17 and above
@@ -162,113 +162,51 @@ Compatible with iOS 17 and above
                                         <div class="service-box wow fadeInRight">
                                             <div class="">
 
+<h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
+
+<p>E8 devices are the EU SKU of the RFD40 and RFD90. They support an administrator login, which protects some reader settings and functions. This page shows how to log in as administrator and how to change the administrator password. Both calls are made on the SDK instance (<code>apiInstance</code>) for a connected reader (<code>readerID</code>), after the ASCII connection is established.</p>
+
+<p>Use <code>srfidAdminLogin</code> to log in as administrator and <code>srfidChangePassword</code> to change the administrator password.</p>
+
 <h2 id="admin-login" class="anchor"><a class="heading-anchor" href="#admin-login"><span></span></a>Admin Login</h2>
 
-<p>The <code>srfidAdminLogin</code> method attempts to log in to an RFID reader using credentials.</p>
+<p>The <code>srfidAdminLogin</code> method logs in to an RFID reader as administrator. Pass the reader ID and the administrator password. Replace the placeholder with the password set on your reader.</p>
 
 <pre class="prettyprint"><code>
-- (SRFID_RESULT) srfidAdminLogin:(int)readerID password:(NSString*)password aStatusMessage:(NSString**)statusMessage
-{
-    ZT_LOG_ENTRY(SST_LOG_LEVEL_VERBOSE);
-
-    ZT_SDK_LOCK(SRFID_RESULT_FAILURE);
-
-    SRFID_RESULT rfid_result = SRFID_RESULT_FAILURE;
-
-    if (password == nil)
-    {
-        rfid_result = SRFID_RESULT_INVALID_PARAMS;
+- (void)adminLogin {
+    NSString *statusMessage = nil;
+    SRFID_RESULT result = [apiInstance srfidAdminLogin:readerID
+                                              password:@"&lt;your admin password&gt;"
+                                        aStatusMessage:&amp;statusMessage];
+    if (result == SRFID_RESULT_SUCCESS) {
+        NSLog(@"Admin login succeeded");
+    } else {
+        NSLog(@"Admin login failed: %d %@", result, statusMessage);
     }
-    else
-    {
-        zt_AsciiProcotocolHandler *_handler = [self getAsciiHandlerWithReaderId:readerID];
-
-        if (nil != _handler)
-        {
-            SRFID_COMMAND_STATUS cmd_status = [_handler performCommandAdminLogin:password andStatusMessage:statusMessage];
-
-            if (SRFID_COMMAND_STATUS_OK == cmd_status)
-            {
-                rfid_result = SRFID_RESULT_SUCCESS;
-            }
-            else if (SRFID_COMMAND_STATUS_ERROR_MESSAGE == cmd_status)
-            {
-                rfid_result = SRFID_RESULT_RESPONSE_ERROR;
-            }
-            else if (SRFID_COMMAND_STATUS_TIMEOUT == cmd_status)
-            {
-                rfid_result = SRFID_RESULT_RESPONSE_TIMEOUT;
-            }
-            else if (SRFID_COMMAND_STATUS_ASCII_CONNECTION_REQUIRED == cmd_status)
-            {
-                rfid_result = SRFID_RESULT_ASCII_CONNECTION_REQUIRED;
-            }
-        }
-        else
-        {
-            rfid_result = SRFID_RESULT_READER_NOT_AVAILABLE;
-        }
-    }
-
-    ZT_SDK_UNLOCK;
-    ZT_LOG_EXIT(SST_LOG_LEVEL_VERBOSE);
-    return rfid_result;
 }
 </code></pre>
 
 <h2 id="change-password" class="anchor"><a class="heading-anchor" href="#change-password"><span></span></a>Change Password</h2>
 
-<p>The <code>srfidChangePassword</code> method is designed to change the password for an RFID reader.</p>
+<p>The <code>srfidChangePassword</code> method changes the administrator password of an RFID reader. Pass the current password, the new password, and the new password again. The current password must be the one set on the reader. Otherwise the reader answers with "Password mismatch error".</p>
 
 <pre class="prettyprint"><code>
-- (SRFID_RESULT) srfidChangePassword:(int)readerID oldPassword:(NSString*)oldPassword andNewPassword:(NSString*)newPassword andreEnterPassword:(NSString*)reEnterPassword aStatusMessage:(NSString**)statusMessage
-{
-    ZT_LOG_ENTRY(SST_LOG_LEVEL_VERBOSE);
-
-    ZT_SDK_LOCK(SRFID_RESULT_FAILURE);
-
-    SRFID_RESULT rfid_result = SRFID_RESULT_FAILURE;
-
-    if ((oldPassword == nil) || (newPassword == nil) || (reEnterPassword == nil))
-    {
-        rfid_result = SRFID_RESULT_INVALID_PARAMS;
+- (void)changePassword {
+    NSString *statusMessage = nil;
+    SRFID_RESULT result = [apiInstance srfidChangePassword:readerID
+                                               oldPassword:@"&lt;your current admin password&gt;"
+                                             andNewPassword:@"&lt;your new admin password&gt;"
+                                        andreEnterPassword:@"&lt;your new admin password&gt;"
+                                            aStatusMessage:&amp;statusMessage];
+    if (result == SRFID_RESULT_SUCCESS) {
+        NSLog(@"Change password succeeded");
+    } else {
+        NSLog(@"Change password failed: %d %@", result, statusMessage);
     }
-    else
-    {
-        zt_AsciiProcotocolHandler *_handler = [self getAsciiHandlerWithReaderId:readerID];
-
-        if (nil != _handler)
-        {
-            SRFID_COMMAND_STATUS cmd_status = [_handler performCommandChangePassword:oldPassword newPassword:newPassword reEnterPassword:reEnterPassword andStatusMessage:statusMessage];
-
-            if (SRFID_COMMAND_STATUS_OK == cmd_status)
-            {
-                rfid_result = SRFID_RESULT_SUCCESS;
-            }
-            else if (SRFID_COMMAND_STATUS_ERROR_MESSAGE == cmd_status)
-            {
-                rfid_result = SRFID_RESULT_RESPONSE_ERROR;
-            }
-            else if (SRFID_COMMAND_STATUS_TIMEOUT == cmd_status)
-            {
-                rfid_result = SRFID_RESULT_RESPONSE_TIMEOUT;
-            }
-            else if (SRFID_COMMAND_STATUS_ASCII_CONNECTION_REQUIRED == cmd_status)
-            {
-                rfid_result = SRFID_RESULT_ASCII_CONNECTION_REQUIRED;
-            }
-        }
-        else
-        {
-            rfid_result = SRFID_RESULT_READER_NOT_AVAILABLE;
-        }
-    }
-
-    ZT_SDK_UNLOCK;
-    ZT_LOG_EXIT(SST_LOG_LEVEL_VERBOSE);
-    return rfid_result;
 }
 </code></pre>
+
+<p>Keep the new password safe. Some reader functions, such as getting the reader log, need an administrator login.</p>
 
                                             </div>
                                         </div>

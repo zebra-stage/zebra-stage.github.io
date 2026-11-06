@@ -146,7 +146,7 @@ RFID SDK for iOS
 1.2.46
 </p>
 <p>
-Applicable Devices : RFD 40, RFD 90 and 8500 devices
+Applicable Devices : RFD40, RFD90, RFD8500
 </p>
 <p>
 Compatible with iOS 17 and above
@@ -170,11 +170,13 @@ Compatible with iOS 17 and above
 
 <p>Rapid read operation is a simple inventory operation without performing a read from a particular memory bank.</p>
 
-<p>The srfidStartRapidRead API function is used to request performing of rapid read operation. Aborting of rapid read operation is requested via srfidStopRapidRead API function. When performing of rapid read operation is requested the actual operation will be started once conditions specified by start trigger parameters are met. The on-going operation will be stopped in accordance with configured stop trigger parameters. If repeat monitoring option is enabled in start trigger configuration the actual operation will be started again after it has stopped once conditions of start trigger configuration are met. On starting and stopping of the actual operation the SDK will deliver asynchronous notifications to the application if the application has subscribed for events of this type.</p>
+<p>The <code>srfidStartRapidRead</code> API function is used to request performing of rapid read operation. Aborting of rapid read operation is requested via <code>srfidStopRapidRead</code> API function. When performing of rapid read operation is requested the actual operation will be started once conditions specified by start trigger parameters are met. The on-going operation will be stopped in accordance with configured stop trigger parameters. If repeat monitoring option is enabled in start trigger configuration the actual operation will be started again after it has stopped once conditions of start trigger configuration are met. On starting and stopping of the actual operation the SDK will deliver asynchronous notifications to the application if the application has subscribed for events of this type.</p>
 
-<p>The SDK will deliver asynchronous notifications to inform the application about tag data received from the RFID reader during the on-going operation if the application has subscribed for events of this type. Fields to be reported during asynchronous tag data related notification are configured via reportConfig parameter of srfidStartRapidRead API function.</p>
+<p>The SDK will deliver asynchronous notifications to inform the application about tag data received from the RFID reader during the on-going operation if the application has subscribed for events of this type. Fields to be reported during asynchronous tag data related notification are configured via <code>reportConfig</code> parameter of <code>srfidStartRapidRead</code> API function.</p>
 
-<p>The following example demonstrates performing of rapid read operation that starts and stops immediately after requested operation performing and aborting`.</p>
+<p>The following examples demonstrate performing of rapid read operation that starts and stops immediately after requested operation performing and aborting.</p>
+
+<h2 id="start-and-stop-rapid-read" class="anchor"><a class="heading-anchor" href="#start-and-stop-rapid-read"><span></span></a>Start and Stop Rapid Read</h2>
 
 <pre class="prettyprint"><code>
  -(void)startStopRapidRead{
@@ -241,7 +243,7 @@ Compatible with iOS 17 and above
             [report_cfg setIncFirstSeenTime:NO];
             [report_cfg setIncLastSeenTime:NO];
 
-            /* configure access parameters to perform the operation with 27.0 dbm antenna power level without application of pre-filters */
+            /* configure access parameters to perform the operation with 27.0 dBm antenna power level without application of pre-filters */
             [access_cfg setPower:270];
             [access_cfg setDoSelect:NO];
 
@@ -254,7 +256,7 @@ Compatible with iOS 17 and above
                 /* stop an operation after 1 minute */
 
                 dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(60 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                    [self-&gt;apiInstance srfidStopRapidRead:self-&gt;readerID aStatusMessage:nil];
+                    [apiInstance srfidStopRapidRead:self-&gt;readerID aStatusMessage:nil];
                 });
             }
             else if (SRFID_RESULT_RESPONSE_ERROR == result) {
@@ -267,19 +269,29 @@ Compatible with iOS 17 and above
     } while (0);
 
 }
+</code></pre>
 
-Events
+<h2 id="operation-status-event" class="anchor"><a class="heading-anchor" href="#operation-status-event"><span></span></a>Operation Status Event</h2>
+
+<p>The SDK calls <code>srfidEventStatusNotify:</code> when the radio operation starts and stops.</p>
+
+<pre class="prettyprint"><code>
 - (void)srfidEventStatusNotify:(int)readerID aEvent:(SRFID_EVENT_STATUS)event aNotification:(id)notificationData {
     NSLog(@"Radio operation has %@\n", ((SRFID_EVENT_STATUS_OPERATION_START == event) ? @"started" : @"stopped"));
 }
+</code></pre>
 
+<h2 id="tag-data-event" class="anchor"><a class="heading-anchor" href="#tag-data-event"><span></span></a>Tag Data Event</h2>
+
+<p>The SDK calls <code>srfidEventReadNotify:</code> for each tag received from the reader.</p>
+
+<pre class="prettyprint"><code>
 - (void)srfidEventReadNotify:(int)readerID aTagData:(srfidTagData *)tagData {
     /* print the received tag data */
     NSLog(@"Tag data received from RFID reader with ID = %d\n", readerID);
     NSLog(@"Tag id: %@\n", [tagData getTagId]);
 
 }
-`
 </code></pre>
 
                                             </div>

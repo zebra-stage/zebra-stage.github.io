@@ -146,7 +146,7 @@ RFID SDK for iOS
 1.2.46
 </p>
 <p>
-Applicable Devices : RFD 40, RFD 90 and 8500 devices
+Applicable Devices : RFD40, RFD90, RFD8500
 </p>
 <p>
 Compatible with iOS 17 and above
@@ -162,13 +162,25 @@ Compatible with iOS 17 and above
                                         <div class="service-box wow fadeInRight">
                                             <div class="">
 
+<h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
+
+<p>Reads data from, and writes data to, a memory bank of a specific tag, using <code>srfidReadTag</code> and <code>srfidWriteTag</code>.</p>
+
+<h2 id="details" class="anchor"><a class="heading-anchor" href="#details"><span></span></a>Details</h2>
+
+<p>The tag ID is the tag's EPC as a hexadecimal string, for example one read by an inventory. Data to write is also a hexadecimal string, with four characters per 16-bit word.</p>
+
+<p>In the EPC memory bank, word 0 is the CRC and word 1 is the PC. The EPC itself starts at word 2. The read below starts at word 0, so it returns the CRC, the PC and the first six words of the EPC. The write starts at word 2, so it replaces the 96-bit EPC (six words, 24 hexadecimal characters). Do not write the EPC at word 0, because that overwrites the CRC and PC words.</p>
+
+<p>The write changes the tag. Use a tag you can afford to change, and note its original EPC so you can write it back. After the write, the tag answers to its new EPC, so use the new EPC as the tag ID to address it again.</p>
+
 <pre class="prettyprint"><code>
 -(void)accessOperationTagReadAndWrite {
 
     /* allocate object for storing results of access operation */
     srfidTagData *access_result = [[srfidTagData alloc] init];
-    /* id of tag to be read */
-    NSString *tag_id = @"36420124102N012610R98V91";
+    /* id of tag to be read (the EPC, as a hexadecimal string) */
+    NSString *tag_id = @"E28011B0A506007D3DD17A34";
     /* an object for storage of error response received from RFID reader */
     NSString *error_response = nil;
 
@@ -199,11 +211,11 @@ Compatible with iOS 17 and above
     access_result = [[srfidTagData alloc] init];
     error_response = nil;
 
-    /* data to be written */
-    NSString *data = @"N20122014R1010364989126V";
+    /* data to be written: a new 96-bit EPC, as 24 hexadecimal characters */
+    NSString *data = @"ABCDEF0123456789ABCDEF01";
 
-    /* request to write a data to a EPC memory bank of tag specified by tag_id */
-    result = [apiInstance srfidWriteTag:readerID aTagID:tag_id aAccessTagData:&amp;access_result aMemoryBank:SRFID_MEMORYBANK_EPC aOffset:0 aData:data aPassword:0x00 aDoBlockWrite:NO aStatusMessage:&amp;error_response];
+    /* request to write a data to a EPC memory bank of tag specified by tag_id, starting at word 2 (the EPC) */
+    result = [apiInstance srfidWriteTag:readerID aTagID:tag_id aAccessTagData:&amp;access_result aMemoryBank:SRFID_MEMORYBANK_EPC aOffset:2 aData:data aPassword:0x00 aDoBlockWrite:NO aStatusMessage:&amp;error_response];
 
     if (SRFID_RESULT_SUCCESS == result) {
         NSLog(@"Request succeed\n");
