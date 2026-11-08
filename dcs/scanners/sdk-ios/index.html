@@ -424,6 +424,7 @@
                                     <li><a href="#sdk-events-communication-session-terminated">Communication Session Terminated Event</a></li>
                                     <li><a href="#sdk-events-barcode">Barcode Data Received Event</a></li>
                                     <li><a href="#sdk-events-firmware-update">Firmware Update Event</a></li>
+                                    <li><a href="#sdk-events-configuration-update">Configuration Update Event</a></li>
                                 </ul>
                             </li>
                             <li><a href="#sdk-connectivity">Connectivity Management</a></li>
@@ -456,6 +457,8 @@
                                     <li><a href="#sdk-operations-update-firmware-plugin">Update Firmware with Plug-in File</a></li>
                                     <li><a href="#sdk-operations-update-firmware-abort">Abort Firmware Update</a></li>
                                     <li><a href="#sdk-operations-virtual-tether">Virtual Tether</a></li>
+                                    <li><a href="#sdk-operations-configuration-update">Configuration Update</a></li>
+                                    <li><a href="#sdk-operations-execute-sms-package">Execute SMS Package</a></li>
                                 </ul>
                             </li>
                         </ul>
@@ -1571,7 +1574,7 @@ func sbtEventBarcodeData(_ barcodeData: Data!, barcodeType: Int32, fromScanner s
 
                                                     <h4 id="sdk-events-firmware-update" class="anchor"><a class="heading-anchor" href="#sdk-events-firmware-update"><span></span></a>Firmware Update Event</h4>
 
-                                                    <p>This event occurs when firmware update is in progress. You don't need to specifically subscribe to this event. You just have to implement this delegate method.</p>
+                                                                                                        <p>This event occurs when firmware update is in progress. It is not required to specifically subscribe to this event. Simply implement the delegate method below.</p>
 
                                                     <!-- code segment -->
                                                     <div class="tab-container">
@@ -1583,19 +1586,112 @@ func sbtEventBarcodeData(_ barcodeData: Data!, barcodeType: Int32, fromScanner s
 <pre class="prettyprint">
 <code>
 func sbtEventFirmwareUpdate(_ fwUpdateEventObj: FirmwareUpdateEvent!) {
-    // TODO: Handle event
-}                                                                
+    let status     = fwUpdateEventObj.status
+    let currentRec = fwUpdateEventObj.currentRecord
+    let maxRecs    = fwUpdateEventObj.maxRecords
+
+    if status == SBT_FW_UPDATE_RESULT_SUCCESS {
+        if maxRecs &gt; 0 &amp;&amp; currentRec &gt;= maxRecs {
+            // TODO: Firmware transfer complete — scanner is rebooting to apply the update.
+            // Await sbtEventCommunicationSessionEstablished for reconnection,
+            // then sbtEventConfigurationUpdate for the configuration phase (SMS only).
+        } else if currentRec == 0 {
+            // TODO: Firmware transfer started
+        } else if maxRecs &gt; 0 {
+            let progress = Float(currentRec) / Float(maxRecs) * 100
+            // TODO: Update firmware progress UI with progress value
+        }
+    } else { // status == SBT_FW_UPDATE_RESULT_FAILURE
+        // TODO: Handle firmware update failure
+    }
+}
 </code>
 </pre>
                                                         </div>
                                                         <div id="tabContent20" class="tab-content">
 <pre class="prettyprint">
 <code>
-- (void) sbtEventFirmwareUpdate:(FirmwareUpdateEvent*)event {
-    // TODO: Handle event
+- (void)sbtEventFirmwareUpdate:(FirmwareUpdateEvent *)fwUpdateEventObj {
+    SBT_FW_UPDATE_RESULT status = fwUpdateEventObj.status;
+    int currentRec = fwUpdateEventObj.currentRecord;
+    int maxRecs    = fwUpdateEventObj.maxRecords;
+
+    if (status == SBT_FW_UPDATE_RESULT_SUCCESS) {
+        if (maxRecs &gt; 0 &amp;&amp; currentRec &gt;= maxRecs) {
+            // TODO: Firmware transfer complete — scanner is rebooting to apply the update.
+            // Await sbtEventCommunicationSessionEstablished for reconnection,
+            // then sbtEventConfigurationUpdate for the configuration phase (SMS only).
+        } else if (currentRec == 0) {
+            // TODO: Firmware transfer started
+        } else if (maxRecs &gt; 0) {
+            float progress = (float)currentRec / (float)maxRecs * 100.0f;
+            // TODO: Update firmware progress UI with progress value
+        }
+    } else { // status == SBT_FW_UPDATE_RESULT_FAILURE
+        // TODO: Handle firmware update failure
+    }
 }
 </code>
-</pre>                                                     
+</pre>
+                                                        </div>
+                                                    </div>
+
+                                                    <h4 id="sdk-events-configuration-update" class="anchor"><a class="heading-anchor" href="#sdk-events-configuration-update"><span></span></a>Configuration Update Event</h4>
+
+                                                    <p>This event occurs when a configuration update is in progress. It is not required to specifically subscribe to this event. Simply implement the delegate method below.</p>
+
+                                                    <!-- code segment -->
+                                                    <div class="tab-container">
+                                                        <div class="tab-header" id="tabHeader41">
+                                                            <div class="tab active" onclick="openTab('tabContent81')">Swift</div>
+                                                            <div class="tab" onclick="openTab('tabContent82')">Objective C</div>
+                                                        </div>
+                                                        <div id="tabContent81" class="tab-content active">
+<pre class="prettyprint">
+<code>
+func sbtEventConfigurationUpdate(_ configUpdateEventObj: ConfigurationUpdateEvent!) {
+    switch configUpdateEventObj.eventType {
+    case SBT_UC_EVENT_SESS_START:
+        // TODO: Configuration update started
+    case SBT_UC_EVENT_PROGRESS:
+        let progress = Float(configUpdateEventObj.currentRecord) / Float(configUpdateEventObj.maxRecords) * 100
+        // TODO: Update configuration progress UI with progress value
+    case SBT_UC_EVENT_SESS_END:
+        // TODO: Configuration update completed
+    case SBT_UC_EVENT_STATUS:
+        // TODO: Configuration update failed
+    default:
+        break
+    }
+}
+</code>
+</pre>
+                                                        </div>
+                                                        <div id="tabContent82" class="tab-content">
+<pre class="prettyprint">
+<code>
+- (void)sbtEventConfigurationUpdate:(ConfigurationUpdateEvent *)configUpdateEventObj {
+    switch (configUpdateEventObj.eventType) {
+        case SBT_UC_EVENT_SESS_START:
+            // TODO: Configuration update started
+            break;
+        case SBT_UC_EVENT_PROGRESS: {
+            float progress = (float)configUpdateEventObj.currentRecord / (float)configUpdateEventObj.maxRecords * 100.0f;
+            // TODO: Update configuration progress UI with progress value
+            break;
+        }
+        case SBT_UC_EVENT_SESS_END:
+            // TODO: Configuration update completed
+            break;
+        case SBT_UC_EVENT_STATUS:
+            // TODO: Configuration update failed
+            break;
+        default:
+            break;
+    }
+}
+</code>
+</pre>
                                                         </div>
                                                     </div>
 
@@ -3330,6 +3426,232 @@ else {
 </pre>                                                          
                                                         </div>
                                                     </div>
+
+                                                    <h3 id="sdk-operations-configuration-update" class="anchor"><a class="heading-anchor" href="#sdk-operations-configuration-update"><span></span></a>Configuration Update</h3>
+
+                                                    <p>Configuration update is the process of modifying the settings of a scanner using a configuration file. These files are created with the <a href="https://www.zebra.com/us/en/support-downloads/software/scanner-software/123scan-utility.html?downloadId=e37c6f0c-fdb2-4c25-a8de-6a5b2cc77315" target="_blank">123Scan Configuration Utility</a> and have the .scncfg file extension. Follow the guidelines in the How-to Videos of 123Scan Configuration Utility to create a configuration file.</p>
+
+                                                    <p>The <strong>sbtExecuteCommand</strong> API with the dedicated operation code SBT_LOAD_CONFIGURATION can be used to push a .scncfg file to the connected scanner. The <strong>sbtExecuteCommand</strong> API expects the path of the selected file URL embedded in the inXML parameter.</p>
+
+                                                    <p>The SDK requires a security-scoped URL to the configuration file when it is located outside the app's sandbox. Use a document picker or file importer to let the user select the file, then pass the resulting URL path to the API.</p>
+
+                                                    <p>This call blocks the calling thread until pre-transfer validation is complete. Always invoke it on a background thread and monitor progress via the sbtEventConfigurationUpdate delegate method. Refer to the <a href="#sdk-events-configuration-update">Configuration Update Event</a> section for event types and how to track progress.</p>
+
+                                                    <p><strong>Table 14: </strong>Configuration Update Result Codes</p>
+                                                    <table class="hovertable">
+                                                        <tr>
+                                                            <th>Description</th>
+                                                            <th>Result Code</th>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>File passed validation and configuration transfer has started - await sbtEventConfigurationUpdate callbacks for progress and completion</td>
+                                                            <td>SBT_RESULT_SUCCESS</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>The .scncfg file failed hash validation (The file is corrupted, truncated, or has been tampered with since it was generated by 123Scan)</td>
+                                                            <td>SBT_RESULT_INVALID_CONFIG_FILE</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>The .scncfg file was generated for a different scanner model and cannot be applied to the connected scanner model</td>
+                                                            <td>SBT_RESULT_INCOMPATIBLE_CONFIG_FILE</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Invalid file path or XML parameters</td>
+                                                            <td>SBT_RESULT_INVALID_PARAMS</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Scanner rejected the configuration during transfer (mid-session failure)</td>
+                                                            <td>SBT_RESULT_FAILURE</td>
+                                                        </tr>
+                                                    </table>
+
+                                                    <p>The following code example demonstrates how to command the scanner to start a configuration update using the configuration update command (SBT_LOAD_CONFIGURATION).</p>
+
+                                                    <!-- code segment -->
+                                                    <div class="tab-container">
+                                                        <div class="tab-header" id="tabHeader38">
+                                                            <div class="tab active" onclick="openTab('tabContent75')">Swift</div>
+                                                            <div class="tab" onclick="openTab('tabContent76')">Objective C</div>
+                                                        </div>
+                                                        <div id="tabContent75" class="tab-content active">
+<pre class="prettyprint">
+<code>
+// Create XML string to command scanner ID 3 to update configurations
+// selectedConfigFilePath = URL path to the .scncfg file selected by the document picker
+let inXML: String =
+    "&lt;inArgs&gt;&lt;scannerID&gt;3&lt;/scannerID&gt;&lt;cmdArgs&gt;&lt;arg-string&gt;\(selectedConfigFilePath)&lt;/arg-string&gt;&lt;/cmdArgs&gt;&lt;/inArgs&gt;"
+
+// Command scanner ID 3 to update configurations (invoke on a background thread)
+let result = apiInstance?.sbtExecuteCommand(
+    Int32(SBT_LOAD_CONFIGURATION),
+    aInXML: inXML,
+    aOutXML: nil,
+    forScanner: 3
+)
+
+if result == SBT_RESULT_SUCCESS {
+    // TODO: Transfer started — await sbtEventConfigurationUpdate callbacks
+} else if result == SBT_RESULT_INVALID_CONFIG_FILE {
+    // TODO: Process invalid configuration file error
+} else if result == SBT_RESULT_INCOMPATIBLE_CONFIG_FILE {
+    // TODO: Process incompatible configuration file error
+} else {
+    // TODO: Process error
+}
+</code>
+</pre>
+                                                        </div>
+                                                        <div id="tabContent76" class="tab-content">
+<pre class="prettyprint">
+<code>
+// Create XML string to command scanner ID 3 to update configurations
+// selectedConfigFilePath = URL path to the .scncfg file selected by the document picker
+NSString *inXML = [NSString stringWithFormat:@"&lt;inArgs&gt;&lt;scannerID&gt;%d&lt;/scannerID&gt;&lt;cmdArgs&gt;&lt;arg-string&gt;%@&lt;/arg-string&gt;&lt;/cmdArgs&gt;&lt;/inArgs&gt;", 3, selectedConfigFilePath];
+
+// Command scanner ID 3 to update configurations (invoke on a background thread)
+SBT_RESULT result = [apiInstance sbtExecuteCommand:SBT_LOAD_CONFIGURATION aInXML:inXML aOutXML:nil forScanner:3];
+
+if (result == SBT_RESULT_SUCCESS) {
+    // TODO: Transfer started — await sbtEventConfigurationUpdate callbacks
+} else if (result == SBT_RESULT_INVALID_CONFIG_FILE) {
+    // TODO: Process invalid configuration file error
+} else if (result == SBT_RESULT_INCOMPATIBLE_CONFIG_FILE) {
+    // TODO: Process incompatible configuration file error
+} else {
+    // TODO: Process error
+}
+</code>
+</pre>
+                                                        </div>
+                                                    </div>
+
+                                                    <h3 id="sdk-operations-execute-sms-package" class="anchor"><a class="heading-anchor" href="#sdk-operations-execute-sms-package"><span></span></a>Execute SMS Package</h3>
+
+                                                    <p>The <strong>sbtExecuteCommand</strong> API with the dedicated operation code SBT_EXECUTE_SMS_PACKAGE is used to apply a .smspkg file generated by 123Scan to a connected scanner. An SMS package can contain a firmware update, a configuration update, or both.</p>
+
+                                                    <p>When the package includes a firmware update, the firmware binary is transferred to the scanner first. The scanner then reboots automatically and applies the configuration update on reconnect. When the package contains only a configuration update, the configuration is applied inline without a reboot.</p>
+
+                                                    <p>This call blocks the calling thread during the firmware transfer phase. Always invoke it on a background thread. Firmware transfer progress is reported via sbtEventFirmwareUpdate and configuration update progress via sbtEventConfigurationUpdate, both explained in the <a href="#sdk-events">Events</a> section.</p>
+
+                                                    <p>The SDK requires a security-scoped URL to the SMS package file when it is located outside the app's sandbox. Use a document picker or file importer to let the user select the file, then pass the resulting URL path to the API.</p>
+
+                                                    <p><strong>Table 15: </strong>Execute SMS Package Result Codes</p>
+                                                    <table class="hovertable">
+                                                        <tr>
+                                                            <th>Description</th>
+                                                            <th>Result Code</th>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>File passed validation and package accepted - await sbtEventFirmwareUpdate and/or sbtEventConfigurationUpdate callbacks for progress and completion</td>
+                                                            <td>SBT_RESULT_SUCCESS</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>The file has the wrong extension, cannot be unzipped, the LDF file is missing, or a firmware plugin referenced in the package is absent from the zip</td>
+                                                            <td>SBT_RESULT_INVALID_SMS_PACKAGE</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>The package is structurally valid but does not support the connected scanner model</td>
+                                                            <td>SBT_RESULT_INCOMPATIBLE_SMS_PACKAGE</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Invalid file path or XML parameters</td>
+                                                            <td>SBT_RESULT_INVALID_PARAMS</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Firmware transfer to the scanner failed</td>
+                                                            <td>SBT_RESULT_FAILURE</td>
+                                                        </tr>
+                                                    </table>
+
+                                                    <p>The following code example demonstrates how to command the scanner to execute an SMS package using the SMS package execution command (SBT_EXECUTE_SMS_PACKAGE).</p>
+
+                                                    <!-- code segment -->
+                                                    <div class="tab-container">
+                                                        <div class="tab-header" id="tabHeader39">
+                                                            <div class="tab active" onclick="openTab('tabContent77')">Swift</div>
+                                                            <div class="tab" onclick="openTab('tabContent78')">Objective C</div>
+                                                        </div>
+                                                        <div id="tabContent77" class="tab-content active">
+<pre class="prettyprint">
+<code>
+// Create XML string to command scanner ID 3 to execute an SMS package
+// selectedSMSPkgFilePath = URL path to the .smspkg file selected by the document picker
+let inXML: String = "&lt;inArgs&gt;&lt;scannerID&gt;3&lt;/scannerID&gt;&lt;cmdArgs&gt;&lt;arg-string&gt;\(selectedSMSPkgFilePath)&lt;/arg-string&gt;&lt;/cmdArgs&gt;&lt;/inArgs&gt;"
+
+// Command scanner ID 3 to execute the SMS package (invoke on a background thread)
+let result = apiInstance?.sbtExecuteCommand(Int32(SBT_EXECUTE_SMS_PACKAGE), aInXML: inXML, aOutXML: nil, forScanner: 3)
+
+if (result == SBT_RESULT_SUCCESS) {
+    // TODO: Package accepted — await sbtEventFirmwareUpdate and sbtEventConfigurationUpdate callbacks
+} else if (result == SBT_RESULT_INVALID_SMS_PACKAGE) {
+    // TODO: Process invalid SMS package error
+} else if (result == SBT_RESULT_INCOMPATIBLE_SMS_PACKAGE) {
+    // TODO: Process incompatible SMS package error
+} else {
+    // TODO: Process error
+}
+</code>
+</pre>
+                                                        </div>
+                                                        <div id="tabContent78" class="tab-content">
+<pre class="prettyprint">
+<code>
+// Create XML string to command scanner ID 3 to execute an SMS package
+// selectedSMSPkgFilePath = URL path to the .smspkg file selected by the document picker
+NSString *inXML = [NSString stringWithFormat:@"&lt;inArgs&gt;&lt;scannerID&gt;%d&lt;/scannerID&gt;&lt;cmdArgs&gt;&lt;arg-string&gt;%@&lt;/arg-string&gt;&lt;/cmdArgs&gt;&lt;/inArgs&gt;", 3, selectedSMSPkgFilePath];
+
+// Command scanner ID 3 to execute the SMS package (invoke on a background thread)
+SBT_RESULT result = [apiInstance sbtExecuteCommand:SBT_EXECUTE_SMS_PACKAGE aInXML:inXML aOutXML:nil forScanner:3];
+
+if (result == SBT_RESULT_SUCCESS) {
+    // TODO: Package accepted — await sbtEventFirmwareUpdate and sbtEventConfigurationUpdate callbacks
+} else if (result == SBT_RESULT_INVALID_SMS_PACKAGE) {
+    // TODO: Process invalid SMS package error
+} else if (result == SBT_RESULT_INCOMPATIBLE_SMS_PACKAGE) {
+    // TODO: Process incompatible SMS package error
+} else {
+    // TODO: Process error
+}
+</code>
+</pre>
+                                                        </div>
+                                                    </div>
+
+                                                    <p>Once a firmware update has started, track the progress with the sbtEventFirmwareUpdate delegate method. Refer to the <a href="#sdk-events-firmware-update">Firmware Update Event</a> section for event types and the FirmwareUpdateEvent object properties.</p>
+
+                                                    <p>When the firmware transfer completes, the scanner starts to reboot and attempts to reconnect within the default time interval of 30 seconds, only if auto reconnect is enabled in the SDK. If the scanner does not reconnect automatically, the STC pairing barcode should be used to re-establish the connection. Once the connection is re-established, the SDK resumes the configuration phase and triggers sbtEventConfigurationUpdate.</p>
+
+                                                    <p>Implement sbtEventCommunicationSessionEstablished to detect the reconnection and update the UI accordingly.</p>
+
+                                                    <!-- code segment -->
+                                                    <div class="tab-container">
+                                                        <div class="tab-header" id="tabHeader40">
+                                                            <div class="tab active" onclick="openTab('tabContent79')">Swift</div>
+                                                            <div class="tab" onclick="openTab('tabContent80')">Objective C</div>
+                                                        </div>
+                                                        <div id="tabContent79" class="tab-content active">
+<pre class="prettyprint">
+<code>
+func sbtEventCommunicationSessionEstablished(_ activeScanner: SbtScannerInfo!) {
+    // TODO: Scanner reconnected after firmware reboot - configuration update will begin
+    // automatically.
+}
+</code>
+</pre>
+                                                        </div>
+                                                        <div id="tabContent80" class="tab-content">
+<pre class="prettyprint">
+<code>
+- (void)sbtEventCommunicationSessionEstablished:(SbtScannerInfo *)activeScanner {
+    // TODO: Scanner reconnected after firmware reboot — configuration update will begin
+    // automatically.
+}
+</code>
+</pre>
+                                                        </div>
+                                                    </div>
+
+                                                    <p>Once the configuration update has started, track the progress with the sbtEventConfigurationUpdate delegate method. Refer to the <a href="#sdk-events-configuration-update">Configuration Update Event</a> section for event types and ConfigurationUpdateEvent object properties.</p>
 
                                                 </div>
                                             </div>
