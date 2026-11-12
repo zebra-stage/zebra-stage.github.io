@@ -87,13 +87,13 @@
                             </a>
                         </li>
                         <li>
-                            <a href="/hid/1-0/api">
-                                    APIs
+                            <a href="/hid/1-0/dev">
+                                    Developer Guide
                             </a>
                         </li>
                         <li>
-                            <a href="/hid/1-0/dev">
-                                    Developer Guide
+                            <a href="/hid/1-0/api">
+                                    APIs
                             </a>
                         </li>
                         <li>
@@ -238,19 +238,37 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>To authorize an application to use the HID service (com.zebra.hidservice), create and deploy a security profile using Zebra’s <a href="/stagenow">StageNow</a> tool. This process grants your application, identified by its unique signature, the necessary permissions to communicate with the HID service on the device.</p>
+<p>This guide provides instructions for administrators, system integrators, and security engineers to configure, provision, and manage Zebra mobile computers equipped with embedded HID Physical Access Control System (PACS) technology.</p>
 
-<h2 id="prerequisites" class="anchor"><a class="heading-anchor" href="#prerequisites"><span></span></a>Prerequisites</h2>
+<p>Complete device provisioning consists of two operational procedures:</p>
 
 <ul>
-<li>The release-signed application APK file</li>
+<li><strong><a href="#phase1applicationauthorization">Application Authorization</a> (Staging):</strong> Authorize client applications to bind to and communicate with the on-device HID service (<code>com.zebra.hidservice</code>) using Zebra StageNow and AccessMgr.</li>
 
-<li>A host computer with Java (JDK/JRE) installed.</li>
+<li><strong><a href="#phase2hardwarekeyprovisioning">Hardware Key Provisioning</a> (Manual):</strong> Inject proprietary HID Elite cryptographic keys into the hardware-backed Secure Element (SE) using physical provisioning cards.</li>
+</ul>
+
+<hr>
+
+<h2 id="phase1applicationauthorization" class="anchor"><a class="heading-anchor" href="#phase1applicationauthorization"><span></span></a>Phase 1: Application Authorization</h2>
+
+<p>Applications must be authorized to use the HID service (<code>com.zebra.hidservice</code>). Create and deploy a security profile using Zebra’s <a href="/stagenow">StageNow</a> tool to grant the application, identified by its unique signature, the necessary permissions to communicate with the HID service on the device.</p>
+
+<p><strong>I. <a href="#iextractapplicationsignature">Extract Application Signature</a>:</strong> Extract the application's public signing certificate using the ZebraSigTools utility. <br>
+<strong>II. <a href="#iicreateprofilegeneratebarcodeorxml">Create Profile &amp; Generate Deployment Barcode or XML</a>:</strong> Build an AccessMgr authorization profile within StageNow. Generate the staging barcode or XML containing the granted delegation rules.<br>
+<strong>III. <a href="#iiideploytodevices">Deploy to Devices</a>:</strong> Scan the deployment barcode on the target device or deploy the XML via EMM.</p>
+
+<h3 id="prerequisites" class="anchor"><a class="heading-anchor" href="#prerequisites"><span></span></a>Prerequisites</h3>
+
+<ul>
+<li>Release-signed application .APK file</li>
+
+<li>Host computer with Java Runtime Environment (JRE) or Java Development Kit (JDK) installed</li>
 
 <li>Zebra’s <a href="/stagenow">StageNow</a> tool installed on the host computer.</li>
 </ul>
 
-<h2 id="iextractapplicationsignaturecertificate" class="anchor"><a class="heading-anchor" href="#iextractapplicationsignaturecertificate"><span></span></a>I. Extract Application Signature Certificate</h2>
+<h3 id="iextractapplicationsignature" class="anchor"><a class="heading-anchor" href="#iextractapplicationsignature"><span></span></a>I. Extract Application Signature</h3>
 
 <p>Generate the certificate file to be used for the StageNow profile. </p>
 
@@ -266,17 +284,17 @@
 <li><p>Execute the following Java command to extract the signature into a .crt certificate file:</p>
 
 <pre class="prettyprint"><code>java -jar ZebraSigTools_1.5.jar getcert -inform apk -outform der -in &lt;your-apk-file.apk&gt; -outfile &lt;your-certificate-name.crt&gt;
+</code></pre>
+
+<p>Example:</p>
+
+<pre class="prettyprint"><code>java -jar ZebraSigTools_1.5.jar getcert -inform apk -outform der -in app-release.apk -outfile HID_demo_launcher.crt
 </code></pre></li>
+
+<li><p>A new certificate file (e.g., <code>HID_demo_launcher.crt</code>) is created in the directory. This file contains the signature required by StageNow.</p></li>
 </ol>
 
-<p>Example:
-        java -jar ZebraSigTools_1.5.jar getcert -inform apk -outform der -in app-release.apk -outfile HID_demo_launcher.crt</p>
-
-<ol>
-<li>A new certificate file (e.g., HID_demo_launcher.crt) is created in the directory. This file contains the signature required by StageNow.</li>
-</ol>
-
-<h2 id="iicreateastagenowprofilestagingbarcode" class="anchor"><a class="heading-anchor" href="#iicreateastagenowprofilestagingbarcode"><span></span></a>II. Create a StageNow Profile &amp; Staging Barcode</h2>
+<h3 id="iicreateprofilegeneratebarcodeorxml" class="anchor"><a class="heading-anchor" href="#iicreateprofilegeneratebarcodeorxml"><span></span></a>II. Create Profile &amp; Generate Barcode or XML</h3>
 
 <p>Create the StageNow profile and staging barcode to grant the application access to the HID service.</p>
 
@@ -312,17 +330,17 @@
 <table>
 <tbody><tr>
     <td><img alt="image" style="height:300px" src="../../images/1-0/stagenow-6.png"></td>
-    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
     <td><img alt="image" style="height:300px" src="../../images/1-0/stagenow-7.png"></td>
 </tr>
 </tbody></table></li></ul>
 </li>
 
 <li>Review the profile settings. Click <strong>Complete Profile.</strong>
-<img alt="image" style="height:350px" src="../../images/1-0/stagenow-8.jpg"></li>
+<img alt="image" style="height:300px" src="../../images/1-0/stagenow-8.jpg"></li>
 </ol>
 
-<h3 id="iiiprovisiondevices" class="anchor"><a class="heading-anchor" href="#iiiprovisiondevices"><span></span></a>III. Provision Devices</h3>
+<h3 id="iiideploytodevices" class="anchor"><a class="heading-anchor" href="#iiideploytodevices"><span></span></a>III. Deploy to Devices</h3>
 
 <p>Use one of the following methods based on the desired tool to deploy the profile to the devices and authorize application access the HID service:</p>
 
@@ -334,18 +352,256 @@
 
 <hr>
 
+<h2 id="phase2hardwarekeyprovisioning" class="anchor"><a class="heading-anchor" href="#phase2hardwarekeyprovisioning"><span></span></a>Phase 2: Hardware Key Provisioning</h2>
+
+<p>Once client applications are authorized to communicate with the service, configure the internal Secure Element with your organization's custom HID Elite Keys.</p>
+
+<p>All physical provisioning cards must be procured directly from <strong>HID Global Corporation</strong> referencing your organization's unique HID Elite Program Number. Zebra does not generate or store customer Elite keys. Visit "hidglobal.com" or contact the designated HID Global sales representative for Elite Program registration, custom key enrollment, and provisioning card ordering.</p>
+
+<p>When submitting an order to HID Global, specify your organization’s HID Elite Program Number and request the appropriate card sets:</p>
+
+<ul>
+<li><strong>Manual Elite Provisioning Set:</strong> Card P000 (Reader Configuration) and Card P001 (Elite Credential / Key Injection).</li>
+
+<li><strong>Factory Rollback Set:</strong> Card P002 (Elite Downgrade Card) and Card P003 (Standard Key Reset Card).</li>
+</ul>
+
+<h3 id="requirements" class="anchor"><a class="heading-anchor" href="#requirements"><span></span></a>Requirements</h3>
+
+<ul>
+<li><strong>Install the Zebra HID Provisioning Application.</strong> Available from the <a href="https://support.zebra.com/">Zebra Support</a> portal.</li>
+
+<li><strong>Install the application .APK onto target devices.</strong> Use Zebra StageNow or an EMM.</li>
+
+<li><strong>Native Android NFC is enabled.</strong> In <strong>Settings &gt; Connected devices &gt; Connection</strong> preferences, toggle NFC to ON.</li>
+
+<li><strong>Device battery level is at least 30% or higher.</strong> This prevents interruptions during write cycles.</li>
+
+<li><strong>Third-party rugged cases or accessories containing metal shielding is removed</strong> to avoid interference.</li>
+
+<li><strong><a href="#phase1applicationauthorization">Authorize the target application</a>.</strong></li>
+</ul>
+
+<hr>
+
+<h3 id="cardsequencelogic" class="anchor"><a class="heading-anchor" href="#cardsequencelogic"><span></span></a>Card Sequence Logic</h3>
+
+<p>Manual Elite provisioning relies on a two-step cryptographic handshake in a specific sequence:</p>
+
+<table class="facelift" style="width:90%; border-collapse: collapse;" border="1" cellpadding="8">
+  <thead>
+    <tr style="background-color:#dce8ef; text-align: left;"> 
+      <th>Step</th>
+      <th>Card</th>
+      <th>Card Role / Name</th>
+      <th>Cryptographic Function</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>P000</td>
+      <td>Elite Credential / Administrator Key Card</td>
+      <td><b>Enclave Initialization:</b> Authenticates using factory baseline credentials, shifts the Secure Element state to Elite-ready, and opens a transient secure channel</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>P001</td>
+      <td>Elite Upgrade / Configuration Key Card</td>
+      <td><b>Payload Delivery:</b> Injects and delivers the proprietary Elite master encryption keys through the channel established by P000.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>Critical Warning:</strong> Scan Card P000 prior to P001. Reversing this sequence results in a cryptographic handshake failure and key injection rejection. If cards are presented out of sequence, reset the session and restart strictly with P000.</p>
+
+<h3 id="provisioningprocedure" class="anchor"><a class="heading-anchor" href="#provisioningprocedure"><span></span></a>Provisioning Procedure</h3>
+
+<p><strong>Step-by-Step Manual Provisioning:</strong></p>
+
+<ol>
+<li>On the Zebra mobile devices, open the <strong>HID Provisioning</strong> application.
+<img alt="image" style="height:350px" src="../../images/1-0/apps-hid.png"></li>
+
+<li>The app opens showing the <strong>HID Elite Card.</strong> Select <strong>Administrator Keys (P000).</strong>
+<img alt="image" style="height:350px" src="../../images/1-0/hid-app.png"></li>
+
+<li>Align Card P000 flush against the device's NFC antenna location and hold the card steady for 2 to 3 seconds until the device emits an audible success chime. Antenna locations:
+
+
+<ul>
+<li><strong>HC501:</strong> Upper-rear housing, adjacent to the camera and barcode scanner window.</li>
+
+<li><strong>ET401:</strong> Rear upper-middle region of the chassis.
+<img alt="image" style="height:350px" src="../../images/1-0/admin-scan-card.png">
+<strong>Note:</strong> To see the Zebra reader NFC Antenna location go to <strong>Settings &gt; Connected Devices &gt; Connection Preferences &gt; NFC.</strong></li></ul>
+</li>
+
+<li>The success message appears. Tap <strong>Done</strong> and remove the P000 card from the NFC field.
+<img alt="image" style="height:350px" src="../../images/1-0/admin-scan-success.png"></li>
+
+<li>Return to the main screen and select <strong>Configuration Keys (P001).</strong>
+<img alt="image" style="height:350px" src="../../images/1-0/hid-app-2.png"></li>
+
+<li>Present Card P001 flush against the same NFC antenna location. Hold motionless while the cryptographic key injection executes.
+<img alt="image" style="height:350px" src="../../images/1-0/config-scan-card.png"></li>
+
+<li>When complete, the device emits the success tone.
+<img alt="image" style="height:350px" src="../../images/1-0/config-scan-success.png"></li>
+
+<li>Tap <strong>Done</strong> and remove the P001 card from the NFC field. The hardware Secure Element is now permanently provisioned. Exit the application.</li>
+</ol>
+
+<p><strong>Operational Verification:</strong></p>
+
+<ol>
+<li>Open the authorized line-of-business application or the Zebra PACS Credential Validation utility (HID Demo application available for download from Zebra Support site.)</li>
+
+<li>Present an active employee ID badge (e.g., Seos, iCLASS, or DESFire).</li>
+
+<li>Verify that the badge authenticates successfully and outputs the expected Facility Code and Card Number.</li>
+</ol>
+
+<h3 id="factorydefaultrollback" class="anchor"><a class="heading-anchor" href="#factorydefaultrollback"><span></span></a>Factory Default Rollback</h3>
+
+<p>The rollback procedure resets the embedded HID Secure Element from a customer proprietary HID Elite configuration back to the factory standard HID key mode.</p>
+
+<p>Common Rollback Use Cases</p>
+
+<ul>
+<li><strong>Device Reassignment/Decommissioning:</strong> Reallocating devices to a different site, division, or subsidiary with different credential profiles.</li>
+
+<li><strong>Depot Repair:</strong> Shipping hardware for repair or maintenance.</li>
+
+<li><strong>Key Migration:</strong> Upgrading or rotating customer master Elite keys.</li>
+
+<li><strong>Error Recovery:</strong> Resetting a device after an interrupted provisioning attempt.</li>
+</ul>
+
+<p>Rollback card sets must be procured directly through <strong>HID Global</strong> referencing the active Elite Program number. Zebra does not stock or generate customer-specific rollback cards. The rollback set consists of two paired physical cards which must follow a specific sequence:</p>
+
+<table class="facelift" style="width:90%; border-collapse: collapse;" border="1" cellpadding="8">
+  <thead>
+    <tr style="background-color:#dce8ef; text-align: left;"> 
+      <th>Step</th>
+      <th>Card</th>
+      <th>Card Role / Name</th>
+      <th>Cryptographic Function</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>P002</td>
+      <td>Elite Downgrade / Config Card</td>
+      <td><b>Unlock Elite Domain:</b> Authenticates with the active Elite key and opens the Secure Element downgrade channel.</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>P003</td>
+      <td>Elite Upgrade / Configuration Key Card</td>
+      <td><b>Restore to Factory Default:</b> Overwrites the Elite keys and restores factory standard HID credentials into the Secure Element enclave.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>Critical Warning:</strong> Scan Card P002 prior to P003. Reversing this sequence results in a rejection since the Secure Element is still locked under the active Elite program. </p>
+
+<h4 id="rollbackexecution" class="anchor"><a class="heading-anchor" href="#rollbackexecution"><span></span></a>Rollback Execution</h4>
+
+<p><strong>Step-by-Step Rollback Execution:</strong></p>
+
+<ol>
+<li>In the HID Provisioning application, open the top-right settings menu and toggle <strong>Standard Provisioning</strong> to ON.
+<img alt="image" style="height:400px" src="../../images/1-0/standard-provisioning.png"></li>
+
+<li>In the <strong>HID Standard Card</strong> tab, tap <strong>Configuration Keys (P003).</strong> 
+<img alt="image" style="height:350px" src="../../images/1-0/hid-standard.png"></li>
+
+<li>Align Card P003 flush against the device's NFC antenna location and hold the card motionless while injecting the cryptographic key, until the device emits an audible success chime.
+<img alt="image" style="height:350px" src="../../images/1-0/config-scan-card.png"></li>
+
+<li>The success confirmation appears. Tap <strong>Done</strong> and remove the P003 card from the NFC field.
+<img alt="image" style="height:350px" src="../../images/1-0/config-scan-success.png"></li>
+
+<li>Return to the main screen and select <strong>Administrator Keys (P002).</strong>
+<img alt="image" style="height:350px" src="../../images/1-0/hid-admin.png"></li>
+
+<li>Present Card P002 flush against the same NFC antenna location. Hold the card motionless while the cryptographic key injection executes.
+<img alt="image" style="height:350px" src="../../images/1-0/config-scan-card.png"></li>
+
+<li>The success confirmation appears. Tap <strong>Done</strong> and remove the P003 card from the NFC field.
+<img alt="image" style="height:350px" src="../../images/1-0/config-scan-success.png"></li>
+
+<li>Tap Done. The device is now restored to standard factory mode.</li>
+</ol>
+
+<p><strong>Post-Rollback Verification:</strong></p>
+
+<ul>
+<li><strong>Test Active Elite Badge:</strong> Present an organization Elite badge; the device must reject the credential or report an authentication failure.</li>
+
+<li><strong>Test Factory Standard Badge:</strong> Present a standard factory-keyed HID card; the device must read and output credential data successfully.</li>
+</ul>
+
+<h3 id="troubleshootingdiagnostics" class="anchor"><a class="heading-anchor" href="#troubleshootingdiagnostics"><span></span></a>Troubleshooting &amp; Diagnostics</h3>
+
+<table class="facelift" style="width:90%; border-collapse: collapse;" border="1" cellpadding="8">
+  <thead>
+    <tr style="background-color:#dce8ef; text-align: left;"> 
+      <th>Symptom / Error Message</th>
+      <th>Probable Root Cause</th>
+      <th>Recommended Corrective Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>SecurityException / Access Denied</td>
+      <td>Application is not whitelisted in AccessMgr or signed with wrong key.</td>
+      <td>Run SigTools on the application APK and deploy the AccessMgr profile via StageNow (Part I). Verify release key matches.</td>
+    </tr>
+    <tr>
+      <td>"Provisioning Failed" on Card P000</td>
+      <td>Incompatible card or device already provisioned with another Elite key.</td>
+      <td>Confirm genuine P000 card from HID Global. If another Elite key is loaded, execute the Rollback procedure (P002/P003) first.</td>
+    </tr>
+    <tr>
+      <td>"Authentication / Key Rejected" on Card P001</td>
+      <td>Cards presented out of order (P001 scanned before P000).</td>
+      <td>Restart the provisioning session. Present Card P000 first, followed by Card P001.</td>
+    </tr>
+    <tr>
+      <td>No response / No beep when card is presented</td>
+      <td>NFC disabled, card held off-target, or thick protective case.</td>
+      <td>Verify NFC is enabled in Android Settings. Align card directly over the antenna sweet spot. Remove metal-shielded cases.</td>
+    </tr>
+    <tr>
+      <td>"Key Mismatch" on Rollback Card P002</td>
+      <td>Card P002 does not match the active Elite Program ID on the device.</td>
+      <td>Ensure Card P002 was ordered for the specific Elite Program ID currently residing on the device.</td>
+    </tr>
+    <tr>
+      <td>Read Timeout / Interrupted Communication</td>
+      <td>Card was removed before the write cycle completed.</td>
+      <td>Keep card flush against reader housing until the application sounds the confirmation tone and displays the success prompt.</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr>
+
 <h2 id="seealso" class="anchor"><a class="heading-anchor" href="#seealso"><span></span></a>See Also</h2>
 
 <ul>
-<li><a href="../about">About Identity Guardian</a></li>
+<li><a href="../about">About HID SDK</a></li>
 
-<li><a href="../licensing/">Licensing</a></li>
+<li><a href="../dev/">Developer Guide</a></li>
 
-<li><a href="../setup">Setup</a></li>
+<li><a href="../api/">APIs</a></li>
 
-<li><a href="../usage">User Guide</a></li>
+<li><a href="../provision">Provisioning</a></li>
 
-<li><a href="../api">APIs</a></li>
+<li><a href="../demo">Demo App</a></li>
 </ul><p></p>
                                         
 

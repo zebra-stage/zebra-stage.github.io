@@ -87,13 +87,13 @@
                             </a>
                         </li>
                         <li>
-                            <a href="/hid/1-0/api">
-                                    APIs
+                            <a href="/hid/1-0/dev">
+                                    Developer Guide
                             </a>
                         </li>
                         <li>
-                            <a href="/hid/1-0/dev">
-                                    Developer Guide
+                            <a href="/hid/1-0/api">
+                                    APIs
                             </a>
                         </li>
                         <li>
@@ -238,17 +238,29 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>This guide serves as a resource for  integrating the HID SDK to read an HID NFC tag on Zebra devices. It provides an overview of the underlying system design, followed by a programming guide to walk developers through the entire integration lifecycle.</p>
+<p>This guide provides instructions for integrating the HID SDK into Android enterprise applications to communicate with the device's embedded Secure Element (SE) to authenticate and read HID NFC credentials. It covers an overview of the underlying system design, step-by-step programming workflows, security considerations, and diagnostics.</p>
 
 <hr>
 
-<h2 id="architecture" class="anchor"><a class="heading-anchor" href="#architecture"><span></span></a>Architecture</h2>
+<h2 id="systemarchitecture" class="anchor"><a class="heading-anchor" href="#systemarchitecture"><span></span></a>System Architecture</h2>
 
-<p>This section discusses the design of the HID system, illustrating how key hardware and software components interact. </p>
+<p>The <strong>Zebra HID architecture</strong> decouples high-level application logic from underlying cryptographic operations. Supported Zebra mobile devices incorporate an embedded, tamper-resistant HID <strong>Secure Element (SE)</strong> coupled directly to a high-performance 13.56 MHz Near Field Communication (NFC) controller.</p>
 
-<p>Component Matrix</p>
+<p>Key protections include:</p>
 
-<table class="facelift" style="width:90%; border-collapse: collapse;" border="1" cellpadding="8">
+<ul>
+<li><strong>Isolated Key Storage:</strong> Encryption keys reside exclusively within the tamper-proof Secure Element enclave, ensuring that client applications never directly handle or expose master key material.</li>
+
+<li><strong>Protected Operations:</strong> Client applications access read, write, and authentication routines through the HID SDK without exposing underlying cryptographic key material.</li>
+</ul>
+
+<p><img alt="image" style="height:600px" src="../../images/1-0/architecture-diagram.jpg"></p>
+
+<p><em>Architectural Diagram</em></p>
+
+<p><strong>Component Matrix</strong></p>
+
+<table class="facelift" style="width:100%; border-collapse: collapse;" border="1" cellpadding="8">
   <thead>
     <tr style="background-color:#dce8ef; text-align: left;"> 
       <th>Component</th>
@@ -259,83 +271,85 @@
   </thead>
   <tbody>
     <tr>
-      <td>3rd-Party App</td>
-      <td>App Sandbox (Client Process)</td>
+      <td><b>Third-Party App</b></td>
+      <td>Application Sandbox (Client Process)</td>
       <td>Public SDK APIs</td>
-      <td>Business logic, UI updates, trigger read/write</td>
+      <td>Implements business logic, handles UI updates, and triggers read/write operations.</td>
     </tr>
     <tr>
-      <td>HID SDK (hidsdk.aar)</td>
-      <td>App Sandbox (Client Process)</td>
+      <td><b>HID SDK (hidsdk.aar)</b></td>
+      <td>Application Sandbox (Client Process)</td>
       <td>AIDL Proxy / Java API</td>
-      <td>Lifecycle, IPC proxying, callback management</td>
+      <td>Manages connection lifecycle, IPC proxy, and callbacks.</td>
     </tr>
     <tr>
-      <td>Android Binder</td>
+      <td><b>Android Binder</b></td>
       <td>Kernel / Framework</td>
       <td>IPC Driver (/dev/binder)</td>
-      <td>Secure inter-process communication &amp; marshal</td>
+      <td>Provides secure inter-process communication and marshaling between processes.</td>
     </tr>
     <tr>
-      <td>HID Dispatcher</td>
+      <td><b>HID Dispatcher</b></td>
       <td>System / Privileged Process</td>
       <td>AIDL Stub / NCI HAL</td>
-      <td>App validation, resource locking, hardware bridge</td>
+      <td>Validates caller signing certificates, manages resource locking, and acts as a hardware bridge.</td>
     </tr>
     <tr>
-      <td>NFC Controller &amp; SE</td>
+      <td><b>NFC Controller &amp; SE</b></td>
       <td>Hardware / Firmware</td>
       <td>RF / Physical Antenna</td>
-      <td>Contactless smart card interaction &amp; cryptography</td>
+      <td>Executes contactless smart card interaction and cryptography.</td>
     </tr>
   </tbody>
 </table>
 
-<hr>
-
 <h3 id="components" class="anchor"><a class="heading-anchor" href="#components"><span></span></a>Components</h3>
 
-<h4 id="3rdpartyandroidapplication" class="anchor"><a class="heading-anchor" href="#3rdpartyandroidapplication"><span></span></a>3rd-Party Android Application</h4>
+<h4 id="1thirdpartyandroidapplication" class="anchor"><a class="heading-anchor" href="#1thirdpartyandroidapplication"><span></span></a>1. Third-Party Android Application</h4>
 
-<p><strong>Role:</strong> Primary consumer of HID card services and credentials.
-<strong>Responsibilities:</strong></p>
+<p><strong>Role:</strong> Primary consumer of HID card services and credentials.</p>
+
+<p><strong>Responsibilities:</strong></p>
 
 <ul>
 <li>Initializes the SDK client instance and initiates service connection.</li>
 
-<li>Registers callback interfaces (“IHIDCallback” / event listeners) to receive asynchronous responses, discovery events, and card session status.</li>
+<li>Registers callback interfaces (<code>IHIDCallback</code> / event listeners) to receive asynchronous responses, discovery events, and card session status.</li>
 
 <li>Issues commands for credential reading, payload extraction, and cryptographic operations.</li>
 </ul>
 
-<h4 id="hidsdkhidsdkaar" class="anchor"><a class="heading-anchor" href="#hidsdkhidsdkaar"><span></span></a>HID SDK (hidsdk.aar)</h4>
+<h4 id="2hidsdkhidsdkaar" class="anchor"><a class="heading-anchor" href="#2hidsdkhidsdkaar"><span></span></a>2. HID SDK (<code>hidsdk.aar</code>)</h4>
 
-<p><strong>Role:</strong> Client-side library integrated into the third-party application package.
-<strong>Responsibilities:</strong></p>
+<p><strong>Role:</strong> Client-side library integrated into the third-party application package.</p>
+
+<p><strong>Responsibilities:</strong></p>
 
 <ul>
-<li>Abstracts low-level Android IPC and AIDL definitions into developer-friendly Java/Kotlin APIs.</li>
+<li>Abstracts low-level Android Inter-Process Communication (IPC) and AIDL definitions into developer-friendly Java/Kotlin APIs.</li>
 
-<li>Manages Android “ServiceConnection” lifecycle (“onServiceConnected”, “onServiceDisconnected”).</li>
+<li>Manages the Android <code>ServiceConnection</code> lifecycle (<code>onServiceConnected</code>, <code>onServiceDisconnected</code>).</li>
 
 <li>Handles parameter marshaling/unmarshaling, timeout detection, and exception wrapping.</li>
 </ul>
 
-<h4 id="androidbinderipclayer" class="anchor"><a class="heading-anchor" href="#androidbinderipclayer"><span></span></a>Android Binder (IPC Layer)</h4>
+<h4 id="3androidbinderipclayer" class="anchor"><a class="heading-anchor" href="#3androidbinderipclayer"><span></span></a>3. Android Binder (IPC Layer)</h4>
 
-<p><strong>Role:</strong> Secure, high-performance inter-process communication bridge.
-<strong>Responsibilities:</strong></p>
+<p><strong>Role:</strong> Secure, high-performance inter-process communication bridge.</p>
+
+<p><strong>Responsibilities:</strong></p>
 
 <ul>
 <li>Facilitates remote procedure calls across the application sandbox boundary to the system-level HID service.</li>
 
-<li>Enforces Android identity verification (“Binder.getCallingUid()”, “Binder.getCallingPid()”).</li>
+<li>Enforces Android identity verification (<code>Binder.getCallingUid()</code>, <code>Binder.getCallingPid()</code>).</li>
 </ul>
 
-<h4 id="hiddispatcherservicehidservice" class="anchor"><a class="heading-anchor" href="#hiddispatcherservicehidservice"><span></span></a>HID Dispatcher Service (HIDService)</h4>
+<h4 id="4hiddispatcherservicehidservice" class="anchor"><a class="heading-anchor" href="#4hiddispatcherservicehidservice"><span></span></a>4. HID Dispatcher Service (<code>HIDService</code>)</h4>
 
-<p><strong>Role:</strong> Dedicated system/privileged background service managing hardware access.
-<strong>Responsibilities:</strong></p>
+<p><strong>Role:</strong> Dedicated system/privileged background service managing hardware access.</p>
+
+<p><strong>Responsibilities:</strong></p>
 
 <ul>
 <li>Validates calling application signatures, package names, and authorization permissions.</li>
@@ -345,10 +359,11 @@
 <li>Translates high-level HID operations into low-level device commands and routes execution responses back to client callbacks.</li>
 </ul>
 
-<h4 id="nfchardwaresecureelementlayer" class="anchor"><a class="heading-anchor" href="#nfchardwaresecureelementlayer"><span></span></a>NFC Hardware &amp; Secure Element Layer</h4>
+<h4 id="5nfchardwaresecureelementlayer" class="anchor"><a class="heading-anchor" href="#5nfchardwaresecureelementlayer"><span></span></a>5. NFC Hardware &amp; Secure Element Layer</h4>
 
-<p><strong>Role: Physical NFC controller (e.g., NXP PN7160 / PN7220) and Secure Transceive subsystem.
-**Responsibilities:</strong></p>
+<p><strong>Role:</strong> Physical NFC controller (e.g., NXP PN7160/PN7220) and Secure Transceive subsystem.</p>
+
+<p><strong>Responsibilities:</strong></p>
 
 <ul>
 <li>Executes radio frequency (RF) polling, card activation, anti-collision, and APDU / NCI data transmission.</li>
@@ -358,25 +373,25 @@
 
 <hr>
 
-<h2 id="integration" class="anchor"><a class="heading-anchor" href="#integration"><span></span></a>Integration</h2>
+<h2 id="integrationworkflow" class="anchor"><a class="heading-anchor" href="#integrationworkflow"><span></span></a>Integration Workflow</h2>
 
-<p>Developers can integrate with the HID service (com.zebra.hidservice) using either the high-level Client SDK Wrapper or direct AIDL service binding.</p>
+<p>Developers can integrate with the HID service (<code>com.zebra.hidservice</code>) using either the high-level client SDK Wrapper or direct AIDL service binding.</p>
 
-<p>Service Connection Lifecycle</p>
+<p><strong>Service Parameters &amp; Threading Model:</strong></p>
 
 <ul>
-<li><strong>Package Name:</strong> com.zebra.hidservice</li>
+<li><strong>Package Name:</strong> <code>com.zebra.hidservice</code> <br></li>
 
-<li><strong>Intent Action:</strong> com.zebra.hidservice.BIND</li>
+<li><strong>Intent Action:</strong> <code>com.zebra.hidservice.BIND</code><br></li>
 
 <li><strong>Threading Policy:</strong> IPC invocations that communicate with physical Secure Elements or SAM chips perform synchronous hardware I/O inside the service. When using direct AIDL, client applications must dispatch calls off the Main Android UI Thread to avoid Application Not Responding (ANR) warnings.</li>
 </ul>
 
 <p>This guide provides a step-by-step walkthrough for integrating the HID SDK to read an HID NFC tag (iCLASS®, Seos®, and DESFire®) on enabled Zebra hardware (e.g., ET401 premium SKU).</p>
 
-<h3 id="iinitializethesdk" class="anchor"><a class="heading-anchor" href="#iinitializethesdk"><span></span></a>I. Initialize the SDK</h3>
+<h3 id="1initializethesdk" class="anchor"><a class="heading-anchor" href="#1initializethesdk"><span></span></a>1. Initialize the SDK</h3>
 
-<p>In your Activity‘s onCreate() method, create an instance of HidSdkManager. This requires an implementation of the ConnectionCallback interface to handle service connection events. The SDK will automatically attempt to bind to the HID service.</p>
+<p>In the host Activity‘s onCreate() method, create an instance of <code>HidSdkManager</code>. This requires implementing the <code>ConnectionCallback</code> interface to handle service connection events. The SDK automatically attempts to bind to the HID service.</p>
 
 <pre class="prettyprint"><code>    public class MainActivity extends AppCompatActivity {
         private HidSdkManager hidSdkManager;
@@ -409,9 +424,9 @@
     }
 </code></pre>
 
-<h3 id="iiinitiatesecureelementcommunication" class="anchor"><a class="heading-anchor" href="#iiinitiatesecureelementcommunication"><span></span></a>II. Initiate Secure Element Communication</h3>
+<h3 id="2initiatesecureelementcommunication" class="anchor"><a class="heading-anchor" href="#2initiatesecureelementcommunication"><span></span></a>2. Initiate Secure Element Communication</h3>
 
-<p>After the onConnected() callback is invoked, you must initialize communication with the secure element by calling initiateHIDCommunication(). This is an asynchronous operation that reports its result via the HidInitializationCallback.</p>
+<p>After the <code>onConnected()</code> callback is invoked, initialize communication with the secure element by calling <code>initiateHIDCommunication()</code>. This is an asynchronous operation that reports its result via the <code>HidInitializationCallback</code>.</p>
 
 <pre class="prettyprint"><code>    private void initiateSeCommunication() {
         if (hidSdkManager != null &amp;&amp; hidSdkManager.isServiceBound()) {
@@ -430,9 +445,9 @@
     }
 </code></pre>
 
-<h3 id="iiidetectandvalidateannfccard" class="anchor"><a class="heading-anchor" href="#iiidetectandvalidateannfccard"><span></span></a>III. Detect and Validate an NFC Card</h3>
+<h3 id="3detectandvalidateannfccard" class="anchor"><a class="heading-anchor" href="#3detectandvalidateannfccard"><span></span></a>3. Detect and Validate an NFC Card</h3>
 
-<p>Your application should use the standard Android NFC APIs to detect tags. When a tag is discovered, use the isCardHID() method to verify if it is a valid HID card. And then getCardData method to get the PACS (Physical Access Control System) data.</p>
+<p>The client application uses the standard Android NFC APIs to capture detected cards. When a card enter the RF field, invoke <code>isCardHID()</code> to verify whether it is a valid HID card. And then invoke <code>getCardData</code> to retrieve the PACS (Physical Access Control System) data.</p>
 
 <pre class="prettyprint"><code>    @Override
     public void onTagDiscovered(Tag tag) {
@@ -455,9 +470,9 @@
     }
 </code></pre>
 
-<h3 id="ivreadauthenticatedcarddata" class="anchor"><a class="heading-anchor" href="#ivreadauthenticatedcarddata"><span></span></a>IV. Read Authenticated Card Data</h3>
+<h3 id="4readauthenticatedcarddata" class="anchor"><a class="heading-anchor" href="#4readauthenticatedcarddata"><span></span></a>4. Read Authenticated Card Data</h3>
 
-<p>Once a card is confirmed to be a valid HID card, call getAuthenticatedData() to read and decrypt its contents, including the PACS (Physical Access Control System) data. The result is returned in an SEResponse object via the HidResponseCallback.</p>
+<p>Once a card is confirmed as a valid HID card, call <code>getAuthenticatedData()</code> to read and decrypt its contents, including the PACS (Physical Access Control System) data. The result is returned in an <code>SEResponse</code> object via the <code>HidResponseCallback</code>.</p>
 
 <pre class="prettyprint"><code>    private void getCardData(Tag tag) {
         hidSdkManager.getAuthenticatedData(tag, new HidResponseCallback() {
@@ -475,9 +490,9 @@
     }
 </code></pre>
 
-<h3 id="vcleanupresources" class="anchor"><a class="heading-anchor" href="#vcleanupresources"><span></span></a>V. Clean Up Resources</h3>
+<h3 id="5cleanupresources" class="anchor"><a class="heading-anchor" href="#5cleanupresources"><span></span></a>5. Clean Up Resources</h3>
 
-<p>To prevent resource leaks, call cleanup() in your Activity‘s onDestroy() method. This unbinds the SDK from the HID service and releases all allocated resources.</p>
+<p>To prevent resource leaks, call <code>cleanup()</code> in the Activity‘s <code>onDestroy()</code> method. This unbinds the SDK from the HID service and releases all allocated resources.</p>
 
 <pre class="prettyprint"><code>    @Override
     protected void onDestroy() {
@@ -495,7 +510,7 @@
 <p>Developer implementation guidelines when integrating the HID SDK on Zebra hardware:</p>
 
 <ul>
-<li><strong>Service Validation:</strong> Ensure that your application environment checks the signature of the HID service to prevent interactions with unauthorized or malicious services.</li>
+<li><strong>Service Validation:</strong> Ensure that the application environment checks the signature of the HID service to prevent interactions with unauthorized or malicious services.</li>
 
 <li><strong>Resource Cleanup:</strong> Always invoke cleanup() to unbind the service when the application context is destroyed. Unreleased resources can result in memory leaks or blocked hardware communication.</li>
 
@@ -526,36 +541,90 @@
 <li><strong>Error Message:</strong> "Access denied. Please verify your app is authorized to use the HID Secure Element."</li>
 </ul>
 
-<hr>
+<!--
+---
 
-<h2 id="provisioningallowlistregistration" class="anchor"><a class="heading-anchor" href="#provisioningallowlistregistration"><span></span></a>Provisioning &amp; Allowlist Registration</h2>
+## App Authorization
 
-<p>To grant your application package delegated access to the HID Secure Element, configure and deploy an [AccessMgr] profile to the target device:</p>
+To authorize an application to use the HID service (`com.zebra.hidservice`), create and deploy a security profile using Zebra’s [StageNow](/stagenow) tool. This process grants the application, identified by its unique signature, the necessary permissions to communicate with the HID service on the device.
 
-<ol>
-<li><strong>Extract Signature:</strong> Extract your application's public signing certificate using the ZebraSigTools utility.</li>
+1. **Extract Signature:** Extract the application's public signing certificate using the ZebraSigTools utility.
+2. **Create Profile & Generate Deployment Barcode or XML:** Build an AccessMgr authorization profile within StageNow. Generate the staging barcode or XML containing the granted delegation rules.
+3. **Stage Target Devices:** Scan the deployment barcode or deploy the XML via EMM.
 
-<li><strong>Create Profile:</strong> Build an AccessMgr authorization profile within StageNow.</li>
 
-<li><strong>Generate Deployment Barcode:</strong> Generate the staging barcode containing the granted delegation rules.</li>
+### Prerequisites
 
-<li><strong>Stage Target Device:</strong> Scan the deployment barcode on all test devices prior to running integration tests.</li>
-</ol>
+- The release-signed application APK file
+- A host computer with Java (JDK/JRE) installed.
+- Zebra’s [StageNow](/stagenow) tool installed on the host computer.
+
+### I. Extract Application Signature Certificate
+
+Generate the certificate file to be used for the StageNow profile. 
+
+1. <a href="/sigtools/ZebraSigTools_1.5.zip" download>Download</a> the [Zebra SigTools](/sigtools) utility.
+2. Extract the contents of the zip file to a working directory on the host computer, including the "ZebraSigTools_1.5.jar" file.
+3. Open a command prompt or terminal and navigate to the directory where the .zip file contents are extracted.
+4. Place your application's release-signed APK file (e.g., app-release.apk) in the same directory.
+5. Execute the following Java command to extract the signature into a .crt certificate file:
+
+        java -jar ZebraSigTools_1.5.jar getcert -inform apk -outform der -in <your-apk-file.apk> -outfile <your-certificate-name.crt>
+
+Example:
+        java -jar ZebraSigTools_1.5.jar getcert -inform apk -outform der -in app-release.apk -outfile HID_demo_launcher.crt
+
+6. A new certificate file (e.g., HID_demo_launcher.crt) is created in the directory. This file contains the signature required by StageNow.
+
+### II. Create a StageNow Profile & Staging Barcode
+
+Create the StageNow profile and staging barcode to grant the application access to the HID service.
+
+1. Launch the StageNow application on the host computer.
+2. From the home screen, select **Create new Profile.**
+    <img alt="image" style="height:300px"  src="../../images/1-0/stagenow-1.jpg" />
+3. Choose the target MX Version for your devices from the dropdown menu (e.g., the latest available version).
+    <img alt="image" style="height:400px"  src="../../images/1-0/stagenow-2.jpg" />
+4. Select **Xpert Mode** and click **Create.**
+    <img alt="image" style="height:400px"  src="../../images/1-0/stagenow-3.jpg" />
+5. Enter a descriptive name for the profile (e.g., “HID Service Access Grant”) and click **Start.**
+    <img alt="image" style="height:250px"  src="../../images/1-0/stagenow-4.jpg" />
+6.    In the “ADD/EDIT” window, locate **AccessMgr** and click the **(+)** button to add it to the profile. Click **Add.**
+    <img alt="image" style="height:400px"  src="../../images/1-0/stagenow-5.png" />                          
+7.    Configure the AccessMgr settings with the following specific values and click **Continue:**
+    - **Service Access Action:** Allow Caller to Call Service
+    - **Service Identifier:** delegation-zebra-HID-api-access-control
+    - **Caller Package Name:** [Enter your application's package name (e.g., com.zebra.hidDemoApp).]
+    - **Caller Signature:** [Click the three-dot button (…) and browse to select the .crt certificate file generated in Step I.]
+    <table>
+        <tr>
+            <td><img alt="image" style="height:300px"  src="../../images/1-0/stagenow-6.png" /></td>
+            <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+            <td><img alt="image" style="height:300px"  src="../../images/1-0/stagenow-7.png" /></td>
+        </tr>
+    </table>
+8. Review the profile settings. Click **Complete Profile.**
+    <img alt="image" style="height:300px"  src="../../images/1-0/stagenow-8.jpg" />
+
+### III. Deploy to Devices
+
+Use one of the following methods based on the desired tool to deploy the profile to the devices and authorize application access the HID service:
+- **StageNow:** Generate the barcode from the StageNow profile. Open StageNow client on the device and scan the barcode.
+- **EMM:** Export the StageNow XML file from the StageNow installation. Send the XML using either [OEMConfig](/oemconfig) or [MX](/mx/overview).
+-->
 
 <hr>
 
 <h2 id="seealso" class="anchor"><a class="heading-anchor" href="#seealso"><span></span></a>See Also</h2>
 
 <ul>
-<li><a href="../about">About Identity Guardian</a></li>
-
-<li><a href="../setup">Setup</a></li>
-
-<li><a href="../mc">Managed Configurations</a></li>
-
-<li><a href="../usage">User Guide</a></li>
+<li><a href="../about">About HID SDK</a></li>
 
 <li><a href="../api/">APIs</a></li>
+
+<li><a href="../provision">Provisioning</a></li>
+
+<li><a href="../demo">Demo App</a></li>
 </ul><p></p>
                                         
 

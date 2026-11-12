@@ -87,13 +87,13 @@
                             </a>
                         </li>
                         <li>
-                            <a href="/hid/1-0/api">
-                                    APIs
+                            <a href="/hid/1-0/dev">
+                                    Developer Guide
                             </a>
                         </li>
                         <li>
-                            <a href="/hid/1-0/dev">
-                                    Developer Guide
+                            <a href="/hid/1-0/api">
+                                    APIs
                             </a>
                         </li>
                         <li>
@@ -238,443 +238,462 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p><strong>Through either <a href="/zebradna">Zebra DNA Cloud</a> or Enterprise Mobility Management (EMM), administrators establish usage policies and controls for Identity Guardian via <a href="../mc/">Managed Configurations</a>.</strong> This enables companies to personalize device restrictions and access. Additionally, administrators gain insight into usage details such as user sign-in/sign-out events and usage times through a dashboard, promoting user accountability.</p>
+<p>The <strong>HID Demo App</strong> is an Android application demonstrating how enterprise applications integrate with the Zebra HID SDK and the underlying HID Dispatcher service, the service running on the Zebra device responsible for HID-Secure Element communication when the SDK is used. The application configures the host device's NFC controller into Reader Mode, communicates with the internal Secure Element (SE), authenticates contactless HID smart cards, and displays the decrypted PACS payload.</p>
 
-<p><strong>Identity Guardian streamlines application authentication by integrating with the identity provider (IdP).</strong> Users need only to sign in once with <a href="#sso">single sign-on (SSO)</a>, which then handles subsequent application sign-ins, streamlining the process.</p>
-
-<p><strong>It is necessary to install Identity Guardian app on the devices.</strong></p>
-
-<hr>
-
-<h2 id="requirements" class="anchor"><a class="heading-anchor" href="#requirements"><span></span></a>Requirements</h2>
-
-<p>Identity Guardian requirements:</p>
+<p><strong>Intended Audiences:</strong></p>
 
 <ul>
-<li>Zebra devices running <strong>Android 11 or higher</strong> are supported. See <a href="https://www.zebra.com/us/en/support-downloads/software/mobile-computer-software/identity-guardian.html">Zebra Support Portal</a> for the supported devices.</li>
+<li><strong>Application Developers:</strong> Serves as a reference implementation illustrating SDK initialization, callback registration, threading policies, and PACS data parsing.</li>
 
-<li>For <strong>biometric authentication,</strong> a front-facing camera is required on the device</li>
-
-<li><strong>Licenses:</strong>
-
-
-<ul>
-<li>An <strong>Identity Guardian license</strong> is required for advanced features including facial biometric authentication, Single Sign-On (SSO) support and device API support. See <a href="../licensing/">Licensing</a>.</li>
-
-<li>Zebra Professional-series devices require a <strong><a href="/licensing">Mobility DNA Enterprise license</a></strong> for basic functionality</li></ul>
-</li>
-</ul>
-
-<p>SSO requirement:</p>
-
-<ul>
-<li>Support is available for <strong>integration with both Microsoft Entra ID (formerly Azure Active Directory) and PingID platforms</strong> with OAUTH and OAUTH+OIDC authentication protocols.</li>
+<li><strong>Test Engineers &amp; Evaluators:</strong> Provides an immediate pass/fail validation utility for confirming NFC credential compatibility and service connectivity.</li>
 </ul>
 
 <hr>
 
-<h2 id="download" class="anchor"><a class="heading-anchor" href="#download"><span></span></a>Download</h2>
+<h2 id="architecture" class="anchor"><a class="heading-anchor" href="#architecture"><span></span></a>Architecture</h2>
 
-<p>Download and install Identity Guardian from the <a href="https://www.zebra.com/us/en/support-downloads/software/mobile-computer-software/identity-guardian.html">Zebra support portal</a>.</p>
+<p>The demo app sits on top of the <strong>HID SDK,</strong> which hides the Binder call to the <strong>HID Service.</strong> The <strong>HID Service</strong> manages the <strong>NFC controller</strong> channel to the <strong>HID Secure Element.</strong> The demo app never communicates directly with the NFC controller or the Secure Element itself.</p>
 
-<hr>
+<p><img alt="image" style="height:600px" src="../../images/1-0/demo-architecture.png"></p>
 
-<h2 id="sso" class="anchor"><a class="heading-anchor" href="#sso"><span></span></a>SSO</h2>
+<p>For more details, refer to <a href="../dev/#architecture">Architecture</a> from the Developer Guide.</p>
 
-<p>Identity Guardian integrates with identity providers (IdPs) simplifying authentication by only requiring users to log in once, and then leveraging single sign-on (SSO) to streamline the process. This single login grants users to gain access to multiple applications, eliminating the need to keep track of multiple logins for each app. There are 2 types of IdPs supported: Microsoft Entra ID and PingID.</p>
+<!-- 
+**Architecture Layers**
 
-<h3 id="microsoftentraid" class="anchor"><a class="heading-anchor" href="#microsoftentraid"><span></span></a>Microsoft Entra ID</h3>
 
-<p>This section provides guidance to integrate Identity Guardian with Microsoft Entra ID (formerly Azure Active Directory):</p>
+<table class="facelift" style="width:90%; border-collapse: collapse;" border="1" cellpadding="8">
+  <thead>
+    <tr style="background-color:#dce8ef; text-align: left;"> 
+      <th>Layer</th>
+      <th>Component</th>
+      <th>Responsibility</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><b>Demo App</b></td>
+      <td><code>HIDDemoActivity</code></td>
+      <td>Manages UI states, controls NFC reader mode, invokes SDK APIs, parses PACS responses, and maintains diagnostic activity logs.</td>
+    </tr>
+    <tr>
+      <td><b>HID SDK</b></td>
+      <td><code>HidSdkManager</code> and the callback interfaces</td>
+      <td>Manages service binding, executes calls asynchronously with a 10-second timeout, and returns <code>SEInfo</code> and <code>SEResponse</code> through callbacks.</td>
+    </tr>
+    <tr>
+      <td><b>Binder Interface</b></td>
+      <td><code>IHidService</code> (AIDL)</td>
+      <td>Defines the formal inter-process communication (IPC) contract across the Android application sandbox boundary to the system-level daemon.</td>
+    </tr>
+    <tr>
+      <td><b>HID Dispatcher</b></td>
+      <td>System / Privileged Process</td>
+      <td>AIDL Stub / NCI HAL</td>
+      <td>Validates caller signing certificates, manages resource locking, and acts as a hardware bridge.</td>
+    </tr>
+    <tr>
+      <td><b>NFC Controller & SE</b></td>
+      <td>Hardware / Firmware</td>
+      <td>RF / Physical Antenna</td>
+      <td>Executes contactless smart card interaction and cryptography.</td>
+    </tr>
+  </tbody>
+</table>
 
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#iregisterzebraidentityguardian">I. Register Zebra Identity Guardian</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#iiconfiguressoforshareddevices">II. Configure SSO for Shared Devices</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#iiiconfiguremicrosoftauthenticatorapp">III. Configure Microsoft Authenticator App</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#ivconfigurezebraidentityguardianapp">IV. Configure Zebra Identity Guardian App</a><br></p>
+-->
 
-<p><br></p>
+<h3 id="designprinciples" class="anchor"><a class="heading-anchor" href="#designprinciples"><span></span></a>Design Principles</h3>
 
-<h4 id="iregisterzebraidentityguardian" class="anchor"><a class="heading-anchor" href="#iregisterzebraidentityguardian"><span></span></a>I. Register Zebra Identity Guardian</h4>
-
-<p><strong>To establish a trust relationship between Identity Guardian and the Microsoft identity platform, register Zebra Identity Guardian</strong> as an Android application in Microsoft Entra ID (IdP). <em>Consult Microsoft's documentation for guidance on registering an application with the Microsoft identity platform.</em></p>
-
-<p>Please ensure to enter or select the following when registering Identity Guardian:</p>
+<p>Architectural design principles for the Demo App:</p>
 
 <ul>
-<li>For the supported account type, select "Single tenant."
-<img alt="image" style="height:525px" src="single-tenant.png"></li>
+<li><strong>Single-Activity:</strong>  All screen states, layouts, and activity logs are managed by <code>HIDDemoActivity</code>.</li>
 
-<li>When configuring the Android app, enter the following:
+<li><strong>Asynchronous Execution:</strong> All SDK calls execute asynchronously and deliver their results through a callback with a 10-second timeout. Precondition error (such as null tags or unbound services) return immediately.</li>
 
+<li><strong>Reader Mode Operation:</strong> The activity enables Android reader mode rather than intent filters. Reader mode is restricted strictly to foreground operation and is deactivated when paused.</li>
 
-<ul>
-<li><strong>Package name:</strong> com.zebra.mdna.els</li>
+<li><strong>Access Control:</strong> The app requires only the NFC permission declaration in its manifest. Access to the HID Secure Element is enforced by the HID service.</li>
 
-<li><strong>Signature hash:</strong> KqmK9tYXpw+eW2lke7US3iG9EAQ=
-<img alt="image" style="height:450px" src="config-android-app.png"></li></ul>
-</li>
-
-<li>Download the code sample and save the file as <code>auth_config_single_account.json</code>. This will be used in a subsequent step to configure the app settings on the device.
-<img alt="image" style="height:450px" src="download-code-sample.png">
-<br></li>
+<li><strong>Thread Confinement:</strong> SDK results and NFC callbacks (e.g., <code>initiateHIDCommunication</code>, <code>isCardHID</code>, <code>getAuthenticatedData</code>) do not run on the Android main UI thread. The application wraps all UI updates inside <code>runOnUiThread()</code> and does not create threads of its own.</li>
 </ul>
 
-<h4 id="iiconfiguressoforshareddevices" class="anchor"><a class="heading-anchor" href="#iiconfiguressoforshareddevices"><span></span></a>II. Configure SSO for Shared Devices</h4>
-
-<p><strong>If Microsoft Authenticator is used for single sign-on (SSO) on shared devices, it is possible to integrate a third-party device compliance partner solution with Microsoft Intune.</strong> This allows for the collection of device compliance data in conjunction with Intune's own compliance results. The combined data can be used to formulate access policies, providing enhanced protection for your organization and its data. Examples of third-party device compliance partners include solutions such as SOTI MobiControl, VMware Workspace ONE UEM (formerly AirWatch), and others. <em>Consult your EMM or Microsoft's documentation for guidance on adding a third-party device compliance partner in Intune.</em></p>
-
-<p><br></p>
-
-<h4 id="iiiconfiguremicrosoftauthenticatorapp" class="anchor"><a class="heading-anchor" href="#iiiconfiguremicrosoftauthenticatorapp"><span></span></a>III. Configure Microsoft Authenticator App</h4>
-
-<p><strong>For optimal use of shared device mode with SSO through Microsoft Authenticator, ensure the Microsoft Authenticator app is installed on the devices.</strong> This facilitates automatic SSO single sign-in and single sign-out across apps on the device.</p>
-
-<p>To install and configure Microsoft Authenticator app:</p>
-
-<ol>
-<li><p>Download and install the Microsoft Authenticator app from Google Play via an EMM, such as SOTI MobiControl or VMware Workspace ONE UEM.</p></li>
-
-<li><p>In the EMM, enable <strong>Shared Device Mode</strong> and enter the <strong>Shared Device Mode Tenant Identifier</strong> (obtained from the Microsoft Entra ID).</p>
-
-<p><img alt="image" style="height:400px" src="managed-config-shared-device.png"></p>
-
-<p><em>SOTI MobiControl Managed App Config</em></p></li>
-</ol>
-
-<p><br></p>
-
-<h4 id="ivconfigurezebraidentityguardianapp" class="anchor"><a class="heading-anchor" href="#ivconfigurezebraidentityguardianapp"><span></span></a>IV. Configure Zebra Identity Guardian App</h4>
-
-<p><strong>To enable user access to the device through SSO, install and set up Identity Guardian on the devices:</strong></p>
-
-<ol>
-<li>Deploy and install Zebra Identity Guardian app on the devices.</li>
-
-<li>Launch the app using an EMM. <em>This step must be performed at least once.</em></li>
-
-<li>Enter the <a href="../mc">Managed Configuration</a> settings for the app via your EMM:
-
-
-<ul>
-<li>Select the application mode:
-
-
-<ul>
-<li><strong>Application Mode:</strong> Authentication
-<img alt="image" style="height:375px" src="managed-config-app-mode.jpg">
-<em>zDNA Cloud Managed Config</em></li></ul>
-</li>
-
-<li>Configure the Verification Setup to validate the user access:
-
-
-<ul>
-<li><strong>Primary Authentication Factor:</strong> SSO</li>
-
-<li><strong>Secondary Authentication Factor:</strong> [Select FACE, PASSCODE, SSO or NONE]</li>
-
-<li><strong>Fallback Authentication Factor:</strong> [Select FACE, PASSCODE, NONE, SSO or ADMIN BYPASS PASSCODE]</li>
-
-<li><strong>Primary Authentication Timeout:</strong> [Enter value in ms, e.g. "300000"]</li>
-
-<li><strong>Fallback Authentication Timeout:</strong> [Enter value in ms, e.g. "300000"]
-<img alt="image" style="height:450px" src="managed-config-verification-setup.jpg">
-<em>zDNA Cloud Managed Config</em></li></ul>
-</li>
-
-<li>Configure the Lock-screen Event options:
-
-
-<ul>
-<li><strong>On Unlock:</strong>
-
-
-<ul>
-<li><strong>Verification Setup:</strong> [Enter the desired authentication scheme, e.g. "Verification Setup1"]</li></ul>
-</li>
-
-<li><strong>On Reboot:</strong>
-
-
-<ul>
-<li><strong>Verification Setup:</strong> [Enter the desired authentication scheme, e.g. "Verification Setup1"]</li></ul>
-</li>
-
-<li><strong>On AC power connected:</strong>
-
-
-<ul>
-<li><strong>Verification Setup:</strong> [Enter the desired authentication scheme, e.g. "Verification Setup1"]</li></ul>
-</li>
-
-<li><strong>On AC power disconnected:</strong>
-
-
-<ul>
-<li><strong>Verification Setup:</strong> [Enter the desired authentication scheme, e.g. "Verification Setup1"]</li></ul>
-</li>
-
-<li><strong>On device manual check in:</strong>
-
-
-<ul>
-<li><strong>Verification Setup:</strong> [Enter the desired authentication scheme, e.g. "Verification Setup1"]</li></ul>
-</li>
-
-<li><strong>On user change:</strong> 
-
-
-<ul>
-<li><strong>Verification Setup:</strong> [Enter the desired authentication scheme, e.g. "Verification Setup1"]
-<img alt="image" style="height:400px" src="managed-config-lock-screen.jpg">
-<em>zDNA Cloud Managed Config</em></li></ul>
-</li></ul>
-</li>
-
-<li>Configure the SSO Authentication Configuration for the app to communicate with Microsoft SSO to authenticate the user: - <strong>Single Sign On Provider:</strong> Microsoft 
-
-
-<ul>
-<li><strong>Authentication Protocol:</strong> OAuth 2.0 (OIDC) </li>
-
-<li><strong>Scope:</strong> [Enter the string based on the SSO server settings] </li>
-
-<li><strong>Configuration Settings:</strong> [Enter the following string, but replace "client_id" and "authority_url" with your values from <code>auth_config_single_account.json</code> file downloaded from step I.]
-<pre class="prettify prettyprint"><code>
-                {
-                    "client_id" : "[ENTER YOUR CLIENT ID]",
-                    "authorization_user_agent" : "DEFAULT",
-                    "redirect_uri" : "msauth://com.zebra.mdna.els/KqmK9tYXpw%2BeW2lke7US3iG9EAQ%3D",
-                    "account_mode" : "SINGLE",
-                    "broker_redirect_uri_registered": true,
-                    "shared_device_mode_supported": true,
-                    "authorities" : [
-                        {
-                            "type": "AAD",
-                            "authority_url": "[ENTER YOUR AUTHORITY URL]"
-                        }  
-                    ]
-                }
-            </code>
-</pre>
-<img alt="image" style="height:450px" src="managed-config-sso-ms.jpg">
-<em>zDNA Cloud Managed Config</em></li></ul>
-</li></ul>
-</li>
-
-<li>If mapping the SSO response to application-specific roles, enter the following (see <a href="../mc">Managed Configurations</a> for more information):
-
-
-<ul>
-<li><strong>Configuration Role Identification -</strong> Enables the recognition and mapping of the Single Sign-On (SSO) response to application-specific roles. Click <strong>Add Role Identifier</strong> as needed. 
-
-
-<ul>
-<li><strong>Role Identifier -</strong> Establishes links between roles in SSO responses and their corresponding roles within the Identity Guardian app. 
-
-
-<ul>
-<li><strong>Identity Guardian Role Name -</strong> Enter the Identity Guardian user role to be assigned based on SSO response during user sign-in </li>
-
-<li><strong>Key-value Pair for Role Assignment -</strong> Add one or more SSO key-value pairs to identify and map users to a predefined Identity Guardian user role. Click <strong>Add SSO Key-Value Pair</strong> as needed. 
-
-
-<ul>
-<li><strong>SSO Key-Value Pair -</strong> Choose whether the SSO response, which contains the user key and values, should be mapped to a corresponding user role in Identity Guardian </li>
-
-<li><strong>SSO Key -</strong> Enter the SSO key to map it to an Identity Guardian role. </li>
-
-<li><strong>SSO Value -</strong> Enter the SSO value(s) to map to the Identity Guardian role. Use commas to separate multiple entries.
-<img alt="image" style="height:450px" src="managed-config-roleID.jpg">
-<em>zDNA Cloud Managed Config</em></li></ul>
-</li></ul>
-</li></ul>
-</li></ul>
-</li>
-
-<li>See <a href="../mc">Managed Configurations</a> to configure any other non-SSO settings.</li>
-
-<li>Deploy the Managed Configurations to the devices through your EMM.</li>
-</ol>
-
-<p>When a device gets updated with the new configurations, Zebra Identity Guardian activates the lock screen. The user is then required to authenticate themselves using Single Sign-On (SSO) to gain access to the device. See <a href="../usage/">User Guide</a> for more information.</p>
+<hr>
+
+<h2 id="userinterfacestates" class="anchor"><a class="heading-anchor" href="#userinterfacestates"><span></span></a>User Interface &amp; States</h2>
+
+<p>The application transitions across four distinct UI states: Idle, Processing, Success, and Failed.</p>
+
+<p><img src="../../images/1-0/screen-states.png" style="height:375px;"></p>
+
+<p><strong>Application Screens</strong></p>
+
+<table class="facelift" style="width:100%" border="1" padding="5px">
+    <tbody><tr bgcolor="#dce8ef">
+        <th style="width: 10%;">State</th>
+        <th style="width: 35%;">Primary Screen Element</th>
+        <th style="width: 30%;">Description/Instruction</th>
+        <th style="width: 25%;">Screen Capture</th>
+    </tr>
+    <tr>
+        <td><strong>Idle</strong></td>
+        <td>Card Scan</td>
+        <td>Tap or align the card to scan. This screen appears when launching the app, after completing a scan, or when directed to try again.</td>
+        <td><img src="../../images/1-0/scan-card.png" style="height:300px;"></td>
+    </tr>
+    <tr>
+        <td><strong>Processing</strong> </td>
+        <td>Circular Progress Indicator</td>
+        <td>Displayed while communicating with the card to read credentials.</td>
+        <td><img src="../../images/1-0/processing.png" style="height:300px;"></td>
+    </tr>
+    <tr>
+        <td><strong>Success</strong> </td>
+        <td>Successful card scan</td>
+        <td>Displayed after card authentication completes successfully, presenting the PCS payload and a <b>Done</b> button.</td>
+        <td><img src="../../images/1-0/scan-success.png" style="height:300px;"></td>
+    </tr>
+    <tr>
+        <td><strong>Failed</strong> </td>
+        <td>Failed to scan the card</td>
+        <td>Displayed when card authentication or communication fails, prompting the user to try again. View the Activity Log for more details; see <a href="#scanfailed">Failed Scan Errors</a>.</td>
+        <td><img src="../../images/1-0/scan-fail.png" style="height:300px;"></td>
+    </tr>
+    <tr>
+        <td><strong>Activity Log</strong> </td>
+        <td>Timestamped Event Trace</td>
+        <td>Tap the icon in the upper-right corner of the title bar to open the Activity Log. It displays a timestamped trace of service status, NFC lifecycle events, and card read diagnostics. Use the <b>Clear</b> button to reset the log, or tap the icon to switch back to the card scan screen.</td>
+        <td><img src="../../images/1-0/activity-log.png" style="height:300px;"></td>
+    </tr>
+</tbody></table>
+
+<h3 id="lifecyclestatemanagement" class="anchor"><a class="heading-anchor" href="#lifecyclestatemanagement"><span></span></a>Lifecycle &amp; State Management</h3>
+
+<p>The application actively monitors Android system NFC state changes and Activity lifecycle transitions to maintain service stability and hardware operation. When NFC is disabled, the application displays an NFC dialog prompting the user to enable NFC in system settings. The table below details the application's behavior across lifecycle events:</p>
+
+<table class="facelift" style="width:90%; border-collapse: collapse;" border="1" cellpadding="8">
+  <thead>
+    <tr style="background-color:#dce8ef; text-align: left;"> 
+      <th>Event</th>
+      <th>Application Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>App Launched with NFC Disabled</td>
+      <td>Status message indicates NFC is off. Does not connect to the HID Service. Displays the NFC dialog.</td>
+    </tr>
+    <tr>
+      <td>App Launched or Resumed with NFC Enabled</td>
+      <td>Automatically dismisses the NFC dialog, enables reader mode and initializes service connection or reconnection.</td>
+    </tr>
+    <tr>
+      <td>NFC Disabled While App is Open</td>
+      <td>Disables reader mode, disconnects service, and displays the NFC dialog. Status message indicates NFC is off. If the service was previously connected, the SDK reports the disconnect, and the status message indicates the HID Dispatcher is not connected.</td>
+    </tr>
+    <tr>
+      <td>NFC Enabled While App is Open</td>
+      <td>Automatically dismisses the NFC dialog, enables reader mode, and reconnects or connects to the service.</td>
+    </tr>
+    <tr>
+      <td>App Shifts to Background</td>
+      <td>Disconnects from service (displayed in status message) and disables reader mode.</td>
+    </tr>
+    <tr>
+      <td>App Terminated</td>
+      <td>Invokes <code>cleanup()</code> SDK method.</td>
+    </tr>
+    <tr>
+      <td>App Launched with NFC Disabled</td>
+      <td>Status message indicates NFC is off, displays the NFC dialog, and does not connect to the HID Service.</td>
+    </tr>
+    <tr>
+      <td>Scan Card While NFC is Disabled</td>
+      <td>Scan failed screen appears, and status and toast message indicates NFC is off.</td>
+    </tr>
+  </tbody>
+</table>
 
 <hr>
 
-<h3 id="pingid" class="anchor"><a class="heading-anchor" href="#pingid"><span></span></a>PingID</h3>
+<h2 id="keymethods" class="anchor"><a class="heading-anchor" href="#keymethods"><span></span></a>Key Methods</h2>
 
-<p>This section provides guidance to integrate Identity Guardian with PingID.</p>
+<p><strong>HIDDemoActivity Methods</strong></p>
 
-<p><strong>To enable user access to the device through SSO, install and set up Identity Guardian on the devices:</strong></p>
+<table class="facelift" style="width:100%; border-collapse: collapse;" border="1" cellpadding="8">
+  <thead>
+    <tr style="background-color:#dce8ef; text-align: left;"> 
+      <th>SDK Method</th>
+      <th>Purpose</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>onCreate()</code></td>
+      <td>Builds the UI and checks the NFC status. If NFC is "off," the NFC dialog displays. If NFC is "on," it connects to the HID Service.</td>
+    </tr>
+    <tr>
+      <td><code>onResume()</code></td>
+      <td>Registers the NFC state receiver. If NFC is "on," it enables reader mode, then connects or reconnects (if the SDK manager already exists) to the HID service. Otherwise, the NFC dialog displays.</td>
+    </tr>
+    <tr>
+      <td><code>onPause()</code></td>
+      <td>Unregisters the NFC receiver, disables reader mode, and disconnects from the HID service.</td>
+    </tr>
+    <tr>
+      <td><code>onDestroy()</code></td>
+      <td>Dismisses the dialog and invokes <code>cleanup()</code> on the SDK manager.</td>
+    </tr>
+    <tr>
+      <td><code>connectToHIDService()</code></td>
+      <td>Creates the <code>HidSdkManager</code> with a connection callback.</td>
+    </tr>
+    <tr>
+      <td><code>initializeHidCommunication()</code></td>
+      <td>Calls <code>initiateHIDCommunication()</code>, logs the <code>SEInfo</code> it returns and</td>
+    </tr>
+    <tr>
+      <td><code>enableReadPassMode() / disableReadPassMode()</code></td>
+      <td>Turn on/off the NFC reader (flags A, B, F, V and skip-NDEF-check).</td>
+    </tr>
+    <tr>
+      <td><code>onTagDiscovered()</code></td>
+      <td>Captures the physical tag, invokes <code>isCardHID()</code>, and triggers <code>getAuthenticatedData()</code>.</td>
+    </tr>
+    <tr>
+      <td><code>parsePacsData()</code></td>
+      <td>Reads the status byte and the PACS value.</td>
+    </tr>
+    <tr>
+      <td><code>showSimpleViewState()</code></td>
+      <td>Switches between the Idle, Processing, Success and Failure screens according to the operational state.</td>
+    </tr>
+    <tr>
+      <td><code>showSuccess() / showFailure()</code></td>
+      <td>Displays the respective result screen. For <code>showFailure()</code>, the error reason is recorded exclusively in the activity log rather than shown in the result screen.</td>
+    </tr>
+    <tr>
+      <td><code>updateServiceStatus()</code></td>
+      <td>Updates the status message banner at the top of the user interface.</td>
+    </tr>
+    <tr>
+      <td><code>handleNfcEnabled() / handleNfcDisabled()</code></td>
+      <td>React to NFC being switched on or off while the app is open.</td>
+    </tr>
+    <tr>
+      <td><code>showNfcDisabledDialog()</code></td>
+      <td>Shows the "NFC is Disabled" dialog with Enable NFC and Exit buttons.</td>
+    </tr>
+    <tr>
+      <td><code>toggleView()</code></td>
+      <td>Switches the interface between the high-level Simple View and the diagnostic Detailed (Log) View.</td>
+    </tr>
+  </tbody>
+</table>
 
-<ol>
-<li>Deploy and install Zebra Identity Guardian app on the devices.</li>
+<p><br></p>
 
-<li>Launch the app using an EMM. <em>This step must be performed at least once.</em></li>
+<p><strong>HID SDK Methods Used by the Demo</strong></p>
 
-<li>Enter the <a href="../mc">Managed Configuration</a> settings for the app via your EMM:
+<table class="facelift" style="width:100%; border-collapse: collapse;" border="1" cellpadding="8">
+  <thead>
+    <tr style="background-color:#dce8ef; text-align: left;"> 
+      <th>SDK Method</th>
+      <th>Purpose</th>
+      <th>Associated Callback &amp; Payload</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>new HidSdkManager(context, ConnectionCallback)</code></td>
+      <td>Binds the application to the HID service.</td>
+      <td><code>onConnected(), onDisconnected(), onError(String)</code></td>
+    </tr>
+    <tr>
+      <td><code>initiateHIDCommunication(callback)</code></td>
+      <td>Starts the HID communication.</td>
+      <td><code>onSuccess(SEInfo), onError(String)</code></td>
+    </tr>
+    <tr>
+      <td><code>isCardHID(tag, callback)</code></td>
+      <td>Checks if the presented card is a HID card.</td>
+      <td><code>onSuccess(SEResponse), onError(String)</code></td>
+    </tr>
+    <tr>
+      <td><code>getAuthenticatedData(tag, callback)</code></td>
+      <td>Read the PACS data.</td>
+      <td><code>onSuccess(SEResponse), onError(String)</code></td>
+    </tr>
+    <tr>
+      <td><code>disconnect()</code></td>
+      <td>Releases the service connection.</td>
+      <td><code>ConnectionCallback.onDisconnected(); </code></td>
+    </tr>
+    <tr>
+      <td><code>reconnect()</code></td>
+      <td>Re-acquires the service connection.</td>
+      <td><code>onConnected() or onError()</code></td>
+    </tr>
+    <tr>
+      <td><code>cleanup()</code></td>
+      <td>Releases all SDK resources and unbinds from the HID service.</td>
+      <td>N/A</td>
+    </tr>
+  </tbody>
+</table>
 
+<!-- 
+---
 
-<ul>
-<li>Select the application mode:
+## Error Handling
 
+### System & Connection State
 
-<ul>
-<li><strong>Application Mode:</strong> Authentication
-<img alt="image" style="height:375px" src="managed-config-app-mode.jpg">
-<em>zDNA Cloud Managed App Config</em></li></ul>
-</li>
-
-<li>Configure the Verification Setup to validate the user access:
-
-
-<ul>
-<li><strong>Primary Authentication Factor:</strong> SSO</li>
-
-<li><strong>Secondary Authentication Factor:</strong> [Select FACE, PASSCODE, or NO_COMPARISON]</li>
-
-<li><strong>Fallback Authentication Factor:</strong> [Select FACE, PASSCODE, NONE, SSO or ADMIN BYPASS PASSCODE]</li>
-
-<li><strong>Primary Authentication Timeout:</strong> [Enter value in ms, e.g. "300000"]</li>
-
-<li><strong>Fallback Authentication Timeout:</strong> [Enter value in ms, e.g. "300000"]
-<img alt="image" style="height:450px" src="managed-config-verification-setup.jpg">
-<em>zDNA Cloud Managed Config</em></li></ul>
-</li>
-
-<li>Configure the Lock-screen Event options:
-
-
-<ul>
-<li><strong>On Unlock:</strong>
-
-
-<ul>
-<li><strong>Verification Setup:</strong> [Enter the desired authentication scheme, e.g. "Verification Setup1"]</li></ul>
-</li>
-
-<li><strong>On Reboot:</strong>
-
-
-<ul>
-<li><strong>Verification Setup:</strong> [Enter the desired authentication scheme, e.g. "Verification Setup1"]</li></ul>
-</li>
-
-<li><strong>On AC power connected:</strong>
-
-
-<ul>
-<li><strong>Verification Setup:</strong> [Enter the desired authentication scheme, e.g. "Verification Setup1"]</li></ul>
-</li>
-
-<li><strong>On AC power disconnected:</strong>
-
-
-<ul>
-<li><strong>Verification Setup:</strong> [Enter the desired authentication scheme, e.g. "Verification Setup1"]</li></ul>
-</li>
-
-<li><strong>On device manual check in:</strong>
-
-
-<ul>
-<li><strong>Verification Setup:</strong> [Enter the desired authentication scheme, e.g. "Verification Setup1"]</li></ul>
-</li>
-
-<li><strong>On user change:</strong> 
-
-
-<ul>
-<li><strong>Verification Setup:</strong> [Enter the desired authentication scheme, e.g. "Verification Setup1"]
-<img alt="image" style="height:400px" src="managed-config-lock-screen.jpg">
-<em>zDNA Cloud Managed Config</em></li></ul>
-</li></ul>
-</li>
-
-<li>Configure the SSO Authentication Configuration: 
-
-
-<ul>
-<li><strong>Single Sign On Provider:</strong> PingId </li>
-
-<li><strong>Authentication Protocol:</strong> OAuth 2.0 (OIDC) </li>
-
-<li><strong>Scope:</strong> openid email profile </li>
-
-<li><strong>Userid Identifier:</strong> [Specify the user key for identifying the signed-in user] </li>
-
-<li><strong>Configuration Settings:</strong> [Enter the specified string, but replace the following values with those from your own SSO response: logoutURL, logoutURL, tokenURL, authorizationURL, clientId, userInfoUrl]
-<pre class="prettify prettyprint"><code>
-            {
-            "redirectURI" : "com.zebra.mdna.els:/loginComplete",
-            "logoutURL" : "[enter your logout URL]",
-            "logoutURL" : "[enter your revoke URL]",
-            "tokenURL" : "[enter your token URL]",
-            "authorizationURL" : "[enter your authorization URL]",
-            "clientAuthType" : 0,
-            "clientId" : "[enter your clientID]",
-            "certificatePhrase" : "",
-            "userInfoUrl" : "[enter your serInfo URL]",
-            "certificate" : ""
-            }
-            </code>
-</pre>
-<img alt="image" style="height:450px" src="managed-config-sso-ping.jpg">
-<em>zDNA Cloud Managed App Config</em></li></ul>
-</li></ul>
-</li>
-
-<li>If mapping the SSO response to application-specific roles, enter the following (see <a href="../mc">Managed Configurations</a> for more information):
-
-
-<ul>
-<li><strong>Configuration Role Identification -</strong> Enables the recognition and mapping of the Single Sign-On (SSO) response to application-specific roles. Click <strong>Add Role Identifier</strong> as needed. 
-
-
-<ul>
-<li><strong>Role Identifier -</strong> Establishes links between roles in SSO responses and their corresponding roles within the Identity Guardian app. 
-
-
-<ul>
-<li><strong>Identity Guardian Role Name -</strong> Enter the Identity Guardian user role to be assigned based on SSO response during user sign-in </li>
-
-<li><strong>Key-value Pair for Role Assignment -</strong> Add one or more SSO key-value pairs to identify and map users to a predefined Identity Guardian user role. Click <strong>Add SSO Key-Value Pair</strong> as needed. 
+The status banner (message strip located at the top of the user interface) provides real-time visibility into the system and connection state:
 
 
-<ul>
-<li><strong>SSO Key-Value Pair -</strong> Choose whether the SSO response, which contains the user key and values, should be mapped to a corresponding user role in Identity Guardian </li>
+<table class="facelift" style="width:100%; border-collapse: collapse;" border="1" cellpadding="8">
+  <thead>
+    <tr style="background-color:#dce8ef; text-align: left;"> 
+      <th>Message</th>
+      <th>Display</th>
+      <th>Cause / Trigger</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><b>Connecting...</b></td>
+      <td>Banner (red)</td>
+      <td>Startup state prior to receiving a response using <code>initiateHIDCommunication()</code>.</td>
+    </tr>
+    <tr>
+      <td><b>All Services are connected</b></td>
+      <td>Banner (green)</td>
+      <td>Successful connection using <code>initiateHIDCommunication</code>.</td>
+    </tr>
+    <tr>
+      <td><b>HID Dispatcher not found</b></td>
+      <td>Banner (red)</td>
+      <td>Service connection error using <code>bindService()</code>.</td>
+    </tr>
+    <tr>
+      <td><b>HID Dispatcher not connected</b></td>
+      <td>Banner (red)</td>
+      <td>The service or app disconnected (e.g., NFC was switched off), or initialization using <code>initiateHIDCommunication</code> returned an error.</td>
+    </tr>
+    <tr>
+      <td><b>Disconnected</b></td>
+      <td>Banner (red)</td>
+      <td>The application is placed in the background.</td>
+    </tr>
+    <tr>
+      <td><b>NFC is OFF <br /><br />NFC is Disabled</b></td>
+      <td>Banner (red)</td>
+      <td>NFC is disabled in the device system settings, or a card was scanned with NFC disabled.</td>
+    </tr>
+    <tr>
+      <td><b>NFC turning ON... <br /><br />NFC turning OFF...</b></td>
+      <td>Banner (red)</td>
+      <td>NFC state transition.</td>
+    </tr>
+    <tr>
+      <td><b>NFC turned OFF. Please enable it.</td>
+      <td>Toast Message</td>
+      <td>A card was scanned with NFC disabled.</td>
+    </tr>
+     <tr>
+      <td><b>NFC is required for this application.</td>
+      <td>Toast Message</td>
+      <td>The user exited the NFC dialog.</td>
+    </tr>
+  </tbody>
+</table>
 
-<li><strong>SSO Key -</strong> Enter the SSO key to map it to an Identity Guardian role.</li>
 
-<li><strong>SSO Value -</strong> Enter the SSO value(s) to map to the Identity Guardian role. Use commas to separate multiple entries.
-<img alt="image" style="height:450px" src="managed-config-roleID.jpg">
-<em>zDNA Cloud Managed Config</em></li></ul>
-</li></ul>
-</li></ul>
-</li></ul>
-</li>
+### Scan Failed
 
-<li>See <a href="../mc">Managed Configurations</a> to configure any other non-SSO settings.</li>
+When a scan fails, view the Activity Log for more detailed error messages:
 
-<li>Deploy the Managed Configurations to the devices through your EMM.</li>
-</ol>
 
-<p>When a device gets updated with the new configurations, Zebra Identity Guardian activates the lock screen. The user is then required to authenticate themselves using Single Sign-On (SSO) to gain access to the device. See <a href="../usage/">User Guide</a> for more information.</p>
+<table class="facelift" style="width:100%; border-collapse: collapse;" border="1" cellpadding="8">
+  <thead>
+    <tr style="background-color:#dce8ef; text-align: left;"> 
+      <th>Error Message</th>
+      <th>Cause</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><b>NFC is OFF - Cannot process card</b></td>
+      <td>Card was scanned while NFC was disabled. Enable NFC.</td>
+    </tr>
+    <tr>
+      <td><b>ERROR: ... Tag object is null</b></td>
+      <td>No data returned from the NFC card.</td>
+    </tr>
+    <tr>
+      <td><b>ERROR: HID SDK not connected - Cannot authenticate</b></td>
+      <td>The NFC card was presented before the service was connected.</td>
+    </tr>
+    <tr>
+      <td><b>ERROR: Null response from isCardHID</b></td>
+      <td><code>isCardHID</code> returned null.</td>
+    </tr>
+    <tr>
+      <td><b>NOT a HID card</b></td>
+      <td>The card detected is not a valid HID card.</td>
+    </tr>
+    <tr>
+      <td><b>ERROR checking card type: &lt;error&gt;</b></td>
+      <td>Returned an error from <code>isCardHID()</code>.</td>
+    </td>
+    </tr>
+    <tr>
+      <td><b>Tag Lost<br /><br />ERROR: &lt;error&gt;</b></td>
+      <td>Returned an error from <code>getAuthenticatedData()</code>. Logged as "Tag Lost" when the text contains "Tag is out of date" or "Tag Lost."</td>
+    </tr>
+    <tr>
+      <td><b>Response Error: &lt;text&gt;</b></td>
+      <td>Warning reported by <code>getAuthenticatedData()</code>. Since data transmission completed successfully, the app still attempts to parse the PACS data.</td>
+    </tr>
+    <tr>
+      <td><b>PACS Data too short to parse</b></td>
+      <td>The response is fewer than 3 bytes; authentication response was truncated.</td>
+    </tr>
+    <tr>
+      <td><b>No PACS bits retrieved</b></td>
+      <td>Status returned <code>0xBD</code> but the expected marker is not <code>0x80</code>.</td>
+    </tr>
+    <tr>
+      <td><b>Status: BE (Error)</b></td>
+      <td>The Secure Element responded with status <code>0xBE</code>.</td>
+    </tr>
+    <tr>
+      <td><b>Unexpected status: &lt;byte&gt;</b></td>
+      <td>Expected a status byte other than that specified.</td>
+    </tr>
+    <tr>
+      <td><b>EXCEPTION: &lt;message&gt;</b></td>
+      <td>Exception encountered while parsing.</td>
+    </tr>
+  </tbody>
+</table>
+
+-->
 
 <hr>
 
 <h2 id="seealso" class="anchor"><a class="heading-anchor" href="#seealso"><span></span></a>See Also</h2>
 
 <ul>
-<li><a href="../about">About Identity Guardian</a></li>
+<li><a href="../about">About HID SDK</a></li>
 
-<li><a href="../licensing/">Licensing</a></li>
-
-<li><a href="../usage">User Guide</a></li>
-
-<li><a href="../mc">Managed Configurations</a></li>
+<li><a href="../dev/">Developer Guide</a></li>
 
 <li><a href="../api/">APIs</a></li>
+
+<li><a href="../provision">Provisioning</a></li>
 </ul><p></p>
                                         
 
