@@ -71,7 +71,7 @@
                         <li class="navbar-text pull-left"><strong>TechDocs</strong></li>
                         <p class="navbar-text">
                                             HID SDK
-                                            1.0
+                                            1.2
                         </p>
 
                     </ul>
@@ -82,32 +82,32 @@
 
 
                         <li>
-                            <a href="/hid/1-0/about">
+                            <a href="/hid/1-2/about">
                                     About
                             </a>
                         </li>
                         <li>
-                            <a href="/hid/1-0/dev">
+                            <a href="/hid/1-2/dev">
                                     Developer Guide
                             </a>
                         </li>
                         <li>
-                            <a href="/hid/1-0/api">
+                            <a href="/hid/1-2/api">
                                     APIs
                             </a>
                         </li>
                         <li>
-                            <a href="/hid/1-0/provision">
+                            <a href="/hid/1-2/provision">
                                     Provisioning
                             </a>
                         </li>
                         <li>
-                            <a href="/hid/1-0/demo">
+                            <a href="/hid/1-2/demo">
                                     Demo App
                             </a>
                         </li>
                         <li>
-                            <a href="/hid/1-0/search">
+                            <a href="/hid/1-2/search">
                                     <i class="fa fa-search"></i>
                             </a>
                         </li>
@@ -223,7 +223,7 @@
                                     <h1 id="provisioning" class="anchor"><a class="heading-anchor" href="#provisioning"><span></span></a>Provisioning</h1>
                                     <p>
                                             HID SDK
-                                            1.0
+                                            1.2
                                     </p>
                                 </div>
                             </section>                    
@@ -238,127 +238,41 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>This guide provides instructions for administrators, system integrators, and security engineers to configure, provision, and manage Zebra mobile computers equipped with embedded HID Physical Access Control System (PACS) technology.</p>
+<p>This guide provides instructions for administrators, system integrators, and deployment engineers to perform Hardware Key Provisioning on supported Zebra mobile computers. </p>
 
-<p>Complete device provisioning consists of two operational procedures:</p>
+<p>Typically, facility access cards are protected with proprietary <strong>HID Elite Keys</strong> — a custom cryptographic keyset unique to each organization. Contactless smart cards encrypted with an Elite key cannot be authenticated or read by devices configured with standard keys. Hardware Key Provisioning injects the organization's custom cryptographic keys into the device's hardware-backed Secure Element (SE), enabling the device to mutually authenticate and decrypt the proprietary access cards.</p>
+
+<p>Hardware key provisioning is performed once during initial device staging. It only needs to be repeated when rotating or revoking cryptographic keys.</p>
+
+<hr>
+
+<h2 id="requirements" class="anchor"><a class="heading-anchor" href="#requirements"><span></span></a>Requirements</h2>
+
+<p>Before provisioning devices, ensure the following requirements and prerequisites are met:</p>
 
 <ul>
-<li><strong><a href="#phase1applicationauthorization">Application Authorization</a> (Staging):</strong> Authorize client applications to bind to and communicate with the on-device HID service (<code>com.zebra.hidservice</code>) using Zebra StageNow and AccessMgr.</li>
+<li><strong>Hardware &amp; System Prerequisites:</strong> Satisfy all <a href="../about/#requirements">Device &amp; Hardware Requirements</a>.</li>
 
-<li><strong><a href="#phase2hardwarekeyprovisioning">Hardware Key Provisioning</a> (Manual):</strong> Inject proprietary HID Elite cryptographic keys into the hardware-backed Secure Element (SE) using physical provisioning cards.</li>
+<li><strong>Provisioning Application:</strong> Download the Zebra HID Provisioning Application from the <a href="https://support.zebra.com/">Zebra Support Portal</a> and deploy the <code>.apk</code> onto target devices using Zebra StageNow or an EMM system.</li>
+
+<li><strong><a href="#phase1applicationauthorization">Application Authorization</a>:</strong> Authorize the provisioning application package and its release signing certificate on target devices via Zebra AccessMgr.</li>
+
+<li><strong>Physical Provisioning Cards:</strong> Have genuine HID Elite configuration cards available (see <a href="#cardprocurement">Card Procurement</a>).</li>
+
+<li><strong>Active NFC Controller:</strong> Native Android NFC must be enabled (<strong>Settings &gt; Connected devices &gt; Connection preferences &gt; NFC</strong>).</li>
+
+<li><strong>Battery Level:</strong> Device battery must be charged to at least 30% to prevent power interruption during Secure Element write cycles.</li>
+
+<li><strong>RF Interference:</strong> Remove third-party rugged cases or accessories containing metal shielding that could attenuate NFC RF signals.</li>
 </ul>
 
 <hr>
 
-<h2 id="phase1applicationauthorization" class="anchor"><a class="heading-anchor" href="#phase1applicationauthorization"><span></span></a>Phase 1: Application Authorization</h2>
+<h2 id="cardprocurement" class="anchor"><a class="heading-anchor" href="#cardprocurement"><span></span></a>Card Procurement</h2>
 
-<p>Applications must be authorized to use the HID service (<code>com.zebra.hidservice</code>). Create and deploy a security profile using Zebra’s <a href="/stagenow">StageNow</a> tool to grant the application, identified by its unique signature, the necessary permissions to communicate with the HID service on the device.</p>
+<p>All physical provisioning cards must be procured directly from <strong>HID Global Corporation</strong> referencing the organization's unique HID Elite Program Number. Zebra does not generate or store customer Elite keys. Visit <a href="https://www.hidglobal.com">hidglobal.com</a> or contact an authorized HID Global representative to register an Elite Program, enroll custom keys, and order provisioning cards.</p>
 
-<p><strong>I. <a href="#iextractapplicationsignature">Extract Application Signature</a>:</strong> Extract the application's public signing certificate using the ZebraSigTools utility. <br>
-<strong>II. <a href="#iicreateprofilegeneratebarcodeorxml">Create Profile &amp; Generate Deployment Barcode or XML</a>:</strong> Build an AccessMgr authorization profile within StageNow. Generate the staging barcode or XML containing the granted delegation rules.<br>
-<strong>III. <a href="#iiideploytodevices">Deploy to Devices</a>:</strong> Scan the deployment barcode on the target device or deploy the XML via EMM.</p>
-
-<h3 id="prerequisites" class="anchor"><a class="heading-anchor" href="#prerequisites"><span></span></a>Prerequisites</h3>
-
-<ul>
-<li>Release-signed application .APK file</li>
-
-<li>Host computer with Java Runtime Environment (JRE) or Java Development Kit (JDK) installed</li>
-
-<li>Zebra’s <a href="/stagenow">StageNow</a> tool installed on the host computer.</li>
-</ul>
-
-<h3 id="iextractapplicationsignature" class="anchor"><a class="heading-anchor" href="#iextractapplicationsignature"><span></span></a>I. Extract Application Signature</h3>
-
-<p>Generate the certificate file to be used for the StageNow profile. </p>
-
-<ol>
-<li><p><a href="/sigtools/ZebraSigTools_1.5.zip" download="">Download</a> the <a href="/sigtools">Zebra SigTools</a> utility.</p></li>
-
-<li><p>Extract the contents of the zip file to a working directory on the host computer, including the "ZebraSigTools_1.5.jar" file.</p></li>
-
-<li><p>Open a command prompt or terminal and navigate to the directory where the .zip file contents are extracted.</p></li>
-
-<li><p>Place your application's release-signed APK file (e.g., app-release.apk) in the same directory.</p></li>
-
-<li><p>Execute the following Java command to extract the signature into a .crt certificate file:</p>
-
-<pre class="prettyprint"><code>java -jar ZebraSigTools_1.5.jar getcert -inform apk -outform der -in &lt;your-apk-file.apk&gt; -outfile &lt;your-certificate-name.crt&gt;
-</code></pre>
-
-<p>Example:</p>
-
-<pre class="prettyprint"><code>java -jar ZebraSigTools_1.5.jar getcert -inform apk -outform der -in app-release.apk -outfile HID_demo_launcher.crt
-</code></pre></li>
-
-<li><p>A new certificate file (e.g., <code>HID_demo_launcher.crt</code>) is created in the directory. This file contains the signature required by StageNow.</p></li>
-</ol>
-
-<h3 id="iicreateprofilegeneratebarcodeorxml" class="anchor"><a class="heading-anchor" href="#iicreateprofilegeneratebarcodeorxml"><span></span></a>II. Create Profile &amp; Generate Barcode or XML</h3>
-
-<p>Create the StageNow profile and staging barcode to grant the application access to the HID service.</p>
-
-<ol>
-<li>Launch the StageNow application on the host computer.</li>
-
-<li>From the home screen, select <strong>Create new Profile.</strong>
-<img alt="image" style="height:300px" src="../../images/1-0/stagenow-1.jpg"></li>
-
-<li>Choose the target MX Version for your devices from the dropdown menu (e.g., the latest available version).
-<img alt="image" style="height:400px" src="../../images/1-0/stagenow-2.jpg"></li>
-
-<li>Select <strong>Xpert Mode</strong> and click <strong>Create.</strong>
-<img alt="image" style="height:400px" src="../../images/1-0/stagenow-3.jpg"></li>
-
-<li>Enter a descriptive name for the profile (e.g., “HID Service Access Grant”) and click <strong>Start.</strong>
-<img alt="image" style="height:250px" src="../../images/1-0/stagenow-4.jpg"></li>
-
-<li>In the “ADD/EDIT” window, locate <strong>AccessMgr</strong> and click the <strong>(+)</strong> button to add it to the profile. Click <strong>Add.</strong>
-<img alt="image" style="height:400px" src="../../images/1-0/stagenow-5.png">                          </li>
-
-<li>Configure the AccessMgr settings with the following specific values and click <strong>Continue:</strong>
-
-
-<ul>
-<li><strong>Service Access Action:</strong> Allow Caller to Call Service</li>
-
-<li><strong>Service Identifier:</strong> delegation-zebra-HID-api-access-control</li>
-
-<li><strong>Caller Package Name:</strong> [Enter your application's package name (e.g., com.zebra.hidDemoApp).]</li>
-
-<li><strong>Caller Signature:</strong> [Click the three-dot button (…) and browse to select the .crt certificate file generated in Step I.]
-<table>
-<tbody><tr>
-    <td><img alt="image" style="height:300px" src="../../images/1-0/stagenow-6.png"></td>
-    <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
-    <td><img alt="image" style="height:300px" src="../../images/1-0/stagenow-7.png"></td>
-</tr>
-</tbody></table></li></ul>
-</li>
-
-<li>Review the profile settings. Click <strong>Complete Profile.</strong>
-<img alt="image" style="height:300px" src="../../images/1-0/stagenow-8.jpg"></li>
-</ol>
-
-<h3 id="iiideploytodevices" class="anchor"><a class="heading-anchor" href="#iiideploytodevices"><span></span></a>III. Deploy to Devices</h3>
-
-<p>Use one of the following methods based on the desired tool to deploy the profile to the devices and authorize application access the HID service:</p>
-
-<ul>
-<li><strong>StageNow:</strong> Generate the barcode from the StageNow profile. Open StageNow client on the device and scan the barcode.</li>
-
-<li><strong>EMM:</strong> Export the StageNow XML file from the StageNow installation. Send the XML using either <a href="/oemconfig">OEMConfig</a> or <a href="/mx/overview">MX</a>.</li>
-</ul>
-
-<hr>
-
-<h2 id="phase2hardwarekeyprovisioning" class="anchor"><a class="heading-anchor" href="#phase2hardwarekeyprovisioning"><span></span></a>Phase 2: Hardware Key Provisioning</h2>
-
-<p>Once client applications are authorized to communicate with the service, configure the internal Secure Element with your organization's custom HID Elite Keys.</p>
-
-<p>All physical provisioning cards must be procured directly from <strong>HID Global Corporation</strong> referencing your organization's unique HID Elite Program Number. Zebra does not generate or store customer Elite keys. Visit "hidglobal.com" or contact the designated HID Global sales representative for Elite Program registration, custom key enrollment, and provisioning card ordering.</p>
-
-<p>When submitting an order to HID Global, specify your organization’s HID Elite Program Number and request the appropriate card sets:</p>
+<p>When submitting an order to HID Global, specify the organization's HID Elite Program Number and request the appropriate card sets:</p>
 
 <ul>
 <li><strong>Manual Elite Provisioning Set:</strong> Card P000 (Reader Configuration) and Card P001 (Elite Credential / Key Injection).</li>
@@ -366,25 +280,9 @@
 <li><strong>Factory Rollback Set:</strong> Card P002 (Elite Downgrade Card) and Card P003 (Standard Key Reset Card).</li>
 </ul>
 
-<h3 id="requirements" class="anchor"><a class="heading-anchor" href="#requirements"><span></span></a>Requirements</h3>
-
-<ul>
-<li><strong>Install the Zebra HID Provisioning Application.</strong> Available from the <a href="https://support.zebra.com/">Zebra Support</a> portal.</li>
-
-<li><strong>Install the application .APK onto target devices.</strong> Use Zebra StageNow or an EMM.</li>
-
-<li><strong>Native Android NFC is enabled.</strong> In <strong>Settings &gt; Connected devices &gt; Connection</strong> preferences, toggle NFC to ON.</li>
-
-<li><strong>Device battery level is at least 30% or higher.</strong> This prevents interruptions during write cycles.</li>
-
-<li><strong>Third-party rugged cases or accessories containing metal shielding is removed</strong> to avoid interference.</li>
-
-<li><strong><a href="#phase1applicationauthorization">Authorize the target application</a>.</strong></li>
-</ul>
-
 <hr>
 
-<h3 id="cardsequencelogic" class="anchor"><a class="heading-anchor" href="#cardsequencelogic"><span></span></a>Card Sequence Logic</h3>
+<h2 id="cardsequencelogic" class="anchor"><a class="heading-anchor" href="#cardsequencelogic"><span></span></a>Card Sequence Logic</h2>
 
 <p>Manual Elite provisioning relies on a two-step cryptographic handshake in a specific sequence:</p>
 
@@ -415,16 +313,16 @@
 
 <p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>Critical Warning:</strong> Scan Card P000 prior to P001. Reversing this sequence results in a cryptographic handshake failure and key injection rejection. If cards are presented out of sequence, reset the session and restart strictly with P000.</p>
 
-<h3 id="provisioningprocedure" class="anchor"><a class="heading-anchor" href="#provisioningprocedure"><span></span></a>Provisioning Procedure</h3>
+<h2 id="provisioningprocedure" class="anchor"><a class="heading-anchor" href="#provisioningprocedure"><span></span></a>Provisioning Procedure</h2>
 
 <p><strong>Step-by-Step Manual Provisioning:</strong></p>
 
 <ol>
 <li>On the Zebra mobile devices, open the <strong>HID Provisioning</strong> application.
-<img alt="image" style="height:350px" src="../../images/1-0/apps-hid.png"></li>
+<img alt="image" style="height:350px" src="../../images/1-2/apps-hid.png"></li>
 
 <li>The app opens showing the <strong>HID Elite Card.</strong> Select <strong>Administrator Keys (P000).</strong>
-<img alt="image" style="height:350px" src="../../images/1-0/hid-app.png"></li>
+<img alt="image" style="height:350px" src="../../images/1-2/hid-app.png"></li>
 
 <li>Align Card P000 flush against the device's NFC antenna location and hold the card steady for 2 to 3 seconds until the device emits an audible success chime. Antenna locations:
 
@@ -433,21 +331,21 @@
 <li><strong>HC501:</strong> Upper-rear housing, adjacent to the camera and barcode scanner window.</li>
 
 <li><strong>ET401:</strong> Rear upper-middle region of the chassis.
-<img alt="image" style="height:350px" src="../../images/1-0/admin-scan-card.png">
+<img alt="image" style="height:350px" src="../../images/1-2/admin-scan-card.png">
 <strong>Note:</strong> To see the Zebra reader NFC Antenna location go to <strong>Settings &gt; Connected Devices &gt; Connection Preferences &gt; NFC.</strong></li></ul>
 </li>
 
 <li>The success message appears. Tap <strong>Done</strong> and remove the P000 card from the NFC field.
-<img alt="image" style="height:350px" src="../../images/1-0/admin-scan-success.png"></li>
+<img alt="image" style="height:350px" src="../../images/1-2/admin-scan-success.png"></li>
 
 <li>Return to the main screen and select <strong>Configuration Keys (P001).</strong>
-<img alt="image" style="height:350px" src="../../images/1-0/hid-app-2.png"></li>
+<img alt="image" style="height:350px" src="../../images/1-2/hid-app-2.png"></li>
 
 <li>Present Card P001 flush against the same NFC antenna location. Hold motionless while the cryptographic key injection executes.
-<img alt="image" style="height:350px" src="../../images/1-0/config-scan-card.png"></li>
+<img alt="image" style="height:350px" src="../../images/1-2/config-scan-card.png"></li>
 
 <li>When complete, the device emits the success tone.
-<img alt="image" style="height:350px" src="../../images/1-0/config-scan-success.png"></li>
+<img alt="image" style="height:350px" src="../../images/1-2/config-scan-success.png"></li>
 
 <li>Tap <strong>Done</strong> and remove the P001 card from the NFC field. The hardware Secure Element is now permanently provisioned. Exit the application.</li>
 </ol>
@@ -462,7 +360,7 @@
 <li>Verify that the badge authenticates successfully and outputs the expected Facility Code and Card Number.</li>
 </ol>
 
-<h3 id="factorydefaultrollback" class="anchor"><a class="heading-anchor" href="#factorydefaultrollback"><span></span></a>Factory Default Rollback</h3>
+<h2 id="factorydefaultrollback" class="anchor"><a class="heading-anchor" href="#factorydefaultrollback"><span></span></a>Factory Default Rollback</h2>
 
 <p>The rollback procedure resets the embedded HID Secure Element from a customer proprietary HID Elite configuration back to the factory standard HID key mode.</p>
 
@@ -505,7 +403,7 @@
   </tbody>
 </table>
 
-<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>Critical Warning:</strong> Scan Card P002 prior to P003. Reversing this sequence results in a rejection since the Secure Element is still locked under the active Elite program. </p>
+<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>Critical Warning:</strong> Scan Card P002 prior to P003. Reversing this sequence results in a rejection since the Secure Element is still locked under the active Elite program.</p>
 
 <h4 id="rollbackexecution" class="anchor"><a class="heading-anchor" href="#rollbackexecution"><span></span></a>Rollback Execution</h4>
 
@@ -513,25 +411,25 @@
 
 <ol>
 <li>In the HID Provisioning application, open the top-right settings menu and toggle <strong>Standard Provisioning</strong> to ON.
-<img alt="image" style="height:400px" src="../../images/1-0/standard-provisioning.png"></li>
+<img alt="image" style="height:400px" src="../../images/1-2/standard-provisioning.png"></li>
 
-<li>In the <strong>HID Standard Card</strong> tab, tap <strong>Configuration Keys (P003).</strong> 
-<img alt="image" style="height:350px" src="../../images/1-0/hid-standard.png"></li>
+<li>In the <strong>HID Standard Card</strong> tab, tap <strong>Configuration Keys (P003).</strong>
+<img alt="image" style="height:350px" src="../../images/1-2/hid-standard.png"></li>
 
 <li>Align Card P003 flush against the device's NFC antenna location and hold the card motionless while injecting the cryptographic key, until the device emits an audible success chime.
-<img alt="image" style="height:350px" src="../../images/1-0/config-scan-card.png"></li>
+<img alt="image" style="height:350px" src="../../images/1-2/config-scan-card.png"></li>
 
 <li>The success confirmation appears. Tap <strong>Done</strong> and remove the P003 card from the NFC field.
-<img alt="image" style="height:350px" src="../../images/1-0/config-scan-success.png"></li>
+<img alt="image" style="height:350px" src="../../images/1-2/config-scan-success.png"></li>
 
 <li>Return to the main screen and select <strong>Administrator Keys (P002).</strong>
-<img alt="image" style="height:350px" src="../../images/1-0/hid-admin.png"></li>
+<img alt="image" style="height:350px" src="../../images/1-2/hid-admin.png"></li>
 
 <li>Present Card P002 flush against the same NFC antenna location. Hold the card motionless while the cryptographic key injection executes.
-<img alt="image" style="height:350px" src="../../images/1-0/config-scan-card.png"></li>
+<img alt="image" style="height:350px" src="../../images/1-2/config-scan-card.png"></li>
 
 <li>The success confirmation appears. Tap <strong>Done</strong> and remove the P003 card from the NFC field.
-<img alt="image" style="height:350px" src="../../images/1-0/config-scan-success.png"></li>
+<img alt="image" style="height:350px" src="../../images/1-2/config-scan-success.png"></li>
 
 <li>Tap Done. The device is now restored to standard factory mode.</li>
 </ol>
@@ -544,7 +442,7 @@
 <li><strong>Test Factory Standard Badge:</strong> Present a standard factory-keyed HID card; the device must read and output credential data successfully.</li>
 </ul>
 
-<h3 id="troubleshootingdiagnostics" class="anchor"><a class="heading-anchor" href="#troubleshootingdiagnostics"><span></span></a>Troubleshooting &amp; Diagnostics</h3>
+<h2 id="troubleshootingdiagnostics" class="anchor"><a class="heading-anchor" href="#troubleshootingdiagnostics"><span></span></a>Troubleshooting &amp; Diagnostics</h2>
 
 <table class="facelift" style="width:90%; border-collapse: collapse;" border="1" cellpadding="8">
   <thead>

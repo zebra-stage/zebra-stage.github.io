@@ -71,7 +71,7 @@
                         <li class="navbar-text pull-left"><strong>TechDocs</strong></li>
                         <p class="navbar-text">
                                             HID SDK
-                                            1.0
+                                            1.2
                         </p>
 
                     </ul>
@@ -82,32 +82,32 @@
 
 
                         <li>
-                            <a href="/hid/1-0/about">
+                            <a href="/hid/1-2/about">
                                     About
                             </a>
                         </li>
                         <li>
-                            <a href="/hid/1-0/dev">
+                            <a href="/hid/1-2/dev">
                                     Developer Guide
                             </a>
                         </li>
                         <li>
-                            <a href="/hid/1-0/api">
+                            <a href="/hid/1-2/api">
                                     APIs
                             </a>
                         </li>
                         <li>
-                            <a href="/hid/1-0/provision">
+                            <a href="/hid/1-2/provision">
                                     Provisioning
                             </a>
                         </li>
                         <li>
-                            <a href="/hid/1-0/demo">
+                            <a href="/hid/1-2/demo">
                                     Demo App
                             </a>
                         </li>
                         <li>
-                            <a href="/hid/1-0/search">
+                            <a href="/hid/1-2/search">
                                     <i class="fa fa-search"></i>
                             </a>
                         </li>
@@ -223,7 +223,7 @@
                                     <h1 id="developer-guide" class="anchor"><a class="heading-anchor" href="#developer-guide"><span></span></a>Developer Guide</h1>
                                     <p>
                                             HID SDK
-                                            1.0
+                                            1.2
                                     </p>
                                 </div>
                             </section>                    
@@ -238,7 +238,39 @@
 
                                         <p></p><h2 id="overview" class="anchor"><a class="heading-anchor" href="#overview"><span></span></a>Overview</h2>
 
-<p>This guide provides instructions for integrating the HID SDK into Android enterprise applications to communicate with the device's embedded Secure Element (SE) to authenticate and read HID NFC credentials. It covers an overview of the underlying system design, step-by-step programming workflows, security considerations, and diagnostics.</p>
+<p>This guide provides instructions for integrating the Zebra HID SDK into Android enterprise applications. By leveraging the SDK, applications communicate with the device’s embedded Secure Element (SE) to authenticate contactless smart cards and extract decrypted Physical Access Control System (PACS) data.</p>
+
+<p>This document covers:</p>
+
+<ul>
+<li><strong><a href="#systemarchitecture">System Architecture</a>:</strong> How the application, SDK, Binder IPC layer, and privileged HID Dispatcher service interact with the embedded Secure Element.</li>
+
+<li><strong><a href="#implementation">Implementation</a>:</strong> Step-by-step guidance on initializing <code>HidSdkManager</code>, managing service connection lifecycles, configuring NFC Reader Mode, and parsing PACS payloads.</li>
+
+<li><strong><a href="#applicationauthorization">Application Authorization</a>:</strong> Enforce runtime security policies by allowlisting application package identities and signing certificates via Zebra AccessMgr and StageNow.</li>
+
+<li><strong><a href="#security">Security</a>:</strong> Security principles and best practices, including secure handling of decrypted PACS payloads.</li>
+</ul>
+
+<blockquote>
+  <p><code>Important:</code> Applications must be authorized via <a href="#applicationauthorization">Application Authorization</a>; unauthorized apps cannot access the Secure Element (SE). </p>
+</blockquote>
+
+<hr>
+
+<h2 id="requirements" class="anchor"><a class="heading-anchor" href="#requirements"><span></span></a>Requirements</h2>
+
+<p>Before developing an application with the Zebra HID SDK, complete the following steps:</p>
+
+<ul>
+<li>Verify that all <a href="../about/#requirements">Device &amp; Hardware Requirements</a> are met.</li>
+
+<li>Download the Zebra HID SDK package from the <a href="https://support.zebra.com/">Zebra Support Portal</a>.</li>
+
+<li>Copy the extracted <code>.aar</code> library file into the <code>libs/</code> folder of the Android application module (for example, <code>app/libs/</code>).</li>
+
+<li>Add the <code>.aar</code> dependency to the <code>build.gradle</code> file.</li>
+</ul>
 
 <hr>
 
@@ -254,7 +286,7 @@
 <li><strong>Protected Operations:</strong> Client applications access read, write, and authentication routines through the HID SDK without exposing underlying cryptographic key material.</li>
 </ul>
 
-<p><img alt="image" style="height:600px" src="../../images/1-0/architecture-diagram.jpg"></p>
+<p><img alt="image" style="height:600px" src="../../images/1-2/architecture-diagram.jpg"></p>
 
 <p><em>Architectural Diagram</em></p>
 
@@ -373,7 +405,7 @@
 
 <hr>
 
-<h2 id="integrationworkflow" class="anchor"><a class="heading-anchor" href="#integrationworkflow"><span></span></a>Integration Workflow</h2>
+<h2 id="implementation" class="anchor"><a class="heading-anchor" href="#implementation"><span></span></a>Implementation</h2>
 
 <p>Developers can integrate with the HID service (<code>com.zebra.hidservice</code>) using either the high-level client SDK Wrapper or direct AIDL service binding.</p>
 
@@ -389,7 +421,7 @@
 
 <p>This guide provides a step-by-step walkthrough for integrating the HID SDK to read an HID NFC tag (iCLASS®, Seos®, and DESFire®) on enabled Zebra hardware (e.g., ET401 premium SKU).</p>
 
-<h3 id="1initializethesdk" class="anchor"><a class="heading-anchor" href="#1initializethesdk"><span></span></a>1. Initialize the SDK</h3>
+<h3 id="iinitializethesdk" class="anchor"><a class="heading-anchor" href="#iinitializethesdk"><span></span></a>I. Initialize the SDK</h3>
 
 <p>In the host Activity‘s onCreate() method, create an instance of <code>HidSdkManager</code>. This requires implementing the <code>ConnectionCallback</code> interface to handle service connection events. The SDK automatically attempts to bind to the HID service.</p>
 
@@ -424,7 +456,7 @@
     }
 </code></pre>
 
-<h3 id="2initiatesecureelementcommunication" class="anchor"><a class="heading-anchor" href="#2initiatesecureelementcommunication"><span></span></a>2. Initiate Secure Element Communication</h3>
+<h3 id="iiinitiatesecureelementcommunication" class="anchor"><a class="heading-anchor" href="#iiinitiatesecureelementcommunication"><span></span></a>II. Initiate Secure Element Communication</h3>
 
 <p>After the <code>onConnected()</code> callback is invoked, initialize communication with the secure element by calling <code>initiateHIDCommunication()</code>. This is an asynchronous operation that reports its result via the <code>HidInitializationCallback</code>.</p>
 
@@ -445,7 +477,7 @@
     }
 </code></pre>
 
-<h3 id="3detectandvalidateannfccard" class="anchor"><a class="heading-anchor" href="#3detectandvalidateannfccard"><span></span></a>3. Detect and Validate an NFC Card</h3>
+<h3 id="iiidetectandvalidateannfccard" class="anchor"><a class="heading-anchor" href="#iiidetectandvalidateannfccard"><span></span></a>III. Detect and Validate an NFC Card</h3>
 
 <p>The client application uses the standard Android NFC APIs to capture detected cards. When a card enter the RF field, invoke <code>isCardHID()</code> to verify whether it is a valid HID card. And then invoke <code>getCardData</code> to retrieve the PACS (Physical Access Control System) data.</p>
 
@@ -470,7 +502,7 @@
     }
 </code></pre>
 
-<h3 id="4readauthenticatedcarddata" class="anchor"><a class="heading-anchor" href="#4readauthenticatedcarddata"><span></span></a>4. Read Authenticated Card Data</h3>
+<h3 id="ivreadauthenticatedcarddata" class="anchor"><a class="heading-anchor" href="#ivreadauthenticatedcarddata"><span></span></a>IV. Read Authenticated Card Data</h3>
 
 <p>Once a card is confirmed as a valid HID card, call <code>getAuthenticatedData()</code> to read and decrypt its contents, including the PACS (Physical Access Control System) data. The result is returned in an <code>SEResponse</code> object via the <code>HidResponseCallback</code>.</p>
 
@@ -490,7 +522,7 @@
     }
 </code></pre>
 
-<h3 id="5cleanupresources" class="anchor"><a class="heading-anchor" href="#5cleanupresources"><span></span></a>5. Clean Up Resources</h3>
+<h3 id="vcleanupresources" class="anchor"><a class="heading-anchor" href="#vcleanupresources"><span></span></a>V. Clean Up Resources</h3>
 
 <p>To prevent resource leaks, call <code>cleanup()</code> in the Activity‘s <code>onDestroy()</code> method. This unbinds the SDK from the HID service and releases all allocated resources.</p>
 
@@ -502,6 +534,108 @@
         }
     }
 </code></pre>
+
+<hr>
+
+<h2 id="applicationauthorization" class="anchor"><a class="heading-anchor" href="#applicationauthorization"><span></span></a>Application Authorization</h2>
+
+<p>Authorize client applications to bind to and communicate with the on-device HID service (<code>com.zebra.hidservice</code>) using Zebra StageNow and AccessMgr. Create and deploy a security profile using Zebra’s <a href="/stagenow">StageNow</a> tool to grant the application, identified by its unique signature, the necessary permissions to communicate with the HID service on the device.</p>
+
+<p><strong>I. <a href="#iextractapplicationsignature">Extract Application Signature</a>:</strong> Extract the application's public signing certificate using the ZebraSigTools utility. <br>
+<strong>II. <a href="#iicreateprofilegeneratebarcodeorxml">Create Profile &amp; Generate Deployment Barcode or XML</a>:</strong> Build an AccessMgr authorization profile within StageNow. Generate the staging barcode or XML containing the granted delegation rules.<br>
+<strong>III. <a href="#iiideploytodevices">Deploy to Devices</a>:</strong> Scan the deployment barcode on the target device or deploy the XML via EMM.</p>
+
+<h3 id="prerequisites" class="anchor"><a class="heading-anchor" href="#prerequisites"><span></span></a>Prerequisites</h3>
+
+<ul>
+<li>Release-signed application .APK file</li>
+
+<li>Host computer with Java Runtime Environment (JRE) or Java Development Kit (JDK) installed</li>
+
+<li>Zebra’s <a href="/stagenow">StageNow</a> tool installed on the host computer.</li>
+</ul>
+
+<h3 id="iextractapplicationsignature" class="anchor"><a class="heading-anchor" href="#iextractapplicationsignature"><span></span></a>I. Extract Application Signature</h3>
+
+<p>Generate the certificate file to be used for the StageNow profile.</p>
+
+<ol>
+<li><p><a href="/sigtools/ZebraSigTools_1.5.zip" download="">Download</a> the <a href="/sigtools">Zebra SigTools</a> utility.</p></li>
+
+<li><p>Extract the contents of the zip file to a working directory on the host computer, including the "ZebraSigTools_1.5.jar" file.</p></li>
+
+<li><p>Open a command prompt or terminal and navigate to the directory where the .zip file contents are extracted.</p></li>
+
+<li><p>Place your application's release-signed APK file (e.g., app-release.apk) in the same directory.</p></li>
+
+<li><p>Execute the following Java command to extract the signature into a .crt certificate file:</p>
+
+<pre class="prettyprint"><code>java -jar ZebraSigTools_1.5.jar getcert -inform apk -outform der -in &lt;your-apk-file.apk&gt; -outfile &lt;your-certificate-name.crt&gt;
+</code></pre>
+
+<p>Example:</p>
+
+<pre class="prettyprint"><code>java -jar ZebraSigTools_1.5.jar getcert -inform apk -outform der -in app-release.apk -outfile HID_demo_launcher.crt
+</code></pre></li>
+
+<li><p>A new certificate file (e.g., <code>HID_demo_launcher.crt</code>) is created in the directory. This file contains the signature required by StageNow.</p></li>
+</ol>
+
+<h3 id="iicreateprofilegeneratebarcodeorxml" class="anchor"><a class="heading-anchor" href="#iicreateprofilegeneratebarcodeorxml"><span></span></a>II. Create Profile &amp; Generate Barcode or XML</h3>
+
+<p>Create the StageNow profile and staging barcode to grant the application access to the HID service.</p>
+
+<ol>
+<li>Launch the StageNow application on the host computer.</li>
+
+<li>From the home screen, select <strong>Create new Profile.</strong>
+<img alt="image" style="height:300px" src="../../images/1-2/stagenow-1.jpg"></li>
+
+<li>Choose the target MX Version for your devices from the dropdown menu (e.g., the latest available version).
+<img alt="image" style="height:400px" src="../../images/1-2/stagenow-2.jpg"></li>
+
+<li>Select <strong>Xpert Mode</strong> and click <strong>Create.</strong>
+<img alt="image" style="height:400px" src="../../images/1-2/stagenow-3.jpg"></li>
+
+<li>Enter a descriptive name for the profile (e.g., “HID Service Access Grant”) and click <strong>Start.</strong>
+<img alt="image" style="height:250px" src="../../images/1-2/stagenow-4.jpg"></li>
+
+<li>In the “ADD/EDIT” window, locate <strong>AccessMgr</strong> and click the <strong>(+)</strong> button to add it to the profile. Click <strong>Add.</strong>
+<img alt="image" style="height:400px" src="../../images/1-2/stagenow-5.png"></li>
+
+<li>Configure the AccessMgr settings with the following specific values and click <strong>Continue:</strong>
+
+
+<ul>
+<li><strong>Service Access Action:</strong> Allow Caller to Call Service</li>
+
+<li><strong>Service Identifier:</strong> delegation-zebra-HID-api-access-control</li>
+
+<li><strong>Caller Package Name:</strong> [Enter your application's package name (e.g., com.zebra.hidDemoApp).]</li>
+
+<li><strong>Caller Signature:</strong> [Click the three-dot button (…) and browse to select the .crt certificate file generated in Step I.]
+<table>
+<tbody><tr>
+   <td><img alt="image" style="height:300px" src="../../images/1-2/stagenow-6.png"></td>
+   <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+   <td><img alt="image" style="height:300px" src="../../images/1-2/stagenow-7.png"></td>
+</tr>
+</tbody></table></li></ul>
+</li>
+
+<li>Review the profile settings. Click <strong>Complete Profile.</strong>
+<img alt="image" style="height:300px" src="../../images/1-2/stagenow-8.jpg"></li>
+</ol>
+
+<h3 id="iiideploytodevices" class="anchor"><a class="heading-anchor" href="#iiideploytodevices"><span></span></a>III. Deploy to Devices</h3>
+
+<p>Use one of the following methods based on the desired tool to deploy the profile to the devices and authorize application access the HID service:</p>
+
+<ul>
+<li><strong>StageNow:</strong> Generate the barcode from the StageNow profile. Open StageNow client on the device and scan the barcode.</li>
+
+<li><strong>EMM:</strong> Export the StageNow XML file from the StageNow installation. Send the XML using either <a href="/oemconfig">OEMConfig</a> or <a href="/mx/overview">MX</a>.</li>
+</ul>
 
 <hr>
 
@@ -541,81 +675,116 @@
 <li><strong>Error Message:</strong> "Access denied. Please verify your app is authorized to use the HID Secure Element."</li>
 </ul>
 
-<!--
----
+<h2 id="-see-also-about-hid-sdk-apis-provisioning-demo-app-" class="anchor"><a class="heading-anchor" href="#-see-also-about-hid-sdk-apis-provisioning-demo-app-"><span></span></a><!--</h2>
 
-## App Authorization
+<h2 id="appauthorization">App Authorization</h2>
 
-To authorize an application to use the HID service (`com.zebra.hidservice`), create and deploy a security profile using Zebra’s [StageNow](/stagenow) tool. This process grants the application, identified by its unique signature, the necessary permissions to communicate with the HID service on the device.
+<p>To authorize an application to use the HID service (<code>com.zebra.hidservice</code>), create and deploy a security profile using Zebra’s <a href="/stagenow">StageNow</a> tool. This process grants the application, identified by its unique signature, the necessary permissions to communicate with the HID service on the device.</p>
 
-1. **Extract Signature:** Extract the application's public signing certificate using the ZebraSigTools utility.
-2. **Create Profile & Generate Deployment Barcode or XML:** Build an AccessMgr authorization profile within StageNow. Generate the staging barcode or XML containing the granted delegation rules.
-3. **Stage Target Devices:** Scan the deployment barcode or deploy the XML via EMM.
+<ol>
+<li><strong>Extract Signature:</strong> Extract the application's public signing certificate using the ZebraSigTools utility.</li>
+
+<li><strong>Create Profile &amp; Generate Deployment Barcode or XML:</strong> Build an AccessMgr authorization profile within StageNow. Generate the staging barcode or XML containing the granted delegation rules.</li>
+
+<li><strong>Stage Target Devices:</strong> Scan the deployment barcode or deploy the XML via EMM.</li>
+</ol>
+
+<h3 id="prerequisites-1">Prerequisites</h3>
+
+<ul>
+<li>The release-signed application APK file</li>
+
+<li>A host computer with Java (JDK/JRE) installed.</li>
+
+<li>Zebra’s <a href="/stagenow">StageNow</a> tool installed on the host computer.</li>
+</ul>
+
+<h3 id="iextractapplicationsignaturecertificate">I. Extract Application Signature Certificate</h3>
+
+<p>Generate the certificate file to be used for the StageNow profile.</p>
+
+<ol>
+<li><p><a href="/sigtools/ZebraSigTools_1.5.zip" download>Download</a> the <a href="/sigtools">Zebra SigTools</a> utility.</p></li>
+
+<li><p>Extract the contents of the zip file to a working directory on the host computer, including the "ZebraSigTools_1.5.jar" file.</p></li>
+
+<li><p>Open a command prompt or terminal and navigate to the directory where the .zip file contents are extracted.</p></li>
+
+<li><p>Place your application's release-signed APK file (e.g., app-release.apk) in the same directory.</p></li>
+
+<li><p>Execute the following Java command to extract the signature into a .crt certificate file:</p>
+
+<pre><code>java -jar ZebraSigTools_1.5.jar getcert -inform apk -outform der -in &lt;your-apk-file.apk&gt; -outfile &lt;your-certificate-name.crt&gt;
+</code></pre></li>
+</ol>
+
+<p>Example:
+java -jar ZebraSigTools_1.5.jar getcert -inform apk -outform der -in app-release.apk -outfile HID_demo_launcher.crt</p>
+
+<ol>
+<li>A new certificate file (e.g., HID_demo_launcher.crt) is created in the directory. This file contains the signature required by StageNow.</li>
+</ol>
+
+<h3 id="iicreateastagenowprofilestagingbarcode">II. Create a StageNow Profile &amp; Staging Barcode</h3>
+
+<p>Create the StageNow profile and staging barcode to grant the application access to the HID service.</p>
+
+<ol>
+<li>Launch the StageNow application on the host computer.</li>
+
+<li>From the home screen, select <strong>Create new Profile.</strong>
+<img alt="image" style="height:300px"  src="../../images/1-2/stagenow-1.jpg" /></li>
+
+<li>Choose the target MX Version for your devices from the dropdown menu (e.g., the latest available version).
+<img alt="image" style="height:400px"  src="../../images/1-2/stagenow-2.jpg" /></li>
+
+<li>Select <strong>Xpert Mode</strong> and click <strong>Create.</strong>
+<img alt="image" style="height:400px"  src="../../images/1-2/stagenow-3.jpg" /></li>
+
+<li>Enter a descriptive name for the profile (e.g., “HID Service Access Grant”) and click <strong>Start.</strong>
+<img alt="image" style="height:250px"  src="../../images/1-2/stagenow-4.jpg" /></li>
+
+<li>In the “ADD/EDIT” window, locate <strong>AccessMgr</strong> and click the <strong>(+)</strong> button to add it to the profile. Click <strong>Add.</strong>
+<img alt="image" style="height:400px"  src="../../images/1-2/stagenow-5.png" /></li>
+
+<li>Configure the AccessMgr settings with the following specific values and click <strong>Continue:</strong>
 
 
-### Prerequisites
+<ul>
+<li><strong>Service Access Action:</strong> Allow Caller to Call Service</li>
 
-- The release-signed application APK file
-- A host computer with Java (JDK/JRE) installed.
-- Zebra’s [StageNow](/stagenow) tool installed on the host computer.
+<li><strong>Service Identifier:</strong> delegation-zebra-HID-api-access-control</li>
 
-### I. Extract Application Signature Certificate
+<li><strong>Caller Package Name:</strong> [Enter your application's package name (e.g., com.zebra.hidDemoApp).]</li>
 
-Generate the certificate file to be used for the StageNow profile. 
+<li><strong>Caller Signature:</strong> [Click the three-dot button (…) and browse to select the .crt certificate file generated in Step I.]
+<table>
+<tr>
+   <td><img alt="image" style="height:300px"  src="../../images/1-2/stagenow-6.png" /></td>
+   <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+   <td><img alt="image" style="height:300px"  src="../../images/1-2/stagenow-7.png" /></td>
+</tr>
+</table></li></ul>
+</li>
 
-1. <a href="/sigtools/ZebraSigTools_1.5.zip" download>Download</a> the [Zebra SigTools](/sigtools) utility.
-2. Extract the contents of the zip file to a working directory on the host computer, including the "ZebraSigTools_1.5.jar" file.
-3. Open a command prompt or terminal and navigate to the directory where the .zip file contents are extracted.
-4. Place your application's release-signed APK file (e.g., app-release.apk) in the same directory.
-5. Execute the following Java command to extract the signature into a .crt certificate file:
+<li>Review the profile settings. Click <strong>Complete Profile.</strong>
+<img alt="image" style="height:300px"  src="../../images/1-2/stagenow-8.jpg" /></li>
+</ol>
 
-        java -jar ZebraSigTools_1.5.jar getcert -inform apk -outform der -in <your-apk-file.apk> -outfile <your-certificate-name.crt>
+<h3 id="iiideploytodevices-1">III. Deploy to Devices</h3>
 
-Example:
-        java -jar ZebraSigTools_1.5.jar getcert -inform apk -outform der -in app-release.apk -outfile HID_demo_launcher.crt
+<p>Use one of the following methods based on the desired tool to deploy the profile to the devices and authorize application access the HID service:</p>
 
-6. A new certificate file (e.g., HID_demo_launcher.crt) is created in the directory. This file contains the signature required by StageNow.
+<ul>
+<li><strong>StageNow:</strong> Generate the barcode from the StageNow profile. Open StageNow client on the device and scan the barcode.</li>
 
-### II. Create a StageNow Profile & Staging Barcode
-
-Create the StageNow profile and staging barcode to grant the application access to the HID service.
-
-1. Launch the StageNow application on the host computer.
-2. From the home screen, select **Create new Profile.**
-    <img alt="image" style="height:300px"  src="../../images/1-0/stagenow-1.jpg" />
-3. Choose the target MX Version for your devices from the dropdown menu (e.g., the latest available version).
-    <img alt="image" style="height:400px"  src="../../images/1-0/stagenow-2.jpg" />
-4. Select **Xpert Mode** and click **Create.**
-    <img alt="image" style="height:400px"  src="../../images/1-0/stagenow-3.jpg" />
-5. Enter a descriptive name for the profile (e.g., “HID Service Access Grant”) and click **Start.**
-    <img alt="image" style="height:250px"  src="../../images/1-0/stagenow-4.jpg" />
-6.    In the “ADD/EDIT” window, locate **AccessMgr** and click the **(+)** button to add it to the profile. Click **Add.**
-    <img alt="image" style="height:400px"  src="../../images/1-0/stagenow-5.png" />                          
-7.    Configure the AccessMgr settings with the following specific values and click **Continue:**
-    - **Service Access Action:** Allow Caller to Call Service
-    - **Service Identifier:** delegation-zebra-HID-api-access-control
-    - **Caller Package Name:** [Enter your application's package name (e.g., com.zebra.hidDemoApp).]
-    - **Caller Signature:** [Click the three-dot button (…) and browse to select the .crt certificate file generated in Step I.]
-    <table>
-        <tr>
-            <td><img alt="image" style="height:300px"  src="../../images/1-0/stagenow-6.png" /></td>
-            <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
-            <td><img alt="image" style="height:300px"  src="../../images/1-0/stagenow-7.png" /></td>
-        </tr>
-    </table>
-8. Review the profile settings. Click **Complete Profile.**
-    <img alt="image" style="height:300px"  src="../../images/1-0/stagenow-8.jpg" />
-
-### III. Deploy to Devices
-
-Use one of the following methods based on the desired tool to deploy the profile to the devices and authorize application access the HID service:
-- **StageNow:** Generate the barcode from the StageNow profile. Open StageNow client on the device and scan the barcode.
-- **EMM:** Export the StageNow XML file from the StageNow installation. Send the XML using either [OEMConfig](/oemconfig) or [MX](/mx/overview).
+<li><strong>EMM:</strong> Export the StageNow XML file from the StageNow installation. Send the XML using either <a href="/oemconfig">OEMConfig</a> or <a href="/mx/overview">MX</a>.
 -->
+
 
 <hr>
 
-<h2 id="seealso" class="anchor"><a class="heading-anchor" href="#seealso"><span></span></a>See Also</h2>
+</h2><h2 id="seealso" class="anchor"><a class="heading-anchor" href="#seealso"><span></span></a>See Also</h2>
 
 <ul>
 <li><a href="../about">About HID SDK</a></li>
