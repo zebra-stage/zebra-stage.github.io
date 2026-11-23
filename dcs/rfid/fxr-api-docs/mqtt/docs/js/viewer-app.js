@@ -1,28 +1,39 @@
 (function() {
 'use strict';
 
-/* Keyed lower-case: spec tag names use mixed casing such as Gpio and Date&Time. */
+/* Storage may be unavailable in embedded browsers or privacy-restricted contexts. */
+function readPreference(storageName, key) {
+  try {
+    return window[storageName].getItem(key);
+  } catch (err) {
+    return null;
+  }
+}
+
+function writePreference(storageName, key, value) {
+  try {
+    window[storageName].setItem(key, value);
+  } catch (err) {
+    // Preferences are optional; keep the viewer usable without persistence.
+  }
+}
+
+
 var CATEGORY_LABELS = {
   login: 'Login',
   system: 'System',
   network: 'Network',
-  control: 'Control',
+  control: 'Control Commands',
   region: 'Region',
   gpio: 'GPIO',
   'app-led': 'App LED',
-  'stack-led': 'Stack LED',
-  display: 'Display',
   logs: 'Logs',
   'date-time': 'Date & Time',
-  'date&time': 'Date & Time',
   certificate: 'Certificates',
   firmware: 'Firmware',
   userapp: 'User Apps',
   impinjgen2x: 'Impinj Gen2X',
-  ble: 'BLE',
-  'management-events': 'Management Events',
-  'tag-data-events': 'Tag Data Events',
-  'ble-data-events': 'BLE Data Events'
+  ble: 'Bluetooth LE'
 };
 
 var displayNameConfig = {
@@ -75,8 +86,7 @@ function applyOperationSummaries(spec) {
 
 function formatCategoryLabel(tag) {
   if (!tag) return '';
-  var key = String(tag).toLowerCase();
-  if (CATEGORY_LABELS[key]) return CATEGORY_LABELS[key];
+  if (CATEGORY_LABELS[tag]) return CATEGORY_LABELS[tag];
   return tag.split('-').map(function (w) {
     return w.charAt(0).toUpperCase() + w.slice(1);
   }).join(' ');
@@ -100,36 +110,12 @@ function isAsyncEventOp(op) {
     op.tags.indexOf('Ble-data-events') !== -1;
 }
 
-function setNavGroupIndicator(indicator, collapsed) {
-  indicator.textContent = collapsed ? '+' : '−';
-  if (indicator.tagName === 'BUTTON') {
-    indicator.setAttribute('aria-expanded', String(!collapsed));
-  }
-}
-
-/* Reveal the nav entry for a target id, expanding its group when collapsed. */
-function expandNavGroupFor(targetId) {
-  var link = document.querySelector('.nav-op[href="#' + targetId + '"], .nav-tag[href="#' + targetId + '"], .nav-subgroup-link[href="#' + targetId + '"]');
-  if (!link) return;
-  var children = link.parentElement;
-  while (children && !(children.classList && children.classList.contains('nav-group-children'))) {
-    children = children.parentElement;
-  }
-  if (!children || !children.classList.contains('collapsed')) return;
-  children.classList.remove('collapsed');
-  var groupName = children.getAttribute('data-group-children');
-  var group = groupName ? document.querySelector('.nav-group[data-group="' + groupName + '"]') : null;
-  var indicator = group ? group.querySelector('.nav-group-indicator') : null;
-  if (indicator) setNavGroupIndicator(indicator, false);
-  if (groupName) sessionStorage.setItem('nav-group-' + groupName, 'expanded');
-}
-
 function requestPayloadHeading(op) {
   return isManagementEventOp(op) ? 'Configuration Examples' : 'MQTT Command Payload';
 }
 
 function responsePayloadHeading(op) {
-  return isAsyncEventOp(op) ? (op['x-event-body-title'] || 'Event Body') : 'MQTT Response Payload';
+  return isAsyncEventOp(op) ? 'Example Payload' : 'MQTT Response Payload';
 }
 
 function splitDescriptionBeforeSection(desc, sectionTitles) {
@@ -147,106 +133,6 @@ function splitDescriptionBeforeSection(desc, sectionTitles) {
     before: normalized.slice(0, splitAt).trim(),
     after: normalized.slice(splitAt).trim()
   };
-}
-
-/* Event operations describe configuration before the published event.
- * Keep generated request examples with that configuration text. */
-function splitDescriptionAtPublishedSection(desc) {
-  if (!desc) return { before: '', after: '' };
-  var normalized = desc.replace(/\r\n?/g, '\n');
-  var publishedHeading = normalized.match(/^###\s+Published[^\n]*$/m);
-  if (!publishedHeading) return { before: normalized, after: '' };
-  return {
-    before: normalized.slice(0, publishedHeading.index).trim(),
-    after: normalized.slice(publishedHeading.index).trim()
-  };
-}
-
-function splitDescriptionAtConfigureSection(desc) {
-  if (!desc) return { before: '', after: '' };
-  var normalized = desc.replace(/\r\n?/g, '\n');
-  var configureHeading = normalized.match(/^###\s+Configure[^\n]*$/m);
-  if (!configureHeading) return { before: normalized, after: '' };
-  return {
-    before: normalized.slice(0, configureHeading.index).trim(),
-    after: normalized.slice(configureHeading.index).trim()
-  };
-}
-
-function splitMarkdownByHeadingLevel(text, level) {
-  var normalized = String(text || '').replace(/\r\n?/g, '\n');
-  var lines = normalized.split('\n');
-  var headingPattern = new RegExp('^#{' + level + '}\\s+');
-  var introLines = [];
-  var sections = [];
-  var currentSection = null;
-  var inCodeFence = false;
-
-  lines.forEach(function (line) {
-    if (/^```/.test(line.trim())) {
-      inCodeFence = !inCodeFence;
-    }
-    if (!inCodeFence && headingPattern.test(line)) {
-      if (currentSection) sections.push(currentSection.join('\n').trim());
-      currentSection = [line];
-      return;
-    }
-    if (currentSection) currentSection.push(line);
-    else introLines.push(line);
-  });
-
-  if (currentSection) sections.push(currentSection.join('\n').trim());
-  return {
-    intro: introLines.join('\n').trim(),
-    sections: sections.filter(function (section) { return !!section; })
-  };
-}
-
-function normalizeComparableHeading(value) {
-  return String(value || '')
-    .replace(/`/g, '')
-    .replace(/[()]/g, ' ')
-    .replace(/[_-]/g, ' ')
-    .toLowerCase()
-    .replace(/\bheartbeats\b/g, 'heartbeat')
-    .replace(/\bevents\b/g, 'event')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-/* The operation and tag title already provide the page heading. Remove only a
- * matching leading Markdown heading so unrelated headings such as
- * "Description" or "Configure reader_gateway" remain intact. */
-function stripLeadingDuplicateHeading(description, title) {
-  var normalized = String(description || '').replace(/\r\n?/g, '\n');
-  var match = normalized.match(/^\s*#{1,6}\s+([^\n]+)\n(?:\s*\n)?/);
-  if (!match) return normalized;
-  var headingKey = normalizeComparableHeading(match[1]);
-  var titleKey = normalizeComparableHeading(title);
-  var isDuplicate = headingKey && titleKey && (
-    headingKey === titleKey ||
-    (headingKey.length >= 5 && titleKey.indexOf(headingKey) !== -1) ||
-    (titleKey.length >= 5 && headingKey.indexOf(titleKey) !== -1)
-  );
-  return isDuplicate ? normalized.slice(match[0].length) : normalized;
-}
-
-function renderOperationDescription(description, options) {
-  if (!description) return '';
-  var grouped = splitMarkdownByHeadingLevel(description, 2);
-  if (!grouped.sections.length) {
-    return '<div class="op-description md-content">' + md(description, options) + '</div>';
-  }
-
-  var html = grouped.intro
-    ? '<div class="op-description md-content operation-intro">' + md(grouped.intro, options) + '</div>'
-    : '';
-  grouped.sections.forEach(function (section) {
-    html += '<section class="operation-doc-section">' +
-      '<div class="op-description md-content">' + md(section, options) + '</div>' +
-    '</section>';
-  });
-  return html;
 }
 
 function md(text, options) {
@@ -292,18 +178,15 @@ function normalizeMarkdownHref(href) {
 function formatInline(text) {
    if (!text) return '';
    return text
+     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+     .replace(/`([^`]+)`/g, '<code>$1</code>')
      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(_, text, href) {
        var normalizedHref = normalizeMarkdownHref(href);
        var isExternal = !/^#/.test(normalizedHref);
        var attrs = isExternal ? ' target="_blank" rel="noopener"' : '';
        var linkClass = 'md-link ' + (isExternal ? 'md-link-external' : 'md-link-internal');
-       var label = escHtml(text)
-         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-         .replace(/`([^`]+)`/g, '<code>$1</code>');
-       return '<a class="' + linkClass + '" href="' + escHtml(normalizedHref) + '"' + attrs + '>' + label + '</a>';
-     })
-     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-     .replace(/`([^`]+)`/g, '<code>$1</code>');
+       return '<a class="' + linkClass + '" href="' + escHtml(normalizedHref) + '"' + attrs + '>' + escHtml(text) + '</a>';
+     });
 }
  
 function stripMarkdown(text) {
@@ -377,7 +260,7 @@ function renderHeading(level, text, options) {
    targetLevel = Math.max(1, Math.min(6, targetLevel));
    var idAttr = '';
    /* Only ### section headings get in-page anchor IDs (avoids duplicate #### Description IDs). */
-   if (options.idPrefix && (level === 3 || options.anchorAllHeadings)) {
+   if (options.idPrefix && level === 3) {
      idAttr = ' id="' + options.idPrefix + '-' + slugify(text) + '"';
    }
    var displayText = text.replace(/^\d+\.\s+/, '');
@@ -433,7 +316,6 @@ function renderMarkdownTable(lines) {
  
 var schemaNodeUid = 0;
 var schemaTableUid = 0;
-var openApiSpec = null;
  
 function getSchemaType(schema) {
    if (!schema) return 'object';
@@ -516,46 +398,9 @@ function getSchemaEnumLine(schema) {
     return '<span class="schema-enum-chip">' + escHtml(String(value)) + '</span>';
   }).join(' ') + '</span></div>';
 }
-
-function resolveSchemaRef(ref) {
-  if (!ref || typeof ref !== 'string' || !openApiSpec) return null;
-  var prefix = '#/components/schemas/';
-  if (ref.indexOf(prefix) !== 0) return null;
-  var schemas = (openApiSpec.components && openApiSpec.components.schemas) || {};
-  return schemas[ref.slice(prefix.length)] || null;
-}
-
-function dereferenceSchema(schema, seen) {
-  if (!schema || typeof schema !== 'object') return schema;
-  if (!schema.$ref) return schema;
-  seen = seen || {};
-  if (seen[schema.$ref]) return schema;
-  var resolved = resolveSchemaRef(schema.$ref);
-  if (!resolved) return schema;
-  seen[schema.$ref] = true;
-  return dereferenceSchema(resolved, seen);
-}
-
-/* Prefer a child schema title (or resolved $ref title) over generic anyOf/oneOf/allOf labels. */
-function getCompositionLabel(keyword, childSchema, index) {
-  if (childSchema && childSchema.title) {
-    return childSchema.title;
-  }
-
-  if (childSchema && childSchema.$ref) {
-    var resolved = resolveSchemaRef(childSchema.$ref);
-    if (resolved && resolved.title) {
-      return resolved.title;
-    }
-    return childSchema.$ref.split('/').pop();
-  }
-
-  return keyword + ' ' + (index + 1);
-}
-
+ 
 function flattenSchema(name, schema, depth, isRequired, result) {
    if (!schema) return;
-   schema = dereferenceSchema(schema);
    result = result || [];
    var type = getSchemaType(schema);
    var desc = getSchemaDescription(schema);
@@ -581,16 +426,13 @@ function flattenSchema(name, schema, depth, isRequired, result) {
    }
    ['allOf', 'anyOf', 'oneOf'].forEach(function (kw) {
      if (!Array.isArray(schema[kw])) return;
-     schema[kw].forEach(function (child, i) {
-       flattenSchema(getCompositionLabel(kw, child, i), dereferenceSchema(child), depth + 1, false, result);
-     });
+     schema[kw].forEach(function (child, i) { flattenSchema(kw + ' ' + (i + 1), child, depth + 1, false, result); });
    });
    return result;
 }
  
 function buildSchemaNodeRows(name, schema, depth, parentUid, isRequired) {
    if (!schema) return '';
-   schema = dereferenceSchema(schema);
    var rows = '';
    var type = getSchemaType(schema);
    var description = getSchemaDescriptionHtml(schema);
@@ -634,8 +476,7 @@ function buildSchemaNodeRows(name, schema, depth, parentUid, isRequired) {
    ['allOf', 'anyOf', 'oneOf'].forEach(function (keyword) {
      if (!Array.isArray(schema[keyword])) return;
      schema[keyword].forEach(function (childSchema, index) {
-       var label = getCompositionLabel(keyword, childSchema, index);
-       rows += buildSchemaNodeRows(label, dereferenceSchema(childSchema), depth + 1, nodeId, false);
+       rows += buildSchemaNodeRows(keyword + ' ' + (index + 1), childSchema, depth + 1, nodeId, false);
      });
    });
    return rows;
@@ -733,7 +574,7 @@ function generatePDF(op, path) {
      doc.setFont('helvetica', 'bold');
      doc.setFontSize(9);
      doc.setTextColor(white[0], white[1], white[2]);
-     doc.text('FXR Fixed Readers MQTT API Documentation', margin, 11);
+     doc.text('IoT Connector MQTT API (FXR readers)', margin, 11);
      doc.setFont('helvetica', 'normal');
      doc.setFontSize(8);
      doc.text(op.summary || path, pageW - margin, 11, { align: 'right' });
@@ -750,7 +591,7 @@ function generatePDF(op, path) {
      doc.setFont('helvetica', 'normal');
      doc.setFontSize(7);
      doc.setTextColor(white[0], white[1], white[2]);
-     doc.text('FXR Fixed Readers MQTT API Documentation  |  Zebra Technologies', margin, pageH - 5);
+     doc.text('IoT Connector MQTT API (FXR readers)  |  Zebra Technologies', margin, pageH - 5);
      /* use jsPDF's built-in page number — never drift */
      doc.text('Page ' + doc.internal.getCurrentPageInfo().pageNumber, pageW - margin, pageH - 5, { align: 'right' });
    }
@@ -948,7 +789,36 @@ function generatePDF(op, path) {
      });
    }
 
-   function renderPdfEventBody() {
+   var pdfInsertConfig = isManagementEventOp(op) && op.requestBody && op.requestBody.content;
+   var pdfDescParts = pdfInsertConfig
+     ? splitDescriptionBeforeSection(op.description, ['## Parameters', '## Fields', '## Example Payload'])
+     : { before: op.description, after: '' };
+   renderDescriptionBlocks(pdfDescParts.before);
+
+   if (op.requestBody && op.requestBody.content) {
+     var ct = op.requestBody.content['application/json'];
+     if (ct) {
+       sectionHeading(requestPayloadHeading(op));
+       var exObj = ct.examples || {};
+       var exKeys = Object.keys(exObj);
+       if (exKeys.length) {
+         /* render every named example */
+         exKeys.forEach(function (key) {
+           if (exObj[key] && exObj[key].value !== undefined) {
+             subHeading(exKeys.length > 1 ? 'Example: ' + key : 'Example');
+             jsonBlock(exObj[key].value);
+           }
+         });
+       } else if (ct.schema) {
+         subHeading('Example');
+         jsonBlock(generateExampleFromSchema(ct.schema));
+       }
+       if (ct.schema) schemaTablePdf(ct.schema, 'Command');
+     }
+   }
+
+   renderDescriptionBlocks(pdfDescParts.after);
+
    if (op.responses) {
      var resKey = Object.keys(op.responses)[0];
      var res = op.responses[resKey];
@@ -961,7 +831,7 @@ function generatePDF(op, path) {
          /* render every named example */
          resExKeys.forEach(function (key) {
            if (resExObj[key] && resExObj[key].value !== undefined) {
-             subHeading((op['x-example-title'] || 'Example') + (resExKeys.length > 1 ? ': ' + (resExObj[key].summary || key) : ''));
+             subHeading(resExKeys.length > 1 ? 'Example: ' + key : 'Example');
              jsonBlock(resExObj[key].value);
            }
          });
@@ -969,57 +839,9 @@ function generatePDF(op, path) {
          subHeading('Example');
          jsonBlock(generateExampleFromSchema(rct.schema));
        }
-       if (rct.schema) schemaTablePdf(rct.schema, op['x-schema-title'] || 'Response');
+       if (rct.schema) schemaTablePdf(rct.schema, 'Response');
      }
    }
-
-   }
-   function renderPdfRequestBody() {
-     if (op.requestBody && op.requestBody.content) {
-       var ct = op.requestBody.content['application/json'];
-       if (ct) {
-         sectionHeading(requestPayloadHeading(op));
-         var exObj = ct.examples || {};
-         var exKeys = Object.keys(exObj);
-         if (exKeys.length) {
-           /* render every named example */
-           exKeys.forEach(function (key) {
-             if (exObj[key] && exObj[key].value !== undefined) {
-               subHeading(exKeys.length > 1 ? 'Example: ' + key : 'Example');
-               jsonBlock(exObj[key].value);
-             }
-           });
-         } else if (ct.schema) {
-           subHeading('Example');
-           jsonBlock(generateExampleFromSchema(ct.schema));
-         }
-         if (ct.schema) schemaTablePdf(ct.schema, isManagementEventOp(op) ? 'Configuration' : 'Command');
-       }
-     }
-   }
-
-   var printableDescription = stripLeadingDuplicateHeading(op.description, op.summary || path);
-   var eventPrefix = stripLeadingDuplicateHeading(op['x-event-body-position'], op.summary || path);
-   var hasEarlyEventBody = eventPrefix && printableDescription.indexOf(eventPrefix) === 0;
-   var renderedPdfRequestBody = false;
-   if (hasEarlyEventBody) {
-     var eventDescriptionParts = splitDescriptionAtPublishedSection(eventPrefix);
-     if (eventDescriptionParts && eventDescriptionParts.after) {
-       renderDescriptionBlocks(eventDescriptionParts.before);
-       renderPdfRequestBody();
-       renderedPdfRequestBody = true;
-       renderDescriptionBlocks(eventDescriptionParts.after);
-     } else {
-       renderDescriptionBlocks(eventPrefix);
-     }
-     renderPdfEventBody();
-     renderDescriptionBlocks(op['x-event-body-after'] || '');
-   } else {
-     renderDescriptionBlocks(printableDescription);
-   }
-   if (!renderedPdfRequestBody) renderPdfRequestBody();
-
-   if (!hasEarlyEventBody) renderPdfEventBody();
  
    if (op['x-error-codes'] && op['x-error-codes'].length) errorTablePdf(op['x-error-codes']);
    drawFooter();
@@ -1485,8 +1307,7 @@ function wireTopbarSearch(spec) {
          description: description,
          descriptionLower: description.toLowerCase(),
          text: text,
-         isTag: false,
-         isEvent: isAsyncEventOp(op)
+         isTag: false
        });
      });
    });
@@ -1527,13 +1348,7 @@ function wireTopbarSearch(spec) {
  
    function buildSnippet(text, q) {
      if (!text) return '';
-     /* Several descriptions embed whole JSON schemas in fenced blocks. Those make
-        unreadable previews, so summarise from the prose only. */
-     var prose = String(text)
-       .replace(/```[\s\S]*?```/g, ' ')
-       .replace(/^#{1,6}[^\n]*$/gm, ' ');
-     var clean = stripMarkdown(prose).replace(/\s+/g, ' ').trim();
-     if (!clean) clean = stripMarkdown(String(text)).replace(/\s+/g, ' ').trim();
+     var clean = stripMarkdown(text).replace(/\s+/g, ' ').trim();
      if (!clean) return '';
      var query = normalizeQuery(q);
      if (!query) {
@@ -1631,9 +1446,8 @@ function wireTopbarSearch(spec) {
        row.className = 'topbar-search-item';
        row.setAttribute('role', 'option');
        var badge = document.createElement('span');
-       var badgeKind = item.isTag ? 'tag' : (item.isEvent ? 'event' : 'op');
-       badge.className = 'topbar-search-badge ' + badgeKind;
-       badge.textContent = item.isTag ? 'CAT' : (item.isEvent ? 'EVENT' : 'CMD');
+       badge.className = item.isTag ? 'topbar-search-badge tag' : 'topbar-search-badge op';
+       badge.textContent = item.isTag ? 'CAT' : 'CMD';
        var body = document.createElement('span');
        body.className = 'topbar-search-body';
        var label = document.createElement('span');
@@ -1675,16 +1489,9 @@ function wireTopbarSearch(spec) {
      var targetId = item.isTag ? 'tag-' + item.id : 'op-' + item.id;
      var target = document.getElementById(targetId);
      if (target) {
-       expandNavGroupFor(targetId);
-       var topbarH = document.getElementById('topbar') ? document.getElementById('topbar').offsetHeight : 52;
-       var top = target.getBoundingClientRect().top + window.pageYOffset - topbarH - 12;
-       window.scrollTo({ top: top, behavior: 'smooth' });
-       /* Drop the match highlights from the typed query; keep only the opened one. */
-       clearHighlights();
+       scrollToDocumentationTarget(target, 'smooth');
        target.classList.add('search-highlight');
        setTimeout(function () { target.classList.remove('search-highlight'); }, 2200);
-       /* Keep the address bar in step so the page can be linked or bookmarked. */
-       if (window.history && history.replaceState) history.replaceState(null, '', '#' + targetId);
      }
      dropdown.style.display = 'none';
      input.value = item.summary;
@@ -1729,76 +1536,10 @@ function wireTopbarSearch(spec) {
 }
  
 /* ── Render operation ── */
-function renderResponseBody(id, op) {
-   var resHtml = '';
-   if (op.responses) {
-     var resKey = Object.keys(op.responses)[0];
-     var res = op.responses[resKey];
-     if (res && res.content && res.content['application/json']) {
-       var rct = res.content['application/json'];
-       var resExObj = rct.examples || {};
-       var resExKeys = Object.keys(resExObj);
-       var resSchemaHtml = rct.schema ? schemaTable(rct.schema) : '';
-
-       /* ── Auto-generate response example if missing ── */
-       var resExampleJson = '';
-       if (resExKeys.length && resExObj[resExKeys[0]].value) {
-         resExampleJson = JSON.stringify(resExObj[resExKeys[0]].value, null, 2);
-       } else if (rct.schema) {
-         var autoResExample = generateExampleFromSchema(rct.schema);
-         if (autoResExample && Object.keys(autoResExample).length) {
-           resExampleJson = JSON.stringify(autoResExample, null, 2);
-         }
-       }
-
-       resHtml = '<div class="payload-section">';
-       resHtml += '<div class="payload-heading">' + escHtml(responsePayloadHeading(op)) + '</div>';
-       if (resExampleJson || resSchemaHtml) {
-         var responseExampleTabLabel = isAsyncEventOp(op) && op['x-example-title'] ? op['x-example-title'] : 'Example';
-         var responseSchemaTabLabel = isAsyncEventOp(op) && op['x-schema-title'] ? op['x-schema-title'] : 'Schema';
-         resHtml += '<div class="tab-bar">';
-         if (resExampleJson) resHtml += '<button class="tab-btn active" data-tab="res-ex-' + id + '">' + escHtml(responseExampleTabLabel) + '</button>';
-         if (resSchemaHtml) resHtml += '<button class="tab-btn' + (resExampleJson ? '' : ' active') + '" data-tab="res-sc-' + id + '">' + escHtml(responseSchemaTabLabel) + '</button>';
-         resHtml += '</div>';
-         if (resExampleJson) {
-           resHtml += '<div class="tab-panel active" id="res-ex-' + id + '">';
-           if (op['x-example-title'] && !isAsyncEventOp(op)) resHtml += '<h4 class="event-panel-heading">' + escHtml(op['x-example-title']) + '</h4>';
-           if (resExKeys.length) {
-             var firstResExample = resExObj[resExKeys[0]] || {};
-             var firstResDesc = typeof firstResExample.description === 'string' ? firstResExample.description : '';
-             resHtml += '<div class="example-description"' + (firstResDesc ? '' : ' style="display:none;"') + '>' + (firstResDesc ? md(firstResDesc) : '') + '</div>';
-           }
-           if (resExKeys.length > 1) {
-             var resExVals = {};
-             resExKeys.forEach(function(k){
-               resExVals[k] = {
-                 value: resExObj[k].value,
-                 description: typeof resExObj[k].description === 'string' ? resExObj[k].description : ''
-               };
-             });
-             resHtml += '<select class="example-select" data-panel="res-ex-' + id + '" data-examples="' + encodeURIComponent(JSON.stringify(resExVals)) + '">';
-             resExKeys.forEach(function(k) {
-               var resLabel = (resExObj[k] && resExObj[k].summary) ? resExObj[k].summary : formatExampleLabel(k);
-               resHtml += '<option value="' + escHtml(k) + '">' + escHtml(resLabel) + '</option>';
-             });
-             resHtml += '</select>';
-           }
-           resHtml += '<pre class="language-json"><code class="language-json">' + escHtml(resExampleJson) + '</code></pre>';
-           resHtml += '</div>';
-         }
-         if (resSchemaHtml) resHtml += '<div class="tab-panel' + (resExampleJson ? '' : ' active') + '" id="res-sc-' + id + '">' + (op['x-schema-title'] && !isAsyncEventOp(op) ? '<h4 class="event-panel-heading">' + escHtml(op['x-schema-title']) + '</h4>' : '') + resSchemaHtml + '</div>';
-       }
-       resHtml += '</div>';
-     }
-   }
-
-   return resHtml;
-}
-
 function renderOperation(path, method, op) {
    var summary = op.summary || path;
    var id = opIdFromPath(path);
-   var desc = stripLeadingDuplicateHeading(op.description, summary);
+   var desc = op.description || '';
  
    var reqExampleJson = '';
    var reqHtml = '';
@@ -1852,39 +1593,78 @@ function renderOperation(path, method, op) {
      }
    }
  
-   var resHtml = renderResponseBody(id, op);
+   var resHtml = '';
+   if (op.responses) {
+     var resKey = Object.keys(op.responses)[0];
+     var res = op.responses[resKey];
+     if (res && res.content && res.content['application/json']) {
+       var rct = res.content['application/json'];
+       var resExObj = rct.examples || {};
+       var resExKeys = Object.keys(resExObj);
+       var resSchemaHtml = rct.schema ? schemaTable(rct.schema) : '';
  
-   /* The operation title is an h3, so its body headings start at h4. */
-   var mdOptions = { idPrefix: id, headingMap: { 1: 4, 2: 4, 3: 4, 4: 5, 5: 6, 6: 6 } };
-   var descHtml = '';
-   var eventPrefix = stripLeadingDuplicateHeading(op['x-event-body-position'], summary);
-   if (eventPrefix && desc.indexOf(eventPrefix) === 0) {
-     var eventSuffix = op['x-event-body-after'] || '';
-     var eventDescriptionParts = splitDescriptionAtPublishedSection(eventPrefix);
-     if (eventDescriptionParts && eventDescriptionParts.after) {
-       var configureDescriptionParts = splitDescriptionAtConfigureSection(eventDescriptionParts.before);
-       if (configureDescriptionParts.after) {
-         descHtml = (configureDescriptionParts.before ? '<div class="op-description md-content operation-intro">' + md(configureDescriptionParts.before, mdOptions) + '</div>' : '') +
-           '<section class="operation-content-group operation-content-group--configuration">' +
-             '<div class="op-description md-content">' + md(configureDescriptionParts.after, mdOptions) + '</div>' + reqHtml +
-           '</section>' +
-           '<section class="operation-content-group operation-content-group--published">' +
-             '<div class="op-description md-content">' + md(eventDescriptionParts.after, mdOptions) + '</div>' + resHtml +
-             (eventSuffix ? '<div class="op-description md-content">' + md(eventSuffix, mdOptions) + '</div>' : '') +
-           '</section>';
-       } else {
-         descHtml = '<div class="op-description md-content">' + md(eventDescriptionParts.before, mdOptions) + '</div>' + reqHtml +
-           '<div class="op-description md-content">' + md(eventDescriptionParts.after, mdOptions) + '</div>' + resHtml +
-           (eventSuffix ? '<div class="op-description md-content">' + md(eventSuffix, mdOptions) + '</div>' : '');
+       /* ── Auto-generate response example if missing ── */
+       var resExampleJson = '';
+       if (resExKeys.length && resExObj[resExKeys[0]].value) {
+         resExampleJson = JSON.stringify(resExObj[resExKeys[0]].value, null, 2);
+       } else if (rct.schema) {
+         var autoResExample = generateExampleFromSchema(rct.schema);
+         if (autoResExample && Object.keys(autoResExample).length) {
+           resExampleJson = JSON.stringify(autoResExample, null, 2);
+         }
        }
-      } else {
-        descHtml = renderOperationDescription(eventPrefix, mdOptions) + resHtml +
-          renderOperationDescription(eventSuffix, mdOptions) + reqHtml;
-      }
-      resHtml = '';
-    } else {
-      descHtml = renderOperationDescription(desc, mdOptions) + reqHtml;
-    }
+ 
+       resHtml = '<div class="payload-section">';
+       resHtml += '<div class="payload-heading">' + escHtml(responsePayloadHeading(op)) + '</div>';
+       if (resExampleJson || resSchemaHtml) {
+         resHtml += '<div class="tab-bar">';
+         if (resExampleJson) resHtml += '<button class="tab-btn active" data-tab="res-ex-' + id + '">Example</button>';
+         if (resSchemaHtml) resHtml += '<button class="tab-btn' + (resExampleJson ? '' : ' active') + '" data-tab="res-sc-' + id + '">Schema</button>';
+         resHtml += '</div>';
+         if (resExampleJson) {
+           resHtml += '<div class="tab-panel active" id="res-ex-' + id + '">';
+           if (resExKeys.length) {
+             var firstResExample = resExObj[resExKeys[0]] || {};
+             var firstResDesc = typeof firstResExample.description === 'string' ? firstResExample.description : '';
+             resHtml += '<div class="example-description"' + (firstResDesc ? '' : ' style="display:none;"') + '>' + (firstResDesc ? md(firstResDesc) : '') + '</div>';
+           }
+           if (resExKeys.length > 1) {
+             var resExVals = {};
+             resExKeys.forEach(function(k){
+               resExVals[k] = {
+                 value: resExObj[k].value,
+                 description: typeof resExObj[k].description === 'string' ? resExObj[k].description : ''
+               };
+             });
+             resHtml += '<select class="example-select" data-panel="res-ex-' + id + '" data-examples="' + encodeURIComponent(JSON.stringify(resExVals)) + '">';
+             resExKeys.forEach(function(k) {
+               var resLabel = (resExObj[k] && resExObj[k].summary) ? resExObj[k].summary : formatExampleLabel(k);
+               resHtml += '<option value="' + escHtml(k) + '">' + escHtml(resLabel) + '</option>';
+             });
+             resHtml += '</select>';
+           }
+           resHtml += '<pre class="language-json"><code class="language-json">' + escHtml(resExampleJson) + '</code></pre>';
+           resHtml += '</div>';
+         }
+         if (resSchemaHtml) resHtml += '<div class="tab-panel' + (resExampleJson ? '' : ' active') + '" id="res-sc-' + id + '">' + resSchemaHtml + '</div>';
+       }
+       resHtml += '</div>';
+     }
+   }
+ 
+   var mdOptions = { idPrefix: id, headingMap: { 1: 3, 2: 3, 3: 4, 4: 5, 5: 5, 6: 5 } };
+   var insertConfigBeforeParams = isManagementEventOp(op) && !!reqHtml;
+   var descParts = insertConfigBeforeParams
+     ? splitDescriptionBeforeSection(desc, ['## Parameters', '## Fields', '## Example Payload'])
+     : { before: desc, after: '' };
+   var descHtml = '';
+   if (insertConfigBeforeParams && descParts.after) {
+     if (descParts.before) descHtml += '<div class="op-description md-content">' + md(descParts.before, mdOptions) + '</div>';
+     descHtml += reqHtml;
+     descHtml += '<div class="op-description md-content">' + md(descParts.after, mdOptions) + '</div>';
+   } else {
+     descHtml = '<div class="op-description md-content">' + md(desc, mdOptions) + '</div>' + reqHtml;
+   }
 
    return '<div class="operation" id="op-' + id + '" data-op="' + encodeURIComponent(JSON.stringify(op)) + '" data-path="' + escHtml(path) + '">' +
      '<div class="op-title-bar">' +
@@ -1893,7 +1673,6 @@ function renderOperation(path, method, op) {
        '</div>' +
        '<button class="pdf-btn" data-op-id="' + id + '">⬇ Download PDF</button>' +
      '</div>' +
-     (id === 'tagDataEvents' ? '<span id="op-mode_tag_data_events"></span>' : '') +
      descHtml +
      resHtml +
      (op['x-error-codes'] ? errorTable(op['x-error-codes']) : '') +
@@ -1985,30 +1764,14 @@ function groupedTagOperations(tagName, operations, spec) {
    return groups;
 }
 
-function subgroupAnchorId(tagName, subgroupName) {
-   return 'subgroup-' + slugify(tagName) + '-' + slugify(subgroupName);
-}
-
-function renderNavSubgroup(subgroup, spec, tagName) {
+function renderNavSubgroup(subgroup, spec) {
    var html = '';
-   var visibleOperations = subgroup.operations.filter(function (entry) {
-     return !isNavExcluded(opIdFromPath(entry.path), spec);
-   });
-   var primaryEntry = visibleOperations.length ? visibleOperations[0] : null;
-   var subgroupTargetsPrimary = !!(subgroup.name && primaryEntry &&
-     normalizeComparableHeading(subgroup.name) === normalizeComparableHeading(primaryEntry.op.summary));
-   var subgroupTarget = subgroupTargetsPrimary
-     ? 'op-' + opIdFromPath(primaryEntry.path)
-     : subgroupAnchorId(tagName, subgroup.name);
    if (subgroup.name) {
-     html += '<a class="nav-subgroup nav-subgroup-link" href="#' + escHtml(subgroupTarget) + '"' +
-       (subgroupTargetsPrimary ? ' data-primary-operation="' + escHtml(opIdFromPath(primaryEntry.path)) + '"' : '') +
-       '>' + escHtml(subgroup.name) + '</a>';
+     html += '<div class="nav-subgroup">' + escHtml(subgroup.name) + '</div>';
    }
    subgroup.operations.forEach(function (entry) {
      var opId = opIdFromPath(entry.path);
      if (isNavExcluded(opId, spec)) return;
-     if (subgroupTargetsPrimary && entry === primaryEntry) return;
      html += '<a class="nav-op" href="#op-' + opId + '">' + escHtml(entry.op.summary) + '</a>';
    });
    (subgroup.sections || []).forEach(function (section) {
@@ -2032,7 +1795,7 @@ function applyTagConfig(spec, tagConfig) {
    spec._navExcluded = tagConfig.nav_excluded_operations || [];
    spec._tagDescriptions = tagConfig.tag_descriptions || {};
 }
-
+ 
 /* ── Main render ── */
 function render(spec) {
    var content = document.getElementById('content');
@@ -2069,16 +1832,11 @@ function render(spec) {
  
    var groups = spec['x-tagGroups'] || [{ name: 'API', tags: Object.keys(tagMap) }];
    groups.forEach(function (group) {
-     var groupSlug = slugify(group.name);
-     var groupChildrenId = 'nav-group-' + groupSlug;
-     var groupTargetTag = (group.tags || []).filter(function (tagName) { return !!tagMap[tagName]; })[0] || '';
-     var groupTargetId = 'tag-' + slugify(groupTargetTag || group.name);
      navHtml += '<div class="nav-group" data-group="' + escHtml(group.name) + '">' +
-       '<a class="nav-group-label nav-group-link" href="#' + groupTargetId + '">' + escHtml(group.name) + '</a>' +
-       '<button class="nav-group-indicator" type="button" aria-label="Expand or collapse ' + escHtml(group.name) +
-         '" aria-controls="' + groupChildrenId + '" aria-expanded="true">&minus;</button>' +
+       '<span class="nav-group-label">' + escHtml(group.name) + '</span>' +
+       '<span class="nav-group-indicator">−</span>' +
        '</div>' +
-       '<div class="nav-group-children" id="' + groupChildrenId + '" data-group-children="' + escHtml(group.name) + '">';
+       '<div class="nav-group-children" data-group-children="' + escHtml(group.name) + '">';
      group.tags.forEach(function (tagName) {
        var tag = tagMap[tagName];
        if (!tag) return;
@@ -2091,7 +1849,7 @@ function render(spec) {
         navHtml += '<a class="nav-tag" href="#tag-' + tagId + '">' + escHtml(tagLabel) + '</a>';
       }
       groupedTagOperations(tagName, tag.operations, spec).forEach(function (subgroup) {
-        navHtml += renderNavSubgroup(subgroup, spec, tagName);
+        navHtml += renderNavSubgroup(subgroup, spec);
       });
        html += '<div class="tag-section" id="tag-' + tagId + '">';
        // Single-tag event groups use the nav group name (e.g. "Management Events").
@@ -2101,23 +1859,11 @@ function render(spec) {
          html += '<h2 class="tag-heading">' + escHtml(tagLabel) + '</h2>';
        }
        if (tag.description) {
-         /* The tag heading is an h2, so its body headings start at h3. */
-         var tagOptions = {
-           idPrefix: 'tag-' + tagId,
-           anchorAllHeadings: true,
-           headingMap: { 1: 3, 2: 3, 3: 4, 4: 5, 5: 6, 6: 6 }
-         };
-         var tagEventBody = (spec['x-tagEventBodies'] || {})[tagName];
-         var tagDescription = stripLeadingDuplicateHeading(tag.description, hideNavTag ? group.name : tagLabel);
-         var tagParts = tagDescription.split('<!-- event-body -->');
-         html += '<div class="tag-description md-content">' + md(tagParts[0], tagOptions) + '</div>';
-         if (tagEventBody && tagParts.length > 1) html += renderResponseBody('overview-' + tagId, tagEventBody);
-         if (tagParts.length > 1) html += '<div class="tag-description md-content">' + md(tagParts.slice(1).join(''), tagOptions) + '</div>';
+         html += '<div class="tag-description md-content">' + md(tag.description) + '</div>';
        }
        groupedTagOperations(tagName, tag.operations, spec).forEach(function (subgroup) {
          if (subgroup.name) {
-           html += '<h3 class="tag-subgroup-heading" id="' +
-             escHtml(subgroupAnchorId(tagName, subgroup.name)) + '">' + escHtml(subgroup.name) + '</h3>';
+           html += '<h3 class="tag-subgroup-heading">' + escHtml(subgroup.name) + '</h3>';
          }
          subgroup.operations.forEach(function (entry) {
            html += renderOperation(entry.path, entry.method, entry.op);
@@ -2140,21 +1886,20 @@ function render(spec) {
        var children = document.querySelector('.nav-group-children[data-group-children="' + groupName + '"]');
        var indicator = group.querySelector('.nav-group-indicator');
        if (!children || !indicator) return;
-       var stored = sessionStorage.getItem('nav-group-' + groupName);
+       var stored = readPreference('sessionStorage', 'nav-group-' + groupName);
        var hasActive = children.querySelector('.nav-op.active, .nav-tag.active');
        var isCollapsed = (stored === 'collapsed') || (!stored && !hasActive);
        if (isCollapsed) {
          children.classList.add('collapsed');
-         setNavGroupIndicator(indicator, true);
+         indicator.textContent = '+';
        } else {
          children.classList.remove('collapsed');
-         setNavGroupIndicator(indicator, false);
+         indicator.textContent = '−';
        }
-       var toggle = group.querySelector('button.nav-group-indicator') || group;
-       toggle.addEventListener('click', function() {
+       group.addEventListener('click', function() {
          var collapsed = children.classList.toggle('collapsed');
-         setNavGroupIndicator(indicator, collapsed);
-         sessionStorage.setItem('nav-group-' + groupName, collapsed ? 'collapsed' : 'expanded');
+         indicator.textContent = collapsed ? '+' : '−';
+         writePreference('sessionStorage', 'nav-group-' + groupName, collapsed ? 'collapsed' : 'expanded');
        });
      });
    }
@@ -2177,35 +1922,6 @@ function render(spec) {
      });
    });
  
-   /* Hide group headers with nothing under them while filtering, and explain an
-      empty result instead of leaving a blank sidebar. */
-   function updateNavFilterChrome(query) {
-     var anyVisible = false;
-     document.querySelectorAll('.nav-group-children').forEach(function (children) {
-       var hasVisible = Array.prototype.slice.call(children.querySelectorAll('.nav-op, .nav-tag, .nav-subgroup-link'))
-         .some(function (el) { return el.style.display !== 'none'; });
-       if (hasVisible) anyVisible = true;
-       var groupName = children.getAttribute('data-group-children');
-       var group = groupName ? nav.querySelector('.nav-group[data-group="' + groupName + '"]') : null;
-       var hide = !!query && !hasVisible;
-       if (group) group.style.display = hide ? 'none' : '';
-       children.style.display = hide ? 'none' : '';
-     });
-     var empty = document.getElementById('nav-empty');
-     if (query && !anyVisible) {
-       if (!empty) {
-         empty = document.createElement('div');
-         empty.id = 'nav-empty';
-         empty.className = 'nav-empty';
-         nav.appendChild(empty);
-       }
-       empty.innerHTML = 'No navigation matches <strong>' + escHtml(query) + '</strong>.<br>' +
-         'Try the search box in the header to look inside command details.';
-     } else if (empty && empty.parentNode) {
-       empty.parentNode.removeChild(empty);
-     }
-   }
-
    if (searchInput && !searchInput.getAttribute('data-wired')) {
      searchInput.setAttribute('data-wired', '1');
      searchInput.addEventListener('input', function () {
@@ -2223,16 +1939,15 @@ function render(spec) {
            var children = document.querySelector('.nav-group-children[data-group-children="' + groupName + '"]');
            var indicator = group.querySelector('.nav-group-indicator');
            if (!children || !indicator) return;
-           var stored = sessionStorage.getItem('nav-group-' + groupName);
+           var stored = readPreference('sessionStorage', 'nav-group-' + groupName);
            if (stored === 'collapsed') {
              children.classList.add('collapsed');
-             setNavGroupIndicator(indicator, true);
+             indicator.textContent = '+';
            } else {
              children.classList.remove('collapsed');
-             setNavGroupIndicator(indicator, false);
+             indicator.textContent = '−';
            }
          });
-         updateNavFilterChrome('');
          return;
        }
        var opMatchByTag = {};
@@ -2253,7 +1968,6 @@ function render(spec) {
         tag.style.display = (tagMatch || hasMatchingOp) ? '' : 'none';
       });
       subgroupLabels.forEach(function (label) {
-        var labelMatch = (label.textContent || '').toLowerCase().indexOf(q) !== -1;
         var next = label.nextElementSibling;
         var hasVisibleOp = false;
         while (next && !next.classList.contains('nav-subgroup') && !next.classList.contains('nav-tag') && !next.classList.contains('nav-group')) {
@@ -2263,53 +1977,28 @@ function render(spec) {
           }
           next = next.nextElementSibling;
         }
-        label.style.display = (labelMatch || hasVisibleOp) ? '' : 'none';
+        label.style.display = hasVisibleOp ? '' : 'none';
       });
       /* Auto-expand groups that have matching results */
        document.querySelectorAll('.nav-group-children').forEach(function(children) {
-         var hasVisible = Array.prototype.slice.call(children.querySelectorAll('.nav-op, .nav-tag, .nav-subgroup-link'))
+         var hasVisible = Array.prototype.slice.call(children.querySelectorAll('.nav-op, .nav-tag'))
            .some(function(el) { return el.style.display !== 'none'; });
          if (hasVisible) {
            children.classList.remove('collapsed');
            var groupName = children.getAttribute('data-group-children');
            var indicator = document.querySelector('.nav-group[data-group="' + groupName + '"] .nav-group-indicator');
-           if (indicator) setNavGroupIndicator(indicator, false);
+           if (indicator) indicator.textContent = '−';
          }
        });
-       updateNavFilterChrome(q);
      });
    }
  
    document.querySelectorAll('.tab-btn').forEach(function (btn) {
-     var panelId = btn.getAttribute('data-tab');
-     var panel = document.getElementById(panelId);
-     btn.parentElement.setAttribute('role', 'tablist');
-     btn.id = 'tab-' + panelId;
-     btn.setAttribute('role', 'tab');
-     btn.setAttribute('aria-controls', panelId);
-     btn.setAttribute('aria-selected', String(btn.classList.contains('active')));
-     btn.tabIndex = btn.classList.contains('active') ? 0 : -1;
-     if (panel) {
-       panel.setAttribute('role', 'tabpanel');
-       panel.setAttribute('aria-labelledby', btn.id);
-     }
-     btn.addEventListener('keydown', function (event) {
-       if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].indexOf(event.key) === -1) return;
-       event.preventDefault();
-       var tabs = Array.prototype.slice.call(btn.parentElement.querySelectorAll('.tab-btn'));
-       var index = tabs.indexOf(btn);
-       var next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 :
-         (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
-       tabs[next].click();
-       tabs[next].focus();
-     });
      btn.addEventListener('click', function () {
        var tabId = btn.getAttribute('data-tab');
        var bar = btn.parentElement;
-       bar.querySelectorAll('.tab-btn').forEach(function (b) { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); b.tabIndex = -1; });
+       bar.querySelectorAll('.tab-btn').forEach(function (b) { b.classList.remove('active'); });
        btn.classList.add('active');
-       btn.setAttribute('aria-selected', 'true');
-       btn.tabIndex = 0;
        var section = bar.closest('.payload-section');
        if (section) section.querySelectorAll('.tab-panel').forEach(function (p) { p.classList.remove('active'); });
        var target = document.getElementById(tabId);
@@ -2367,15 +2056,12 @@ function render(spec) {
      });
    });
  
-   /* ── Offset anchor scroll for fixed topbar ──────────────── */
-   var TOPBAR_H = document.getElementById('topbar') ? document.getElementById('topbar').offsetHeight : 52;
    document.addEventListener('click', function (e) {
+     if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
      var anchor = e.target.closest('a[href^="#"]');
      if (!anchor) return;
-     /* The skip link needs the browser's native focus move, not a smooth scroll. */
-     if (anchor.classList.contains('skip-link')) return;
-     var id = anchor.getAttribute('href').slice(1);
-     var target = document.getElementById(id);
+     var fragment = anchor.getAttribute('href');
+     var target = documentationTarget(fragment);
      if (!target) return;
      e.preventDefault();
      /* If clicked link is inside a collapsed group, expand it */
@@ -2387,19 +2073,17 @@ function render(spec) {
        if (gEl) {
          groupChildren.classList.remove('collapsed');
          var ind = gEl.querySelector('.nav-group-indicator');
-         if (ind) setNavGroupIndicator(ind, false);
-         sessionStorage.setItem('nav-group-' + gName, 'expanded');
+         if (ind) ind.textContent = '−';
+         writePreference('sessionStorage', 'nav-group-' + gName, 'expanded');
        }
      }
-     var top = target.getBoundingClientRect().top + window.pageYOffset - TOPBAR_H - 8;
-     window.scrollTo({ top: top, behavior: 'smooth' });
-     history.pushState(null, '', '#' + id);
+     scrollToDocumentationTarget(target, 'smooth');
+     if (window.location.hash !== fragment) history.pushState(null, '', fragment);
      updateActiveNavState();
    });
  
    var navTagLinks = Array.prototype.slice.call(document.querySelectorAll('.nav-tag'));
    var navOpLinks = Array.prototype.slice.call(document.querySelectorAll('.nav-op'));
-   var navSubgroupLinks = Array.prototype.slice.call(document.querySelectorAll('.nav-subgroup-link'));
    var navSectionLinks = Array.prototype.slice.call(document.querySelectorAll('.nav-section'));
    var tagSections = Array.prototype.slice.call(document.querySelectorAll('.tag-section'));
    var operationSections = Array.prototype.slice.call(document.querySelectorAll('.operation'));
@@ -2408,16 +2092,24 @@ function render(spec) {
    function revealActiveNavLink(activeLink) {
      if (!activeLink || activeLink === lastActiveNavLink) return;
      lastActiveNavLink = activeLink;
-     activeLink.scrollIntoView({ block: 'nearest' });
+     // Scroll only the sidebar; scrollIntoView can also move the document.
+     var viewport = nav.getBoundingClientRect();
+     var linkRect = activeLink.getBoundingClientRect();
+     if (linkRect.top < viewport.top) {
+       nav.scrollTop += linkRect.top - viewport.top;
+     } else if (linkRect.bottom > viewport.bottom) {
+       nav.scrollTop += linkRect.bottom - viewport.bottom;
+     }
    }
  
    function updateActiveNavState() {
-     var threshold = TOPBAR_H + 12;
+     var paneBounds = documentationPane.getBoundingClientRect();
+     var threshold = paneBounds.top + 12;
      var bestOp = null;
      var bestDistance = Infinity;
      operationSections.forEach(function(op) {
        var rect = op.getBoundingClientRect();
-       var isVisible = rect.bottom > threshold && rect.top < window.innerHeight;
+       var isVisible = rect.bottom > threshold && rect.top < paneBounds.bottom;
        if (!isVisible) return;
        var distance = Math.abs(rect.top - threshold);
        if (distance < bestDistance) {
@@ -2494,17 +2186,12 @@ function render(spec) {
        if (isOpActive && bestSectionLink) isOpActive = false;
        link.classList.toggle('active', isOpActive);
      });
-     navSubgroupLinks.forEach(function(link) {
-       var isPrimaryActive = !!activeOpId && link.getAttribute('href') === '#' + activeOpId;
-       if (isPrimaryActive && bestSectionLink) isPrimaryActive = false;
-       link.classList.toggle('active', isPrimaryActive);
-     });
      navTagLinks.forEach(function(link) {
        link.classList.toggle('active', !!activeTagId && link.getAttribute('href') === '#' + activeTagId);
      });
      /* Active group highlighting */
      document.querySelectorAll('.nav-group').forEach(function(g) { g.classList.remove('active-group'); });
-     var activeOp = nav.querySelector('.nav-op.active, .nav-subgroup-link.active');
+     var activeOp = nav.querySelector('.nav-op.active');
      if (activeOp) {
        var activeChildren = activeOp.closest ? activeOp.closest('.nav-group-children') : null;
        if (!activeChildren) {
@@ -2520,9 +2207,9 @@ function render(spec) {
            activeChildren.classList.remove('collapsed');
            if (activeGroupEl) {
              var activeIndicator = activeGroupEl.querySelector('.nav-group-indicator');
-             if (activeIndicator) setNavGroupIndicator(activeIndicator, false);
+             if (activeIndicator) activeIndicator.textContent = '−';
            }
-           if (activeGroupName) sessionStorage.setItem('nav-group-' + activeGroupName, 'expanded');
+           if (activeGroupName) writePreference('sessionStorage', 'nav-group-' + activeGroupName, 'expanded');
          }
          /* Breadcrumb update */
          var breadcrumb = document.getElementById('sidebar-breadcrumb');
@@ -2536,34 +2223,15 @@ function render(spec) {
          }
        }
      }
-     var activeNavLink = nav.querySelector('.nav-op.active') || nav.querySelector('.nav-subgroup-link.active') || nav.querySelector('.nav-tag.active');
+     var activeNavLink = nav.querySelector('.nav-op.active') || nav.querySelector('.nav-tag.active');
      revealActiveNavLink(activeNavLink);
    }
  
-   /* Content is rendered well after load, so the browser has already given up on
-      jumping to the hash target by the time it exists. Do the jump here, and
-      repeat it on back/forward. */
-   function goToHash(behavior) {
-     var id = '';
-     try { id = decodeURIComponent((location.hash || '').slice(1)); } catch (err) { id = (location.hash || '').slice(1); }
-     if (!id) return;
-     var target = document.getElementById(id);
-     if (!target) return;
-     expandNavGroupFor(id);
-     requestAnimationFrame(function () {
-       var top = target.getBoundingClientRect().top + window.pageYOffset - TOPBAR_H - 8;
-       window.scrollTo({ top: top, behavior: behavior || 'auto' });
-       updateActiveNavState();
-     });
-   }
-
-   window.addEventListener('scroll', updateActiveNavState);
+   documentationPane.addEventListener('scroll', updateActiveNavState, { passive: true });
    window.addEventListener('hashchange', function () {
-     goToHash('smooth');
-     updateActiveNavState();
+     requestAnimationFrame(scrollToCurrentFragment);
    });
    updateActiveNavState();
-   goToHash('auto');
  
    /* ── FIX 11 — Wire mobile sidebar ── */
    (function wireMobileSidebar() {
@@ -2571,57 +2239,59 @@ function render(spec) {
      var overlay = document.getElementById('sidebar-overlay');
      var sidebar = document.getElementById('sidebar');
      if (!toggle || !overlay || !sidebar) return;
-     if (toggle.getAttribute('data-wired')) return;
-     toggle.setAttribute('data-wired', '1');
-     toggle.setAttribute('aria-controls', 'sidebar');
-     function setState(open) {
-       sidebar.classList.toggle('open', open);
-       overlay.classList.toggle('visible', open);
-       /* html is the scrolling element here, so lock both. */
-       document.documentElement.style.overflow = open ? 'hidden' : '';
-       document.body.style.overflow = open ? 'hidden' : '';
-       toggle.setAttribute('aria-expanded', String(open));
-       toggle.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
+     function openSidebar() {
+       sidebar.classList.add('open');
+       overlay.classList.add('visible');
      }
      function closeSidebar() {
-       if (!sidebar.classList.contains('open')) return;
-       setState(false);
-       toggle.focus();
+       sidebar.classList.remove('open');
+       overlay.classList.remove('visible');
      }
-     setState(false);
-     toggle.addEventListener('click', function () {
-       var willOpen = !sidebar.classList.contains('open');
-       setState(willOpen);
-       if (willOpen) {
-         var search = document.getElementById('sidebar-search');
-         if (search) search.focus();
-       }
-     });
+     toggle.addEventListener('click', openSidebar);
      overlay.addEventListener('click', closeSidebar);
-     document.addEventListener('keydown', function (e) {
-       if (e.key === 'Escape') closeSidebar();
-     });
-     document.querySelectorAll('.nav-tag, .nav-op, .nav-section, .nav-subgroup-link, .nav-group-link').forEach(function (link) {
+     document.querySelectorAll('.nav-tag, .nav-op').forEach(function (link) {
        link.addEventListener('click', function () {
-         if (window.innerWidth <= 768) setState(false);
+         if (window.innerWidth <= 768) closeSidebar();
        });
-     });
-     window.addEventListener('resize', function () {
-       if (window.innerWidth > 768) setState(false);
      });
    })();
 
+}
+
+
+var documentationPane = document.getElementById('main');
+
+function documentationTarget(fragment) {
+  if (!fragment || fragment === '#') return null;
+  var id;
+  try {
+    id = decodeURIComponent(fragment.slice(1));
+  } catch (err) {
+    return null;
+  }
+  var target = document.getElementById(id);
+  return target && documentationPane.contains(target) ? target : null;
+}
+
+function scrollToDocumentationTarget(target, behavior) {
+  // The documentation pane starts below the header and sets the anchor spacing in CSS.
+  target.scrollIntoView({ block: 'start', inline: 'nearest', behavior: behavior });
+}
+
+function scrollToCurrentFragment() {
+  var target = documentationTarget(window.location.hash);
+  if (target) scrollToDocumentationTarget(target, 'instant');
 }
 
 function wireBackToTop() {
   var btn = document.getElementById('back-to-top');
   if (!btn || btn.getAttribute('data-wired')) return;
   btn.setAttribute('data-wired', '1');
-  window.addEventListener('scroll', function () {
-    btn.classList.toggle('visible', window.scrollY > 420);
+  documentationPane.addEventListener('scroll', function () {
+    btn.classList.toggle('visible', documentationPane.scrollTop > 420);
   }, { passive: true });
   btn.addEventListener('click', function () {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    documentationPane.scrollTo({ top: 0, behavior: 'smooth' });
   });
 }
 
@@ -2638,74 +2308,6 @@ function wireSearchShortcut() {
   });
 }
 
-function wireThemeToggle() {
-  var root = document.documentElement;
-  var button = document.getElementById('theme-toggle');
-  var icon = document.getElementById('theme-toggle-icon');
-  var label = document.getElementById('theme-toggle-label');
-  var storageKey = 'fxr-color-theme';
-  var legacyStorageKey = 'mqtt-color-theme';
-  var media = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
-  if (!button || !icon || !label || button.getAttribute('data-wired')) return;
-  button.setAttribute('data-wired', '1');
-
-  function readSavedTheme() {
-    try {
-      var savedTheme = localStorage.getItem(storageKey) || localStorage.getItem(legacyStorageKey);
-      if ((savedTheme === 'light' || savedTheme === 'dark') && !localStorage.getItem(storageKey)) {
-        localStorage.setItem(storageKey, savedTheme);
-        localStorage.removeItem(legacyStorageKey);
-      }
-      return savedTheme === 'light' || savedTheme === 'dark' ? savedTheme : null;
-    } catch (error) {
-      return null;
-    }
-  }
-
-  function applyTheme(theme, persist) {
-    var isDark = theme === 'dark';
-    var nextTheme = isDark ? 'light' : 'dark';
-    root.setAttribute('data-theme', theme);
-    root.style.colorScheme = theme;
-    button.setAttribute('aria-pressed', String(isDark));
-    button.setAttribute('aria-label', 'Switch to ' + nextTheme + ' mode');
-    button.title = 'Switch to ' + nextTheme + ' mode';
-    icon.textContent = isDark ? '☀' : '☾';
-    label.textContent = isDark ? 'Light' : 'Dark';
-    if (persist) {
-      try {
-        localStorage.setItem(storageKey, theme);
-        localStorage.removeItem(legacyStorageKey);
-      } catch (error) {}
-    }
-  }
-
-  var initialTheme = root.getAttribute('data-theme');
-  if (initialTheme !== 'light' && initialTheme !== 'dark') {
-    initialTheme = media && media.matches ? 'dark' : 'light';
-  }
-  applyTheme(initialTheme, false);
-
-  button.addEventListener('click', function () {
-    applyTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark', true);
-  });
-
-  if (media) {
-    var syncWithSystemTheme = function (event) {
-      if (!readSavedTheme()) applyTheme(event.matches ? 'dark' : 'light', false);
-    };
-    if (media.addEventListener) media.addEventListener('change', syncWithSystemTheme);
-    else if (media.addListener) media.addListener(syncWithSystemTheme);
-  }
-
-  window.addEventListener('storage', function (event) {
-    if (event.key !== storageKey && event.key !== legacyStorageKey) return;
-    var savedTheme = readSavedTheme();
-    applyTheme(savedTheme || (media && media.matches ? 'dark' : 'light'), false);
-  });
-}
-
-wireThemeToggle();
 wireBackToTop();
 wireSearchShortcut();
 
@@ -2729,11 +2331,15 @@ Promise.all([
   fetchTagConfig()
 ])
   .then(function (results) {
-    openApiSpec = results[0];
     applyTagConfig(results[0], results[1] || {});
     loadDisplayNameConfig({}, results[1] || {});
     applyOperationSummaries(results[0]);
     render(results[0]);
+    // The fragment becomes available after rendering. Allow fonts to finish reflowing.
+    var fontsReady = document.fonts ? document.fonts.ready : Promise.resolve();
+    fontsReady.then(function () {
+      requestAnimationFrame(scrollToCurrentFragment);
+    });
   })
   .catch(function (err) {
     document.getElementById('content').innerHTML = '<p class="error-msg">Error loading spec: ' + escHtml(err.message) + '</p>';
@@ -2741,14 +2347,14 @@ Promise.all([
  
 var BASE_FONT_PX = 15;
 var STEP = 0.05, MIN = 0.5, MAX = 2.0, KEY = 'mqtt-font-scale';
-var saved = parseFloat(localStorage.getItem(KEY));
+var saved = parseFloat(readPreference('localStorage', KEY));
 var scale = (saved >= MIN && saved <= MAX) ? saved : 1;
 var display = document.getElementById('font-scale-value');
 function applyScale() {
    scale = Math.round(scale * 100) / 100;
    document.documentElement.style.fontSize = (BASE_FONT_PX * scale) + 'px';
    display.textContent = Math.round(scale * 100) + '%';
-   localStorage.setItem(KEY, scale);
+   writePreference('localStorage', KEY, scale);
 }
 applyScale();
 document.getElementById('font-scale-up').addEventListener('click', function () { if (scale < MAX) { scale += STEP; applyScale(); } });
