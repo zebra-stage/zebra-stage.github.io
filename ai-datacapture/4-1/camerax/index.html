@@ -387,10 +387,14 @@
 <ul>
 <li><p><strong>Initialize <a href="../imageattributes/">ImageAttributesDetector</a> -</strong> Configure specific image attribute metrics to track during real-time camera preview. In this example, enable detection for people visibility and package visibility. Implement proper error handling using the <code>exceptionally()</code> callback on <code>CompletableFuture</code> to handle initialization failures gracefully.</p>
 
-<pre class="prettyprint"><code>    // Initialize ImageAttributesDetector with specific image attribute metrics
-    ImageAttributesDetector.Settings imageAttributeSettings = new ImageAttributesDetector.Settings();
+<pre class="prettyprint"><code>import com.zebra.ai.vision.detector.ImageAttributeMetricValue;
+import com.zebra.ai.vision.detector.ImageAttributeMetricValue.ConditionType;
+import com.zebra.ai.vision.detector.ImageAttributeMetricValue.ImageAttributeMetric;
 
-<pre><code>// Configure image attribute metrics
+// Initialize ImageAttributesDetector with specific image attribute metrics
+ImageAttributesDetector.Settings imageAttributeSettings = new ImageAttributesDetector.Settings();
+
+// Configure image attribute metrics
 imageAttributeSettings.configureImageAttributeMetrics(List.of(
     new ImageAttributeMetricValue.Builder(ImageAttributeMetric.ImageTagPeopleVisible)
         .setEnable(true)
@@ -400,61 +404,56 @@ imageAttributeSettings.configureImageAttributeMetrics(List.of(
         .build()
 ));
 
-// Initialize ImageAttributesDetector object
-ImageAttributesDetector imageAttributesDetector = null;
-
 // Get ImageAttributesDetector
-CompletableFuture&amp;lt;ImageAttributesDetector&amp;gt; future =
+CompletableFuture&lt;ImageAttributesDetector&gt; future =
     ImageAttributesDetector.getImageAttributesDetector(imageAttributeSettings, imageAttribExecutor);
 
 // Use the future to implement the thenAccept() callback of CompletableFuture
-future.thenAccept(detector -&amp;gt; {
-    // Use the ImageAttributesDetector object returned here for detecting image attributes
-    imageAttributesDetector = detector;
+future.thenAccept(detector -&gt; {
+    imageAttributesDetector = detector;   // imageAttributesDetector must be a class field
     Log.d(TAG, "ImageAttributesDetector initialized successfully");
-}).exceptionally(ex -&amp;gt; {
+}).exceptionally(ex -&gt; {
     Log.e(TAG, "ImageAttributesDetector initialization failed", ex);
     return null;
 });
-</code></pre>
+</code></pre></li>
 
-</code></pre>
-
-<ul>
 <li><p><strong>Initialize <a href="../imagetransform">ImageTransformDetector</a> -</strong> Configure the <code>ImageTransformDetector</code> with all available transformation actions. This detector will be used later to blur sensitive information in captured images.</p>
 
-<p>// Initialize ImageTransformDetector with all available transformation actions
-  ImageTransformDetector.Settings transformSettings = new ImageTransformDetector.Settings();</p>
+<pre class="prettyprint"><code>import com.zebra.ai.vision.detector.ImageTransformDetector;
+import com.zebra.ai.vision.detector.ImageTransformDetector.TransformActionDescriptor;
+import com.zebra.ai.vision.detector.ImageTransformDetector.TransformationAction;
 
-<p>// Configure all transformation actions
-  List<transformationaction> actions = List.of(
-      TransformationAction.LocalizeAndBlurPeople,
-      TransformationAction.LocalizeAndBlurText,
-      TransformationAction.LocalizeAndBlurBarcode
-  );</transformationaction></p>
+// Initialize ImageTransformDetector with all available transformation actions
+ImageTransformDetector.Settings transformSettings = new ImageTransformDetector.Settings();
 
-<p>TransformActionDescriptor descriptor = new TransformActionDescriptor.Builder()
-      .setActions(actions)
-      .build();</p>
+// Configure all transformation actions
+List&lt;TransformationAction&gt; actions = List.of(
+    TransformationAction.LocalizeAndBlurPeople,
+    TransformationAction.LocalizeAndBlurText,
+    TransformationAction.LocalizeAndBlurBarcode
+);
+TransformActionDescriptor descriptor = new TransformActionDescriptor.Builder()
+    .setActions(actions)
+    .build();
+transformSettings.configureTransformationActions(descriptor);
 
-<p>transformSettings.configureTransformationActions(descriptor);</p>
+// Declare as a class field (it is assigned inside the lambda below)
+private ImageTransformDetector imageTransformDetector = null;
 
-<p>// Initialize ImageTransformDetector object
-  ImageTransformDetector imageTransformDetector = null;</p>
+// Get ImageTransformDetector
+CompletableFuture&lt;ImageTransformDetector&gt; transformFuture =
+    ImageTransformDetector.getImageTransformDetector(transformSettings, imageTransformExecutor);
 
-<p>// Get ImageTransformDetector
-  CompletableFuture<imagetransformdetector> transformFuture =
-      ImageTransformDetector.getImageTransformDetector(transformSettings, imageTransformExecutor);</imagetransformdetector></p>
-
-<p>// Use the transformFuture to implement the thenAccept() callback of CompletableFuture
-  transformFuture.thenAccept(transformDetector -&gt; {
-      // Use the ImageTransformDetector object returned here for transforming images
-      imageTransformDetector = transformDetector;
-      Log.i(TAG, "ImageTransformDetector initialized successfully");
-  }).exceptionally(ex -&gt; {
-      Log.e(TAG, "ImageTransformDetector initialization failed", ex);
-      return null;
-  });</p></li></ul></li></ul></li>
+// Use the transformFuture to implement the thenAccept() callback of CompletableFuture
+transformFuture.thenAccept(transformDetector -&gt; {
+    imageTransformDetector = transformDetector;
+    Log.i(TAG, "ImageTransformDetector initialized successfully");
+}).exceptionally(ex -&gt; {
+    Log.e(TAG, "ImageTransformDetector initialization failed", ex);
+    return null;
+});
+</code></pre></li></ul></li>
 
 <li><p><strong>Create EntityTrackerAnalyzer:</strong> Create an <code>EntityTrackerAnalyzer</code> with the <code>ImageAttributesDetector</code>. This analyzer processes camera frames in real-time and provides callbacks with attribute compliance results. The callback checks if all attribute results are compliant, at which point the user can proceed with image capture. This real-time compliance check allows guidance to users to position the camera correctly before capturing the image, ensuring optimal image quality and required content visibility.</p>
 
@@ -518,8 +517,19 @@ cameraController.setImageAnalysisAnalyzer(
 
 <p>The same <code>ImageAttributesDetector</code> instance can be used with the <code>ImageTransformDetector's</code> <code>process()</code> API overload with 3 arguments. However, the user must stop the <code>EntityTrackerAnalyzer</code> before doing the image capture and transformation, as it is using the same <code>ImageAttributesDetector</code> instance. The user can restart the analyzer once the capture results are available to continue the analysis and capturing process.</p>
 
-<p><strong>Important Threading Consideration:</strong>
-When using the process API overload with 3 arguments (image, executor, AttributeDetector), ensure that the provided executor has enough threads to handle parallel processing of image transformation and attribute detection.A thread pool of 3 or more threads is required depending on the Transform Actions set by the user. If all three transformation actions are enabled, a pool of 4 threads is recommended to handle the 4 parallel actions (Attributes detection + 3 Transformation actions).</p>
+<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>Important Threading Considerations:</strong></p>
+
+<ul>
+<li><strong>Register the analyzer with the main executor:</strong> <code>imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(context), analyzer)</code> (as in QuickStart Tracker.java:693). This ensures result callbacks execute on the main thread, allowing direct UI updates.</li>
+
+<li><strong>A single-thread executor is sufficient for one detector.</strong> The guidance recommending a thread pool size of 3 or more applies only to Picture Proof of Delivery (parallel attribute detection + transformation).</li></ul>
+
+<p><strong>ImageProxy ownership:</strong></p>
+
+<ul>
+<li><code>EntityTrackerAnalyzer</code> automatically closes the <code>ImageProxy</code>.</li>
+
+<li>If writing a custom <code>ImageAnalysis.Analyzer</code>, call <code>image.close()</code> once on <em>every</em> execution path (including success, failure, and catch blocks). Failure to close the image stalls the camera pipeline. Attempting to close the image more than once throws an <code>IllegalStateException</code>.</li></ul>
 
 <p><strong>Result Handling APIs:</strong>
 The user can use the following APIs from <code>ImageTransformResult</code>:</p>
@@ -537,7 +547,7 @@ The user can use the following APIs from <code>ImageTransformResult</code>:</p>
     <td>Returns true if attribute results are available.</td>
     </tr>
     <tr>
-    <td><code>getImageAttributeResults()</code></td>
+    <td><code>getImageAttributeResult()</code></td>
     <td>Returns <code>List<imageattributeresult></imageattributeresult></code> on success and null on fail.</td>
     </tr>
     <tr>
@@ -563,7 +573,7 @@ cameraController.takePicture(
             imageTransformDetector.process(imgData, executor, imageAttributesDetector).thenAccept(result -&gt; {
                 Bitmap outputImage = result.getBitmapImage();
                 // Get the image attribute results for the transformed image
-                List&lt;ImageAttributeResult&gt; attributeResults = result.getImageAttributeResults();
+                List&lt;ImageAttributeResult&gt; attributeResults = result.getImageAttributeResult();
 
 <pre><code>            // Check if all attributes are compliant for the transformed image
             boolean allCompliant = attributeResults.stream()
@@ -582,9 +592,11 @@ cameraController.takePicture(
 
     @Override
     public void onError(@NonNull ImageCaptureException exception) {
-        // Restart image analysis on error
-        restartImageAnalysis();
+        // Restart image analysis on error: re-attach the analyzer that was cleared before capture
+        cameraController.setImageAnalysisAnalyzer(
+            ContextCompat.getMainExecutor(context), entityTrackerAnalyzer);
     }
+
 }
 </code></pre>
 
@@ -1289,9 +1301,9 @@ A <code>CompletableFuture</code> that completes with the detection results.<
 
 <li><strong>Call process() -</strong> Invoke the <code>process()</code> method on the <code>ImageData</code> object to initiate barcode detection.</li>
 
-<li><strong>Success Handling -</strong> Upon successful detection, <code>addOnSuccessListener</code> is activated, retrieving the barcode value and symbology type.</li>
+<li><strong>Success Handling -</strong> When the <code>CompletableFuture</code> completes, <code>thenAccept</code> is invoked with the detected entities. Retrieve the barcode value and symbology from each <code>BarcodeEntity</code>. </li>
 
-<li><strong>Failure Handling -</strong> If detection fails, <code>addOnFailureListener</code> logs the error and closes the image.</li>
+<li><strong>Failure Handling -</strong> If processing fails, handle the exception, e.g., using <code>exceptionally</code>. Regardless of success or failure, ensure the <code>ImageProxy</code> is closed to release the frame (if using a custom analyzer; <code>EntityTrackerAnalyzer</code> closes it automatically).</li>
 
 <li><strong>Exception Handling -</strong> Handle exceptions such as <code>InvalidInputException</code> and <code>AIVisionSDKException</code> by logging issues during processing and properly closing the image.</li>
 </ol>
@@ -1304,29 +1316,27 @@ A <code>CompletableFuture</code> that completes with the detection results.<
         @Override
         public void analyze(@NonNull ImageProxy image) {
             try {
-                barcodeDecoder.process(ImageData.fromImageProxy(image)).addOnSuccessListener(result -&gt;{
+                barcodeDecoder.process(ImageData.fromImageProxy(image))
+                    .thenAccept(result -&gt; {
+                        for (BarcodeEntity barcodeEntity : result) {
+                            // Access bounding box and confidence
+                            Rect boundingBox = barcodeEntity.getBoundingBox();
+                            float confidence = barcodeEntity.getAccuracy();
 
-                    for(Entity&lt;?&gt; bb:result){
-                        // Access bounding box and confidence
-                        BoundingBox boundingBox = bb.getBoundingBox();
-                        float confidence = bb.accuracy();
-
-                        // Type cast Entity to BarcodeEntity for specific operations
-                        BarcodeEntity barcodeEntity = (BarcodeEntity) bb;
-
-                        // Access barcode-specific data
-                        String barcodeValue = barcodeEntity.getValue();
-                        String barcodeType = barcodeEntity.getSymbology();
-                    }
-                    image.close();
-                })
-
-                .addOnFailureListener(e -&gt;{
-                    image.close();
-                });
-            }
-            catch (Exception e) {
+                            // Access barcode-specific data
+                            String barcodeValue = barcodeEntity.getValue();
+                            int symbology = barcodeEntity.getSymbology();   // int
+                        }
+                        image.close();
+                    })
+                    .exceptionally(e -&gt; {
+                        Log.e(TAG, "Analysis failed: " + e.getMessage());
+                        image.close();
+                        return null;
+                    });
+            } catch (Exception e) {
                 Log.e(TAG, "Analysis failed: " + e.getMessage());
+                image.close();
             }
         }
     }
@@ -1394,7 +1404,7 @@ A <code>CompletableFuture</code> that completes with the detection results.<
 
 <li><p><strong>Bind Camera to Lifecycle -</strong> Unbind any previous use cases before binding the camera to the lifecycle with the configured preview and image analysis use cases. Set the camera controller in the <code>EntityViewController</code>.</p></li>
 
-<li><p><strong>Register Event Listeners -</strong> Register listeners to handle user interactions, such as entity click events, and to manage dynanmic layout changes, like viewfinder resize events. The resize listener allows users to establish field of view and entity coordinates between the preview and analyzer. <br></p>
+<li><p><strong>Register Event Listeners -</strong> Register listeners to handle user interactions, such as entity click events, and to manage dynamic layout changes, like viewfinder resize events. The resize listener allows users to establish field of view and entity coordinates between the preview and analyzer. In the resize listener, both values must be applied to the analyzer to prevent overlay misalignment. <code>setCropRect</code> requires sensor coordinates rather than view pixels.<br></p>
 
 <p>Sample code for steps 2 to 6:</p>
 
@@ -1435,8 +1445,10 @@ entityViewController.registerEntityClickListener(entity -&gt; {
 });
 
 // Register Listener for Viewfinder Resize Events
-entityViewController.registerViewfinderResizeListener(specs -&gt; {
+entityViewController.registerViewfinderResizeListener(entityViewResizeSpecs -&gt; {
     // Handle viewfinder size changes
+    analyzer.updateTransform(entityViewResizeSpecs.getSensorToViewMatrix());
+    analyzer.setCropRect(entityViewResizeSpecs.getViewfinderFOVCropRegion());
 });
 </code></pre></li>
 
@@ -1461,6 +1473,8 @@ private void initializeStylePens() {
 <li><p><strong>Apply StylePens and Render Entities -</strong> In the analyzer results consumer method, clear previous entities and retrieve detected entities. Apply the appropriate <code>StylePen</code> to each entity based on your application use case and add them to the <code>EntityViewController</code>. Finally, render all entities on the viewfinder at once for optimized performance.</p></li>
 </ol>
 
+<p><i class="fa fa-exclamation-triangle" style="color:#FFA500;"></i> <strong>Note:</strong> The <code>isQRCodeSymbology()</code> or <code>isUPCASymbology()</code> methods are not included in the SDK. They are simple helper methods defined within this sample. Use <code>BarcodeEntity.getSymbology()</code>, which  returns an integer, and compare it to <code>BarcodeDecoder.Settings.SymbologyType.<name>.getValue()</name></code>, as shown below.</p>
+
 <pre class="prettyprint">    <code>
     // Analyzer results consumer method
     private void handleEntities(EntityTrackerAnalyzer.Result result) { 
@@ -1479,27 +1493,35 @@ private void initializeStylePens() {
                     continue; 
                 } 
 
-                BarcodeEntity barcodeEntity = (BarcodeEntity) entity;       
-
-                int symbology = barcodeEntity.getSymbology(); 
-
-                // QR Code symbology 
-                if (isQRCodeSymbology(symbology)) { 
-                    // Associate style pen initialized for QR codes 
-                    entityViewController.add(barcodeEntity, qrCodeBoundingBoxPen); 
-                } 
-
-                // UPCA symbology 
-                if (isUPCASymbology(symbology)) { 
-                    // Associate style pen initialized for UPCA barcodes 
-                    entityViewController.add(barcodeEntity, upcaIconPen); 
-                }             
+                BarcodeEntity barcodeEntity = (BarcodeEntity) entity;
+                int symbology = barcodeEntity.getSymbology();   // int, not String
+                if (isQRCodeSymbology(symbology)) {
+                    // highlight the QR code
+                } else if (isUPCASymbology(symbology)) {
+                    // highlight the UPC-A code
+                }                           
             } 
         } 
 
         // Render all entities at once 
         entityViewController.render(); 
     } 
+
+    // ------------------------------------------------------------------------------------------
+    // Helper methods (not part of the SDK) – Define in the same class as handleEntities()
+    // ------------------------------------------------------------------------------------------
+
+    // SymbologyType.getValue() gives the int that BarcodeEntity.getSymbology() returns.
+    private static final int QR_CODE_SYMBOLOGY = BarcodeDecoder.Settings.SymbologyType.QRCODE.getValue();   // 15
+    private static final int UPCA_SYMBOLOGY    = BarcodeDecoder.Settings.SymbologyType.UPC_A.getValue();    // 2
+
+    private static boolean isQRCodeSymbology(int symbology) {
+        return symbology == QR_CODE_SYMBOLOGY;
+    }
+
+    private static boolean isUPCASymbology(int symbology) {
+        return symbology == UPCA_SYMBOLOGY;
+    }
     </code>
 </pre>
 
@@ -2190,6 +2212,18 @@ A Matrix representing the transformation from sensor to view coordinates.</p
 
 <p>The methods and properties available for each are provided in the subsections below.</p>
 
+<p><strong>Limitations:</strong></p>
+
+<p>EntityView supports two customizable overlay styles:</p>
+
+<ul>
+<li><strong>BoundingBoxDrawPen –</strong> Customizes the bounding box stroke width, stroke color, and fill color. Supports click events.</li>
+
+<li><strong>IconDrawPen –</strong> Renders a predefined <code>IconStyle</code> with customizable minimum and maximum icon dimensions. Support click events.</li>
+</ul>
+
+<p>The base <code>StylePen</code> cannot be implemented by applications. <code>EntityView</code> does not draw text labels, custom icons, drawables, or per-entity dynamic content. To draw anything else (such as displaying a decoded value above each barcode), use <code>PreviewView</code> with a custom overlay and convert entity coordinates. Refer to the implementation sample in the <a href="https://github.com/ZebraDevs/AISuite_Android_Samples/tree/main/AISuite_Demos/AI_Barcode_Finder">AI Barcode Finder sample application</a>.</p>
+
 <h4 id="developerguide-3" class="anchor"><a class="heading-anchor" href="#developerguide-3"><span></span></a>Developer Guide</h4>
 
 <p>Follow these steps utilize a StylePen:</p>
@@ -2212,10 +2246,11 @@ A Matrix representing the transformation from sensor to view coordinates.</p
         .build();
 
     IconDrawPen iconPen = IconDrawPen.builder()
-        .setIconStyle(IconStyle.ACTION)
-        .setclickable(true)
+        .setIconStyle(IconStyle.SUCCESSFUL_DECODE)   // or IconStyle.DETECTION_ONLY
+        .setClickable(true)
         .setIconSizes(50, 100)
         .build();
+
 
     // Associate the stylepens with Entities
     entityViewController.add(detectedEntity1, boundingBoxPen);
